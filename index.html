@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Centerville FD Reports</title>
+    <title>Centerville FD Reports & Training</title>
     
     <!-- PWA / Add to Home Screen -->
     <link rel="manifest" href="manifest.json">
@@ -34,9 +34,8 @@
         header img {
             width: 160px;
             height: auto;
-            border: 6px solid #fff;
-            border-radius: 50%;
             margin-bottom: 20px;
+            /* Removed border and border-radius */
         }
         h1 {
             font-size: 2.8rem;
@@ -196,11 +195,9 @@
         </footer>
     </div>
 
-    <!-- Manifest File (create this in root) -->
     <script>
         // Show install prompt on mobile
         if ('serviceWorker' in navigator) {
-            // Optional: register a dummy service worker for PWA feel
             navigator.serviceWorker.register('sw.js');
         }
 
