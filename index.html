@@ -3,7 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Centerville FD Reports & Training</title>
+    <title>Centerville FD Reports</title>
+    
+    <!-- PWA / Add to Home Screen -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="patch.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Centerville FD">
+    <meta name="theme-color" content="#dc2626">
+
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -85,19 +94,27 @@
         .report-card a:hover:not(.disabled) {
             background: #b91c1c;
         }
+        .install-prompt {
+            margin: 40px auto;
+            padding: 20px;
+            background: #334155;
+            border-radius: 12px;
+            max-width: 600px;
+            font-size: 1rem;
+            color: #e2e8f0;
+        }
+        .city-logo {
+            width: 250px;
+            height: auto;
+            margin: 30px auto;
+            display: block;
+        }
         footer {
             margin-top: 60px;
             padding: 20px;
             color: #64748b;
             font-size: 0.9rem;
         }
-        .city-logo {
-            width: 250px;
-            height: auto;
-            margin: 20px auto;
-            display: block;
-        }
-        /* Tablet & Desktop - 2 or 3 columns */
         @media (min-width: 640px) {
             .reports-grid {
                 grid-template-columns: repeat(2, 1fr);
@@ -129,6 +146,15 @@
             <h1>Centerville Fire Department</h1>
             <p class="subtitle">Reports & Training System</p>
         </header>
+
+        <!-- Optional: Add to Home Screen Prompt -->
+        <div class="install-prompt" id="installPrompt" style="display:none;">
+            <strong>Add to Home Screen</strong><br>
+            For quick access, install this app on your phone:
+            <br><br>
+            <strong>Android:</strong> Tap menu → "Add to Home screen"<br>
+            <strong>iPhone:</strong> Tap Share → "Add to Home Screen"
+        </div>
 
         <div class="reports-grid">
             <div class="report-card">
@@ -163,12 +189,25 @@
             </div>
         </div>
 
-        <!-- City Logo at Bottom Center -->
         <img src="city-logo.png" alt="City of Centerville Logo" class="city-logo">
 
         <footer>
             © 2025 Centerville Fire Department • Confidential System • Contact Sergeant Dorman
         </footer>
     </div>
+
+    <!-- Manifest File (create this in root) -->
+    <script>
+        // Show install prompt on mobile
+        if ('serviceWorker' in navigator) {
+            // Optional: register a dummy service worker for PWA feel
+            navigator.serviceWorker.register('sw.js');
+        }
+
+        // Show install instructions on mobile
+        if (/Mobi|Android|iPhone|iPad|iPod/.test(navigator.userAgent)) {
+            document.getElementById('installPrompt').style.display = 'block';
+        }
+    </script>
 </body>
 </html>
