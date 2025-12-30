@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centerville FD - Weekly Performance Report</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="report-header">
+            <div class="header-top">
+                <img src="patch.png" alt="Centerville FD Patch" class="patch-logo">
+                <div class="header-text">
+                    <h1>Centerville Fire Department</h1>
+                    <h2>Firefighter Weekly Performance Report</h2>
+                </div>
+            </div>
+        </header>
+
+        <h3 style="text-align:center;color:#d32f2f;margin:30px 0;">5. Advanced Operations</h3>
+
+        <form id="pageForm">
+            <div class="performance-block">
+                <div class="inline-dropdown">
+                    <label class="inline-label">Firefighter demonstrates proper knowledge and proficiency in establishing a water supply from a fire hydrant.</label>
+                    <select name="Hydrant Supply Proficiency" class="compact-select">
+                        <option value="">Select Proficiency</option>
+                        <option value="Unsatisfactory">Unsatisfactory</option>
+                        <option value="Needs Improvement">Needs Improvement</option>
+                        <option value="Satisfactory">Satisfactory</option>
+                        <option value="Exceeds Expectations">Exceeds Expectations</option>
+                        <option value="Not Applicable">Not Applicable</option>
+                    </select>
+                </div>
+                <div class="evaluator-note">
+                    <label>Evaluator Note:</label>
+                    <textarea name="Hydrant Supply Note" rows="3" placeholder="Enter any notes regarding hydrant location, wrapping, connection, flow, pressure, or related observations..."></textarea>
+                </div>
+            </div>
+
+            <div class="performance-block">
+                <div class="inline-dropdown">
+                    <label class="inline-label">Firefighter demonstrates proper knowledge and proficiency in removing the deck gun from Engine 1 and uses it as a ground monitor.</label>
+                    <select name="Deck Gun Proficiency" class="compact-select">
+                        <option value="">Select Proficiency</option>
+                        <option value="Unsatisfactory">Unsatisfactory</option>
+                        <option value="Needs Improvement">Needs Improvement</option>
+                        <option value="Satisfactory">Satisfactory</option>
+                        <option value="Exceeds Expectations">Exceeds Expectations</option>
+                        <option value="Not Applicable">Not Applicable</option>
+                    </select>
+                </div>
+                <div class="evaluator-note">
+                    <label>Evaluator Note:</label>
+                    <textarea name="Deck Gun Note" rows="3" placeholder="Enter any notes regarding deck gun removal, setup as ground monitor, flow control, stability, safety, or related observations..."></textarea>
+                </div>
+            </div>
+
+            <div class="performance-block">
+                <div class="inline-dropdown">
+                    <label class="inline-label">Firefighter demonstrates proper knowledge and proficiency in removing the BlitzFire rapid attack monitor for exposure protection.</label>
+                    <select name="BlitzFire Proficiency" class="compact-select">
+                        <option value="">Select Proficiency</option>
+                        <option value="Unsatisfactory">Unsatisfactory</option>
+                        <option value="Needs Improvement">Needs Improvement</option>
+                        <option value="Satisfactory">Satisfactory</option>
+                        <option value="Exceeds Expectations">Exceeds Expectations</option>
+                        <option value="Not Applicable">Not Applicable</option>
+                    </select>
+                </div>
+                <div class="evaluator-note">
+                    <label>Evaluator Note:</label>
+                    <textarea name="BlitzFire Note" rows="3" placeholder="Enter any notes regarding BlitzFire removal, setup, anchoring, flow control, exposure protection application, or related observations..."></textarea>
+                </div>
+            </div>
+
+            <div class="performance-block">
+                <div class="inline-dropdown">
+                    <label class="inline-label">Firefighter demonstrates proper knowledge and proficiency in flowing and maneuvering various attack lines in accordance with industry standards.</label>
+                    <select name="Attack Lines Flow Proficiency" class="compact-select">
+                        <option value="">Select Proficiency</option>
+                        <option value="Unsatisfactory">Unsatisfactory</option>
+                        <option value="Needs Improvement">Needs Improvement</option>
+                        <option value="Satisfactory">Satisfactory</option>
+                        <option value="Exceeds Expectations">Exceeds Expectations</option>
+                        <option value="Not Applicable">Not Applicable</option>
+                    </select>
+                </div>
+                <div class="evaluator-note">
+                    <label>Evaluator Note:</label>
+                    <textarea name="Attack Lines Flow Note" rows="3" placeholder="Enter any notes regarding flowing techniques, nozzle control, line advancement, backing up, bleed-off, or related observations..."></textarea>
+                </div>
+            </div>
+
+            <div class="performance-block">
+                <div class="inline-dropdown">
+                    <label class="inline-label">Firefighter demonstrates proper knowledge and proficiency with fire department ground ladders in a given scenario.</label>
+                    <select name="Ground Ladders Proficiency" class="compact-select">
+                        <option value="">Select Proficiency</option>
+                        <option value="Unsatisfactory">Unsatisfactory</option>
+                        <option value="Needs Improvement">Needs Improvement</option>
+                        <option value="Satisfactory">Satisfactory</option>
+                        <option value="Exceeds Expectations">Exceeds Expectations</option>
+                        <option value="Not Applicable">Not Applicable</option>
+                    </select>
+                </div>
+                <div class="evaluator-note">
+                    <label>Evaluator Note:</label>
+                    <textarea name="Ground Ladders Note" rows="3" placeholder="Enter any notes regarding ladder selection, carry, placement, climbing, footing, securing, or scenario performance..."></textarea>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" onclick="window.history.back()">← Back</button>
+                <button type="button" onclick="saveAndGo('page6.html')">Next → Command & Scene</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        function saveAndGo(next) {
+            const data = JSON.parse(localStorage.getItem('reportData') || '{}');
+            const form = document.getElementById('pageForm');
+            const formData = new FormData(form);
+            for (let [key, value] of formData.entries()) {
+                if (data[key]) {
+                    if (!Array.isArray(data[key])) data[key] = [data[key]];
+                    data[key].push(value);
+                } else {
+                    data[key] = value;
+                }
+            }
+            localStorage.setItem('reportData', JSON.stringify(data));
+            window.location.href = next;
+        }
+
+        window.onload = () => {
+            const savedData = localStorage.getItem('reportData');
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                Object.keys(data).forEach(key => {
+                    const elements = document.querySelectorAll(`[name="${key}"]`);
+                    elements.forEach(el => {
+                        if (el.type === 'checkbox' || el.type === 'radio') {
+                            el.checked = Array.isArray(data[key]) ? data[key].includes(el.value) : data[key] === el.value;
+                        } else {
+                            el.value = Array.isArray(data[key]) ? data[key][0] || '' : data[key] || '';
+                        }
+                    });
+                });
+            }
+        };
+    </script>
+</body>
+</html>

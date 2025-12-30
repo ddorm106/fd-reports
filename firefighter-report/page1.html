@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centerville FD - Weekly Performance Report</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="report-header">
+            <div class="header-top">
+                <img src="patch.png" alt="Centerville FD Patch" class="patch-logo">
+                <div class="header-text">
+                    <h1>Centerville Fire Department</h1>
+                    <h2>Firefighter Weekly Performance Report</h2>
+                </div>
+            </div>
+        </header>
+
+        <h3 style="text-align:center;color:#d32f2f;margin:30px 0;">1. Personnel Information</h3>
+
+        <form id="pageForm">
+            <div class="form-row">
+                <div class="form-field">
+                    <label for="report-date">Week Ending Date:</label>
+                    <input type="date" id="report-date" name="Week Ending Date">
+                </div>
+                <div class="form-field">
+                    <label for="shift">Shift:</label>
+                    <select id="shift" name="Shift">
+                        <option value="">-- Select Shift --</option>
+                        <option value="Shift 1">Shift 1</option>
+                        <option value="Shift 2">Shift 2</option>
+                        <option value="Shift 3">Shift 3</option>
+                        <option value="Day Shift">Day Shift</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-field">
+                    <label for="officer">Officer:</label>
+                    <select id="officer" name="Officer">
+                        <option value="">-- Select Officer --</option>
+                        <option value="Sergeant Dorman">Sergeant Dorman</option>
+                        <option value="Sergeant Redd">Sergeant Redd</option>
+                        <option value="Sergeant Talley">Sergeant Talley</option>
+                        <option value="Engineer Traxler">Engineer Traxler</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label for="firefighter">Firefighter:</label>
+                    <select id="firefighter" name="Firefighter">
+                        <option value="">-- Select Firefighter --</option>
+                        <option value="Barr, H">Barr, H</option>
+                        <option value="Bennett, K">Bennett, K</option>
+                        <option value="Cannon, J">Cannon, J</option>
+                        <option value="Dunn, P">Dunn, P</option>
+                        <option value="Lightning, L">Lightning, L</option>
+                        <option value="Mixon, J">Mixon, J</option>
+                        <option value="Mooney, W">Mooney, W</option>
+                        <option value="Orona, A">Orona, A</option>
+                        <option value="Schuler, A">Schuler, A</option>
+                        <option value="Smith, M">Smith, M</option>
+                        <option value="Stockholm, J">Stockholm, J</option>
+                        <option value="Thornton, E">Thornton, E</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group apparatus-group">
+                <label>Assigned Apparatus for this Week:</label>
+                <div class="apparatus-buttons">
+                    <label class="apparatus-btn engine1">
+                        <input type="checkbox" name="Apparatus" value="Engine 1">
+                        <span>Engine 1</span>
+                    </label>
+                    <label class="apparatus-btn engine2">
+                        <input type="checkbox" name="Apparatus" value="Engine 2">
+                        <span>Engine 2</span>
+                    </label>
+                    <label class="apparatus-btn truck1">
+                        <input type="checkbox" name="Apparatus" value="Truck 1">
+                        <span>Truck 1</span>
+                    </label>
+                    <label class="apparatus-btn rescue1">
+                        <input type="checkbox" name="Apparatus" value="Rescue 1">
+                        <span>Rescue 1</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" onclick="saveAndGo('page2.html')">Next → Policies & Conduct</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        function saveAndGo(next) {
+            const data = {};
+            const formElements = document.querySelectorAll('#pageForm input, #pageForm select, #pageForm textarea');
+            formElements.forEach(el => {
+                if (el.type === 'checkbox') {
+                    if (el.checked) {
+                        if (!data[el.name]) data[el.name] = [];
+                        data[el.name].push(el.value);
+                    }
+                } else {
+                    data[el.name] = el.value;
+                }
+            });
+            localStorage.setItem('reportData', JSON.stringify(data));
+            window.location.href = next;
+        }
+
+        window.addEventListener('load', () => {
+            const data = JSON.parse(localStorage.getItem('reportData') || '{}');
+            Object.keys(data).forEach(key => {
+                const elements = document.querySelectorAll(`[name="${key}"]`);
+                elements.forEach(el => {
+                    if (el.type === 'checkbox') {
+                        el.checked = data[key] && data[key].includes(el.value);
+                    } else {
+                        el.value = data[key] || '';
+                    }
+                });
+            });
+            if (!document.getElementById('report-date').value) {
+                document.getElementById('report-date').value = new Date().toISOString().split('T')[0];
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centerville FD - Weekly Performance Report</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="report-header">
+            <div class="header-top">
+                <img src="patch.png" alt="Centerville FD Patch" class="patch-logo">
+                <div class="header-text">
+                    <h1>Centerville Fire Department</h1>
+                    <h2>Firefighter Weekly Performance Report</h2>
+                </div>
+            </div>
+        </header>
+
+        <h3 style="text-align:center;color:#d32f2f;margin:30px 0;">2. Policies & Conduct</h3>
+
+        <form id="pageForm">
+            <div class="performance-block">
+                <div class="inline-dropdown">
+                    <label class="inline-label">Firefighter Reported to Shift on Time and in Proper Uniform:</label>
+                    <select name="On Time & Uniform Rating" class="compact-select">
+                        <option value="">Select Proficiency</option>
+                        <option value="Unsatisfactory">Unsatisfactory</option>
+                        <option value="Needs Improvement">Needs Improvement</option>
+                        <option value="Satisfactory">Satisfactory</option>
+                        <option value="Exceeds Expectations">Exceeds Expectations</option>
+                        <option value="Not Applicable">Not Applicable</option>
+                    </select>
+                </div>
+                <div class="evaluator-note">
+                    <label>Evaluator Note:</label>
+                    <textarea name="On Time & Uniform Note" rows="3" placeholder="Enter any notes regarding punctuality, uniform condition, readiness, or related observations..."></textarea>
+                </div>
+            </div>
+
+            <div class="performance-block">
+                <div class="inline-dropdown">
+                    <label class="inline-label">Firefighter demonstrates proper use and understanding of the functions of the portable and mobile radios used at Centerville Fire Department:</label>
+                    <select name="Radio Proficiency" class="compact-select">
+                        <option value="">Select Proficiency</option>
+                        <option value="Unsatisfactory">Unsatisfactory</option>
+                        <option value="Needs Improvement">Needs Improvement</option>
+                        <option value="Satisfactory">Satisfactory</option>
+                        <option value="Exceeds Expectations">Exceeds Expectations</option>
+                        <option value="Not Applicable">Not Applicable</option>
+                    </select>
+                </div>
+                <div class="evaluator-note">
+                    <label>Evaluator Note:</label>
+                    <textarea name="Radio Note" rows="3" placeholder="Enter any notes regarding radio use, channel selection, communication clarity, emergency button, battery check, or related observations..."></textarea>
+                </div>
+            </div>
+
+            <div class="performance-block">
+                <div class="inline-dropdown">
+                    <label class="inline-label">Firefighter regards their personal cell phone as a resource that supports, rather than impedes, their professionalism and work ethic.</label>
+                    <select name="Cell Phone Proficiency" class="compact-select">
+                        <option value="">Select Proficiency</option>
+                        <option value="Unsatisfactory">Unsatisfactory</option>
+                        <option value="Needs Improvement">Needs Improvement</option>
+                        <option value="Satisfactory">Satisfactory</option>
+                        <option value="Exceeds Expectations">Exceeds Expectations</option>
+                        <option value="Not Applicable">Not Applicable</option>
+                    </select>
+                </div>
+                <div class="evaluator-note">
+                    <label>Evaluator Note:</label>
+                    <textarea name="Cell Phone Note" rows="3" placeholder="Enter any notes regarding cell phone use during shift, distractions, appropriate timing, or related observations..."></textarea>
+                </div>
+            </div>
+
+            <div class="performance-block">
+                <div class="inline-dropdown">
+                    <label class="inline-label">Firefighter demonstrates knowledge and understands the city's policies set forth by the governing authority.</label>
+                    <select name="City Policies Proficiency" class="compact-select">
+                        <option value="">Select Proficiency</option>
+                        <option value="Unsatisfactory">Unsatisfactory</option>
+                        <option value="Needs Improvement">Needs Improvement</option>
+                        <option value="Satisfactory">Satisfactory</option>
+                        <option value="Exceeds Expectations">Exceeds Expectations</option>
+                        <option value="Not Applicable">Not Applicable</option>
+                    </select>
+                </div>
+                <div class="evaluator-note">
+                    <label>Evaluator Note:</label>
+                    <textarea name="City Policies Note" rows="3" placeholder="Enter any notes regarding knowledge of city policies, ordinances, or observed adherence..."></textarea>
+                </div>
+            </div>
+
+            <div class="performance-block">
+                <div class="inline-dropdown">
+                    <label class="inline-label">Firefighter demonstrates knowledge and understands the fire department policies set forth by the Centerville Fire Department Command Staff.</label>
+                    <select name="Department Policies Proficiency" class="compact-select">
+                        <option value="">Select Proficiency</option>
+                        <option value="Unsatisfactory">Unsatisfactory</option>
+                        <option value="Needs Improvement">Needs Improvement</option>
+                        <option value="Satisfactory">Satisfactory</option>
+                        <option value="Exceeds Expectations">Exceeds Expectations</option>
+                        <option value="Not Applicable">Not Applicable</option>
+                    </select>
+                </div>
+                <div class="evaluator-note">
+                    <label>Evaluator Note:</label>
+                    <textarea name="Department Policies Note" rows="3" placeholder="Enter any notes regarding knowledge of department policies, SOPs, guidelines, or observed adherence..."></textarea>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" onclick="window.history.back()">← Back</button>
+                <button type="button" onclick="saveAndGo('page3.html')">Next → PPE & Medical</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        function saveAndGo(next) {
+            const data = JSON.parse(localStorage.getItem('reportData') || '{}');
+            const form = document.getElementById('pageForm');
+            const formData = new FormData(form);
+            for (let [key, value] of formData) {
+                if (data[key]) {
+                    if (!Array.isArray(data[key])) data[key] = [data[key]];
+                    data[key].push(value);
+                } else {
+                    data[key] = value;
+                }
+            }
+            localStorage.setItem('reportData', JSON.stringify(data));
+            window.location.href = next;
+        }
+
+        window.addEventListener('load', () => {
+            const data = JSON.parse(localStorage.getItem('reportData') || '{}');
+            Object.keys(data).forEach(key => {
+                const elements = document.querySelectorAll(`[name="${key}"]`);
+                elements.forEach(el => {
+                    if (el.type === 'checkbox') {
+                        el.checked = data[key] && data[key].includes(el.value);
+                    } else {
+                        el.value = data[key] || '';
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

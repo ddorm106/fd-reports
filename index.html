@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centerville FD Reports & Training</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 40px;
+            background: #1e293b;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            text-align: center;
+        }
+        header img {
+            width: 180px;
+            border: 6px solid #fff;
+            border-radius: 50%;
+            margin-bottom: 30px;
+        }
+        h1 {
+            font-size: 3rem;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+        p.subtitle {
+            font-size: 1.4rem;
+            color: #cbd5e1;
+            margin-bottom: 60px;
+        }
+        .reports-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+        .report-card {
+            background: #334155;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            transition: transform 0.3s;
+        }
+        .report-card:hover {
+            transform: translateY(-10px);
+        }
+        .report-card h3 {
+            font-size: 1.6rem;
+            color: #f59e0b;
+            margin-bottom: 15px;
+        }
+        .report-card p {
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            color: #e2e8f0;
+        }
+        .report-card a {
+            display: block;
+            padding: 15px;
+            background: #dc2626;
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+        .report-card a.disabled {
+            background: #64748b;
+            cursor: not-allowed;
+        }
+        .report-card a:hover:not(.disabled) {
+            background: #b91c1c;
+        }
+        footer {
+            margin-top: 80px;
+            padding: 20px;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+        @media (max-width: 768px) {
+            h1 { font-size: 2.4rem; }
+            .reports-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <img src="patch.png" alt="Centerville FD Patch">
+            <h1>Centerville Fire Department</h1>
+            <p class="subtitle">Reports & Training System</p>
+        </header>
+
+        <div class="reports-grid">
+            <div class="report-card">
+                <h3>AOIC Weekly Performance Report</h3>
+                <p>Coming soon</p>
+                <a href="#" class="disabled">Available Soon</a>
+            </div>
+
+            <div class="report-card">
+                <h3>Aerial Weekly Performance Report</h3>
+                <p>Coming soon</p>
+                <a href="#" class="disabled">Available Soon</a>
+            </div>
+
+            <div class="report-card">
+                <h3>Centerville FD Training Sheets</h3>
+                <p>Training logs and documentation</p>
+                <a href="training-sheets/index.html">Open Training →</a>
+            </div>
+
+            <div class="report-card">
+                <h3>Engine Driver Weekly Performance Report</h3>
+                <p>Coming soon</p>
+                <a href="#" class="disabled">Available Soon</a>
+            </div>
+
+            <div class="report-card">
+                <h3>Firefighter Weekly Performance Report</h3>
+                <p>Standard firefighter weekly evaluation</p>
+                <a href="firefighter-report/page1.html">Start Report →</a>
+            </div>
+
+            <div class="report-card">
+                <h3>Rescue Driver Weekly Performance Report</h3>
+                <p>Coming soon</p>
+                <a href="#" class="disabled">Available Soon</a>
+            </div>
+        </div>
+
+        <footer>
+            © 2025 Centerville Fire Department • Confidential System • Contact Sergeant Dorman
+        </footer>
+    </div>
+</body>
+</html>

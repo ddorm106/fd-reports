@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centerville FD - Weekly Performance Report</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="report-header">
+            <div class="header-top">
+                <img src="patch.png" alt="Centerville FD Patch" class="patch-logo">
+                <div class="header-text">
+                    <h1>Centerville Fire Department</h1>
+                    <h2>Firefighter Weekly Performance Report</h2>
+                </div>
+            </div>
+        </header>
+
+        <h3 style="text-align:center;color:#d32f2f;margin:30px 0;">3. PPE & Medical</h3>
+
+        <form id="pageForm">
+            <div class="performance-block">
+                <div class="inline-dropdown">
+                    <label class="inline-label">Firefighter can demonstrate donning of the firefighter's structural PPE with SCBA within two (2) minutes or less.</label>
+                    <select name="PPE/SCBA Donning Proficiency" class="compact-select">
+                        <option value="">Select Proficiency</option>
+                        <option value="Unsatisfactory">Unsatisfactory</option>
+                        <option value="Needs Improvement">Needs Improvement</option>
+                        <option value="Satisfactory">Satisfactory</option>
+                        <option value="Exceeds Expectations">Exceeds Expectations</option>
+                        <option value="Not Applicable">Not Applicable</option>
+                    </select>
+                </div>
+                <div class="evaluator-note">
+                    <label>Evaluator Note:</label>
+                    <textarea name="PPE/SCBA Donning Note" rows="3" placeholder="Enter time achieved, any issues with donning sequence, mask seal, regulator connection, SCBA checks, or related observations..."></textarea>
+                </div>
+            </div>
+
+            <div class="performance-block">
+                <div class="inline-dropdown">
+                    <label class="inline-label">Firefighter demonstrates proper inventory and function check of medical equipment carried on the Rescue Unit.</label>
+                    <select name="Medical Equipment Proficiency" class="compact-select">
+                        <option value="">Select Proficiency</option>
+                        <option value="Unsatisfactory">Unsatisfactory</option>
+                        <option value="Needs Improvement">Needs Improvement</option>
+                        <option value="Satisfactory">Satisfactory</option>
+                        <option value="Exceeds Expectations">Exceeds Expectations</option>
+                        <option value="Not Applicable">Not Applicable</option>
+                    </select>
+                </div>
+                <div class="evaluator-note">
+                    <label>Evaluator Note:</label>
+                    <textarea name="Medical Equipment Note" rows="3" placeholder="Enter any notes regarding inventory accuracy, function checks of AED, oxygen, trauma bag, or other medical equipment readiness..."></textarea>
+                </div>
+            </div>
+
+            <div class="performance-block">
+                <div class="inline-dropdown">
+                    <label class="inline-label">Firefighter demonstrates proper inventory and function check of the RIT pack carried on the engine.</label>
+                    <select name="RIT Pack Proficiency" class="compact-select">
+                        <option value="">Select Proficiency</option>
+                        <option value="Unsatisfactory">Unsatisfactory</option>
+                        <option value="Needs Improvement">Needs Improvement</option>
+                        <option value="Satisfactory">Satisfactory</option>
+                        <option value="Exceeds Expectations">Exceeds Expectations</option>
+                        <option value="Not Applicable">Not Applicable</option>
+                    </select>
+                </div>
+                <div class="evaluator-note">
+                    <label>Evaluator Note:</label>
+                    <textarea name="RIT Pack Note" rows="3" placeholder="Enter any notes regarding RIT pack inventory, air cylinder pressure, regulator function, mask condition, rope, tools, or related observations..."></textarea>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" onclick="window.history.back()">← Back</button>
+                <button type="button" onclick="saveAndGo('page4.html')">Next → Hose & Equipment</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        function saveAndGo(next) {
+            const data = JSON.parse(localStorage.getItem('reportData') || '{}');
+            const form = document.getElementById('pageForm');
+            const formData = new FormData(form);
+            for (let [key, value] of formData) {
+                if (data[key]) {
+                    if (!Array.isArray(data[key])) data[key] = [data[key]];
+                    data[key].push(value);
+                } else {
+                    data[key] = value;
+                }
+            }
+            localStorage.setItem('reportData', JSON.stringify(data));
+            window.location.href = next;
+        }
+
+        window.onload = () => {
+            const data = JSON.parse(localStorage.getItem('reportData') || '{}');
+            Object.keys(data).forEach(key => {
+                const el = document.querySelector(`[name="${key}"]`);
+                if (el) {
+                    if (el.type === 'checkbox') {
+                        el.checked = Array.isArray(data[key]) ? data[key].includes(el.value) : data[key] === el.value;
+                    } else {
+                        el.value = data[key];
+                    }
+                }
+            });
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centerville FD - Weekly Performance Report</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="report-header">
+            <div class="header-top">
+                <img src="patch.png" alt="Centerville FD Patch" class="patch-logo">
+                <div class="header-text">
+                    <h1>Centerville Fire Department</h1>
+                    <h2>Firefighter Weekly Performance Report</h2>
+                </div>
+            </div>
+        </header>
+
+        <h3 style="text-align:center;color:#d32f2f;margin:30px 0;">4. Hose & Equipment</h3>
+
+        <form id="pageForm">
+            <div class="performance-block">
+                <div class="inline-dropdown">
+                    <label class="inline-label">Firefighter can demonstrate and perform a functional check of all powered equipment carried on all Centerville Fire Department apparatus.</label>
+                    <select name="Powered Equipment Proficiency" class="compact-select">
+                        <option value="">Select Proficiency</option>
+                        <option value="Unsatisfactory">Unsatisfactory</option>
+                        <option value="Needs Improvement">Needs Improvement</option>
+                        <option value="Satisfactory">Satisfactory</option>
+                        <option value="Exceeds Expectations">Exceeds Expectations</option>
+                        <option value="Not Applicable">Not Applicable</option>
+                    </select>
+                </div>
+                <div class="evaluator-note">
+                    <label>Evaluator Note:</label>
+                    <textarea name="Powered Equipment Note" rows="3" placeholder="Enter any notes regarding functional checks of saws, fans, lights, generators, hydraulic tools, or other powered equipment..."></textarea>
+                </div>
+            </div>
+
+            <div class="performance-block">
+                <div class="inline-dropdown">
+                    <label class="inline-label">Firefighter demonstrates proper knowledge and can identify each hose load by common name, use, load, line size, and length on all Centerville Fire Department apparatus.</label>
+                    <select name="Hose Load Proficiency" class="compact-select">
+                        <option value="">Select Proficiency</option>
+                        <option value="Unsatisfactory">Unsatisfactory</option>
+                        <option value="Needs Improvement">Needs Improvement</option>
+                        <option value="Satisfactory">Satisfactory</option>
+                        <option value="Exceeds Expectations">Exceeds Expectations</option>
+                        <option value="Not Applicable">Not Applicable</option>
+                    </select>
+                </div>
+                <div class="evaluator-note">
+                    <label>Evaluator Note:</label>
+                    <textarea name="Hose Load Note" rows="3" placeholder="Enter any notes regarding identification of hose loads (common name, use, load type, line size, length), or related observations..."></textarea>
+                </div>
+            </div>
+
+            <div class="performance-block">
+                <div class="inline-dropdown">
+                    <label class="inline-label">Firefighter demonstrates proper knowledge and can identify each nozzle used on attack lines and the flow range for each nozzle.</label>
+                    <select name="Nozzle Proficiency" class="compact-select">
+                        <option value="">Select Proficiency</option>
+                        <option value="Unsatisfactory">Unsatisfactory</option>
+                        <option value="Needs Improvement">Needs Improvement</option>
+                        <option value="Satisfactory">Satisfactory</option>
+                        <option value="Exceeds Expectations">Exceeds Expectations</option>
+                        <option value="Not Applicable">Not Applicable</option>
+                    </select>
+                </div>
+                <div class="evaluator-note">
+                    <label>Evaluator Note:</label>
+                    <textarea name="Nozzle Note" rows="3" placeholder="Enter any notes regarding nozzle identification, flow ranges (GPM), adjustable vs fixed, fog vs straight stream settings, or related observations..."></textarea>
+                </div>
+            </div>
+
+            <div class="performance-block">
+                <div class="inline-dropdown">
+                    <label class="inline-label">Firefighter demonstrates proper knowledge and proficiency in the deployment of attack lines and reloading techniques on all Centerville Fire Department apparatus.</label>
+                    <select name="Attack Lines Proficiency" class="compact-select">
+                        <option value="">Select Proficiency</option>
+                        <option value="Unsatisfactory">Unsatisfactory</option>
+                        <option value="Needs Improvement">Needs Improvement</option>
+                        <option value="Satisfactory">Satisfactory</option>
+                        <option value="Exceeds Expectations">Exceeds Expectations</option>
+                        <option value="Not Applicable">Not Applicable</option>
+                    </select>
+                </div>
+                <div class="evaluator-note">
+                    <label>Evaluator Note:</label>
+                    <textarea name="Attack Lines Note" rows="3" placeholder="Enter any notes regarding deployment speed, technique, flake-out, reloading methods, kinks, or related observations..."></textarea>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" onclick="window.history.back()">← Back</button>
+                <button type="button" onclick="saveAndGo('page5.html')">Next → Advanced Operations</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        function saveAndGo(next) {
+            const data = JSON.parse(localStorage.getItem('reportData') || '{}');
+            const form = document.getElementById('pageForm');
+            const formData = new FormData(form);
+            for (let [key, value] of formData) {
+                if (data[key]) {
+                    if (!Array.isArray(data[key])) data[key] = [data[key]];
+                    data[key].push(value);
+                } else {
+                    data[key] = value;
+                }
+            }
+            localStorage.setItem('reportData', JSON.stringify(data));
+            window.location.href = next;
+        }
+
+        window.addEventListener('load', () => {
+            const data = JSON.parse(localStorage.getItem('reportData') || '{}');
+            Object.keys(data).forEach(key => {
+                const elements = document.querySelectorAll(`[name="${key}"]`);
+                elements.forEach(el => {
+                    if (el.type === 'checkbox') {
+                        el.checked = data[key] && data[key].includes(el.value);
+                    } else {
+                        el.value = data[key] || '';
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

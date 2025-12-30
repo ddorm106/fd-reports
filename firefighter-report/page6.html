@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centerville FD - Weekly Performance Report</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="report-header">
+            <div class="header-top">
+                <img src="patch.png" alt="Centerville FD Patch" class="patch-logo">
+                <div class="header-text">
+                    <h1>Centerville Fire Department</h1>
+                    <h2>Firefighter Weekly Performance Report</h2>
+                </div>
+            </div>
+        </header>
+
+        <h3 style="text-align:center;color:#d32f2f;margin:30px 0;">6. Command & Scene Proficiency</h3>
+
+        <form id="pageForm">
+            <div class="performance-block">
+                <div class="inline-dropdown">
+                    <label class="inline-label">Firefighter demonstrates proper knowledge and proficiency working within the command structure at the fire station and on emergency incidents.</label>
+                    <select name="Command Structure Proficiency" class="compact-select">
+                        <option value="">Select Proficiency</option>
+                        <option value="Unsatisfactory">Unsatisfactory</option>
+                        <option value="Needs Improvement">Needs Improvement</option>
+                        <option value="Satisfactory">Satisfactory</option>
+                        <option value="Exceeds Expectations">Exceeds Expectations</option>
+                        <option value="Not Applicable">Not Applicable</option>
+                    </select>
+                </div>
+                <div class="evaluator-note">
+                    <label>Evaluator Note:</label>
+                    <textarea name="Command Structure Note" rows="3" placeholder="Enter any notes regarding ICS/NIMS adherence, chain of command at station and on scene, task assignment completion, communication, or related observations..."></textarea>
+                </div>
+            </div>
+
+            <div class="performance-block">
+                <div class="inline-dropdown">
+                    <label class="inline-label">Firefighter demonstrates proficiency in various Search & Rescue techniques in accordance with industry standards.</label>
+                    <select name="Search & Rescue Proficiency" class="compact-select">
+                        <option value="">Select Proficiency</option>
+                        <option value="Unsatisfactory">Unsatisfactory</option>
+                        <option value="Needs Improvement">Needs Improvement</option>
+                        <option value="Satisfactory">Satisfactory</option>
+                        <option value="Exceeds Expectations">Exceeds Expectations</option>
+                        <option value="Not Applicable">Not Applicable</option>
+                    </select>
+                </div>
+                <div class="evaluator-note">
+                    <label>Evaluator Note:</label>
+                    <textarea name="Search & Rescue Note" rows="3" placeholder="Enter any notes regarding primary/secondary search, victim removal, orientation, VES, rope search, or related observations..."></textarea>
+                </div>
+            </div>
+
+            <div class="performance-block">
+                <div class="inline-dropdown">
+                    <label class="inline-label">Firefighter demonstrates proficiency in various Forcible Entry techniques in accordance with industry standards.</label>
+                    <select name="Forcible Entry Proficiency" class="compact-select">
+                        <option value="">Select Proficiency</option>
+                        <option value="Unsatisfactory">Unsatisfactory</option>
+                        <option value="Needs Improvement">Needs Improvement</option>
+                        <option value="Satisfactory">Satisfactory</option>
+                        <option value="Exceeds Expectations">Exceeds Expectations</option>
+                        <option value="Not Applicable">Not Applicable</option>
+                    </select>
+                </div>
+                <div class="evaluator-note">
+                    <label>Evaluator Note:</label>
+                    <textarea name="Forcible Entry Note" rows="3" placeholder="Enter any notes regarding tool selection, conventional vs through-the-lock, inward/outward doors, hydraulic tools, safety, or related observations..."></textarea>
+                </div>
+            </div>
+
+            <div class="performance-block">
+                <div class="inline-dropdown">
+                    <label class="inline-label">Firefighter demonstrates proficiency in various Salvage & Overhaul techniques in accordance with industry standards.</label>
+                    <select name="Salvage & Overhaul Proficiency" class="compact-select">
+                        <option value="">Select Proficiency</option>
+                        <option value="Unsatisfactory">Unsatisfactory</option>
+                        <option value="Needs Improvement">Needs Improvement</option>
+                        <option value="Satisfactory">Satisfactory</option>
+                        <option value="Exceeds Expectations">Exceeds Expectations</option>
+                        <option value="Not Applicable">Not Applicable</option>
+                    </select>
+                </div>
+                <div class="evaluator-note">
+                    <label>Evaluator Note:</label>
+                    <textarea name="Salvage & Overhaul Note" rows="3" placeholder="Enter any notes regarding salvage covers, water removal, debris management, hidden fire checks, property preservation, or related observations..."></textarea>
+                </div>
+            </div>
+
+            <div class="performance-block">
+                <div class="inline-dropdown">
+                    <label class="inline-label">Firefighter demonstrates proficiency in incident scene preservation techniques in accordance with industry standards and in protecting potential evidence.</label>
+                    <select name="Scene Preservation Proficiency" class="compact-select">
+                        <option value="">Select Proficiency</option>
+                        <option value="Unsatisfactory">Unsatisfactory</option>
+                        <option value="Needs Improvement">Needs Improvement</option>
+                        <option value="Satisfactory">Satisfactory</option>
+                        <option value="Exceeds Expectations">Exceeds Expectations</option>
+                        <option value="Not Applicable">Not Applicable</option>
+                    </select>
+                </div>
+                <div class="evaluator-note">
+                    <label>Evaluator Note:</label>
+                    <textarea name="Scene Preservation Note" rows="3" placeholder="Enter any notes regarding scene security, evidence protection, overhaul care, chain of custody awareness, or related observations..."></textarea>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" onclick="window.history.back()">← Back</button>
+                <button type="button" onclick="saveAndGo('page7.html')">Next → Signature & Submit</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        function saveAndGo(next) {
+            const data = JSON.parse(localStorage.getItem('reportData') || '{}');
+            const form = document.getElementById('pageForm');
+            const formData = new FormData(form);
+            for (let [key, value] of formData) {
+                if (data[key]) {
+                    if (!Array.isArray(data[key])) data[key] = [data[key]];
+                    data[key].push(value);
+                } else {
+                    data[key] = value;
+                }
+            }
+            localStorage.setItem('reportData', JSON.stringify(data));
+            window.location.href = next;
+        }
+
+        window.addEventListener('load', () => {
+            const data = JSON.parse(localStorage.getItem('reportData') || '{}');
+            Object.keys(data).forEach(key => {
+                const elements = document.querySelectorAll(`[name="${key}"]`);
+                elements.forEach(el => {
+                    if (el.type === 'checkbox') {
+                        el.checked = data[key] && data[key].includes(el.value);
+                    } else {
+                        el.value = data[key] || '';
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

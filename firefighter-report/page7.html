@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centerville FD - Weekly Performance Report</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <script type="text/javascript">
+        (function() {
+            emailjs.init('0149jkoCQjJZn6JwD');
+        })();
+    </script>
+</head>
+<body>
+    <div class="container">
+        <header class="report-header">
+            <div class="header-top">
+                <img src="patch.png" alt="Centerville FD Patch" class="patch-logo">
+                <div class="header-text">
+                    <h1>Centerville Fire Department</h1>
+                    <h2>Firefighter Weekly Performance Report</h2>
+                </div>
+            </div>
+        </header>
+
+        <h3 style="text-align:center;color:#d32f2f;margin:30px 0;">7. Evaluator Signature & Submit</h3>
+
+        <form id="pageForm">
+            <div class="evaluator-bottom-group">
+                <div class="form-group evaluator-name-group">
+                    <label for="evaluator-name">Evaluator Name:</label>
+                    <input type="text" id="evaluator-name" name="Evaluator Name" placeholder="Type full name here">
+                </div>
+
+                <div class="form-group evaluator-rank-group">
+                    <label for="evaluator-rank">Evaluator Rank:</label>
+                    <select id="evaluator-rank" name="Evaluator Rank">
+                        <option value="">Select Rank</option>
+                        <option value="Firefighter">Firefighter</option>
+                        <option value="Engineer">Engineer</option>
+                        <option value="Sergeant">Sergeant</option>
+                        <option value="Captain">Captain</option>
+                        <option value="Assistant Chief">Assistant Chief</option>
+                        <option value="Chief">Chief</option>
+                    </select>
+                </div>
+
+                <div class="form-group signature-group">
+                    <label for="signature-pad">Evaluator Signature:</label>
+                    <canvas id="signature-pad" class="signature-pad" width="800" height="250"></canvas>
+                    <div class="signature-actions">
+                        <button type="button" id="clear-signature">Clear Signature</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" onclick="window.history.back()">← Back</button>
+                <button type="button" id="finalSubmit">Submit Report & Send PDF via Email</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Load saved data
+        window.addEventListener('load', () => {
+            const data = JSON.parse(localStorage.getItem('reportData') || '{}');
+            Object.keys(data).forEach(key => {
+                const elements = document.querySelectorAll(`[name="${key}"]`);
+                elements.forEach(el => {
+                    if (el.type === 'checkbox') {
+                        el.checked = data[key] && data[key].includes(el.value);
+                    } else {
+                        el.value = data[key] || '';
+                    }
+                });
+            });
+        });
+
+        // Signature pad
+        const canvas = document.getElementById('signature-pad');
+        const ctx = canvas.getContext('2d');
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+
+        let isDrawing = false;
+
+        function resizeCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * devicePixelRatio;
+            canvas.height = rect.height * devicePixelRatio;
+            ctx.scale(devicePixelRatio, devicePixelRatio);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        canvas.addEventListener('mousedown', (e) => {
+            isDrawing = true;
+            const rect = canvas.getBoundingClientRect();
+            ctx.beginPath();
+            ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDrawing) return;
+            const rect = canvas.getBoundingClientRect();
+            ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+            ctx.stroke();
+        });
+
+        canvas.addEventListener('mouseup', () => isDrawing = false);
+        canvas.addEventListener('mouseout', () => isDrawing = false);
+
+        canvas.addEventListener('touchstart', (e) => {
+            isDrawing = true;
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            ctx.beginPath();
+            ctx.moveTo(touch.clientX - rect.left, touch.clientY - rect.top);
+            e.preventDefault();
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (!isDrawing) return;
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            ctx.lineTo(touch.clientX - rect.left, touch.clientY - rect.top);
+            ctx.stroke();
+            e.preventDefault();
+        });
+
+        canvas.addEventListener('touchend', () => isDrawing = false);
+
+        document.getElementById('clear-signature').addEventListener('click', () => {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        });
+
+        // Final Submit - Professional 2-3 page PDF
+        document.getElementById('finalSubmit').addEventListener('click', async function() {
+            if (!confirm("Are you sure you are ready to submit the Weekly Performance Report?\n\nThis will generate the PDF and send it by email (no download).")) return;
+
+            try {
+                // Save current page data
+                const currentForm = document.getElementById('pageForm');
+                const currentData = new FormData(currentForm);
+                let allData = JSON.parse(localStorage.getItem('reportData') || '{}');
+                for (let [key, value] of currentData) {
+                    if (allData[key]) {
+                        if (!Array.isArray(allData[key])) allData[key] = [allData[key]];
+                        allData[key].push(value);
+                    } else {
+                        allData[key] = value;
+                    }
+                }
+
+                // Generate professional 2-3 page PDF
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: 'a4',
+                    compress: true
+                });
+
+                let y = 20;
+
+                // Header on every page
+                const addHeader = () => {
+                    pdf.setFillColor(178, 34, 34);
+                    pdf.rect(0, 0, 210, 30, 'F');
+                    pdf.setTextColor(255, 255, 255);
+                    pdf.setFontSize(18);
+                    pdf.setFont('helvetica', 'bold');
+                    pdf.text("Centerville Fire Department", 105, 15, { align: 'center' });
+                    pdf.setFontSize(14);
+                    pdf.text("Firefighter Weekly Performance Report", 105, 25, { align: 'center' });
+                    pdf.setTextColor(0, 0, 0);
+                    y = 40;
+                };
+
+                addHeader();
+
+                // Page 1: Personnel + Part 1
+                pdf.setFontSize(12);
+                pdf.setFont('helvetica', 'bold');
+                pdf.text("Personnel Information", 20, y);
+                y += 10;
+                pdf.setFontSize(11);
+                pdf.setFont('helvetica', 'normal');
+                pdf.text(`Firefighter: ${allData['Firefighter'] || 'Unknown'}`, 20, y); y += 8;
+                pdf.text(`Week Ending: ${allData['Week Ending Date'] || 'Unknown'}`, 20, y); y += 8;
+                pdf.text(`Shift: ${allData['Shift'] || 'Unknown'}`, 20, y); y += 8;
+                pdf.text(`Officer: ${allData['Officer'] || 'Unknown'}`, 20, y); y += 8;
+                pdf.text(`Apparatus Assignment: ${allData['Apparatus'] ? allData['Apparatus'].join(', ') : 'None'}`, 20, y); y += 15;
+
+                pdf.setFontSize(12);
+                pdf.setFont('helvetica', 'bold');
+                pdf.text("Proficiency Ratings - Part 1", 20, y);
+                y += 10;
+                pdf.setFontSize(11);
+                pdf.setFont('helvetica', 'normal');
+                const part1 = [
+                    "On Time & Uniform",
+                    "Radio Proficiency",
+                    "Cell Phone Use",
+                    "City Policies",
+                    "Department Policies",
+                    "PPE/SCBA Donning",
+                    "Medical Equipment",
+                    "RIT Pack",
+                    "Powered Equipment",
+                    "Hose Load ID",
+                    "Nozzle ID",
+                    "Attack Lines"
+                ];
+                part1.forEach(item => {
+                    const value = allData[item + ' Proficiency'] || 'N/A';
+                    pdf.text(`${item}: ${value}`, 20, y);
+                    y += 8;
+                });
+
+                // Page 2
+                pdf.addPage();
+                addHeader();
+
+                pdf.setFontSize(12);
+                pdf.setFont('helvetica', 'bold');
+                pdf.text("Proficiency Ratings - Part 2", 20, y);
+                y += 10;
+                pdf.setFontSize(11);
+                pdf.setFont('helvetica', 'normal');
+                const part2 = [
+                    "Hydrant Supply",
+                    "Deck Gun",
+                    "BlitzFire",
+                    "Attack Line Flow",
+                    "Ground Ladders",
+                    "Command Structure",
+                    "Search & Rescue",
+                    "Forcible Entry",
+                    "Salvage & Overhaul",
+                    "Scene Preservation"
+                ];
+                part2.forEach(item => {
+                    const value = allData[item + ' Proficiency'] || 'N/A';
+                    pdf.text(`${item}: ${value}`, 20, y);
+                    y += 8;
+                });
+
+                y += 15;
+
+                // Evaluator
+                pdf.setFontSize(12);
+                pdf.setFont('helvetica', 'bold');
+                pdf.text("Evaluator", 20, y);
+                y += 10;
+                pdf.setFontSize(11);
+                pdf.setFont('helvetica', 'normal');
+                pdf.text(`Name: ${allData['Evaluator Name'] || 'Unknown'}`, 20, y); y += 8;
+                pdf.text(`Rank: ${allData['Evaluator Rank'] || 'Unknown'}`, 20, y); y += 15;
+
+                // Signature with border box
+                const sigCanvas = document.getElementById('signature-pad');
+                const sigData = sigCanvas.toDataURL('image/png');
+                if (sigData !== "data:,") {
+                    pdf.setFontSize(12);
+                    pdf.setFont('helvetica', 'bold');
+                    pdf.text("Evaluator Signature:", 20, y);
+                    y += 10;
+
+                    // Border box around signature
+                    pdf.setDrawColor(0);
+                    pdf.setLineWidth(1);
+                    pdf.rect(20, y - 5, 170, 70, 'S');
+
+                    pdf.addImage(sigData, 'PNG', 25, y, 160, 60);
+                    y += 80;
+                }
+
+                // Optional Page 3 if needed (for long notes — but we don't have note fields yet)
+                // If you add long evaluator notes later, it will auto-add page 3
+
+                // Footer
+                pdf.setFontSize(9);
+                pdf.setTextColor(100, 100, 100);
+                pdf.text("Generated on " + new Date().toLocaleString(), 20, 290);
+                pdf.text("Centerville FD Weekly Performance Report System", 20, 295);
+
+                // Convert to base64
+                const pdfBase64 = pdf.output('datauristring').split(',')[1];
+
+                // Send with EmailJS
+                const params = {
+                    to_email: 'centfire6@gmail.com',
+                    firefighter: allData['Firefighter'] || 'Unknown',
+                    week_ending_date: allData['Week Ending Date'] || 'Unknown',
+                    shift: allData['Shift'] || 'Unknown',
+                    officer: allData['Officer'] || 'Unknown',
+                    evaluator_name: allData['Evaluator Name'] || 'Unknown',
+                    evaluator_rank: allData['Evaluator Rank'] || 'Unknown',
+                    apparatus: allData['Apparatus'] ? allData['Apparatus'].join(', ') : 'None',
+                    pdf_attachment: pdfBase64
+                };
+
+                emailjs.send('service_2gdxvws', 'template_46xt4jy', params)
+                    .then((response) => {
+                        console.log('SUCCESS!', response);
+                        alert('Success! Report sent with attached signed PDF.');
+                        localStorage.clear();
+                    })
+                    .catch((error) => {
+                        console.error('EmailJS FAILED:', error);
+                        alert('Failed to send. Open console (F12) and copy the full error object.');
+                    });
+
+            } catch (error) {
+                console.error('Generation Error:', error);
+                alert('Error creating PDF. Please try again.');
+            }
+        });
+    </script>
+</body>
+</html>
