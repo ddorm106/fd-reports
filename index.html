@@ -11,66 +11,72 @@
             font-family: 'Inter', sans-serif;
             background: #0f172a;
             color: #e2e8f0;
+            min-height: 100vh;
         }
         .container {
             max-width: 1200px;
-            margin: 40px auto;
-            padding: 40px;
+            margin: 20px auto;
+            padding: 30px 20px;
             background: #1e293b;
             border-radius: 16px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.4);
             text-align: center;
         }
         header img {
-            width: 180px;
+            width: 160px;
+            height: auto;
             border: 6px solid #fff;
             border-radius: 50%;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
         h1 {
-            font-size: 3rem;
+            font-size: 2.8rem;
             color: #fff;
             margin-bottom: 10px;
         }
         p.subtitle {
-            font-size: 1.4rem;
+            font-size: 1.3rem;
             color: #cbd5e1;
-            margin-bottom: 60px;
+            margin-bottom: 50px;
         }
         .reports-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 30px;
+            grid-template-columns: 1fr;
+            gap: 25px;
         }
         .report-card {
             background: #334155;
             padding: 30px;
             border-radius: 16px;
             box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-            transition: transform 0.3s;
+            transition: transform 0.3s ease;
         }
         .report-card:hover {
-            transform: translateY(-10px);
+            transform: translateY(-8px);
         }
         .report-card h3 {
             font-size: 1.6rem;
             color: #f59e0b;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
         .report-card p {
             font-size: 1.1rem;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
             color: #e2e8f0;
         }
         .report-card a {
             display: block;
-            padding: 15px;
+            padding: 18px;
             background: #dc2626;
             color: white;
             text-decoration: none;
             border-radius: 12px;
             font-weight: 700;
-            font-size: 1.2rem;
+            font-size: 1.3rem;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .report-card a.disabled {
             background: #64748b;
@@ -80,14 +86,31 @@
             background: #b91c1c;
         }
         footer {
-            margin-top: 80px;
+            margin-top: 60px;
             padding: 20px;
             color: #64748b;
             font-size: 0.9rem;
         }
-        @media (max-width: 768px) {
-            h1 { font-size: 2.4rem; }
-            .reports-grid { grid-template-columns: 1fr; }
+
+        /* Tablet & Desktop - 2 or 3 columns */
+        @media (min-width: 640px) {
+            .reports-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media (min-width: 1024px) {
+            .reports-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .container {
+                padding: 40px;
+            }
+            h1 {
+                font-size: 3rem;
+            }
+            header img {
+                width: 180px;
+            }
         }
     </style>
 </head>
@@ -102,37 +125,37 @@
         <div class="reports-grid">
             <div class="report-card">
                 <h3>AOIC Weekly Performance Report</h3>
-                <p>Coming soon</p>
+                <p>Coming Soon</p>
                 <a href="#" class="disabled">Available Soon</a>
             </div>
 
             <div class="report-card">
                 <h3>Aerial Weekly Performance Report</h3>
-                <p>Coming soon</p>
+                <p>Coming Soon</p>
                 <a href="#" class="disabled">Available Soon</a>
             </div>
 
             <div class="report-card">
                 <h3>Centerville FD Training Sheets</h3>
-                <p>Training logs and documentation</p>
-                <a href="training-sheets/index.html">Open Training →</a>
+                  <p>Coming Soon</p>
+                <a href="#" class="disabled">Available Soon</a>
             </div>
 
             <div class="report-card">
                 <h3>Engine Driver Weekly Performance Report</h3>
-                <p>Coming soon</p>
+                <p>Coming Soon</p>
                 <a href="#" class="disabled">Available Soon</a>
             </div>
 
             <div class="report-card">
                 <h3>Firefighter Weekly Performance Report</h3>
-                <p>Standard firefighter weekly evaluation</p>
+                <p>Standard Firefighter Weekly evaluation</p>
                 <a href="firefighter-report/page1.html">Start Report →</a>
             </div>
 
             <div class="report-card">
                 <h3>Rescue Driver Weekly Performance Report</h3>
-                <p>Coming soon</p>
+                <p>Coming Soon</p>
                 <a href="#" class="disabled">Available Soon</a>
             </div>
         </div>
