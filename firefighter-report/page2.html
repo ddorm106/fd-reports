@@ -4,8 +4,164 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Centerville FD - Weekly Performance Report</title>
-    <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 40px;
+            background: #1e293b;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            flex: 1;
+        }
+        .report-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+        .patch-logo {
+            width: 120px;
+        }
+        .header-text h1 {
+            font-size: 2.8rem;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+        .header-text h2 {
+            font-size: 1.8rem;
+            color: #cbd5e1;
+        }
+        h3 {
+            text-align: center;
+            color: #f59e0b;
+            font-size: 1.8rem;
+            margin: 40px 0 30px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+        .performance-block {
+            background: #334155;
+            padding: 24px;
+            border-radius: 16px;
+        }
+        .inline-dropdown {
+            margin-bottom: 20px;
+        }
+        .inline-label {
+            display: block;
+            margin-bottom: 12px;
+            font-weight: 600;
+            color: #cbd5e1;
+            font-size: 1.1rem;
+            line-height: 1.5;
+        }
+        select {
+            width: 100%;
+            padding: 12px 16px;
+            background: #1e293b;
+            border: none;
+            border-radius: 12px;
+            color: #e2e8f0;
+            font-size: 1rem;
+        }
+        select:focus {
+            outline: 2px solid #f59e0b;
+        }
+        .evaluator-note {
+            margin-top: 10px;
+        }
+        .evaluator-note label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #cbd5e1;
+        }
+        .evaluator-note textarea {
+            width: 100%;
+            padding: 12px 16px;
+            background: #1e293b;
+            border: none;
+            border-radius: 12px;
+            color: #e2e8f0;
+            font-size: 1rem;
+            resize: vertical;
+            min-height: 100px;
+        }
+        .evaluator-note textarea:focus {
+            outline: 2px solid #f59e0b;
+        }
+        .evaluator-note textarea::placeholder {
+            color: #64748b;
+        }
+        .form-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+        .form-actions button {
+            padding: 15px 30px;
+            background: #dc2626;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .form-actions button:hover {
+            background: #b91c1c;
+        }
+        .form-actions button:first-child {
+            background: #334155;
+        }
+        .form-actions button:first-child:hover {
+            background: #475569;
+        }
+        footer {
+            text-align: center;
+            padding: 30px 20px 40px;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+        footer .city-logo {
+            width: 100px;
+            margin-bottom: 15px;
+            opacity: 0.8;
+        }
+        @media (max-width: 768px) {
+            .container { padding: 20px; margin: 20px; }
+            .header-top { flex-direction: column; }
+            .header-text h1 { font-size: 2.2rem; }
+            .header-text h2 { font-size: 1.5rem; }
+            .form-actions {
+                flex-direction: column;
+                gap: 15px;
+            }
+            .form-actions button {
+                width: 100%;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -19,14 +175,14 @@
             </div>
         </header>
 
-        <h3 style="text-align:center;color:#d32f2f;margin:30px 0;">2. Policies & Conduct</h3>
+        <h3>2. Policies & Conduct</h3>
 
         <form id="pageForm">
             <div class="performance-block">
                 <div class="inline-dropdown">
                     <label class="inline-label">Firefighter Reported to Shift on Time and in Proper Uniform:</label>
-                    <select name="On Time & Uniform Rating" class="compact-select">
-                        <option value="">Select Proficiency</option>
+                    <select name="On Time & Uniform Rating">
+                        <option value="" selected>Select Proficiency</option>
                         <option value="Unsatisfactory">Unsatisfactory</option>
                         <option value="Needs Improvement">Needs Improvement</option>
                         <option value="Satisfactory">Satisfactory</option>
@@ -43,8 +199,8 @@
             <div class="performance-block">
                 <div class="inline-dropdown">
                     <label class="inline-label">Firefighter demonstrates proper use and understanding of the functions of the portable and mobile radios used at Centerville Fire Department:</label>
-                    <select name="Radio Proficiency" class="compact-select">
-                        <option value="">Select Proficiency</option>
+                    <select name="Radio Proficiency">
+                        <option value="" selected>Select Proficiency</option>
                         <option value="Unsatisfactory">Unsatisfactory</option>
                         <option value="Needs Improvement">Needs Improvement</option>
                         <option value="Satisfactory">Satisfactory</option>
@@ -61,8 +217,8 @@
             <div class="performance-block">
                 <div class="inline-dropdown">
                     <label class="inline-label">Firefighter regards their personal cell phone as a resource that supports, rather than impedes, their professionalism and work ethic.</label>
-                    <select name="Cell Phone Proficiency" class="compact-select">
-                        <option value="">Select Proficiency</option>
+                    <select name="Cell Phone Proficiency">
+                        <option value="" selected>Select Proficiency</option>
                         <option value="Unsatisfactory">Unsatisfactory</option>
                         <option value="Needs Improvement">Needs Improvement</option>
                         <option value="Satisfactory">Satisfactory</option>
@@ -79,8 +235,8 @@
             <div class="performance-block">
                 <div class="inline-dropdown">
                     <label class="inline-label">Firefighter demonstrates knowledge and understands the city's policies set forth by the governing authority.</label>
-                    <select name="City Policies Proficiency" class="compact-select">
-                        <option value="">Select Proficiency</option>
+                    <select name="City Policies Proficiency">
+                        <option value="" selected>Select Proficiency</option>
                         <option value="Unsatisfactory">Unsatisfactory</option>
                         <option value="Needs Improvement">Needs Improvement</option>
                         <option value="Satisfactory">Satisfactory</option>
@@ -97,8 +253,8 @@
             <div class="performance-block">
                 <div class="inline-dropdown">
                     <label class="inline-label">Firefighter demonstrates knowledge and understands the fire department policies set forth by the Centerville Fire Department Command Staff.</label>
-                    <select name="Department Policies Proficiency" class="compact-select">
-                        <option value="">Select Proficiency</option>
+                    <select name="Department Policies Proficiency">
+                        <option value="" selected>Select Proficiency</option>
                         <option value="Unsatisfactory">Unsatisfactory</option>
                         <option value="Needs Improvement">Needs Improvement</option>
                         <option value="Satisfactory">Satisfactory</option>
@@ -119,20 +275,24 @@
         </form>
     </div>
 
+    <footer>
+        <img src="city-logo.png" alt="City of Centerville Logo" class="city-logo">
+        <p>© 2026 City of Centerville Fire Department Training Division</p>
+    </footer>
+
     <script>
         function saveAndGo(next) {
-            const data = JSON.parse(localStorage.getItem('reportData') || '{}');
-            const form = document.getElementById('pageForm');
-            const formData = new FormData(form);
-            for (let [key, value] of formData) {
-                if (data[key]) {
-                    if (!Array.isArray(data[key])) data[key] = [data[key]];
-                    data[key].push(value);
-                } else {
-                    data[key] = value;
+            const data = {};
+            const formElements = document.querySelectorAll('#pageForm select, #pageForm textarea');
+            formElements.forEach(el => {
+                if (el.value !== '') {
+                    data[el.name] = el.value;
                 }
-            }
-            localStorage.setItem('reportData', JSON.stringify(data));
+            });
+            // Merge with existing data
+            const existingData = JSON.parse(localStorage.getItem('reportData') || '{}');
+            const mergedData = { ...existingData, ...data };
+            localStorage.setItem('reportData', JSON.stringify(mergedData));
             window.location.href = next;
         }
 
@@ -141,11 +301,7 @@
             Object.keys(data).forEach(key => {
                 const elements = document.querySelectorAll(`[name="${key}"]`);
                 elements.forEach(el => {
-                    if (el.type === 'checkbox') {
-                        el.checked = data[key] && data[key].includes(el.value);
-                    } else {
-                        el.value = data[key] || '';
-                    }
+                    el.value = data[key] || '';
                 });
             });
         });
