@@ -5,10 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Centerville FD Reports & Training</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-    <script type="text/javascript">
-        (function () { emailjs.init('0149jkoCQjJZn6JwD'); })();
-    </script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body {
@@ -36,16 +32,8 @@
             width: 180px;
             margin-bottom: 30px;
         }
-        h1 {
-            font-size: 3rem;
-            color: #fff;
-            margin-bottom: 10px;
-        }
-        p.subtitle {
-            font-size: 1.4rem;
-            color: #cbd5e1;
-            margin-bottom: 60px;
-        }
+        h1 { font-size: 3rem; color: #fff; margin-bottom: 10px; }
+        p.subtitle { font-size: 1.4rem; color: #cbd5e1; margin-bottom: 60px; }
         .reports-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -58,19 +46,9 @@
             box-shadow: 0 10px 20px rgba(0,0,0,0.3);
             transition: transform 0.3s;
         }
-        .report-card:hover {
-            transform: translateY(-10px);
-        }
-        .report-card h3 {
-            font-size: 1.6rem;
-            color: #f59e0b;
-            margin-bottom: 15px;
-        }
-        .report-card p {
-            font-size: 1.1rem;
-            margin-bottom: 20px;
-            color: #e2e8f0;
-        }
+        .report-card:hover { transform: translateY(-10px); }
+        .report-card h3 { font-size: 1.6rem; color: #f59e0b; margin-bottom: 15px; }
+        .report-card p { font-size: 1.1rem; margin-bottom: 20px; color: #e2e8f0; }
         .report-card a,
         .upload-trigger {
             display: block;
@@ -113,7 +91,6 @@
             min-height: 24px;
             font-size: 1rem;
         }
-        /* Fixed Footer - Works on iPad & All Mobile */
         footer {
             width: 100%;
             padding: 30px 20px;
@@ -121,7 +98,7 @@
             text-align: center;
             color: #64748b;
             font-size: 0.9rem;
-            margin-top: auto; /* Pushes footer to bottom */
+            margin-top: auto;
         }
         footer .city-logo {
             width: 100px;
@@ -179,22 +156,27 @@
                 <a href="#" class="disabled">Available Soon</a>
             </div>
 
-            <!-- Upload Training Sheets Card -->
+            <!-- Upload Training Sheets Card - Using FormSubmit.co -->
             <div class="report-card">
                 <h3>Upload Training Sheets</h3>
                 <p>Submit completed training documentation (sent via email)</p>
                 
-                <form id="upload-form">
+                <form action="https://formsubmit.co/ddorman@centervillefd.com" method="POST" enctype="multipart/form-data" id="upload-form">
                     <div class="upload-buttons">
                         <label for="file-upload" class="upload-trigger">
                             Select Files →
                         </label>
-                        <input type="file" id="file-upload" name="training_files" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" required>
+                        <input type="file" id="file-upload" name="attachment" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" required>
                         
                         <button type="submit" class="upload-trigger" id="send-button">
                             Send Files via Email →
                         </button>
                     </div>
+                    
+                    <input type="hidden" name="_subject" value="New Training Sheet Upload - Centerville FD">
+                    <input type="hidden" name="_captcha" value="false">
+                    <input type="hidden" name="_next" value="https://yourusername.github.io/index.html?upload=success">
+                    <input type="email" name="_replyto" placeholder="Your email (optional)" style="margin-top: 15px; padding: 12px; border-radius: 8px; border: 1px solid #64748b;">
                 </form>
                 
                 <div id="upload-status"></div>
@@ -202,22 +184,27 @@
         </div>
     </div>
 
-    <!-- Fixed Footer Outside Container -->
     <footer>
         <img src="city-logo.png" alt="City of Centerville Logo" class="city-logo">
         <p>© 2026 City of Centerville Fire Department Training Division</p>
     </footer>
 
-    <!-- Main JavaScript -->
+    <!-- Simple Success Feedback -->
     <script>
-        // File Upload & Email Submission
-        const fileInput = document.getElementById('file-upload');
-        const selectTrigger = document.querySelector('.upload-trigger');
-        const sendButton = document.getElementById('send-button');
-        const statusDiv = document.getElementById('upload-status');
-        const form = document.getElementById('upload-form');
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('upload') === 'success') {
+            document.getElementById('upload-status').textContent = 'Success! Files sent to ddorman@centervillefd.com';
+            document.getElementById('upload-status').style.color = '#4ade80';
+            // Clear the URL parameter
+            history.replaceState({}, '', window.location.pathname);
+        }
 
         // Click "Select Files" to open picker
+        const selectTrigger = document.querySelector('.upload-trigger');
+        const fileInput = document.getElementById('file-upload');
+        const sendButton = document.getElementById('send-button');
+        const statusDiv = document.getElementById('upload-status');
+
         selectTrigger.addEventListener('click', (e) => {
             e.preventDefault();
             fileInput.click();
@@ -241,64 +228,6 @@
             statusDiv.style.color = '#f59e0b';
             sendButton.disabled = false;
         });
-
-        // Submit - send via EmailJS
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            if (fileInput.files.length === 0) {
-                statusDiv.textContent = 'Please select at least one file.';
-                statusDiv.style.color = '#dc2626';
-                return;
-            }
-
-            statusDiv.textContent = 'Sending files...';
-            statusDiv.style.color = '#f59e0b';
-            sendButton.disabled = true;
-
-            try {
-                const attachments = [];
-                for (let file of fileInput.files) {
-                    const base64 = await new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.onload = () => resolve(reader.result.split(',')[1]);
-                        reader.readAsDataURL(file);
-                    });
-                    attachments.push({
-                        filename: file.name,
-                        content: base64,
-                        encoding: 'base64'
-                    });
-                }
-
-                await emailjs.send('service_2gdxvws', 'template_46xt4jy', {
-                    message: `${fileInput.files.length} training document${fileInput.files.length > 1 ? 's' : ''} uploaded`,
-                    attachments: attachments
-                });
-
-                statusDiv.textContent = 'Success! Files sent via email.';
-                statusDiv.style.color = '#4ade80';
-                form.reset();
-                sendButton.disabled = true;
-            } catch (err) {
-                console.error(err);
-                statusDiv.textContent = 'Upload failed. Check connection or try local server.';
-                statusDiv.style.color = '#dc2626';
-            } finally {
-                sendButton.disabled = false;
-            }
-        });
-    </script>
-
-    <!-- Service Worker Registration -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
-                    .then(reg => console.log('SW registered:', reg.scope))
-                    .catch(err => console.log('SW failed:', err));
-            });
-        }
     </script>
 </body>
 </html>
