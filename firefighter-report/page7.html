@@ -1,806 +1,624 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Centerville FD - Weekly Performance Report</title>
-
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.2.0/dist/signature_pad.umd.min.js"></script>
-
-  <script type="text/javascript">
-    (function () {
-      try { emailjs.init('0149jkoCQjJZn6JwD'); } catch (e) {}
-    })();
-  </script>
-
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'Inter', sans-serif;
-      background: #0f172a;
-      color: #e2e8f0;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-    .container {
-      max-width: 900px;
-      margin: 40px auto;
-      padding: 40px;
-      background: #1e293b;
-      border-radius: 16px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-      flex: 1;
-    }
-    .report-header { text-align: center; margin-bottom: 40px; }
-    .header-top {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 30px;
-      flex-wrap: wrap;
-    }
-    .patch-logo { width: 120px; }
-    .header-text h1 {
-      font-size: 2.8rem;
-      color: #fff;
-      margin-bottom: 8px;
-    }
-    .header-text h2 {
-      font-size: 1.8rem;
-      color: #cbd5e1;
-    }
-    h3 {
-      text-align: center;
-      color: #f59e0b;
-      font-size: 1.8rem;
-      margin: 40px 0 30px;
-    }
-
-    form { display: flex; flex-direction: column; gap: 30px; }
-
-    .evaluator-bottom-group {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 20px;
-    }
-    .form-group { display: flex; flex-direction: column; }
-    .form-group label {
-      margin-bottom: 8px;
-      font-weight: 600;
-      color: #cbd5e1;
-    }
-    .form-group input,
-    .form-group select {
-      padding: 12px 16px;
-      background: #334155;
-      border: none;
-      border-radius: 12px;
-      color: #e2e8f0;
-      font-size: 1rem;
-    }
-    .form-group input:focus,
-    .form-group select:focus { outline: 2px solid #f59e0b; }
-
-    .signature-group { grid-column: 1 / -1; text-align: center; }
-    .signature-wrapper {
-      position: relative;
-      background: #fff;
-      border-radius: 12px;
-      border: 2px solid #334155;
-      overflow: hidden;
-      max-width: 600px;
-      margin: 0 auto;
-      height: 300px;
-    }
-    .signature-pad {
-      width: 100%;
-      height: 100%;
-      display: block;
-      background: white;
-      touch-action: none;
-    }
-    .signature-note {
-      font-size: 0.9rem;
-      color: #94a3b8;
-      margin-top: 8px;
-    }
-    .signature-actions {
-      margin-top: 15px;
-      display: flex;
-      justify-content: center;
-      gap: 15px;
-    }
-    .signature-actions button {
-      padding: 12px 28px;
-      background: #dc2626;
-      color: white;
-      border: none;
-      border-radius: 12px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-    .signature-actions button:hover { background: #b91c1c; }
-
-    .form-actions {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 30px;
-      gap: 12px;
-    }
-    .form-actions button {
-      padding: 15px 30px;
-      background: #dc2626;
-      color: white;
-      border: none;
-      border-radius: 12px;
-      font-size: 1.2rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.3s;
-      flex: 1;
-    }
-    .form-actions button:hover:not(:disabled) { background: #b91c1c; }
-    .form-actions button:disabled {
-      background: #64748b;
-      cursor: not-allowed;
-      opacity: 0.75;
-    }
-    .form-actions button:first-child { background: #334155; }
-    .form-actions button:first-child:hover:not(:disabled) { background: #475569; }
-
-    footer {
-      text-align: center;
-      padding: 30px 20px 40px;
-      color: #64748b;
-      font-size: 0.9rem;
-    }
-    footer .city-logo {
-      width: 100px;
-      margin-bottom: 15px;
-      opacity: 0.8;
-    }
-
-    @media (max-width: 768px) {
-      .container { padding: 20px; margin: 20px; }
-      .header-top { flex-direction: column; }
-      .header-text h1 { font-size: 2.2rem; }
-      .header-text h2 { font-size: 1.5rem; }
-      .form-actions { flex-direction: column; }
-      .signature-wrapper { height: 250px; }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centerville FD - Weekly Performance Report</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.2.0/dist/signature_pad.umd.min.js"></script>
+    <script type="text/javascript">
+        (function () { emailjs.init('0149jkoCQjJZn6JwD'); })();
+    </script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 40px;
+            background: #1e293b;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            flex: 1;
+        }
+        .report-header { text-align: center; margin-bottom: 40px; }
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+        .patch-logo { width: 120px; max-width: 100%; height: auto; }
+        .header-text h1 {
+            font-size: 2.8rem;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+        .header-text h2 {
+            font-size: 1.8rem;
+            color: #cbd5e1;
+        }
+        h3 {
+            text-align: center;
+            color: #f59e0b;
+            font-size: 1.8rem;
+            margin: 40px 0 30px;
+        }
+        form { display: flex; flex-direction: column; gap: 30px; }
+        .evaluator-bottom-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .form-group { display: flex; flex-direction: column; }
+        .form-group label {
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #cbd5e1;
+        }
+        .form-group input,
+        .form-group select {
+            padding: 12px 16px;
+            background: #334155;
+            border: none;
+            border-radius: 12px;
+            color: #e2e8f0;
+            font-size: 1rem;
+        }
+        .form-group input:focus,
+        .form-group select:focus { outline: 2px solid #f59e0b; }
+        .signature-group { grid-column: 1 / -1; text-align: center; margin-top: 20px; }
+        .signature-label {
+            display: block;
+            margin-bottom: 12px;
+            font-weight: 600;
+            color: #cbd5e1;
+            font-size: 1.1rem;
+        }
+        .signature-wrapper {
+            position: relative;
+            background: #fff;
+            border-radius: 12px;
+            border: 2px solid #334155;
+            overflow: hidden;
+            max-width: 600px;
+            width: 100%;
+            margin: 0 auto;
+            height: 300px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .signature-wrapper canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+        .signature-note {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin-top: 12px;
+        }
+        .signature-actions {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        .signature-actions button {
+            padding: 12px 28px;
+            background: #dc2626;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .signature-actions button:hover { background: #b91c1c; }
+        .form-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+            gap: 12px;
+        }
+        .form-actions button {
+            padding: 15px 30px;
+            background: #dc2626;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.3s;
+            flex: 1;
+        }
+        .form-actions button:hover:not(:disabled) { background: #b91c1c; }
+        .form-actions button:first-child {
+            background: #334155;
+        }
+        .form-actions button:first-child:hover:not(:disabled) { background: #475569; }
+        .form-actions button:disabled {
+            background: #64748b;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        footer {
+            text-align: center;
+            padding: 30px 20px 40px;
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-top: auto;
+        }
+        footer .city-logo {
+            width: 100px;
+            margin-bottom: 15px;
+            opacity: 0.8;
+            max-width: 100%;
+            height: auto;
+        }
+        @media (max-width: 768px) {
+            .container { padding: 20px; margin: 20px auto; max-width: 100%; }
+            .header-top { flex-direction: column; }
+            .header-text h1 { font-size: 2.2rem; }
+            .header-text h2 { font-size: 1.5rem; }
+            .form-actions { flex-direction: column; }
+            .signature-wrapper { height: 220px; }
+        }
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .container { padding: 30px; max-width: 95%; }
+            .header-text h1 { font-size: 2.5rem; }
+            .header-text h2 { font-size: 1.6rem; }
+            .signature-wrapper { height: 280px; }
+        }
+    </style>
 </head>
-
 <body>
-  <div class="container">
-    <header class="report-header">
-      <div class="header-top">
-        <img src="patch.png" alt="Centerville FD Patch" class="patch-logo">
-        <div class="header-text">
-          <h1>Centerville Fire Department</h1>
-          <h2>Firefighter Weekly Performance Report</h2>
-        </div>
-      </div>
-    </header>
+    <div class="container">
+        <header class="report-header">
+            <div class="header-top">
+                <img src="patch.png" alt="Centerville FD Patch" class="patch-logo">
+                <div class="header-text">
+                    <h1>Centerville Fire Department</h1>
+                    <h2>Firefighter Weekly Performance Report</h2>
+                </div>
+            </div>
+        </header>
 
-    <h3>7. Signature & Submit</h3>
+        <h3>7. Signature & Submit</h3>
 
-    <form id="pageForm">
-      <div class="evaluator-bottom-group">
-        <div class="form-group">
-          <label for="evaluator-name">Evaluator Name:</label>
-          <input type="text" id="evaluator-name" name="Evaluator Name" placeholder="Enter evaluator name" required>
-        </div>
-        <div class="form-group">
-          <label for="evaluator-rank">Evaluator Rank:</label>
-          <select id="evaluator-rank" name="Evaluator Rank" required>
-            <option value="">-- Select Rank --</option>
-            <option value="Firefighter">Firefighter</option>
-            <option value="Engineer">Engineer</option>
-            <option value="Sergeant">Sergeant</option>
-            <option value="Captain">Captain</option>
-            <option value="Chief">Chief</option>
-          </select>
-        </div>
-      </div>
+        <form id="pageForm">
+            <div class="evaluator-bottom-group">
+                <div class="form-group">
+                    <label for="evaluator-name">Evaluator Name:</label>
+                    <input type="text" id="evaluator-name" name="Evaluator Name" placeholder="Enter evaluator name" required>
+                </div>
+                <div class="form-group">
+                    <label for="evaluator-rank">Evaluator Rank:</label>
+                    <select id="evaluator-rank" name="Evaluator Rank" required>
+                        <option value="">-- Select Rank --</option>
+                        <option value="Firefighter">Firefighter</option>
+                        <option value="Engineer">Engineer</option>
+                        <option value="Sergeant">Sergeant</option>
+                        <option value="Captain">Captain</option>
+                        <option value="Chief">Chief</option>
+                    </select>
+                </div>
+            </div>
 
-      <div class="signature-group">
-        <label>Evaluator Signature:</label>
-        <div class="signature-wrapper">
-          <canvas id="signature-pad" class="signature-pad"></canvas>
-        </div>
-        <p class="signature-note">Sign above using mouse, touch, or stylus</p>
-        <div class="signature-actions">
-          <button type="button" id="clear-signature">Clear Signature</button>
-        </div>
-      </div>
+            <div class="signature-group">
+                <label class="signature-label">Evaluator Signature:</label>
+                <div class="signature-wrapper">
+                    <canvas id="signature-pad"></canvas>
+                </div>
+                <p class="signature-note">Sign above using mouse, touch, or stylus (blue ink)</p>
+                <div class="signature-actions">
+                    <button type="button" id="clear-signature">Clear Signature</button>
+                </div>
+            </div>
 
-      <div class="form-actions">
-        <button type="button" id="backBtn">← Back</button>
-        <button type="button" id="finalSubmit" disabled>Loading…</button>
-      </div>
-    </form>
-  </div>
+            <div class="form-actions">
+                <button type="button" id="backBtn">← Back</button>
+                <button type="button" id="finalSubmit">Submit Report</button>
+            </div>
+        </form>
+    </div>
 
-  <footer>
-    <img src="city-logo.png" alt="City of Centerville Logo" class="city-logo">
-    <p>© 2026 City of Centerville • Fire Department Confidential System</p>
-  </footer>
+    <footer>
+        <img src="city-logo.png" alt="City of Centerville Logo" class="city-logo">
+        <p>© 2026 City of Centerville Fire Department Training Division</p>
+    </footer>
 
-  <script>
-    // -----------------------------
-    // Storage helpers
-    // -----------------------------
-    const STORAGE_KEY = 'reportData';
-    const WINDOW_NAME_KEY = '__CENTERVILLE_REPORT_DATA__';
+    <script>
+        const STORAGE_KEY = 'reportData';
 
-    function localStorageAvailable() {
-      try {
-        const k = '__test__';
-        window.localStorage.setItem(k, '1');
-        window.localStorage.removeItem(k);
-        return true;
-      } catch (e) {
-        return false;
-      }
-    }
-
-    function loadReportData() {
-      if (localStorageAvailable()) {
-        try {
-          return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-        } catch (e) {
-          return {};
-        }
-      }
-      try {
-        const name = window.name || '';
-        if (!name.startsWith(WINDOW_NAME_KEY + ':')) return {};
-        return JSON.parse(name.slice((WINDOW_NAME_KEY + ':').length) || '{}');
-      } catch (e) {
-        return {};
-      }
-    }
-
-    function saveReportData(obj) {
-      if (localStorageAvailable()) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
-        return;
-      }
-      window.name = WINDOW_NAME_KEY + ':' + JSON.stringify(obj);
-    }
-
-    function clearReportData() {
-      if (localStorageAvailable()) {
-        localStorage.removeItem(STORAGE_KEY);
-        return;
-      }
-      if ((window.name || '').startsWith(WINDOW_NAME_KEY + ':')) window.name = '';
-    }
-
-    // -----------------------------
-    // SignaturePad init
-    // -----------------------------
-    const canvas = document.getElementById('signature-pad');
-    const wrapper = canvas.closest('.signature-wrapper');
-    const submitBtn = document.getElementById('finalSubmit');
-    const backBtn = document.getElementById('backBtn');
-
-    let signaturePad = null;
-    let isSubmitting = false;
-
-    function fitCanvasToWrapper() {
-      if (!wrapper) return;
-
-      const rect = wrapper.getBoundingClientRect();
-      const ratio = Math.max(window.devicePixelRatio || 1, 1);
-
-      canvas.width = Math.floor(rect.width * ratio);
-      canvas.height = Math.floor(rect.height * ratio);
-
-      canvas.style.width = rect.width + 'px';
-      canvas.style.height = rect.height + 'px';
-
-      const ctx = canvas.getContext('2d');
-      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-    }
-
-    function initSignaturePad() {
-      if (!window.SignaturePad) {
-        alert('Signature library failed to load. Please check your connection or try another browser.');
-        return;
-      }
-
-      fitCanvasToWrapper();
-
-      signaturePad = new SignaturePad(canvas, {
-        backgroundColor: 'rgb(255, 255, 255)',
-        penColor: 'rgb(0, 0, 0)',
-        throttle: 16,
-        minWidth: 1,
-        maxWidth: 3
-      });
-
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Submit Report';
-    }
-
-    window.addEventListener('resize', () => {
-      if (!signaturePad) return;
-      const data = signaturePad.toData();
-      fitCanvasToWrapper();
-      signaturePad.clear();
-      signaturePad.fromData(data);
-    });
-
-    document.getElementById('clear-signature').addEventListener('click', () => {
-      if (signaturePad) signaturePad.clear();
-    });
-
-    // -----------------------------
-    // Restore fields
-    // -----------------------------
-    window.addEventListener('load', () => {
-      const data = loadReportData();
-      if (data['Evaluator Name']) document.getElementById('evaluator-name').value = data['Evaluator Name'];
-      if (data['Evaluator Rank']) document.getElementById('evaluator-rank').value = data['Evaluator Rank'];
-
-      backBtn.addEventListener('click', () => {
-        window.history.back();
-      });
-
-      initSignaturePad();
-    });
-
-    // -----------------------------
-    // Submit
-    // -----------------------------
-    document.getElementById('finalSubmit').addEventListener('click', async () => {
-      if (isSubmitting) return;
-      if (!signaturePad) {
-        alert('Signature pad is not ready yet. Please wait a second and try again.');
-        return;
-      }
-
-      const evaluatorName = document.getElementById('evaluator-name').value.trim();
-      const evaluatorRank = document.getElementById('evaluator-rank').value;
-
-      if (signaturePad.isEmpty()) { alert('Please provide an evaluator signature before submitting.'); return; }
-      if (!evaluatorName) { alert('Please enter the evaluator name.'); return; }
-      if (!evaluatorRank) { alert('Please select the evaluator rank.'); return; }
-
-      isSubmitting = true;
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Submitting...';
-
-      try {
-        let allData = loadReportData();
-
-        allData['Evaluator Name'] = evaluatorName;
-        allData['Evaluator Rank'] = evaluatorRank;
-        saveReportData(allData);
-
-        const requiredRatings = [
-          'On Time & Uniform Rating','Radio Proficiency','Cell Phone Proficiency','City Policies Proficiency','Department Policies Proficiency',
-          'PPE/SCBA Donning Proficiency','Medical Equipment Proficiency','RIT Pack Proficiency',
-          'Powered Equipment Proficiency','Hose Load Proficiency','Nozzle Proficiency','Attack Lines Proficiency',
-          'Deck Gun Proficiency','BlitzFire Proficiency','Attack Lines Flow Proficiency','Ground Ladders Proficiency',
-          'Command Structure Proficiency','Search & Rescue Proficiency','Forcible Entry Proficiency',
-          'Salvage & Overhaul Proficiency','Scene Preservation Proficiency'
-        ];
-
-        const missingRatings = requiredRatings.filter(key => !allData[key]);
-        if (missingRatings.length > 0) {
-          alert(
-            `Submission blocked.\n\nThe following performance areas were not evaluated:\n\n• ${missingRatings
-              .map(k => k.replace(' Proficiency', '').replace(' Rating', ''))
-              .join('\n• ')}\n\nAll dropdowns must have a selection before submission.`
-          );
-          throw new Error('Missing ratings.');
+        function clearReportData() {
+            localStorage.removeItem(STORAGE_KEY);
         }
 
-        const proficiencyItems = [
-          { rating: 'On Time & Uniform Rating', note: 'On Time & Uniform Note' },
-          { rating: 'Radio Proficiency', note: 'Radio Note' },
-          { rating: 'Cell Phone Proficiency', note: 'Cell Phone Note' },
-          { rating: 'City Policies Proficiency', note: 'City Policies Note' },
-          { rating: 'Department Policies Proficiency', note: 'Department Policies Note' },
-          { rating: 'PPE/SCBA Donning Proficiency', note: 'PPE/SCBA Donning Note' },
-          { rating: 'Medical Equipment Proficiency', note: 'Medical Equipment Note' },
-          { rating: 'RIT Pack Proficiency', note: 'RIT Pack Note' },
-          { rating: 'Powered Equipment Proficiency', note: 'Powered Equipment Note' },
-          { rating: 'Hose Load Proficiency', note: 'Hose Load Note' },
-          { rating: 'Nozzle Proficiency', note: 'Nozzle Note' },
-          { rating: 'Attack Lines Proficiency', note: 'Attack Lines Note' },
-          { rating: 'Deck Gun Proficiency', note: 'Deck Gun Note' },
-          { rating: 'BlitzFire Proficiency', note: 'BlitzFire Note' },
-          { rating: 'Attack Lines Flow Proficiency', note: 'Attack Lines Flow Note' },
-          { rating: 'Ground Ladders Proficiency', note: 'Ground Ladders Note' },
-          { rating: 'Command Structure Proficiency', note: 'Command Structure Note' },
-          { rating: 'Search & Rescue Proficiency', note: 'Search & Rescue Note' },
-          { rating: 'Forcible Entry Proficiency', note: 'Forcible Entry Note' },
-          { rating: 'Salvage & Overhaul Proficiency', note: 'Salvage & Overhaul Note' },
-          { rating: 'Scene Preservation Proficiency', note: 'Scene Preservation Note' }
-        ];
-
-        const missingNotes = [];
-        proficiencyItems.forEach(item => {
-          const ratingValue = allData[item.rating];
-          if (ratingValue === 'Unsatisfactory' || ratingValue === 'Needs Improvement') {
-            if (!allData[item.note] || String(allData[item.note]).trim() === '') {
-              missingNotes.push(item.rating.replace(' Proficiency', '').replace(' Rating', ''));
-            }
-          }
+        // Initialize SignaturePad with blue pen
+        const canvas = document.getElementById('signature-pad');
+        const signaturePad = new SignaturePad(canvas, {
+            backgroundColor: 'white',
+            penColor: '#2563eb'  // Professional blue
         });
 
-        if (missingNotes.length > 0) {
-          alert(
-            `Submission blocked.\n\nThe following items are marked "Unsatisfactory" or "Needs Improvement" but have no evaluator note:\n\n• ${missingNotes.join('\n• ')}\n\nPlease go back and add a comment for each.`
-          );
-          throw new Error('Missing notes for low ratings.');
+        // Properly resize canvas for high-DPI screens and responsiveness
+        function resizeCanvas() {
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
+            const rect = canvas.getBoundingClientRect();
+            
+            canvas.width = rect.width * ratio;
+            canvas.height = rect.height * ratio;
+            canvas.style.width = '100%';
+            canvas.style.height = '100%';
+            
+            const ctx = canvas.getContext('2d');
+            ctx.scale(ratio, ratio);
+            
+            // Restore the signature after resize
+            signaturePad.fromData(signaturePad.toData());
         }
 
-        // ---------- Build Professional 2-page PDF ----------
-        const { jsPDF } = window.jspdf;
-        if (!jsPDF) throw new Error('jsPDF failed to load.');
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas(); // Initial size
 
-        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
+        // Clear button
+        document.getElementById('clear-signature').addEventListener('click', (e) => {
+            e.preventDefault();
+            signaturePad.clear();
+        });
 
-        const GOLD = [245, 158, 11];
-        const RED  = [220, 38, 38];
-        const BLACK = [0, 0, 0];
-        const GREY = [100, 116, 139];
+        // Load saved evaluator info
+        window.addEventListener('load', () => {
+            const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+            document.getElementById('evaluator-name').value = data['Evaluator Name'] || '';
+            document.getElementById('evaluator-rank').value = data['Evaluator Rank'] || '';
+            resizeCanvas();
+        });
 
-        const FONT = 'times';
+        // Save evaluator fields when going back
+        document.getElementById('backBtn').addEventListener('click', () => {
+            const name = document.getElementById('evaluator-name').value;
+            const rank = document.getElementById('evaluator-rank').value;
+            const existing = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...existing, 'Evaluator Name': name, 'Evaluator Rank': rank }));
+            window.history.back();
+        });
 
-        const SZ_TITLE = 20;
-        const SZ_SUBTITLE = 14;
-        const SZ_META = 11;
-        const SZ_SECTION = 13;
-        const SZ_ITEM = 11;
-        const SZ_TEXT = 11;
-        const SZ_NOTE = 10;
-        const SZ_FOOTER = 10;
+        // Submit Report
+        let isSubmitting = false;
+        const submitBtn = document.getElementById('finalSubmit');
+        submitBtn.addEventListener('click', async () => {
+            if (isSubmitting) return;
+            isSubmitting = true;
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
 
-        const LH_META = 6;
-        const LH_SECTION = 7;
-        const LH_ITEM = 6;
-        const LH_TEXT = 6;
-        const LH_NOTE = 5.5;
+            try {
+                const evaluatorName = document.getElementById('evaluator-name').value.trim();
+                const evaluatorRank = document.getElementById('evaluator-rank').value;
+                if (!evaluatorName || !evaluatorRank) {
+                    throw new Error('Please enter evaluator name and rank');
+                }
+                if (signaturePad.isEmpty()) {
+                    throw new Error('Please provide a signature');
+                }
 
-        const pageW = pdf.internal.pageSize.getWidth();
-        const pageH = pdf.internal.pageSize.getHeight();
-        const margin = 12;
-        const headerH = 35;
-        const footerH = 15;
+                const allData = {
+                    ...JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'),
+                    'Evaluator Name': evaluatorName,
+                    'Evaluator Rank': evaluatorRank
+                };
 
-        const contentTop = margin + headerH;
-        const contentBottom = pageH - margin - footerH;
-        const contentW = pageW - margin * 2;
+                if (!allData['Firefighter'] || !allData['Week Ending Date']) {
+                    throw new Error('Missing required information from previous pages');
+                }
 
-        let y = contentTop;
-        let pageCount = 1;
-        let truncated = false;
+                const { jsPDF } = window.jspdf;
+                if (!jsPDF) throw new Error('jsPDF failed to load.');
+                const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
 
-        function setFont(style, size, colorArr) {
-          pdf.setFont(FONT, style);
-          pdf.setFontSize(size);
-          pdf.setTextColor(colorArr[0], colorArr[1], colorArr[2]);
-        }
-
-        function drawHeader() {
-          setFont('bold', SZ_TITLE, BLACK);
-          pdf.text('Centerville Fire Department', pageW / 2, margin + 10, { align: 'center' });
-
-          setFont('bold', SZ_SUBTITLE, BLACK);
-          pdf.text('Firefighter Weekly Performance Report', pageW / 2, margin + 18, { align: 'center' });
-
-          setFont('normal', SZ_SUBTITLE - 1, BLACK);
-          pdf.text(`Firefighter: ${allData['Firefighter'] || 'N/A'}`, pageW / 2, margin + 25, { align: 'center' });
-
-          pdf.setDrawColor(RED[0], RED[1], RED[2]);
-          pdf.setLineWidth(0.7);
-          pdf.line(margin, margin + 29, pageW - margin, margin + 29);
-        }
-
-        function drawFooter() {
-          setFont('normal', SZ_FOOTER, GREY);
-          pdf.text('© 2026 City of Centerville • Fire Department Confidential System', pageW / 2, pageH - margin + 5, { align: 'center' });
-        }
-
-        function addPageIfAllowed() {
-          if (pageCount >= 2) {
-            truncated = true;
-            return false;
-          }
-          pdf.addPage();
-          pageCount += 1;
-          drawHeader();
-          drawFooter();
-          y = contentTop;
-          return true;
-        }
-
-        function canFit(lines, lineHeight) {
-          return (y + (lines * lineHeight)) <= contentBottom;
-        }
-
-        function writeWrapped(text, maxW, lineHeight, style, size, colorArr) {
-          const lines = pdf.splitTextToSize(String(text), maxW);
-
-          if (!canFit(lines.length, lineHeight)) {
-            if (!addPageIfAllowed()) return false;
-          }
-
-          if (!canFit(lines.length, lineHeight)) {
-            truncated = true;
-            const maxLines = Math.max(1, Math.floor((contentBottom - y) / lineHeight));
-            const clipped = lines.slice(0, maxLines);
-            if (clipped.length > 0) clipped[clipped.length - 1] = clipped[clipped.length - 1] + '…';
-            setFont(style, size, colorArr);
-            pdf.text(clipped, margin, y);
-            y += clipped.length * lineHeight;
-            return false;
-          }
-
-          setFont(style, size, colorArr);
-          pdf.text(lines, margin, y);
-          y += lines.length * lineHeight;
-          return true;
-        }
-
-        function sectionTitle(title) {
-          setFont('bold', SZ_SECTION, GOLD);
-          if (!canFit(1, LH_SECTION)) {
-            if (!addPageIfAllowed()) return false;
-          }
-          pdf.text(title, margin, y);
-          y += LH_SECTION;
-          return true;
-        }
-
-        function itemLine(label, value) {
-          const labelText = `${label}: `;
-          setFont('bold', SZ_ITEM, BLACK);
-          const labelW = pdf.getTextWidth(labelText);
-
-          if (labelW > contentW * 0.6) {
-            if (!canFit(1, LH_ITEM)) {
-              if (!addPageIfAllowed()) return false;
+                const GOLD = [245, 158, 11];
+                const RED = [220, 38, 38];
+                const BLACK = [0, 0, 0];
+                const GREY = [100, 116, 139];
+                const FONT = 'times';
+                const SZ_TITLE = 20;
+                const SZ_SUBTITLE = 14;
+                const SZ_META = 11;
+                const SZ_SECTION = 13;
+                const SZ_ITEM = 11;
+                const SZ_TEXT = 11;
+                const SZ_NOTE = 10;
+                const SZ_FOOTER = 10;
+                const LH_META = 6;
+                const LH_SECTION = 7;
+                const LH_ITEM = 6;
+                const LH_TEXT = 6;
+                const LH_NOTE = 5.5;
+                const pageW = pdf.internal.pageSize.getWidth();
+                const pageH = pdf.internal.pageSize.getHeight();
+                const margin = 12;
+                const headerH = 35;
+                const footerH = 15;
+                const contentTop = margin + headerH;
+                const contentBottom = pageH - margin - footerH;
+                const contentW = pageW - margin * 2;
+                let y = contentTop;
+                let pageCount = 1;
+                let truncated = false;
+                function setFont(style, size, colorArr) {
+                    pdf.setFont(FONT, style);
+                    pdf.setFontSize(size);
+                    pdf.setTextColor(colorArr[0], colorArr[1], colorArr[2]);
+                }
+                function drawHeader() {
+                    setFont('bold', SZ_TITLE, BLACK);
+                    pdf.text('Centerville Fire Department', pageW / 2, margin + 10, { align: 'center' });
+                    setFont('bold', SZ_SUBTITLE, BLACK);
+                    pdf.text('Firefighter Weekly Performance Report', pageW / 2, margin + 18, { align: 'center' });
+                    setFont('normal', SZ_SUBTITLE - 1, BLACK);
+                    pdf.text(`Firefighter: ${allData['Firefighter'] || 'N/A'}`, pageW / 2, margin + 25, { align: 'center' });
+                    pdf.setDrawColor(RED[0], RED[1], RED[2]);
+                    pdf.setLineWidth(0.7);
+                    pdf.line(margin, margin + 29, pageW - margin, margin + 29);
+                }
+                function drawFooter() {
+                    setFont('normal', SZ_FOOTER, GREY);
+                    pdf.text('© 2026 City of Centerville • Fire Department Confidential System', pageW / 2, pageH - margin + 5, { align: 'center' });
+                }
+                function addPageIfAllowed() {
+                    if (pageCount >= 2) {
+                        truncated = true;
+                        return false;
+                    }
+                    pdf.addPage();
+                    pageCount += 1;
+                    drawHeader();
+                    drawFooter();
+                    y = contentTop;
+                    return true;
+                }
+                function canFit(lines, lineHeight) {
+                    return (y + (lines * lineHeight)) <= contentBottom;
+                }
+                function writeWrapped(text, maxW, lineHeight, style, size, colorArr) {
+                    const lines = pdf.splitTextToSize(String(text), maxW);
+                    if (!canFit(lines.length, lineHeight)) {
+                        if (!addPageIfAllowed()) return false;
+                    }
+                    if (!canFit(lines.length, lineHeight)) {
+                        truncated = true;
+                        const maxLines = Math.max(1, Math.floor((contentBottom - y) / lineHeight));
+                        const clipped = lines.slice(0, maxLines);
+                        if (clipped.length > 0) clipped[clipped.length - 1] = clipped[clipped.length - 1] + '…';
+                        setFont(style, size, colorArr);
+                        pdf.text(clipped, margin, y);
+                        y += clipped.length * lineHeight;
+                        return false;
+                    }
+                    setFont(style, size, colorArr);
+                    pdf.text(lines, margin, y);
+                    y += lines.length * lineHeight;
+                    return true;
+                }
+                function sectionTitle(title) {
+                    setFont('bold', SZ_SECTION, GOLD);
+                    if (!canFit(1, LH_SECTION)) {
+                        if (!addPageIfAllowed()) return false;
+                    }
+                    pdf.text(title, margin, y);
+                    y += LH_SECTION;
+                    return true;
+                }
+                function itemLine(label, value) {
+                    const labelText = `${label}: `;
+                    setFont('bold', SZ_ITEM, BLACK);
+                    const labelW = pdf.getTextWidth(labelText);
+                    if (labelW > contentW * 0.6) {
+                        if (!canFit(1, LH_ITEM)) {
+                            if (!addPageIfAllowed()) return false;
+                        }
+                        setFont('bold', SZ_ITEM, BLACK);
+                        pdf.text(`${label}:`, margin, y);
+                        y += LH_ITEM;
+                        return writeWrapped(String(value), contentW, LH_TEXT, 'normal', SZ_TEXT, BLACK);
+                    }
+                    const valueMaxW = contentW - labelW;
+                    const valueLines = pdf.splitTextToSize(String(value), valueMaxW);
+                    if (!canFit(1, LH_ITEM)) {
+                        if (!addPageIfAllowed()) return false;
+                    }
+                    setFont('bold', SZ_ITEM, BLACK);
+                    pdf.text(labelText, margin, y);
+                    setFont('normal', SZ_TEXT, BLACK);
+                    pdf.text(valueLines[0], margin + labelW, y);
+                    y += LH_TEXT;
+                    if (valueLines.length > 1) {
+                        const remaining = valueLines.slice(1);
+                        if (!canFit(remaining.length, LH_TEXT)) {
+                            if (!addPageIfAllowed()) return false;
+                        }
+                        if (!canFit(remaining.length, LH_TEXT)) {
+                            truncated = true;
+                            const maxLines = Math.max(1, Math.floor((contentBottom - y) / LH_TEXT));
+                            const clipped = remaining.slice(0, maxLines);
+                            if (clipped.length > 0) clipped[clipped.length - 1] = clipped[clipped.length - 1] + '…';
+                            pdf.text(clipped, margin, y);
+                            y += clipped.length * LH_TEXT;
+                            return false;
+                        }
+                        pdf.text(remaining, margin, y);
+                        y += remaining.length * LH_TEXT;
+                    }
+                    return true;
+                }
+                function noteLine(noteText) {
+                    return writeWrapped(`Note: ${noteText}`, contentW, LH_NOTE, 'normal', SZ_NOTE, BLACK);
+                }
+                function getNoteValue(ratingKey, noteKey) {
+                    const rawNote = (allData[noteKey] ||
+                        allData[`${ratingKey} Note`] ||
+                        allData[`${ratingKey.replace(' Proficiency', '').replace(' Rating', '')} Note`] ||
+                        allData[`${ratingKey.replace(' Rating', '')} Note`] ||
+                        '').toString().trim();
+                    return rawNote === '' ? 'No comments provided' : rawNote;
+                }
+                let weekEndingFormatted = 'N/A';
+                if (allData['Week Ending Date']) {
+                    const dateObj = new Date(allData['Week Ending Date']);
+                    weekEndingFormatted = dateObj.toLocaleDateString('en-US', { month: 'long', day: '2-digit', year: 'numeric' });
+                }
+                const sections = [
+                    { title: '1. Policies & Conduct', items: [
+                        ['On Time & Uniform Rating', 'On Time & Uniform Note'],
+                        ['Radio Proficiency', 'Radio Note'],
+                        ['Cell Phone Proficiency', 'Cell Phone Note'],
+                        ['City Policies Proficiency', 'City Policies Note'],
+                        ['Department Policies Proficiency', 'Department Policies Note']
+                    ]},
+                    { title: '2. PPE & Medical', items: [
+                        ['PPE/SCBA Donning Proficiency', 'PPE/SCBA Donning Note'],
+                        ['Medical Equipment Proficiency', 'Medical Equipment Note'],
+                        ['RIT Pack Proficiency', 'RIT Pack Note']
+                    ]},
+                    { title: '3. Hose & Equipment', items: [
+                        ['Powered Equipment Proficiency', 'Powered Equipment Note'],
+                        ['Hose Load Proficiency', 'Hose Load Note'],
+                        ['Nozzle Proficiency', 'Nozzle Note'],
+                        ['Attack Lines Proficiency', 'Attack Lines Note']
+                    ]},
+                    { title: '4. Advanced Operations', items: [
+                        ['Deck Gun Proficiency', 'Deck Gun Note'],
+                        ['BlitzFire Proficiency', 'BlitzFire Note'],
+                        ['Attack Lines Flow Proficiency', 'Attack Lines Flow Note'],
+                        ['Ground Ladders Proficiency', 'Ground Ladders Note']
+                    ]},
+                    { title: '5. Command & Scene Proficiency', items: [
+                        ['Command Structure Proficiency', 'Command Structure Note'],
+                        ['Search & Rescue Proficiency', 'Search & Rescue Note'],
+                        ['Forcible Entry Proficiency', 'Forcible Entry Note'],
+                        ['Salvage & Overhaul Proficiency', 'Salvage & Overhaul Note'],
+                        ['Scene Preservation Proficiency', 'Scene Preservation Note']
+                    ]}
+                ];
+                drawHeader();
+                drawFooter();
+                writeWrapped(`Week Ending: ${weekEndingFormatted}`, contentW, LH_META, 'normal', SZ_META, BLACK);
+                writeWrapped(`Shift: ${allData['Shift'] || 'N/A'}`, contentW, LH_META, 'normal', SZ_META, BLACK);
+                writeWrapped(`Officer: ${allData['Officer'] || 'N/A'}`, contentW, LH_META, 'normal', SZ_META, BLACK);
+                writeWrapped(`Apparatus: ${allData['Apparatus'] ? allData['Apparatus'].join(', ') : 'N/A'}`, contentW, LH_META, 'normal', SZ_META, BLACK);
+                y += 3;
+                sectionTitle('Performance Evaluation');
+                y += 4;
+                const page1Titles = new Set(['1. Policies & Conduct', '2. PPE & Medical', '3. Hose & Equipment']);
+                for (const sec of sections) {
+                    if (!page1Titles.has(sec.title) && pageCount === 1) {
+                        addPageIfAllowed();
+                    }
+                    if (truncated) break;
+                    if (!sectionTitle(sec.title)) break;
+                    for (let i = 0; i < sec.items.length; i++) {
+                        const [ratingKey, noteKey] = sec.items[i];
+                        if (truncated) break;
+                        const rating = (allData[ratingKey] || 'Not Assessed').toString();
+                        const note = getNoteValue(ratingKey, noteKey).trim();
+                        const label = ratingKey.replace(' Proficiency', '').replace(' Rating', '');
+                        let ratingText;
+                        if (rating === 'Not Applicable') {
+                            ratingText = 'Proficiency not assessed during this time frame';
+                        } else if (rating === '' || rating === 'Not Assessed') {
+                            ratingText = 'Not Assessed';
+                        } else {
+                            ratingText = rating;
+                        }
+                        if (!itemLine(label, ratingText)) break;
+                        if (truncated) break;
+                        if (note && note !== 'No comments provided') {
+                            if (!noteLine(note)) break;
+                        }
+                        if (truncated) break;
+                        y += 3; // Small vertical spacing
+                    }
+                    y += 6; // Extra space between sections
+                }
+                if (!truncated) {
+                    sectionTitle('Evaluator');
+                    y += 6;
+                    itemLine('Name', allData['Evaluator Name'] || 'N/A');
+                    const sigData = signaturePad.toDataURL('image/jpeg', 0.85);
+                    if (sigData && sigData !== 'data:,') {
+                        const sigW = 90, sigH = 30;
+                        if (!canFit(1, sigH + 10)) addPageIfAllowed();
+                        if (!truncated) {
+                            pdf.addImage(sigData, 'JPEG', margin, y + 2, sigW, sigH, undefined, 'FAST');
+                            y += sigH + 8;
+                        }
+                    } else {
+                        y += 8;
+                    }
+                    itemLine('Rank', allData['Evaluator Rank'] || 'N/A');
+                    const submittedDate = new Date();
+                    const submittedFormatted = submittedDate.toLocaleDateString('en-US', { month: 'long', day: '2-digit', year: 'numeric' });
+                    itemLine('Date Submitted', submittedFormatted);
+                }
+                if (truncated) {
+                    if (pageCount === 1) addPageIfAllowed();
+                    if (pageCount === 2) {
+                        if (y < contentBottom - 10) {
+                            setFont('normal', SZ_NOTE, GREY);
+                            pdf.text('Some notes were truncated to keep this report to two pages.', margin, Math.min(y + 6, contentBottom - 2));
+                        }
+                    }
+                }
+                if (!window.emailjs || !emailjs.send) {
+                    throw new Error('Email service failed to load (EmailJS). Check connection/CDN.');
+                }
+                const pdfBase64 = pdf.output('datauristring').split(',')[1];
+                const params = {
+                    to_email: 'ddorman@centervillefd.com',
+                    firefighter: allData['Firefighter'] || 'Unknown',
+                    week_ending_date: weekEndingFormatted,
+                    shift: allData['Shift'] || 'Unknown',
+                    officer: allData['Officer'] || 'Unknown',
+                    evaluator_name: allData['Evaluator Name'] || 'Unknown',
+                    evaluator_rank: allData['Evaluator Rank'] || 'Unknown',
+                    apparatus: allData['Apparatus'] ? allData['Apparatus'].join(', ') : 'None',
+                    pdf_attachment: pdfBase64
+                };
+                await emailjs.send('service_2gdxvws', 'template_46xt4jy', params);
+                alert('Success! Report sent with attached signed PDF.');
+                clearReportData();
+                window.location.href = 'page1.html';
+            } catch (err) {
+                console.error(err);
+                alert(
+                    'Something failed while submitting.\n\n' +
+                    'Most common causes:\n' +
+                    '• EmailJS blocked/offline\n' +
+                    '• Opening locally with strict browser security\n' +
+                    '• A required script failed to load\n\n' +
+                    'Open DevTools → Console for the exact error.'
+                );
+            } finally {
+                isSubmitting = false;
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit Report';
             }
-            setFont('bold', SZ_ITEM, BLACK);
-            pdf.text(`${label}:`, margin, y);
-            y += LH_ITEM;
-            return writeWrapped(String(value), contentW, LH_TEXT, 'normal', SZ_TEXT, BLACK);
-          }
-
-          const valueMaxW = contentW - labelW;
-          const valueLines = pdf.splitTextToSize(String(value), valueMaxW);
-
-          if (!canFit(1, LH_ITEM)) {
-            if (!addPageIfAllowed()) return false;
-          }
-
-          setFont('bold', SZ_ITEM, BLACK);
-          pdf.text(labelText, margin, y);
-
-          setFont('normal', SZ_TEXT, BLACK);
-          pdf.text(valueLines[0], margin + labelW, y);
-          y += LH_TEXT;
-
-          if (valueLines.length > 1) {
-            const remaining = valueLines.slice(1);
-            if (!canFit(remaining.length, LH_TEXT)) {
-              if (!addPageIfAllowed()) return false;
-            }
-            if (!canFit(remaining.length, LH_TEXT)) {
-              truncated = true;
-              const maxLines = Math.max(1, Math.floor((contentBottom - y) / LH_TEXT));
-              const clipped = remaining.slice(0, maxLines);
-              if (clipped.length > 0) clipped[clipped.length - 1] = clipped[clipped.length - 1] + '…';
-              pdf.text(clipped, margin, y);
-              y += clipped.length * LH_TEXT;
-              return false;
-            }
-            pdf.text(remaining, margin, y);
-            y += remaining.length * LH_TEXT;
-          }
-
-          return true;
-        }
-
-        function noteLine(noteText) {
-          return writeWrapped(`Note: ${noteText}`, contentW, LH_NOTE, 'normal', SZ_NOTE, BLACK);
-        }
-
-        function getNoteValue(ratingKey, noteKey) {
-          return (allData[noteKey]
-            || allData[`${ratingKey} Note`]
-            || allData[`${ratingKey.replace(' Rating', '').replace(' Proficiency', '')} Note`]
-            || allData[`${ratingKey.replace(' Rating', '')} Note`]
-            || '').toString();
-        }
-
-        let weekEndingFormatted = 'N/A';
-        if (allData['Week Ending Date']) {
-          const dateObj = new Date(allData['Week Ending Date']);
-          weekEndingFormatted = dateObj.toLocaleDateString('en-US', { month: 'long', day: '2-digit', year: 'numeric' });
-        }
-
-        const sections = [
-          { title: '2. Policies & Conduct', items: [
-            ['On Time & Uniform Rating', 'On Time & Uniform Note'],
-            ['Radio Proficiency', 'Radio Note'],
-            ['Cell Phone Proficiency', 'Cell Phone Note'],
-            ['City Policies Proficiency', 'City Policies Note'],
-            ['Department Policies Proficiency', 'Department Policies Note']
-          ]},
-          { title: '3. PPE & Medical', items: [
-            ['PPE/SCBA Donning Proficiency', 'PPE/SCBA Donning Note'],
-            ['Medical Equipment Proficiency', 'Medical Equipment Note'],
-            ['RIT Pack Proficiency', 'RIT Pack Note']
-          ]},
-          { title: '4. Hose & Equipment', items: [
-            ['Powered Equipment Proficiency', 'Powered Equipment Note'],
-            ['Hose Load Proficiency', 'Hose Load Note'],
-            ['Nozzle Proficiency', 'Nozzle Note'],
-            ['Attack Lines Proficiency', 'Attack Lines Note']
-          ]},
-          { title: '5. Advanced Operations', items: [
-            ['Deck Gun Proficiency', 'Deck Gun Note'],
-            ['BlitzFire Proficiency', 'BlitzFire Note'],
-            ['Attack Lines Flow Proficiency', 'Attack Lines Flow Note'],
-            ['Ground Ladders Proficiency', 'Ground Ladders Note']
-          ]},
-          { title: '6. Command & Scene Proficiency', items: [
-            ['Command Structure Proficiency', 'Command Structure Note'],
-            ['Search & Rescue Proficiency', 'Search & Rescue Note'],
-            ['Forcible Entry Proficiency', 'Forcible Entry Note'],
-            ['Salvage & Overhaul Proficiency', 'Salvage & Overhaul Note'],
-            ['Scene Preservation Proficiency', 'Scene Preservation Note']
-          ]}
-        ];
-
-        drawHeader();
-        drawFooter();
-
-        writeWrapped(`Week Ending: ${weekEndingFormatted}`, contentW, LH_META, 'normal', SZ_META, BLACK);
-        writeWrapped(`Shift: ${allData['Shift'] || 'N/A'}`, contentW, LH_META, 'normal', SZ_META, BLACK);
-        writeWrapped(`Officer: ${allData['Officer'] || 'N/A'}`, contentW, LH_META, 'normal', SZ_META, BLACK);
-        writeWrapped(`Apparatus: ${allData['Apparatus'] ? allData['Apparatus'].join(', ') : 'N/A'}`, contentW, LH_META, 'normal', SZ_META, BLACK);
-
-        y += 3;
-
-        sectionTitle('Performance Evaluation');
-        y += 4;
-
-        const page1Titles = new Set(['2. Policies & Conduct', '3. PPE & Medical', '4. Hose & Equipment']);
-
-        for (const sec of sections) {
-          if (!page1Titles.has(sec.title) && pageCount === 1) {
-            addPageIfAllowed();
-          }
-          if (truncated) break;
-
-          if (!sectionTitle(sec.title)) break;
-
-          for (let i = 0; i < sec.items.length; i++) {
-            const [ratingKey, noteKey] = sec.items[i];
-            if (truncated) break;
-
-            const rating = (allData[ratingKey] || 'Not Assessed').toString();
-            const note = getNoteValue(ratingKey, noteKey).trim();
-
-            const label = ratingKey.replace(' Proficiency', '').replace(' Rating', '');
-            const ratingText = (rating === 'Not Applicable')
-              ? 'Not Assessed During This Evaluation Period'
-              : rating;
-
-            if (!itemLine(label, ratingText)) break;
-            if (truncated) break;
-
-            if (note) {
-              if (!noteLine(note)) break;
-            }
-            if (truncated) break;
-
-            // REMOVED: divider() call - no separation lines between items
-            y += 3; // Small vertical spacing instead of line
-          }
-
-          y += 6; // Extra space between sections
-        }
-
-        if (!truncated) {
-          sectionTitle('Evaluator');
-          y += 6;
-
-          itemLine('Name', allData['Evaluator Name'] || 'N/A');
-
-          const sigData = signaturePad.toDataURL('image/jpeg', 0.85);
-          if (sigData && sigData !== 'data:,') {
-            const sigW = 90, sigH = 30;
-
-            if (!canFit(1, sigH + 10)) addPageIfAllowed();
-
-            if (!truncated) {
-              pdf.addImage(sigData, 'JPEG', margin, y + 2, sigW, sigH, undefined, 'FAST');
-              y += sigH + 8;
-            }
-          } else {
-            y += 8;
-          }
-
-          itemLine('Rank', allData['Evaluator Rank'] || 'N/A');
-
-          const submittedDate = new Date();
-          const submittedFormatted = submittedDate.toLocaleDateString('en-US', { month: 'long', day: '2-digit', year: 'numeric' });
-          itemLine('Date Submitted', submittedFormatted);
-        }
-
-        if (truncated) {
-          if (pageCount === 1) addPageIfAllowed();
-          if (pageCount === 2) {
-            if (y < contentBottom - 10) {
-              setFont('normal', SZ_NOTE, GREY);
-              pdf.text('Some notes were truncated to keep this report to two pages.', margin, Math.min(y + 6, contentBottom - 2));
-            }
-          }
-        }
-
-        drawFooter();
-
-        if (!window.emailjs || !emailjs.send) {
-          throw new Error('Email service failed to load (EmailJS). Check connection/CDN.');
-        }
-
-        const pdfBase64 = pdf.output('datauristring').split(',')[1];
-
-        const params = {
-          to_email: 'ddorman@centervillefd.com',
-          firefighter: allData['Firefighter'] || 'Unknown',
-          week_ending_date: weekEndingFormatted,
-          shift: allData['Shift'] || 'Unknown',
-          officer: allData['Officer'] || 'Unknown',
-          evaluator_name: allData['Evaluator Name'] || 'Unknown',
-          evaluator_rank: allData['Evaluator Rank'] || 'Unknown',
-          apparatus: allData['Apparatus'] ? allData['Apparatus'].join(', ') : 'None',
-          pdf_attachment: pdfBase64
-        };
-
-        await emailjs.send('service_2gdxvws', 'template_46xt4jy', params);
-
-        alert('Success! Report sent with attached signed PDF.');
-
-        clearReportData();
-
-        window.location.href = 'page1.html';
-
-      } catch (err) {
-        console.error(err);
-
-        if (String(err && err.message || '').includes('Missing')) {
-          // stay on page
-        } else {
-          alert(
-            'Something failed while submitting.\n\n' +
-            'Most common causes:\n' +
-            '• EmailJS blocked/offline\n' +
-            '• Opening locally with strict browser security\n' +
-            '• A required script failed to load\n\n' +
-            'Open DevTools → Console for the exact error.'
-          );
-        }
-      } finally {
-        isSubmitting = false;
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Submit Report';
-      }
-    });
-  </script>
+        });
+    </script>
 </body>
 </html>
