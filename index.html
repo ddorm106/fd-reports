@@ -1,210 +1,55 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Centerville FD Reports & Training</title>
-    
-    <!-- PWA / Add to Home Screen -->
-    <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="patch.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <meta name="apple-mobile-web-app-title" content="Centerville FD">
-    <meta name="theme-color" content="#dc2626">
+// ===============================================
+// Centerville FD - Main JavaScript (Fresh & Clean)
+// For use with index.html and report pages
+// ===============================================
+// Minimal service worker for PWA "installable" feel
+self.addEventListener('install', (e) => {
+    self.skipWaiting();
+});
 
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Inter', sans-serif;
-            background: #0f172a;
-            color: #e2e8f0;
-            min-height: 100vh;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 20px auto;
-            padding: 30px 20px;
-            background: #1e293b;
-            border-radius: 16px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-            text-align: center;
-        }
-        header img {
-            width: 160px;
-            height: auto;
-            margin-bottom: 20px;
-            /* Removed border and border-radius */
-        }
-        h1 {
-            font-size: 2.8rem;
-            color: #fff;
-            margin-bottom: 10px;
-        }
-        p.subtitle {
-            font-size: 1.3rem;
-            color: #cbd5e1;
-            margin-bottom: 50px;
-        }
-        .reports-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 25px;
-        }
-        .report-card {
-            background: #334155;
-            padding: 30px;
-            border-radius: 16px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-            transition: transform 0.3s ease;
-        }
-        .report-card:hover {
-            transform: translateY(-8px);
-        }
-        .report-card h3 {
-            font-size: 1.6rem;
-            color: #f59e0b;
-            margin-bottom: 12px;
-        }
-        .report-card p {
-            font-size: 1.1rem;
-            margin-bottom: 25px;
-            color: #e2e8f0;
-        }
-        .report-card a {
-            display: block;
-            padding: 18px;
-            background: #dc2626;
-            color: white;
-            text-decoration: none;
-            border-radius: 12px;
-            font-weight: 700;
-            font-size: 1.3rem;
-            min-height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .report-card a.disabled {
-            background: #64748b;
-            cursor: not-allowed;
-        }
-        .report-card a:hover:not(.disabled) {
-            background: #b91c1c;
-        }
-        .install-prompt {
-            margin: 40px auto;
-            padding: 20px;
-            background: #334155;
-            border-radius: 12px;
-            max-width: 600px;
-            font-size: 1rem;
-            color: #e2e8f0;
-        }
-        .city-logo {
-            width: 250px;
-            height: auto;
-            margin: 30px auto;
-            display: block;
-        }
-        footer {
-            margin-top: 60px;
-            padding: 20px;
-            color: #64748b;
-            font-size: 0.9rem;
-        }
-        @media (min-width: 640px) {
-            .reports-grid {
-                grid-template-columns: repeat(2, 1fr);
+self.addEventListener('fetch', (e) => {
+    // Optional: cache strategy (can be empty for now)
+
+});
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('Centerville FD system loaded - New JS folder active!');
+
+    // === File Upload Handler (for Upload Training Sheets card) ===
+    const fileInput = document.getElementById('file-upload');
+    const uploadTrigger = document.querySelector('.upload-trigger');
+
+    if (uploadTrigger && fileInput) {
+        uploadTrigger.addEventListener('click', (e) => {
+            e.preventDefault();
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const files = e.target.files;
+            if (files.length === 0) return;
+
+            let message = `You selected ${files.length} file${files.length > 1 ? 's' : ''}:\n\n`;
+            for (let file of files) {
+                const sizeKB = (file.size / 1024).toFixed(1);
+                message += `• ${file.name} (${sizeKB} KB)\n`;
             }
-        }
-        @media (min-width: 1024px) {
-            .reports-grid {
-                grid-template-columns: repeat(3, 1fr);
-            }
-            .container {
-                padding: 40px;
-            }
-            h1 {
-                font-size: 3rem;
-            }
-            header img {
-                width: 180px;
-            }
-            .city-logo {
-                width: 300px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <header>
-            <img src="patch.png" alt="Centerville FD Patch">
-            <h1>Centerville Fire Department</h1>
-            <p class="subtitle">Reports & Training System</p>
-        </header>
+            message += `\nFiles are ready. In a live system, they would be uploaded to the server.`;
 
-        <!-- Optional: Add to Home Screen Prompt -->
-        <div class="install-prompt" id="installPrompt" style="display:none;">
-            <strong>Add to Home Screen</strong><br>
-            For quick access, install this app on your phone:
-            <br><br>
-            <strong>Android:</strong> Tap menu → "Add to Home screen"<br>
-            <strong>iPhone:</strong> Tap Share → "Add to Home Screen"
-        </div>
+            alert(message);
+            console.log('Selected files:', files);
+        });
+    }
 
-        <div class="reports-grid">
-            <div class="report-card">
-                <h3>AOIC Weekly Performance Report</h3>
-                <p>Coming Soon</p>
-                <a href="#" class="disabled">Available Soon</a>
-            </div>
-            <div class="report-card">
-                <h3>Aerial Weekly Performance Report</h3>
-                <p>Coming Soon</p>
-                <a href="#" class="disabled">Available Soon</a>
-            </div>
-            <div class="report-card">
-                <h3>Centerville FD Training Sheets</h3>
-                <p>Coming Soon</p>
-                <a href="#" class="disabled">Available Soon</a>
-            </div>
-            <div class="report-card">
-                <h3>Engine Driver Weekly Performance Report</h3>
-                <p>Coming Soon</p>
-                <a href="#" class="disabled">Available Soon</a>
-            </div>
-            <div class="report-card">
-                <h3>Firefighter Weekly Performance Report</h3>
-                <p>Standard Firefighter Weekly Evaluation</p>
-                <a href="firefighter-report/page1.html">Start Report →</a>
-            </div>
-            <div class="report-card">
-                <h3>Rescue Driver Weekly Performance Report</h3>
-                <p>Coming Soon</p>
-                <a href="#" class="disabled">Available Soon</a>
-            </div>
-        </div>
 
-        <img src="city-logo.png" alt="City of Centerville Logo" class="city-logo">
+    // === Placeholder for future features ===
+    // Example: Add smooth scrolling, dark mode toggle, etc. later
+    // const smoothLinks = document.querySelectorAll('a[href^="#"]');
+    // smoothLinks.forEach(link => {
+    //     link.addEventListener('click', (e) => {
+    //         e.preventDefault();
+    //         document.querySelector(link.getAttribute('href')).scrollIntoView({ behavior: 'smooth' });
+    //     });
+    // });
 
-        <footer>
-            © 2025 Centerville Fire Department • Confidential System • Contact Sergeant Dorman
-        </footer>
-    </div>
-
-    <script>
-        // Show install prompt on mobile
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js');
-        }
-
-        // Show install instructions on mobile
-        if (/Mobi|Android|iPhone|iPad|iPod/.test(navigator.userAgent)) {
-            document.getElementById('installPrompt').style.display = 'block';
-        }
-    </script>
-</body>
-</html>
+    // You can add more features here as needed!
+});
