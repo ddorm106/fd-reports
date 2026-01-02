@@ -5,21 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Centerville FD Reports & Training</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-    
-    <!-- EmailJS CDN -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <script type="text/javascript">
-        (function () { 
-            emailjs.init('0149jkoCQjJZn6JwD'); 
-        })();
+        (function () { emailjs.init('0149jkoCQjJZn6JwD'); })();
     </script>
-
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
+        html, body {
+            height: 100%;
             font-family: 'Inter', sans-serif;
             background: #0f172a;
             color: #e2e8f0;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
         }
         .container {
             max-width: 1200px;
@@ -29,6 +30,7 @@
             border-radius: 16px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.4);
             text-align: center;
+            flex: 1;
         }
         header img {
             width: 180px;
@@ -111,24 +113,29 @@
             min-height: 24px;
             font-size: 1rem;
         }
+        /* Fixed Footer - Works on iPad & All Mobile */
         footer {
-            margin-top: 80px;
-            padding: 20px;
+            width: 100%;
+            padding: 30px 20px;
+            background: #0f172a;
+            text-align: center;
             color: #64748b;
             font-size: 0.9rem;
+            margin-top: auto; /* Pushes footer to bottom */
         }
         footer .city-logo {
             width: 100px;
+            max-width: 90%;
+            height: auto;
             margin-bottom: 10px;
             opacity: 0.8;
-            max-width: 100%;
-            height: auto;
         }
         @media (max-width: 768px) {
             h1 { font-size: 2.4rem; }
             .reports-grid { grid-template-columns: 1fr; }
             .container { padding: 20px; margin: 20px auto; }
             .upload-buttons { gap: 15px; }
+            footer .city-logo { width: 80px; }
         }
     </style>
 </head>
@@ -193,12 +200,13 @@
                 <div id="upload-status"></div>
             </div>
         </div>
-
-        <footer>
-            <img src="city-logo.png" alt="City of Centerville Logo" class="city-logo">
-            <p>© 2026 City of Centerville Fire Department Training Division</p>
-        </footer>
     </div>
+
+    <!-- Fixed Footer Outside Container -->
+    <footer>
+        <img src="city-logo.png" alt="City of Centerville Logo" class="city-logo">
+        <p>© 2026 City of Centerville Fire Department Training Division</p>
+    </footer>
 
     <!-- Main JavaScript -->
     <script>
@@ -274,7 +282,7 @@
                 sendButton.disabled = true;
             } catch (err) {
                 console.error(err);
-                statusDiv.textContent = 'Upload failed. Must be served over HTTP/HTTPS (not file://).';
+                statusDiv.textContent = 'Upload failed. Check connection or try local server.';
                 statusDiv.style.color = '#dc2626';
             } finally {
                 sendButton.disabled = false;
@@ -287,12 +295,8 @@
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/sw.js')
-                    .then((reg) => {
-                        console.log('Service Worker registered successfully:', reg.scope);
-                    })
-                    .catch((err) => {
-                        console.log('Service Worker registration failed:', err);
-                    });
+                    .then(reg => console.log('SW registered:', reg.scope))
+                    .catch(err => console.log('SW failed:', err));
             });
         }
     </script>
