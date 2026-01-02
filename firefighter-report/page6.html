@@ -24,10 +24,7 @@
             box-shadow: 0 20px 40px rgba(0,0,0,0.4);
             flex: 1;
         }
-        .report-header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
+        .report-header { text-align: center; margin-bottom: 40px; }
         .header-top {
             display: flex;
             align-items: center;
@@ -35,9 +32,7 @@
             gap: 30px;
             flex-wrap: wrap;
         }
-        .patch-logo {
-            width: 120px;
-        }
+        .patch-logo { width: 120px; max-width: 100%; height: auto; }
         .header-text h1 {
             font-size: 2.8rem;
             color: #fff;
@@ -53,11 +48,7 @@
             font-size: 1.8rem;
             margin: 40px 0 30px;
         }
-        form {
-            display: flex;
-            flex-direction: column;
-            gap: 30px;
-        }
+        form { display: flex; flex-direction: column; gap: 30px; }
         .performance-block {
             background: #334155;
             padding: 24px;
@@ -83,9 +74,7 @@
             color: #e2e8f0;
             font-size: 1rem;
         }
-        select:focus {
-            outline: 2px solid #f59e0b;
-        }
+        select:focus { outline: 2px solid #f59e0b; }
         .evaluator-note {
             margin-top: 10px;
         }
@@ -106,12 +95,8 @@
             resize: vertical;
             min-height: 100px;
         }
-        .evaluator-note textarea:focus {
-            outline: 2px solid #f59e0b;
-        }
-        .evaluator-note textarea::placeholder {
-            color: #64748b;
-        }
+        .evaluator-note textarea:focus { outline: 2px solid #f59e0b; }
+        .evaluator-note textarea::placeholder { color: #64748b; }
         .form-actions {
             display: flex;
             justify-content: space-between;
@@ -128,38 +113,36 @@
             cursor: pointer;
             transition: background 0.3s;
         }
-        .form-actions button:hover {
-            background: #b91c1c;
-        }
-        .form-actions button:first-child {
-            background: #334155;
-        }
-        .form-actions button:first-child:hover {
-            background: #475569;
-        }
+        .form-actions button:hover { background: #b91c1c; }
+        .form-actions button:first-child { background: #334155; }
+        .form-actions button:first-child:hover { background: #475569; }
         footer {
             text-align: center;
             padding: 30px 20px 40px;
             color: #64748b;
             font-size: 0.9rem;
+            margin-top: auto;
         }
         footer .city-logo {
             width: 100px;
             margin-bottom: 15px;
             opacity: 0.8;
+            max-width: 100%;
+            height: auto;
         }
         @media (max-width: 768px) {
-            .container { padding: 20px; margin: 20px; }
+            .container { padding: 20px; margin: 20px auto; max-width: 100%; }
             .header-top { flex-direction: column; }
             .header-text h1 { font-size: 2.2rem; }
             .header-text h2 { font-size: 1.5rem; }
-            .form-actions {
-                flex-direction: column;
-                gap: 15px;
-            }
-            .form-actions button {
-                width: 100%;
-            }
+            .form-actions { flex-direction: column; gap: 15px; }
+            .form-actions button { width: 100%; }
+        }
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .container { padding: 30px; max-width: 95%; }
+            .header-text h1 { font-size: 2.5rem; }
+            .header-text h2 { font-size: 1.6rem; }
+            .form-actions button { padding: 12px 25px; font-size: 1.1rem; }
         }
     </style>
 </head>
@@ -175,13 +158,13 @@
             </div>
         </header>
 
-        <h3>6. Command & Scene Proficiency</h3>
+        <h3>5. Advanced Operations</h3>
 
         <form id="pageForm">
             <div class="performance-block">
                 <div class="inline-dropdown">
-                    <label class="inline-label">Firefighter demonstrates proper knowledge and proficiency working within the command structure at the fire station and on emergency incidents.</label>
-                        <select name="Command Structure Proficiency">
+                    <label class="inline-label">Firefighter demonstrates proper knowledge and proficiency in removing the deck gun for use as a ground monitor.</label>
+                    <select name="Deck Gun Proficiency">
                         <option value="" selected>Select Proficiency</option>
                         <option value="Unsatisfactory">Unsatisfactory</option>
                         <option value="Needs Improvement">Needs Improvement</option>
@@ -192,14 +175,14 @@
                 </div>
                 <div class="evaluator-note">
                     <label>Evaluator Note:</label>
-                    <textarea name="Command Structure Note" rows="3" placeholder="Enter any notes regarding ICS/NIMS adherence, chain of command at station and on scene, task assignment completion, communication, or related observations..."></textarea>
+                    <textarea name="Deck Gun Note" placeholder="Enter any notes regarding deck gun removal, setup as ground monitor, flow control, stability, safety, or related observations..."></textarea>
                 </div>
             </div>
 
             <div class="performance-block">
                 <div class="inline-dropdown">
-                    <label class="inline-label">Firefighter demonstrates proficiency in various Search & Rescue techniques in accordance with industry standards.</label>
-                    <select name="Search & Rescue Proficiency">
+                    <label class="inline-label">Firefighter demonstrates proper knowledge and proficiency in removing the BlitzFire rapid attack monitor for exposure protection.</label>
+                    <select name="BlitzFire Proficiency">
                         <option value="" selected>Select Proficiency</option>
                         <option value="Unsatisfactory">Unsatisfactory</option>
                         <option value="Needs Improvement">Needs Improvement</option>
@@ -210,15 +193,15 @@
                 </div>
                 <div class="evaluator-note">
                     <label>Evaluator Note:</label>
-                    <textarea name="Search & Rescue Note" rows="3" placeholder="Enter any notes regarding primary/secondary search, victim removal, orientation, VES, rope search, or related observations..."></textarea>
+                    <textarea name="BlitzFire Note" placeholder="Enter any notes regarding BlitzFire removal, setup, anchoring, flow control, exposure protection application, or related observations..."></textarea>
                 </div>
             </div>
 
             <div class="performance-block">
                 <div class="inline-dropdown">
-                    <label class="inline-label">Firefighter demonstrates proficiency in various Forcible Entry techniques in accordance with industry standards.</label>
-                    <select name="Forcible Entry Proficiency">
-                        <option value="">Select Proficiency</option>
+                    <label class="inline-label">Firefighter demonstrates proper knowledge and proficiency in flowing and maneuvering various attack lines in accordance with industry standards.</label>
+                    <select name="Attack Lines Flow Proficiency">
+                        <option value="" selected>Select Proficiency</option>
                         <option value="Unsatisfactory">Unsatisfactory</option>
                         <option value="Needs Improvement">Needs Improvement</option>
                         <option value="Satisfactory">Satisfactory</option>
@@ -228,15 +211,15 @@
                 </div>
                 <div class="evaluator-note">
                     <label>Evaluator Note:</label>
-                    <textarea name="Forcible Entry Note" rows="3" placeholder="Enter any notes regarding tool selection, conventional vs through-the-lock, inward/outward doors, hydraulic tools, safety, or related observations..."></textarea>
+                    <textarea name="Attack Lines Flow Note" placeholder="Enter any notes regarding flowing techniques, nozzle control, line advancement, backing up, bleed-off, or related observations..."></textarea>
                 </div>
             </div>
 
             <div class="performance-block">
                 <div class="inline-dropdown">
-                    <label class="inline-label">Firefighter demonstrates proficiency in various Salvage & Overhaul techniques in accordance with industry standards.</label>
-                    <select name="Salvage & Overhaul Proficiency">
-                        <option value="">Select Proficiency</option>
+                    <label class="inline-label">Firefighter demonstrates proper knowledge and proficiency with fire department ground ladders in a given scenario.</label>
+                    <select name="Ground Ladders Proficiency">
+                        <option value="" selected>Select Proficiency</option>
                         <option value="Unsatisfactory">Unsatisfactory</option>
                         <option value="Needs Improvement">Needs Improvement</option>
                         <option value="Satisfactory">Satisfactory</option>
@@ -246,31 +229,13 @@
                 </div>
                 <div class="evaluator-note">
                     <label>Evaluator Note:</label>
-                    <textarea name="Salvage & Overhaul Note" rows="3" placeholder="Enter any notes regarding salvage covers, water removal, debris management, hidden fire checks, property preservation, or related observations..."></textarea>
-                </div>
-            </div>
-
-            <div class="performance-block">
-                <div class="inline-dropdown">
-                    <label class="inline-label">Firefighter demonstrates proficiency in incident scene preservation techniques in accordance with industry standards and in protecting potential evidence.</label>
-                    <select name="Scene Preservation Proficiency">
-                        <option value="">Select Proficiency</option>
-                        <option value="Unsatisfactory">Unsatisfactory</option>
-                        <option value="Needs Improvement">Needs Improvement</option>
-                        <option value="Satisfactory">Satisfactory</option>
-                        <option value="Exceeds Expectations">Exceeds Expectations</option>
-                        <option value="Not Applicable">Not Applicable</option>
-                    </select>
-                </div>
-                <div class="evaluator-note">
-                    <label>Evaluator Note:</label>
-                    <textarea name="Scene Preservation Note" rows="3" placeholder="Enter any notes regarding scene security, evidence protection, overhaul care, chain of custody awareness, or related observations..."></textarea>
+                    <textarea name="Ground Ladders Note" placeholder="Enter any notes regarding ladder selection, carry, placement, climbing, footing, securing, or scenario performance..."></textarea>
                 </div>
             </div>
 
             <div class="form-actions">
                 <button type="button" onclick="window.history.back()">← Back</button>
-                <button type="button" onclick="saveAndGo('page7.html')">Next → Signature & Submit</button>
+                <button type="button" onclick="saveAndGo('page6.html')">Next → Command & Scene</button>
             </div>
         </form>
     </div>
@@ -289,7 +254,6 @@
                     data[el.name] = el.value;
                 }
             });
-            // Merge with existing data
             const existingData = JSON.parse(localStorage.getItem('reportData') || '{}');
             const mergedData = { ...existingData, ...data };
             localStorage.setItem('reportData', JSON.stringify(mergedData));
