@@ -156,7 +156,7 @@
                 <a href="#" class="disabled">Available Soon</a>
             </div>
 
-            <!-- Upload Training Sheets Card - Using FormSubmit.co -->
+            <!-- Upload Training Sheets Card - FormSubmit.co -->
             <div class="report-card">
                 <h3>Upload Training Sheets</h3>
                 <p>Submit completed training documentation (sent via email)</p>
@@ -185,49 +185,4 @@
     </div>
 
     <footer>
-        <img src="city-logo.png" alt="City of Centerville Logo" class="city-logo">
-        <p>© 2026 City of Centerville Fire Department Training Division</p>
-    </footer>
-
-    <!-- Simple Success Feedback -->
-    <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('upload') === 'success') {
-            document.getElementById('upload-status').textContent = 'Success! Files sent to ddorman@centervillefd.com';
-            document.getElementById('upload-status').style.color = '#4ade80';
-            // Clear the URL parameter
-            history.replaceState({}, '', window.location.pathname);
-        }
-
-        // Click "Select Files" to open picker
-        const selectTrigger = document.querySelector('.upload-trigger');
-        const fileInput = document.getElementById('file-upload');
-        const sendButton = document.getElementById('send-button');
-        const statusDiv = document.getElementById('upload-status');
-
-        selectTrigger.addEventListener('click', (e) => {
-            e.preventDefault();
-            fileInput.click();
-        });
-
-        // Show selected files
-        fileInput.addEventListener('change', () => {
-            const files = fileInput.files;
-            if (files.length === 0) {
-                statusDiv.textContent = '';
-                sendButton.disabled = true;
-                return;
-            }
-
-            let message = `${files.length} file${files.length > 1 ? 's' : ''} selected:`;
-            for (let file of files) {
-                const size = (file.size / 1024).toFixed(1);
-                message += `<br>• ${file.name} (${size} KB)`;
-            }
-            statusDiv.innerHTML = message;
-            statusDiv.style.color = '#f59e0b';
-            sendButton.disabled = false;
-        });
-    </script>
-</body>
-</html>
+        <img src="city-logo.png" alt="City of Centerville Logo" class="city-logo
