@@ -4,8 +4,178 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Centerville FD - Weekly Performance Report</title>
-    <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 40px;
+            background: #1e293b;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            flex: 1;
+        }
+        .report-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+        .patch-logo {
+            width: 120px;
+        }
+        .header-text h1 {
+            font-size: 2.8rem;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+        .header-text h2 {
+            font-size: 1.8rem;
+            color: #cbd5e1;
+        }
+        h3 {
+            text-align: center;
+            color: #f59e0b;
+            font-size: 1.8rem;
+            margin: 40px 0 30px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .form-field {
+            display: flex;
+            flex-direction: column;
+        }
+        .form-field label {
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #cbd5e1;
+        }
+        .form-field input,
+        .form-field select {
+            padding: 12px 16px;
+            background: #334155;
+            border: none;
+            border-radius: 12px;
+            color: #e2e8f0;
+            font-size: 1rem;
+        }
+        .form-field input:focus,
+        .form-field select:focus {
+            outline: 2px solid #f59e0b;
+        }
+        .form-group.apparatus-group {
+            background: #334155;
+            padding: 20px;
+            border-radius: 16px;
+        }
+        .apparatus-group > label {
+            display: block;
+            margin-bottom: 15px;
+            font-weight: 600;
+            color: #cbd5e1;
+            font-size: 1.1rem;
+        }
+        .apparatus-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 18px;
+            justify-content: center;
+        }
+        .apparatus-btn {
+            position: relative;
+            cursor: pointer;
+        }
+        .apparatus-btn input[type="checkbox"] {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            margin: 0;
+        }
+        .apparatus-btn span {
+            display: block;
+            background: #1e293b;
+            padding: 16px 32px;
+            border-radius: 14px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: #e2e8f0;
+            transition: all 0.3s ease;
+            min-width: 140px;
+        }
+        .apparatus-btn:hover span {
+            background: #334155;
+            transform: translateY(-3px);
+        }
+        /* Red highlight when checkbox is checked */
+        .apparatus-btn input[type="checkbox"]:checked + span {
+            background: #dc2626;
+            color: white;
+            box-shadow: 0 0 20px rgba(220, 38, 38, 0.5);
+            transform: translateY(-3px);
+        }
+        .form-actions {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .form-actions button {
+            padding: 15px 30px;
+            background: #dc2626;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .form-actions button:hover {
+            background: #b91c1c;
+        }
+        footer {
+            text-align: center;
+            padding: 30px 20px 40px;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+        footer .city-logo {
+            width: 100px;
+            margin-bottom: 15px;
+            opacity: 0.8;
+        }
+        @media (max-width: 768px) {
+            .container { padding: 20px; margin: 20px; }
+            .header-top { flex-direction: column; }
+            .header-text h1 { font-size: 2.2rem; }
+            .header-text h2 { font-size: 1.5rem; }
+            .apparatus-buttons { gap: 12px; }
+            .apparatus-btn span { padding: 14px 24px; min-width: 120px; }
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -19,7 +189,7 @@
             </div>
         </header>
 
-        <h3 style="text-align:center;color:#d32f2f;margin:30px 0;">1. Personnel Information</h3>
+        <h3>1. Personnel Information</h3>
 
         <form id="pageForm">
             <div class="form-row">
@@ -73,19 +243,19 @@
             <div class="form-group apparatus-group">
                 <label>Assigned Apparatus for this Week:</label>
                 <div class="apparatus-buttons">
-                    <label class="apparatus-btn engine1">
+                    <label class="apparatus-btn">
                         <input type="checkbox" name="Apparatus" value="Engine 1">
                         <span>Engine 1</span>
                     </label>
-                    <label class="apparatus-btn engine2">
+                    <label class="apparatus-btn">
                         <input type="checkbox" name="Apparatus" value="Engine 2">
                         <span>Engine 2</span>
                     </label>
-                    <label class="apparatus-btn truck1">
+                    <label class="apparatus-btn">
                         <input type="checkbox" name="Apparatus" value="Truck 1">
                         <span>Truck 1</span>
                     </label>
-                    <label class="apparatus-btn rescue1">
+                    <label class="apparatus-btn">
                         <input type="checkbox" name="Apparatus" value="Rescue 1">
                         <span>Rescue 1</span>
                     </label>
@@ -97,6 +267,11 @@
             </div>
         </form>
     </div>
+
+    <footer>
+        <img src="city-logo.png" alt="City of Centerville Logo" class="city-logo">
+        <p>© 2026 City of Centerville Fire Department Training Division</p>
+    </footer>
 
     <script>
         function saveAndGo(next) {
@@ -118,6 +293,8 @@
 
         window.addEventListener('load', () => {
             const data = JSON.parse(localStorage.getItem('reportData') || '{}');
+
+            // Restore all form fields (including checkboxes)
             Object.keys(data).forEach(key => {
                 const elements = document.querySelectorAll(`[name="${key}"]`);
                 elements.forEach(el => {
@@ -128,6 +305,8 @@
                     }
                 });
             });
+
+            // Default today's date if empty
             if (!document.getElementById('report-date').value) {
                 document.getElementById('report-date').value = new Date().toISOString().split('T')[0];
             }
