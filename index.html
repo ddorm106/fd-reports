@@ -156,33 +156,30 @@
                 <a href="#" class="disabled">Available Soon</a>
             </div>
 
-            <!-- Upload Training Sheets Card - Using FormSubmit.co -->
-            <div class="report-card">
-                <h3>Upload Training Sheets</h3>
-                <p>Submit completed training documentation (sent via email)</p>
-                
-                <form action="https://formsubmit.co/ddorman@centervillefd.com" method="POST" enctype="multipart/form-data" id="upload-form">
-                    <div class="upload-buttons">
-                        <label for="file-upload" class="upload-trigger">
-                            Select Files →
-                        </label>
-                        <input type="file" id="file-upload" name="attachment" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" required>
-                        
-                        <button type="submit" class="upload-trigger" id="send-button">
-                            Send Files via Email →
-                        </button>
-                    </div>
-                    
-                    <input type="hidden" name="_subject" value="New Training Sheet Upload - Centerville FD">
-                    <input type="hidden" name="_captcha" value="false">
-                    <input type="hidden" name="_next" value="https://yourusername.github.io/index.html?upload=success">
-                    <input type="email" name="_replyto" placeholder="Your email (optional)" style="margin-top: 15px; padding: 12px; border-radius: 8px; border: 1px solid #64748b;">
-                </form>
-                
-                <div id="upload-status"></div>
-            </div>
+          <!-- Upload Training Sheets Card - FormSubmit.co AJAX (No Redirect) -->
+<div class="report-card">
+    <h3>Upload Training Sheets</h3>
+    <p>Submit completed training documentation (sent via email)</p>
+    
+    <form action="https://formsubmit.co/ddorman@centervillefd.com" method="POST" enctype="multipart/form-data" id="upload-form">
+        <div class="upload-buttons">
+            <label for="file-upload" class="upload-trigger">
+                Select Files →
+            </label>
+            <input type="file" id="file-upload" name="attachment" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" required>
+            
+            <button type="submit" class="upload-trigger" id="send-button">
+                Send Files via Email →
+            </button>
         </div>
-    </div>
+        
+        <input type="hidden" name="_subject" value="New Training Sheet Upload - Centerville FD">
+        <input type="hidden" name="_captcha" value="false">
+        <input type="email" name="_replyto" placeholder="Your email (optional)" style="margin-top: 15px; padding: 12px; border-radius: 8px; border: 1px solid #64748b;">
+    </form>
+    
+    <div id="upload-status"></div>
+</div>
 
     <footer>
         <img src="city-logo.png" alt="City of Centerville Logo" class="city-logo">
@@ -226,6 +223,67 @@
             statusDiv.innerHTML = message;
             statusDiv.style.color = '#f59e0b';
         });
-    </script>
+    <script>
+    const form = document.getElementById('upload-form');
+    const statusDiv = document.getElementById('upload-status');
+    const sendButton = document.getElementById('send-button');
+    const fileInput = document.getElementById('file-upload');
+
+    // Click "Select Files" to open picker
+    document.querySelector('.upload-trigger').addEventListener('click', (e) => {
+        if (e.target.tagName === 'BUTTON') return;
+        e.preventDefault();
+        fileInput.click();
+    });
+
+    // Show selected files
+    fileInput.addEventListener('change', () => {
+        const files = fileInput.files;
+        if (files.length === 0) {
+            statusDiv.textContent = '';
+            return;
+        }
+        let message = `${files.length} file${files.length > 1 ? 's' : ''} selected:`;
+        for (let file of files) {
+            const size = (file.size / 1024).toFixed(1);
+            message += `<br>• ${file.name} (${size} KB)`;
+        }
+        statusDiv.innerHTML = message;
+        statusDiv.style.color = '#f59e0b';
+    });
+
+    // AJAX submission (no redirect)
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        statusDiv.textContent = 'Sending files...';
+        statusDiv.style.color = '#f59e0b';
+        sendButton.disabled = true;
+
+        try {
+            const formData = new FormData(form);
+            const response = await fetch('https://formsubmit.co/ajax/ddorman@centervillefd.com', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                statusDiv.textContent = 'Success! Files sent to ddorman@centervillefd.com';
+                statusDiv.style.color = '#4ade80';
+                form.reset();
+            } else {
+                throw new Error(result.message || 'Upload failed');
+            }
+        } catch (err) {
+            console.error(err);
+            statusDiv.textContent = 'Upload failed. Check internet or try again.';
+            statusDiv.style.color = '#dc2626';
+        } finally {
+            sendButton.disabled = false;
+        }
+    });
+</script>
 </body>
 </html>
