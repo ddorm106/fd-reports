@@ -24,10 +24,7 @@
             box-shadow: 0 20px 40px rgba(0,0,0,0.4);
             flex: 1;
         }
-        .report-header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
+        .report-header { text-align: center; margin-bottom: 40px; }
         .header-top {
             display: flex;
             align-items: center;
@@ -35,9 +32,7 @@
             gap: 30px;
             flex-wrap: wrap;
         }
-        .patch-logo {
-            width: 120px;
-        }
+        .patch-logo { width: 120px; max-width: 100%; height: auto; }
         .header-text h1 {
             font-size: 2.8rem;
             color: #fff;
@@ -53,11 +48,7 @@
             font-size: 1.8rem;
             margin: 40px 0 30px;
         }
-        form {
-            display: flex;
-            flex-direction: column;
-            gap: 30px;
-        }
+        form { display: flex; flex-direction: column; gap: 30px; }
         .form-row {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -82,9 +73,7 @@
             font-size: 1rem;
         }
         .form-field input:focus,
-        .form-field select:focus {
-            outline: 2px solid #f59e0b;
-        }
+        .form-field select:focus { outline: 2px solid #f59e0b; }
         .form-group.apparatus-group {
             background: #334155;
             padding: 20px;
@@ -113,7 +102,6 @@
             width: 100%;
             height: 100%;
             cursor: pointer;
-            margin: 0;
         }
         .apparatus-btn span {
             display: block;
@@ -131,7 +119,6 @@
             background: #334155;
             transform: translateY(-3px);
         }
-        /* Red highlight when checkbox is checked */
         .apparatus-btn input[type="checkbox"]:checked + span {
             background: #dc2626;
             color: white;
@@ -153,27 +140,34 @@
             cursor: pointer;
             transition: background 0.3s;
         }
-        .form-actions button:hover {
-            background: #b91c1c;
-        }
+        .form-actions button:hover { background: #b91c1c; }
         footer {
             text-align: center;
             padding: 30px 20px 40px;
             color: #64748b;
             font-size: 0.9rem;
+            margin-top: auto;
         }
         footer .city-logo {
             width: 100px;
             margin-bottom: 15px;
             opacity: 0.8;
+            max-width: 100%;
+            height: auto;
         }
         @media (max-width: 768px) {
-            .container { padding: 20px; margin: 20px; }
+            .container { padding: 20px; margin: 20px auto; max-width: 100%; }
             .header-top { flex-direction: column; }
             .header-text h1 { font-size: 2.2rem; }
             .header-text h2 { font-size: 1.5rem; }
-            .apparatus-buttons { gap: 12px; }
-            .apparatus-btn span { padding: 14px 24px; min-width: 120px; }
+            .form-actions { flex-direction: column; gap: 15px; }
+            .form-actions button { width: 100%; }
+        }
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .container { padding: 30px; max-width: 95%; }
+            .header-text h1 { font-size: 2.5rem; }
+            .header-text h2 { font-size: 1.6rem; }
+            .form-actions button { padding: 12px 25px; font-size: 1.1rem; }
         }
     </style>
 </head>
@@ -276,7 +270,7 @@
     <script>
         function saveAndGo(next) {
             const data = {};
-            const formElements = document.querySelectorAll('#pageForm input, #pageForm select, #pageForm textarea');
+            const formElements = document.querySelectorAll('#pageForm input, #pageForm select');
             formElements.forEach(el => {
                 if (el.type === 'checkbox') {
                     if (el.checked) {
@@ -293,8 +287,6 @@
 
         window.addEventListener('load', () => {
             const data = JSON.parse(localStorage.getItem('reportData') || '{}');
-
-            // Restore all form fields (including checkboxes)
             Object.keys(data).forEach(key => {
                 const elements = document.querySelectorAll(`[name="${key}"]`);
                 elements.forEach(el => {
@@ -305,8 +297,6 @@
                     }
                 });
             });
-
-            // Default today's date if empty
             if (!document.getElementById('report-date').value) {
                 document.getElementById('report-date').value = new Date().toISOString().split('T')[0];
             }
