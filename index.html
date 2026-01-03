@@ -19,47 +19,49 @@
             min-height: 100vh;
         }
         .container {
-            max-width: 1200px;
+            width: 95%;
+            max-width: 1600px;
             margin: 40px auto;
-            padding: 40px;
+            padding: 50px 60px;
             background: #1e293b;
-            border-radius: 16px;
+            border-radius: 20px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.4);
             text-align: center;
             flex: 1;
         }
         header img {
-            width: 180px;
+            width: 200px;
             margin-bottom: 30px;
         }
-        h1 { font-size: 3rem; color: #fff; margin-bottom: 10px; }
-        p.subtitle { font-size: 1.4rem; color: #cbd5e1; margin-bottom: 60px; }
+        h1 { font-size: 3.4rem; color: #fff; margin-bottom: 10px; }
+        p.subtitle { font-size: 1.5rem; color: #cbd5e1; margin-bottom: 70px; }
         .reports-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 30px;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 40px;
         }
         .report-card {
             background: #334155;
-            padding: 30px;
-            border-radius: 16px;
+            padding: 40px;
+            border-radius: 20px;
             box-shadow: 0 10px 20px rgba(0,0,0,0.3);
             transition: transform 0.3s;
         }
         .report-card:hover { transform: translateY(-10px); }
-        .report-card h3 { font-size: 1.6rem; color: #f59e0b; margin-bottom: 15px; }
-        .report-card p { font-size: 1.1rem; margin-bottom: 20px; color: #e2e8f0; }
+        .report-card h3 { font-size: 1.8rem; color: #f59e0b; margin-bottom: 15px; }
+        .report-card p { font-size: 1.2rem; margin-bottom: 25px; color: #e2e8f0; }
         .report-card a,
-        .upload-trigger {
+        .upload-trigger,
+        .file-label {
             display: block;
             width: 100%;
-            padding: 15px;
+            padding: 18px;
             background: #dc2626;
             color: white;
             text-decoration: none;
-            border-radius: 12px;
+            border-radius: 14px;
             font-weight: 700;
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             cursor: pointer;
             transition: background 0.3s;
             text-align: center;
@@ -70,49 +72,58 @@
             cursor: not-allowed;
         }
         .report-card a:hover:not(.disabled),
-        .upload-trigger:hover:not(:disabled) {
+        .upload-trigger:hover:not(:disabled),
+        .file-label:hover {
             background: #b91c1c;
         }
-        .upload-trigger:disabled {
+        .upload-trigger:disabled,
+        .file-label:disabled {
             background: #64748b;
             cursor: not-allowed;
         }
         input[type="file"] {
-            display: none;
+            display: none; /* Hide the default file input */
         }
         .upload-buttons {
             display: flex;
             flex-direction: column;
-            gap: 20px;
-            margin-top: 20px;
+            gap: 25px;
+            margin-top: 25px;
         }
         #upload-status {
-            margin-top: 20px;
-            min-height: 24px;
-            font-size: 1rem;
+            margin-top: 25px;
+            min-height: 28px;
+            font-size: 1.1rem;
         }
         footer {
             width: 100%;
-            padding: 30px 20px;
+            padding: 40px 20px;
             background: #0f172a;
             text-align: center;
             color: #64748b;
-            font-size: 0.9rem;
+            font-size: 1rem;
             margin-top: auto;
         }
         footer .city-logo {
-            width: 100px;
+            width: 120px;
             max-width: 90%;
             height: auto;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
             opacity: 0.8;
         }
+        @media (max-width: 1024px) {
+            .container { width: 92%; padding: 40px; }
+            .reports-grid { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
+        }
         @media (max-width: 768px) {
-            h1 { font-size: 2.4rem; }
-            .reports-grid { grid-template-columns: 1fr; }
-            .container { padding: 20px; margin: 20px auto; }
-            .upload-buttons { gap: 15px; }
-            footer .city-logo { width: 80px; }
+            h1 { font-size: 2.6rem; }
+            p.subtitle { font-size: 1.3rem; margin-bottom: 50px; }
+            .container { padding: 30px 20px; margin: 20px auto; }
+            .report-card { padding: 30px; }
+            .report-card h3 { font-size: 1.6rem; }
+            .reports-grid { grid-template-columns: 1fr; gap: 25px; }
+            header img { width: 160px; }
+            footer .city-logo { width: 100px; }
         }
     </style>
 </head>
@@ -123,7 +134,6 @@
             <h1>Centerville Fire Department</h1>
             <p class="subtitle">Reports & Training System</p>
         </header>
-
         <div class="reports-grid">
             <div class="report-card">
                 <h3>AOIC Weekly Performance Report</h3>
@@ -156,25 +166,37 @@
                 <a href="#" class="disabled">Available Soon</a>
             </div>
 
-            <!-- Upload Training Sheets Card - FormSubmit.co AJAX (No Redirect) -->
+            <!-- Upload Training Sheets Card -->
             <div class="report-card">
                 <h3>Upload Training Sheets</h3>
                 <p>Submit completed training documentation (sent via email)</p>
                 
-                <form id="upload-form">
+                <form action="https://fabform.io/f/kGUD6zZ" method="POST" enctype="multipart/form-data" id="upload-form">
+                    <!-- Hidden real file input -->
+                    <input
+                        type="file"
+                        name="files"
+                        id="file-upload"
+                        multiple
+                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                        required>
+
+                    <!-- Custom styled "Select Files" button -->
+                    <label for="file-upload" class="file-label">
+                        Select Files →
+                    </label>
+
                     <div class="upload-buttons">
-                        <label for="file-upload" class="upload-trigger">
-                            Select Files →
-                        </label>
-                        <input type="file" id="file-upload" name="attachment" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" required>
-                        
                         <button type="submit" class="upload-trigger" id="send-button">
                             Send Files via Email →
                         </button>
                     </div>
                     
-                    <input type="hidden" name="_subject" value="New Training Sheet Upload - Centerville FD">
-                    <input type="email" name="_replyto" placeholder="Your email (optional)" style="margin-top: 15px; padding: 12px; border-radius: 8px; border: 1px solid #64748b;">
+                    <input
+                        type="email"
+                        name="from_email"
+                        placeholder="Your email (optional)"
+                        style="margin-top: 15px; padding: 14px; border-radius: 10px; border: 1px solid #64748b; width: 100%; background: #1e293b; color: #e2e8f0; font-size: 1.1rem;">
                 </form>
                 
                 <div id="upload-status"></div>
@@ -187,77 +209,36 @@
         <p>© 2026 City of Centerville Fire Department Training Division</p>
     </footer>
 
-    <!-- Upload AJAX Script - No Redirect -->
+    <!-- Simple UX script -->
     <script>
         const form = document.getElementById('upload-form');
         const statusDiv = document.getElementById('upload-status');
         const sendButton = document.getElementById('send-button');
         const fileInput = document.getElementById('file-upload');
 
-        // Click "Select Files" to open picker
-        document.querySelector('.upload-trigger').addEventListener('click', (e) => {
-            if (e.target.tagName === 'BUTTON') return;
-            e.preventDefault();
-            fileInput.click();
+        // Show feedback when files are selected
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                statusDiv.textContent = `${fileInput.files.length} file${fileInput.files.length > 1 ? 's' : ''} selected`;
+                statusDiv.style.color = '#f59e0b';
+            } else {
+                statusDiv.textContent = '';
+            }
         });
 
-        // Show selected files
-        fileInput.addEventListener('change', () => {
-            const files = fileInput.files;
-            if (files.length === 0) {
-                statusDiv.textContent = '';
+        form.addEventListener('submit', function(e) {
+            if (fileInput.files.length === 0) {
+                e.preventDefault();
+                statusDiv.textContent = 'Please select at least one file.';
+                statusDiv.style.color = '#dc2626';
                 return;
             }
-            let message = `${files.length} file${files.length > 1 ? 's' : ''} selected:`;
-            for (let file of files) {
-                const size = (file.size / 1024).toFixed(1);
-                message += `<br>• ${file.name} (${size} KB)`;
-            }
-            statusDiv.innerHTML = message;
-            statusDiv.style.color = '#f59e0b';
-        });
 
-        // AJAX submission to FormSubmit.co
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            statusDiv.textContent = 'Sending files...';
+            statusDiv.textContent = 'Uploading and sending... Please wait.';
             statusDiv.style.color = '#f59e0b';
             sendButton.disabled = true;
-
-            try {
-                const formData = new FormData();
-                // Add all files
-                for (let file of fileInput.files) {
-                    formData.append('attachment', file);
-                }
-                // Add other fields
-                formData.append('_subject', 'New Training Sheet Upload - Centerville FD');
-                formData.append('_replyto', form.querySelector('input[name="_replyto"]').value || '');
-
-                const response = await fetch('https://formsubmit.co/ajax/ddorman@centervillefd.com', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const result = await response.json();
-
-                if (response.ok) {
-                    statusDiv.textContent = 'Success! Files sent to ddorman@centervillefd.com';
-                    statusDiv.style.color = '#4ade80';
-                    form.reset();
-                } else {
-                    throw new Error(result.message || 'Upload failed');
-                }
-            } catch (err) {
-                console.error(err);
-                statusDiv.textContent = 'Upload failed. Check internet or try again.';
-                statusDiv.style.color = '#dc2626';
-            } finally {
-                sendButton.disabled = false;
-            }
+            sendButton.textContent = 'Sending...';
         });
     </script>
 </body>
 </html>
-
