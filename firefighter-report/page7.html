@@ -3,8 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-touch-fullscreen" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="CFD Report">
+    <meta name="theme-color" content="#0f172a">
     <title>Centerville FD - Weekly Performance Report</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.2.0/dist/signature_pad.umd.min.js"></script>
@@ -17,6 +23,11 @@
             font-family: 'Inter', sans-serif;
             background: #0f172a;
             color: #e2e8f0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .page-wrapper {
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -186,6 +197,7 @@
     </style>
 </head>
 <body>
+    <div class="page-wrapper">
     <div class="container">
         <header class="report-header">
             <div class="header-top">
@@ -378,7 +390,7 @@
                 }
                 function drawFooter() {
                     setFont('normal', SZ_FOOTER, GREY);
-                    pdf.text('© 2026 City of Centerville • Fire Department Confidential System', pageW / 2, pageH - margin + 5, { align: 'center' });
+                    pdf.text('© 2026 City of Centerville • Fire Department Training Division', pageW / 2, pageH - margin + 5, { align: 'center' });
                 }
                 function addPageIfAllowed() {
                     if (pageCount >= 2) {
