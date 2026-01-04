@@ -9,12 +9,42 @@
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #000; line-height: 1.6; font-size: 16px; min-height: 100vh; }
-        .container { max-width: 1000px; margin: 20px auto; background: white; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border-radius: 12px; }
-        header { display: flex; flex-direction: column; align-items: center; margin-bottom: 30px; text-align: center; }
-        .header-text h1 { font-size: 2.4rem; color: #000; margin-bottom: 8px; }
-        .header-text p { font-size: 1.3rem; color: #d32f2f; }
-        .section { margin-bottom: 40px; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f8fafc;
+            color: #000;
+            line-height: 1.6;
+            font-size: 16px;
+            min-height: 100vh;
+            padding: 10px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-radius: 12px;
+        }
+        header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .header-text h1 {
+            font-size: 2.4rem;
+            color: #000;
+            margin-bottom: 8px;
+        }
+        .header-text p {
+            font-size: 1.3rem;
+            color: #d32f2f;
+        }
+        .section {
+            margin-bottom: 40px;
+        }
         .section h2 {
             font-size: 1.4rem;
             border-bottom: 2px solid #d32f2f;
@@ -23,90 +53,311 @@
             color: #d32f2f;
             font-weight: 700;
         }
-        .form-group { margin-bottom: 15px; }
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
-        label { display: block; font-weight: 600; margin-bottom: 6px; }
-        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; }
-        textarea { height: 90px; resize: vertical; }
-        #description, #objectives { color: #0000ff !important; }
-        .copy-wrapper { display: flex; justify-content: flex-end; margin-top: 6px; }
-        .copy-btn { padding: 6px 12px; background: #2563eb; color: white; border: none; border-radius: 6px; font-size: 0.85rem; cursor: pointer; }
-        .copy-btn:hover { background: #1d4ed8; }
-        .copy-feedback { margin-left: 8px; padding: 6px 12px; background: #16a34a; color: white; border-radius: 6px; font-size: 0.85rem; opacity: 0; transition: opacity 0.3s; }
-        .table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-        .table th, .table td { padding: 10px; border: 1px solid #ccc; text-align: left; vertical-align: top; font-size: 0.9rem; }
-        .table th { background: #f1f5f9; font-weight: 600; }
-        .shift-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
-        .shift-btn { padding: 8px 14px; border: 2px solid #000; border-radius: 8px; background: white; color: #000; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.2s; min-width: 70px; text-align: center; }
-        .shift-btn:hover { opacity: 0.8; }
-        .shift-btn.selected { color: white; }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
+        #description, #objectives {
+            color: #0000ff !important;
+        }
+        .copy-wrapper {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 6px;
+        }
+        .copy-btn {
+            padding: 8px 16px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+        .copy-btn:hover {
+            background: #1d4ed8;
+        }
+        .copy-feedback {
+            margin-left: 8px;
+            padding: 8px 16px;
+            background: #16a34a;
+            color: white;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .table th, .table td {
+            padding: 12px;
+            border: 1px solid #ccc;
+            text-align: left;
+            vertical-align: top;
+            font-size: 0.95rem;
+        }
+        .table th {
+            background: #f1f5f9;
+            font-weight: 600;
+        }
+        .shift-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 8px;
+        }
+        .shift-btn {
+            padding: 12px 16px;
+            border: 2px solid #000;
+            border-radius: 8px;
+            background: white;
+            color: #000;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-width: 80px;
+            text-align: center;
+        }
+        .shift-btn:hover {
+            opacity: 0.8;
+        }
+        .shift-btn.selected {
+            color: white;
+        }
         #shift-days.selected { background: #fbbf24; border-color: #fbbf24; }
         #shift-1.selected { background: #16a34a; border-color: #16a34a; }
         #shift-2.selected { background: #2563eb; border-color: #2563eb; }
         #shift-3.selected { background: #dc2626; border-color: #dc2626; }
         #shift-pt.selected { background: #f97316; border-color: #f97316; }
-        .damaged-buttons { display: flex; gap: 10px; margin-top: 6px; }
-        .damaged-btn { padding: 8px 16px; border: 1px solid #ccc; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; width: 70px; text-align: center; background: white; color: #000; transition: all 0.2s; }
+        .damaged-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+        }
+        .damaged-btn {
+            padding: 10px 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            flex: 1;
+            text-align: center;
+            background: white;
+            color: #000;
+        }
         .damaged-yes.selected { background: #dc2626; color: white; border-color: #dc2626; }
         .damaged-no.selected { background: #2563eb; color: white; border-color: #2563eb; }
-        .damaged-btn:hover { opacity: 0.9; }
-        .remove-btn { display: block; margin-top: 8px; padding: 5px 10px; font-size: 0.8rem; background: #dc2626; color: white; border: none; border-radius: 4px; cursor: pointer; width: 100%; }
-        .remove-btn:hover { background: #b91c1c; }
-        .signature-display { border: 1px solid #ccc; border-radius: 8px; background: #fff; width: 100%; height: 100px; object-fit: contain; }
-        .sign-btn { padding: 6px 12px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
-        .sign-btn:hover { background: #1d4ed8; }
-        #other-personnel-toggle { padding: 10px 20px; background: #dc2626; color: white; border: none; border-radius: 8px; font-weight: 700; font-size: 0.95rem; cursor: pointer; margin-top: 12px; display: block; }
-        #other-personnel-toggle:hover { background: #b91c1c; }
-        #other-personnel-toggle.active { background: #16a34a; }
-        #other-personnel-toggle.active:hover { background: #15803d; }
-        .signature-modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); justify-content: center; align-items: center; }
-        .modal-content { background: white; padding: 20px; border-radius: 12px; text-align: center; max-width: 90%; max-height: 90%; }
-        .modal-canvas { border: 2px solid #ccc; background: #fff; cursor: crosshair; touch-action: none; width: 100%; height: 250px; }
-        .modal-buttons { margin-top: 15px; }
-        .modal-buttons button { padding: 10px 20px; margin: 0 10px; border: none; border-radius: 6px; cursor: pointer; font-size: 1rem; }
+        .remove-btn {
+            display: block;
+            margin-top: 10px;
+            padding: 8px;
+            font-size: 0.9rem;
+            background: #dc2626;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+        }
+        .remove-btn:hover {
+            background: #b91c1c;
+        }
+        .signature-display {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background: #fff;
+            width: 100%;
+            height: 120px;
+            object-fit: contain;
+        }
+        .sign-btn {
+            padding: 10px 16px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            width: 100%;
+            margin-top: 8px;
+        }
+        .sign-btn:hover {
+            background: #1d4ed8;
+        }
+        #other-personnel-toggle {
+            padding: 14px 24px;
+            background: #dc2626;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            margin-top: 15px;
+            display: block;
+            width: 100%;
+        }
+        #other-personnel-toggle:hover {
+            background: #b91c1c;
+        }
+        #other-personnel-toggle.active {
+            background: #16a34a;
+        }
+        #other-personnel-toggle.active:hover {
+            background: #15803d;
+        }
+        .buttons-row {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin: 50px 0 30px;
+        }
+        .main-btn {
+            padding: 20px 24px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            min-height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+            color: white;
+            width: 100%;
+        }
+        #save-report-btn { background: #2563eb; }
+        #save-report-btn:hover { background: #1d4ed8; transform: translateY(-3px); }
+        #send-email-btn { background: #16a34a; }
+        #send-email-btn:hover { background: #15803d; transform: translateY(-3px); }
+        #print-preview-btn { background: #f97316; }
+        #print-preview-btn:hover { background: #ea580c; transform: translateY(-3px); }
+        #clear-form-btn { background: #dc2626; }
+        #clear-form-btn:hover { background: #b91c1c; transform: translateY(-3px); }
+        .add-row-btn {
+            padding: 14px 24px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            cursor: pointer;
+            margin-top: 15px;
+            display: block;
+            width: 100%;
+        }
+        .add-row-btn:hover {
+            background: #1d4ed8;
+            transform: translateY(-2px);
+        }
+        .time-input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .time-input {
+            width: 80px;
+            text-align: center;
+        }
+        .time-colon {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        #total-hours {
+            background: #f1f5f9;
+            font-weight: bold;
+        }
+        .signature-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            max-width: 90%;
+            max-height: 90%;
+        }
+        .modal-canvas {
+            border: 2px solid #ccc;
+            background: #fff;
+            cursor: crosshair;
+            touch-action: none;
+            width: 100%;
+            height: 300px;
+        }
+        .modal-buttons {
+            margin-top: 15px;
+        }
+        .modal-buttons button {
+            padding: 10px 20px;
+            margin: 0 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
         .clear-btn { background: #dc2626; color: white; }
         .clear-btn:hover { background: #b91c1c; }
         .done-btn { background: #2563eb; color: white; }
         .done-btn:hover { background: #1d4ed8; }
-
-        .buttons-row { display: flex; flex-direction: column; gap: 16px; margin: 40px 0 30px; align-items: stretch; }
-        .main-btn {
-            padding: 18px 24px; font-size: 1.4rem; font-weight: 700; border-radius: 12px; border: none; cursor: pointer;
-            transition: all 0.3s ease; min-height: 64px; display: flex; align-items: center; justify-content: center; gap: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15); color: white;
-        }
-        #save-report-btn { background: #2563eb; }
-        #save-report-btn:hover { background: #1d4ed8; transform: translateY(-2px); }
-        #send-email-btn { background: #16a34a; }
-        #send-email-btn:hover { background: #15803d; transform: translateY(-2px); }
-        #print-preview-btn { background: #f97316; }
-        #print-preview-btn:hover { background: #ea580c; transform: translateY(-2px); }
-        #clear-form-btn { background: #dc2626; }
-        #clear-form-btn:hover { background: #b91c1c; transform: translateY(-2px); }
-
-        .add-row-btn {
-            padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 1rem;
-            cursor: pointer; margin-top: 12px; display: block; transition: all 0.3s ease; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-        .add-row-btn:hover { background: #1d4ed8; transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.15); }
-
         @media (max-width: 1024px) {
             .container { padding: 20px; margin: 10px; }
             .header-text h1 { font-size: 2.2rem; }
-            .form-row { grid-template-columns: 1fr; }
+            .form-row { grid-template-columns: 1fr; gap: 15px; }
         }
         @media (max-width: 768px) {
-            .container { padding: 15px; margin: 5px; }
+            body { padding: 5px; }
+            .container { padding: 15px; margin: 5px; border-radius: 10px; }
             .header-text h1 { font-size: 2rem; }
             .header-text p { font-size: 1.2rem; }
             .section h2 { font-size: 1.3rem; }
             .shift-group { justify-content: center; }
-            .main-btn { font-size: 1.5rem; min-height: 70px; }
-            .add-row-btn { font-size: 1.1rem; padding: 12px 24px; }
+            .main-btn { font-size: 1.5rem; min-height: 70px; padding: 24px; }
+            .add-row-btn { font-size: 1.1rem; padding: 16px 24px; }
+            .time-input-group { flex-direction: column; align-items: center; }
+            .time-colon { margin: 10px 0; }
         }
-
         @media print {
-            body { background: white; }
+            body { background: white; padding: 0; }
             .container { box-shadow: none; margin: 0; max-width: none; padding: 30px; }
             .no-print, .sign-btn, .remove-btn, .copy-wrapper, #other-personnel-toggle, button { display: none !important; }
             .signature-display { height: 80px; }
@@ -131,9 +382,13 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="date">Date:</label>
-                        <input type="date" id="date" required>
-                        <div class="shift-under-date">
+                        <label for="start-date">Start Date:</label>
+                        <input type="date" id="start-date" required>
+                       
+                        <label for="end-date" style="margin-top: 15px; display: block;">End Date (Optional):</label>
+                        <input type="date" id="end-date">
+                       
+                        <div style="margin-top: 20px;">
                             <label>Shift (select all that apply):</label>
                             <div class="shift-group">
                                 <button type="button" class="shift-btn" id="shift-days">Days</button>
@@ -145,29 +400,24 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <div class="time-and-total">
-                            <div class="time-row">
-                                <div>
-                                    <label>Start Time (24-hour):</label>
-                                    <div class="time-group">
-                                        <input type="text" id="start-hour" maxlength="2" placeholder="HH" required>
-                                        <span>:</span>
-                                        <input type="text" id="start-minute" maxlength="2" placeholder="MM" required>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label>End Time (24-hour):</label>
-                                    <div class="time-group">
-                                        <input type="text" id="end-hour" maxlength="2" placeholder="HH" required>
-                                        <span>:</span>
-                                        <input type="text" id="end-minute" maxlength="2" placeholder="MM" required>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="total-hours-in-between">
-                                <label for="total-hours">Total Hours:</label>
-                                <input type="number" id="total-hours" step="0.5" readonly>
-                            </div>
+                        <label>Start Time (24-hour):</label>
+                        <div class="time-input-group">
+                            <input type="text" id="start-hour" maxlength="2" placeholder="HH" class="time-input" required>
+                            <span class="time-colon">:</span>
+                            <input type="text" id="start-minute" maxlength="2" placeholder="MM" class="time-input" required>
+                        </div>
+                       
+                        <label style="margin-top: 15px;">End Time (24-hour):</label>
+                        <div class="time-input-group">
+                            <input type="text" id="end-hour" maxlength="2" placeholder="HH" class="time-input" required>
+                            <span class="time-colon">:</span>
+                            <input type="text" id="end-minute" maxlength="2" placeholder="MM" class="time-input" required>
+                        </div>
+                       
+                        <div style="margin-top: 15px;">
+                            <label for="total-hours">Total Hours (editable):</label>
+                            <input type="number" id="total-hours" step="0.25" min="0">
+                            <small style="color: #666; font-size: 0.85rem;">Auto-calculated, but you can edit manually</small>
                         </div>
                     </div>
                 </div>
@@ -240,13 +490,13 @@
 
             <div class="section" id="drivers-training-section" style="display:none;">
                 <h2>Drivers Training Report</h2>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
                     <div class="form-group"><label for="apparatus-type">Apparatus Type:</label><select id="apparatus-type"><option value="">-- Select --</option><option>Rescue</option><option>Pumper</option><option>Aerial</option><option>Brush</option><option>Command Car</option></select></div>
                     <div class="form-group"><label for="road-conditions">Road Conditions:</label><select id="road-conditions"><option value="">-- Select --</option><option>Dry</option><option>Wet</option><option>Icey</option></select></div>
                     <div class="form-group"><label for="weather-conditions">Weather Conditions:</label><select id="weather-conditions"><option value="">-- Select --</option><option>Clear</option><option>Cloudy</option><option>Mist</option><option>Rain</option><option>Thunderstorm</option><option>Foggy</option></select></div>
                     <div class="form-group"><label for="traffic-conditions">Traffic Conditions:</label><select id="traffic-conditions"><option value="">-- Select --</option><option>Light</option><option>Moderate</option><option>Heavy</option></select></div>
                 </div>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-top: 15px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
                     <div class="form-group"><label for="apparatus-miles">Apparatus Miles:</label><input type="number" id="apparatus-miles"></div>
                     <div class="form-group"><label for="apparatus-hours">Apparatus Hours:</label><input type="number" id="apparatus-hours" step="0.5"></div>
                     <div class="form-group"><label for="actual-miles">Actual Miles Driven:</label><input type="number" id="actual-miles"></div>
@@ -364,6 +614,7 @@
             const y = (e.clientY || e.touches[0].clientY) - rect.top;
             ctx.moveTo(x, y);
         }
+
         function draw(e) {
             if (!drawing) return;
             e.preventDefault();
@@ -373,7 +624,10 @@
             ctx.lineTo(x, y);
             ctx.stroke();
         }
-        function stopDrawing() { drawing = false; }
+
+        function stopDrawing() {
+            drawing = false;
+        }
 
         canvas.addEventListener('mousedown', startDrawing);
         canvas.addEventListener('mousemove', draw);
@@ -384,7 +638,10 @@
         canvas.addEventListener('touchend', stopDrawing);
 
         document.getElementById('clearSignature').onclick = () => ctx.clearRect(0, 0, canvas.width, canvas.height);
-        modal.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.style.display = 'none';
+        });
 
         document.getElementById('doneSignature').onclick = () => {
             if (!currentSignatureCell) return;
@@ -424,90 +681,27 @@
             }
         }
 
+        let manualTotalHours = false;
+
         const timeInputs = ['start-hour', 'start-minute', 'end-hour', 'end-minute'];
-        timeInputs.forEach(id => {
-            const input = document.getElementById(id);
-            input.addEventListener('input', function () {
-                this.value = this.value.replace(/[^0-9]/g, '');
-                if (this.value.length === 2) {
-                    const next = timeInputs.indexOf(id) + 1;
-                    if (next < timeInputs.length) document.getElementById(timeInputs[next]).focus();
-                }
-                calculateTotalHours();
-            });
-            input.addEventListener('blur', function () {
-                let val = parseInt(this.value) || 0;
-                if (id.includes('hour')) val = Math.min(23, val);
-                if (id.includes('minute')) val = Math.min(59, val);
-                this.value = val.toString().padStart(2, '0');
-                calculateTotalHours();
-            });
-        });
 
         function calculateTotalHours() {
             const sh = parseInt(document.getElementById('start-hour').value) || 0;
             const sm = parseInt(document.getElementById('start-minute').value) || 0;
             const eh = parseInt(document.getElementById('end-hour').value) || 0;
             const em = parseInt(document.getElementById('end-minute').value) || 0;
+
+            if (isNaN(sh) || isNaN(sm) || isNaN(eh) || isNaN(em)) {
+                return;
+            }
+
             let hours = eh - sh;
             let mins = em - sm;
             if (mins < 0) { mins += 60; hours--; }
             if (hours < 0) hours += 24;
+
             document.getElementById('total-hours').value = (hours + mins / 60).toFixed(2);
         }
-
-        ['shift-days', 'shift-1', 'shift-2', 'shift-3', 'shift-pt'].forEach(id => {
-            const btn = document.getElementById(id);
-            if (btn) {
-                btn.addEventListener('click', () => {
-                    btn.classList.toggle('selected');
-                    updateSelectedShifts();
-                });
-            }
-        });
-
-        function updateSelectedShifts() {
-            const selected = Array.from(document.querySelectorAll('.shift-btn.selected')).map(btn => btn.textContent.trim());
-            document.getElementById('selected-shifts').value = selected.join(', ') || 'None';
-        }
-
-        document.querySelectorAll('.copy-btn').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const textarea = btn.closest('.form-group').querySelector('textarea');
-                if (textarea) {
-                    try {
-                        await navigator.clipboard.writeText(textarea.value);
-                    } catch {
-                        textarea.select();
-                        document.execCommand('copy');
-                    }
-                    const feedback = btn.closest('.form-group').querySelector('.copy-feedback');
-                    feedback.style.opacity = 1;
-                    setTimeout(() => feedback.style.opacity = 0, 1500);
-                }
-            });
-        });
-
-        document.getElementById('other-personnel-toggle').addEventListener('click', () => {
-            const section = document.getElementById('outside-students-section');
-            section.style.display = section.style.display === 'none' ? 'block' : 'none';
-            document.getElementById('other-personnel-toggle').classList.toggle('active');
-        });
-
-        document.getElementById('iso-category').addEventListener('change', function () {
-            const val = this.value;
-            const driversSection = document.getElementById('drivers-training-section');
-            const isDriver = ['Driver (Roadway)', 'Driver (Pumper Training)', 'Driver (Aerial Training)'].includes(val);
-            driversSection.style.display = isDriver ? 'block' : 'none';
-            document.getElementById('description').value = commonDescriptions[val] || '';
-            document.getElementById('objectives').value = commonObjectives[val] || '';
-        });
-
-        document.getElementById('add-instructor').addEventListener('click', () => addPersonRow('instructors-table', true));
-        document.getElementById('add-student-centerville').addEventListener('click', () => addPersonRow('students-centerville-table', true));
-        document.getElementById('add-student-outside').addEventListener('click', () => addPersonRow('students-outside-table', false));
-        document.getElementById('add-grading-point').addEventListener('click', addGradingRow);
-        document.getElementById('add-equipment').addEventListener('click', addEquipmentRow);
 
         function addPersonRow(tableId, isCenterville) {
             const tbody = document.querySelector(`#${tableId} tbody`);
@@ -564,7 +758,8 @@
         function collectFormData() {
             const data = {
                 trainingTitle: document.getElementById('training-title').value,
-                date: document.getElementById('date').value,
+                startDate: document.getElementById('start-date').value,
+                endDate: document.getElementById('end-date').value || document.getElementById('start-date').value,
                 selectedShifts: document.getElementById('selected-shifts').value,
                 startHour: document.getElementById('start-hour').value,
                 startMinute: document.getElementById('start-minute').value,
@@ -581,6 +776,7 @@
                 gradingPoints: [],
                 equipment: []
             };
+
             if (document.getElementById('drivers-training-section').style.display !== 'none') {
                 data.drivers = {
                     apparatusType: document.getElementById('apparatus-type').value || '',
@@ -592,6 +788,7 @@
                     actualMiles: document.getElementById('actual-miles').value || ''
                 };
             }
+
             const collectTable = (tableId, isPerson = false) => {
                 const rows = [];
                 document.querySelectorAll(`#${tableId} tbody tr`).forEach(row => {
@@ -615,6 +812,7 @@
                 });
                 return rows;
             };
+
             data.instructors = collectTable('instructors-table', true);
             data.studentsCenterville = collectTable('students-centerville-table', true);
             data.studentsOutside = collectTable('students-outside-table', true);
@@ -623,11 +821,17 @@
             return data;
         }
 
+        function formatDate(dateStr) {
+            if (!dateStr) return 'N/A';
+            const date = new Date(dateStr);
+            const options = { year: 'numeric', month: 'long', day: '2-digit' };
+            return date.toLocaleDateString('en-US', options);
+        }
+
         async function generateTrainingReportPDF() {
             const data = collectFormData();
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
-
             const RED = [220, 38, 38];
             const BLACK = [0, 0, 0];
             const pageW = pdf.internal.pageSize.getWidth();
@@ -712,50 +916,61 @@
                 return Math.min(4, students.length - startIdx);
             }
 
+            function renderTwoInstructors(instructors, startIdx) {
+                const positions = [pageW * 0.35, pageW * 0.75];
+                let rowH = 0;
+                let currY = y;
+                for (let i = 0; i < 2 && startIdx + i < instructors.length; i++) {
+                    const h = renderPerson(instructors[startIdx + i], positions[i], currY) - currY;
+                    rowH = Math.max(rowH, h);
+                }
+                y = currY + rowH + 10;
+                return Math.min(2, instructors.length - startIdx);
+            }
+
             function drawPage1Content() {
-    y += 10;
+                y += 10;
+                pdf.setFontSize(11);
+                pdf.setTextColor(...BLACK);
+                const startFormatted = formatDate(data.startDate);
+                const endFormatted = formatDate(data.endDate);
+                const dateDisplay = (data.endDate && data.endDate !== data.startDate) ? `${startFormatted} – ${endFormatted}` : startFormatted;
 
-    // Meta information (left side)
-    pdf.setFontSize(11);
-    pdf.setTextColor(...BLACK);
-    const meta = [
-        `Date: ${data.date || 'N/A'}`,
-        `Shift(s): ${data.selectedShifts || 'None'}`,
-        `Time: ${data.startHour || '??'}:${data.startMinute || '??'} – ${data.endHour || '??'}:${data.endMinute || '??'} (${data.totalHours || '0'} hours)`,
-        `Location: ${data.location || 'N/A'}`,
-        `ISO Category: ${data.isoCategory || 'N/A'}`
-    ];
-    meta.forEach((line, i) => pdf.text(line, margin, y + i * 6));
+                const meta = [
+                    `Dates: ${dateDisplay}`,
+                    `Shift(s): ${data.selectedShifts || 'None'}`,
+                    `Time: ${data.startHour || '??'}:${data.startMinute || '??'} – ${data.endHour || '??'}:${data.endMinute || '??'} (${data.totalHours || '0'} hours)`,
+                    `Location: ${data.location || 'N/A'}`,
+                    `ISO Category: ${data.isoCategory || 'N/A'}`
+                ];
+                meta.forEach((line, i) => pdf.text(line, margin, y + i * 6));
 
-    // Primary Instructor (right side, level with Date)
-    if (data.instructors.length > 0) {
-        const instructorX = pageW - margin - 80; // Right-aligned
-        pdf.setFontSize(11);
-        pdf.setFont('times', 'bold');
-        pdf.setTextColor(...BLACK);
-        pdf.text('Primary Instructor:', instructorX, y);
-        y += 12;
+                if (data.instructors.length > 0) {
+                    const instructorX = pageW - margin - 80;
+                    pdf.setFontSize(11);
+                    pdf.setFont('times', 'bold');
+                    pdf.text('Primary Instructor:', instructorX, y);
+                    y += 12;
+                    renderPerson(data.instructors[0], instructorX + 40, y - 7);
+                }
 
-        renderPerson(data.instructors[0], instructorX + 40, y - 7); // Center the person box under the label
-    }
+                y += 40;
+                sectionTitle('Description of Training');
+                pdf.setFont('times', 'normal');
+                pdf.setFontSize(11);
+                pdf.setTextColor(...BLACK);
+                const descLines = pdf.splitTextToSize(data.description || 'No description provided', pageW - 25);
+                pdf.text(descLines, margin, y);
+                y += descLines.length * 5 + 2;
 
-    y += 40; // Move down for Description
-
-    sectionTitle('Description of Training');
-    pdf.setFont('times', 'normal');
-    pdf.setFontSize(11);
-    pdf.setTextColor(...BLACK);
-    const descLines = pdf.splitTextToSize(data.description || 'No description provided', pageW - 25);
-    pdf.text(descLines, margin, y);
-    y += descLines.length * 5 + 2;
-
-    sectionTitle('Training Objectives');
-    pdf.setFontSize(11);
-    pdf.setTextColor(...BLACK);
-    const objLines = pdf.splitTextToSize(data.objectives || 'No objectives provided', pageW - 22);
-    pdf.text(objLines, margin, y);
-    y += objLines.length * 5.5 + 5;
-}
+                sectionTitle('Training Objectives');
+                pdf.setFont('times', 'normal');
+                pdf.setFontSize(11);
+                pdf.setTextColor(...BLACK);
+                const objLines = pdf.splitTextToSize(data.objectives || 'No objectives provided', pageW - 25);
+                pdf.text(objLines, margin, y);
+                y += objLines.length * 5.5 + 5;
+            }
 
             drawHeader();
             drawPage1Content();
@@ -788,33 +1003,23 @@
                     sectionTitle('Drivers Training Report');
                     pdf.setFontSize(11);
                     pdf.setTextColor(...BLACK);
-                    pdf.text(`Apparatus Type: ${data.drivers.apparatusType || 'N/A'}`, margin, y);
-                    y += 6;
-                    pdf.text(`Road Conditions: ${data.drivers.roadConditions || 'N/A'}`, margin, y);
-                    y += 6;
-                    pdf.text(`Weather Conditions: ${data.drivers.weatherConditions || 'N/A'}`, margin, y);
-                    y += 6;
-                    pdf.text(`Traffic Conditions: ${data.drivers.trafficConditions || 'N/A'}`, margin, y);
-                    y += 6;
-                    pdf.text(`Apparatus Miles: ${data.drivers.apparatusMiles || 'N/A'}`, margin, y);
-                    y += 6;
-                    pdf.text(`Apparatus Hours: ${data.drivers.apparatusHours || 'N/A'}`, margin, y);
-                    y += 6;
-                    pdf.text(`Actual Miles Driven: ${data.drivers.actualMiles || 'N/A'}`, margin, y);
-                    y += 10;
+                    pdf.text(`Apparatus Type: ${data.drivers.apparatusType || 'N/A'}`, margin, y); y += 6;
+                    pdf.text(`Road Conditions: ${data.drivers.roadConditions || 'N/A'}`, margin, y); y += 6;
+                    pdf.text(`Weather Conditions: ${data.drivers.weatherConditions || 'N/A'}`, margin, y); y += 6;
+                    pdf.text(`Traffic Conditions: ${data.drivers.trafficConditions || 'N/A'}`, margin, y); y += 6;
+                    pdf.text(`Apparatus Miles: ${data.drivers.apparatusMiles || 'N/A'}`, margin, y); y += 6;
+                    pdf.text(`Apparatus Hours: ${data.drivers.apparatusHours || 'N/A'}`, margin, y); y += 6;
+                    pdf.text(`Actual Miles Driven: ${data.drivers.actualMiles || 'N/A'}`, margin, y); y += 10;
 
                     if (data.gradingPoints.length > 0) {
                         sectionTitle('Driver Grading Points');
+                        pdf.setFontSize(11);
+                        pdf.setTextColor(...BLACK);
                         data.gradingPoints.forEach(gp => {
-                            pdf.setFontSize(11);
-                            pdf.setTextColor(...BLACK);
-                            pdf.text(`${gp.point || 'Point'}: ${gp.proficiency || 'Not assessed'}`, margin, y);
-                            y += 6;
+                            pdf.text(`Grading Point: ${gp.point || 'Not specified'}`, margin, y); y += 6;
+                            pdf.text(`  Proficiency: ${gp.proficiency || 'Not assessed'}`, margin, y); y += 6;
                             if (gp.comments) {
-                                pdf.setFontSize(11);
-                                pdf.setTextColor(...BLACK);
-                                pdf.text(`Comment: ${gp.comments}`, margin + 10, y);
-                                y += 6;
+                                pdf.text(`  Comment: ${gp.comments}`, margin, y); y += 6;
                             }
                             y += 4;
                         });
@@ -824,18 +1029,13 @@
 
                 if (data.equipment.length > 0) {
                     sectionTitle('Facility Equipment Used');
+                    pdf.setFontSize(11);
+                    pdf.setTextColor(...BLACK);
                     data.equipment.forEach(eq => {
-                        pdf.setFontSize(11);
-                        pdf.setTextColor(...BLACK);
-                        pdf.text(`Equipment: ${eq.equipment || 'Unknown'}`, margin, y);
-                        y += 6;
-                        pdf.text(`Damaged: ${eq.damaged || 'No'}`, margin, y);
-                        y += 6;
+                        pdf.text(`Equipment: ${eq.equipment || 'Unknown'}`, margin, y); y += 6;
+                        pdf.text(`  Damaged: ${eq.damaged || 'No'}`, margin, y); y += 6;
                         if (eq.comments) {
-                            pdf.setFontSize(11);
-                            pdf.setTextColor(...BLACK);
-                            pdf.text(`Comment: ${eq.comments}`, margin + 10, y);
-                            y += 6;
+                            pdf.text(`  Comment: ${eq.comments}`, margin, y); y += 6;
                         }
                         y += 4;
                     });
@@ -844,10 +1044,15 @@
 
                 if (extraInstructors.length > 0) {
                     sectionTitle('Additional Instructors');
-                    extraInstructors.forEach(inst => {
-                        renderPerson(inst, pageW / 2, y);
-                        y += 50;
-                    });
+                    let instIdx = 0;
+                    while (instIdx < extraInstructors.length) {
+                        const added = renderTwoInstructors(extraInstructors, instIdx);
+                        instIdx += added;
+                        if (instIdx < extraInstructors.length) {
+                            if (!addNewPage()) break;
+                            sectionTitle('Additional Instructors (Continued)');
+                        }
+                    }
                 }
             }
 
@@ -864,6 +1069,86 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            if (!document.getElementById('start-date').value) {
+                document.getElementById('start-date').value = '2026-01-04';
+            }
+
+            document.getElementById('iso-category').addEventListener('change', function () {
+                const val = this.value;
+                const driversSection = document.getElementById('drivers-training-section');
+                const isDriver = ['Driver (Roadway)', 'Driver (Pumper Training)', 'Driver (Aerial Training)'].includes(val);
+                driversSection.style.display = isDriver ? 'block' : 'none';
+                document.getElementById('description').value = commonDescriptions[val] || '';
+                document.getElementById('objectives').value = commonObjectives[val] || '';
+            });
+
+            timeInputs.forEach(id => {
+                const input = document.getElementById(id);
+                input.addEventListener('input', function () {
+                    this.value = this.value.replace(/[^0-9]/g, '');
+                    if (this.value.length === 2) {
+                        const next = timeInputs.indexOf(id) + 1;
+                        if (next < timeInputs.length) document.getElementById(timeInputs[next]).focus();
+                    }
+                    if (!manualTotalHours) calculateTotalHours();
+                });
+                input.addEventListener('blur', function () {
+                    let val = parseInt(this.value) || 0;
+                    if (id.includes('hour')) val = Math.min(23, val);
+                    if (id.includes('minute')) val = Math.min(59, val);
+                    this.value = val.toString().padStart(2, '0');
+                    if (!manualTotalHours) calculateTotalHours();
+                });
+            });
+
+            document.getElementById('total-hours').addEventListener('input', () => {
+                manualTotalHours = true;
+            });
+
+            ['shift-days', 'shift-1', 'shift-2', 'shift-3', 'shift-pt'].forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) {
+                    btn.addEventListener('click', () => {
+                        btn.classList.toggle('selected');
+                        updateSelectedShifts();
+                    });
+                }
+            });
+
+            function updateSelectedShifts() {
+                const selected = Array.from(document.querySelectorAll('.shift-btn.selected')).map(btn => btn.textContent.trim());
+                document.getElementById('selected-shifts').value = selected.join(', ') || 'None';
+            }
+
+            document.querySelectorAll('.copy-btn').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const textarea = btn.closest('.form-group').querySelector('textarea');
+                    if (textarea) {
+                        try {
+                            await navigator.clipboard.writeText(textarea.value);
+                        } catch {
+                            textarea.select();
+                            document.execCommand('copy');
+                        }
+                        const feedback = btn.closest('.form-group').querySelector('.copy-feedback');
+                        feedback.style.opacity = 1;
+                        setTimeout(() => feedback.style.opacity = 0, 1500);
+                    }
+                });
+            });
+
+            document.getElementById('other-personnel-toggle').addEventListener('click', () => {
+                const section = document.getElementById('outside-students-section');
+                section.style.display = section.style.display === 'none' ? 'block' : 'none';
+                document.getElementById('other-personnel-toggle').classList.toggle('active');
+            });
+
+            document.getElementById('add-instructor').addEventListener('click', () => addPersonRow('instructors-table', true));
+            document.getElementById('add-student-centerville').addEventListener('click', () => addPersonRow('students-centerville-table', true));
+            document.getElementById('add-student-outside').addEventListener('click', () => addPersonRow('students-outside-table', false));
+            document.getElementById('add-grading-point').addEventListener('click', addGradingRow);
+            document.getElementById('add-equipment').addEventListener('click', addEquipmentRow);
+
             document.getElementById('save-report-btn').addEventListener('click', () => {
                 const btn = document.getElementById('save-report-btn');
                 const text = btn.querySelector('.btn-text');
@@ -892,19 +1177,20 @@
                 btn.textContent = 'Sending...';
                 try {
                     const { pdfBase64, filename } = await generateTrainingReportPDF();
+                    const formData = collectFormData();
                     await emailjs.send('service_2gdxvws', 'template_wj80wlx', {
-                        training_title: document.getElementById('training-title').value || 'Centerville Training Report',
-                        training_date: document.getElementById('date').value || new Date().toISOString().slice(0,10),
+                        training_title: formData.trainingTitle || 'Centerville Training Report',
+                        training_date: formatDate(formData.startDate) + (formData.endDate && formData.endDate !== formData.startDate ? ' to ' + formatDate(formData.endDate) : ''),
                         attachment_pdf: pdfBase64,
                         attachment_filename: filename
                     });
                     alert('Training report emailed successfully!');
-                    if (confirm('Do Not Hit Ok if Other Shifts Have to Sign!')) {
+                    if (confirm('Clear saved draft? (Only OK if all shifts have signed)')) {
                         localStorage.removeItem(FORM_STORAGE_KEY);
                     }
                 } catch (err) {
-                    console.error('Error:', err);
-                    alert('Send failed. Check console for details.');
+                    console.error('Email error:', err);
+                    alert('Send failed. Please check internet and console.');
                 } finally {
                     btn.disabled = false;
                     btn.textContent = 'Send via Email';
@@ -917,22 +1203,13 @@
                 btn.textContent = 'Generating...';
                 try {
                     const { pdfBase64 } = await generateTrainingReportPDF();
-                    const byteCharacters = atob(pdfBase64);
-                    const byteNumbers = new Array(byteCharacters.length);
-                    for (let i = 0; i < byteCharacters.length; i++) {
-                        byteNumbers[i] = byteCharacters.charCodeAt(i);
-                    }
-                    const byteArray = new Uint8Array(byteNumbers);
-                    const blob = new Blob([byteArray], { type: 'application/pdf' });
+                    const blob = new Blob([Uint8Array.from(atob(pdfBase64), c => c.charCodeAt(0))], { type: 'application/pdf' });
                     const url = URL.createObjectURL(blob);
                     const printWindow = window.open(url, '_blank');
                     if (printWindow) {
-                        printWindow.onload = function() {
-                            printWindow.focus();
-                            printWindow.print();
-                        };
+                        printWindow.onload = () => printWindow.print();
                     } else {
-                        alert('Please allow popups for Print Preview to work.');
+                        alert('Please allow popups for Print Preview.');
                     }
                     setTimeout(() => URL.revokeObjectURL(url), 30000);
                 } catch (err) {
@@ -958,7 +1235,8 @@
                 try {
                     const data = JSON.parse(saved);
                     document.getElementById('training-title').value = data.trainingTitle || '';
-                    document.getElementById('date').value = data.date || '';
+                    document.getElementById('start-date').value = data.startDate || '';
+                    document.getElementById('end-date').value = data.endDate || '';
                     document.getElementById('selected-shifts').value = data.selectedShifts || '';
                     document.getElementById('start-hour').value = data.startHour || '';
                     document.getElementById('start-minute').value = data.startMinute || '';
@@ -969,10 +1247,16 @@
                     document.getElementById('iso-category').value = data.isoCategory || '';
                     document.getElementById('description').value = data.description || '';
                     document.getElementById('objectives').value = data.objectives || '';
+
                     const shifts = (data.selectedShifts || '').split(', ');
-                    document.querySelectorAll('.shift-btn').forEach(btn => btn.classList.toggle('selected', shifts.includes(btn.textContent.trim())));
+                    document.querySelectorAll('.shift-btn').forEach(btn => {
+                        btn.classList.toggle('selected', shifts.includes(btn.textContent.trim()));
+                    });
+
                     document.getElementById('iso-category').dispatchEvent(new Event('change'));
-                } catch (e) { console.error(e); }
+                } catch (e) {
+                    console.error(e);
+                }
             }
         });
     </script>
