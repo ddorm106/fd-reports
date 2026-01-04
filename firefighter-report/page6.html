@@ -3,14 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-touch-fullscreen" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="CFD Report">
+    <meta name="theme-color" content="#0f172a">
     <title>Centerville FD - Weekly Performance Report</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Inter', sans-serif;
             background: #0f172a;
             color: #e2e8f0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .page-wrapper {
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -147,6 +158,7 @@
     </style>
 </head>
 <body>
+    <div class="page-wrapper">
     <div class="container">
         <header class="report-header">
             <div class="header-top">
@@ -158,13 +170,13 @@
             </div>
         </header>
 
-        <h3>5. Advanced Operations</h3>
+        <h3>5. Command & Scene Proficiency</h3>
 
         <form id="pageForm">
             <div class="performance-block">
                 <div class="inline-dropdown">
-                    <label class="inline-label">Firefighter demonstrates proper knowledge and proficiency in removing the deck gun for use as a ground monitor.</label>
-                    <select name="Deck Gun Proficiency">
+                    <label class="inline-label">Firefighter demonstrates proper knowledge and proficiency working within the command structure at the fire station and on emergency incidents.</label>
+                    <select name="Command Structure Proficiency">
                         <option value="" selected>Select Proficiency</option>
                         <option value="Unsatisfactory">Unsatisfactory</option>
                         <option value="Needs Improvement">Needs Improvement</option>
@@ -175,14 +187,14 @@
                 </div>
                 <div class="evaluator-note">
                     <label>Evaluator Note:</label>
-                    <textarea name="Deck Gun Note" placeholder="Enter any notes regarding deck gun removal, setup as ground monitor, flow control, stability, safety, or related observations..."></textarea>
+                    <textarea name="Command Structure Note" placeholder="Enter any notes regarding ICS/NIMS adherence, chain of command at station and on scene, task assignment completion, communication, or related observations..."></textarea>
                 </div>
             </div>
 
             <div class="performance-block">
                 <div class="inline-dropdown">
-                    <label class="inline-label">Firefighter demonstrates proper knowledge and proficiency in removing the BlitzFire rapid attack monitor for exposure protection.</label>
-                    <select name="BlitzFire Proficiency">
+                    <label class="inline-label">Firefighter demonstrates proficiency in various Search & Rescue techniques in accordance with industry standards.</label>
+                    <select name="Search & Rescue Proficiency">
                         <option value="" selected>Select Proficiency</option>
                         <option value="Unsatisfactory">Unsatisfactory</option>
                         <option value="Needs Improvement">Needs Improvement</option>
@@ -193,14 +205,14 @@
                 </div>
                 <div class="evaluator-note">
                     <label>Evaluator Note:</label>
-                    <textarea name="BlitzFire Note" placeholder="Enter any notes regarding BlitzFire removal, setup, anchoring, flow control, exposure protection application, or related observations..."></textarea>
+                    <textarea name="Search & Rescue Note" placeholder="Enter any notes regarding primary/secondary search, victim removal, orientation, VES, rope search, or related observations..."></textarea>
                 </div>
             </div>
 
             <div class="performance-block">
                 <div class="inline-dropdown">
-                    <label class="inline-label">Firefighter demonstrates proper knowledge and proficiency in flowing and maneuvering various attack lines in accordance with industry standards.</label>
-                    <select name="Attack Lines Flow Proficiency">
+                    <label class="inline-label">Firefighter demonstrates proficiency in various Forcible Entry techniques in accordance with industry standards.</label>
+                    <select name="Forcible Entry Proficiency">
                         <option value="" selected>Select Proficiency</option>
                         <option value="Unsatisfactory">Unsatisfactory</option>
                         <option value="Needs Improvement">Needs Improvement</option>
@@ -211,14 +223,14 @@
                 </div>
                 <div class="evaluator-note">
                     <label>Evaluator Note:</label>
-                    <textarea name="Attack Lines Flow Note" placeholder="Enter any notes regarding flowing techniques, nozzle control, line advancement, backing up, bleed-off, or related observations..."></textarea>
+                    <textarea name="Forcible Entry Note" placeholder="Enter any notes regarding tool selection, conventional vs through-the-lock, inward/outward doors, hydraulic tools, safety, or related observations..."></textarea>
                 </div>
             </div>
 
             <div class="performance-block">
                 <div class="inline-dropdown">
-                    <label class="inline-label">Firefighter demonstrates proper knowledge and proficiency with fire department ground ladders in a given scenario.</label>
-                    <select name="Ground Ladders Proficiency">
+                    <label class="inline-label">Firefighter demonstrates proficiency in various Salvage & Overhaul techniques in accordance with industry standards.</label>
+                    <select name="Salvage & Overhaul Proficiency">
                         <option value="" selected>Select Proficiency</option>
                         <option value="Unsatisfactory">Unsatisfactory</option>
                         <option value="Needs Improvement">Needs Improvement</option>
@@ -229,13 +241,31 @@
                 </div>
                 <div class="evaluator-note">
                     <label>Evaluator Note:</label>
-                    <textarea name="Ground Ladders Note" placeholder="Enter any notes regarding ladder selection, carry, placement, climbing, footing, securing, or scenario performance..."></textarea>
+                    <textarea name="Salvage & Overhaul Note" placeholder="Enter any notes regarding salvage covers, water removal, debris management, hidden fire checks, property preservation, or related observations..."></textarea>
+                </div>
+            </div>
+
+            <div class="performance-block">
+                <div class="inline-dropdown">
+                    <label class="inline-label">Firefighter demonstrates proficiency in incident scene preservation techniques in accordance with industry standards and in protecting potential evidence.</label>
+                    <select name="Scene Preservation Proficiency">
+                        <option value="" selected>Select Proficiency</option>
+                        <option value="Unsatisfactory">Unsatisfactory</option>
+                        <option value="Needs Improvement">Needs Improvement</option>
+                        <option value="Satisfactory">Satisfactory</option>
+                        <option value="Exceeds Expectations">Exceeds Expectations</option>
+                        <option value="Not Applicable">Not Applicable</option>
+                    </select>
+                </div>
+                <div class="evaluator-note">
+                    <label>Evaluator Note:</label>
+                    <textarea name="Scene Preservation Note" placeholder="Enter any notes regarding scene security, evidence protection, overhaul care, chain of custody awareness, or related observations..."></textarea>
                 </div>
             </div>
 
             <div class="form-actions">
                 <button type="button" onclick="window.history.back()">← Back</button>
-                <button type="button" onclick="saveAndGo('page6.html')">Next → Command & Scene</button>
+                <button type="button" onclick="saveAndGo('page7.html')">Next → Signature & Submit</button>
             </div>
         </form>
     </div>
