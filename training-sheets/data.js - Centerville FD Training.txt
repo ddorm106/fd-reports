@@ -1,0 +1,71 @@
+// data.js - Centerville FD Training Data
+
+const centervilleStaff = [
+            { name: "Barr, Harvey", rank: "Firefighter", gfstc: "3353-4774" },
+            { name: "Bennett, Kyle", rank: "Firefighter", gfstc: "0869-5796" },
+            { name: "Bostick, David", rank: "Assistant Chief", gfstc: "7615-2424" },
+            { name: "Cannon, James", rank: "Firefighter", gfstc: "7905-1906" },
+            { name: "Carroll, James", rank: "Firefighter", gfstc: "7560-2340" },
+            { name: "Dorman, David", rank: "Sergeant", gfstc: "3081-2978" },
+            { name: "Dunn, Pierson", rank: "Firefighter", gfstc: "6345-7684" },
+            { name: "Jones, Jason", rank: "Fire Chief", gfstc: "4472-9279" },
+            { name: "Kahley, Chad", rank: "Captain", gfstc: "5486-6025" },
+            { name: "Laimana, Joe", rank: "Firefighter", gfstc: "9183-2797" },
+            { name: "Leatherwood, Jonathan", rank: "Firefighter", gfstc: "9823-3446" },
+            { name: "Lightning, Larry", rank: "Firefighter", gfstc: "0711-8310" },
+            { name: "McNeil, Drew", rank: "Firefighter", gfstc: "2676-9943" },
+            { name: "Mixon, Joshua", rank: "Firefighter", gfstc: "4670-9305" },
+            { name: "Mooney, William", rank: "Firefighter", gfstc: "9213-3048" },
+            { name: "Orona, Adam", rank: "Firefighter", gfstc: "4438-5982" },
+            { name: "Redd, Allen", rank: "Sergeant", gfstc: "7135-8934" },
+            { name: "Rice, Aaron", rank: "Firefighter", gfstc: "9228-1494" },
+            { name: "Schuler, Andrew", rank: "Firefighter", gfstc: "6748-5231" },
+            { name: "Smith, Mikayla", rank: "Firefighter", gfstc: "1159-4178" },
+            { name: "Stockholm, Jacob", rank: "Firefighter", gfstc: "5655-4571" },
+            { name: "Talley, Dustin", rank: "Sergeant", gfstc: "3887-0449" },
+            { name: "Thornton, Ethan", rank: "Firefighter", gfstc: "4221-3437" },
+            { name: "Traxler, Clint", rank: "Engineer", gfstc: "3623-4177" },
+            { name: "Wall, Kaleb", rank: "Firefighter", gfstc: "0701-7229" },
+    // Add all your department members here
+];
+
+const commonDescriptions = {
+    "Driver (Roadway)": "Firefighter driver training is a comprehensive program designed to equip emergency personnel with the knowledge, skills, and judgment to operate large, heavy fire apparatus safely and efficiently in emergency and non-emergency situations. This training emphasizes safety through accident avoidance and adherence to legal requirements.",
+    "Driver (Area Familiarization)": "Area familiarization training for firefighters is a continuous and proactive process designed to ensure that crews possess intimate knowledge of their first-due response area and the specific structures within it. This knowledge enhances situational awareness, improves response times, and is critical for both public and firefighter safety during emergencies.",
+    "EMS": "Emergency Medical Services continuing education focusing on patient assessment, airway management, trauma care, and medical emergencies in accordance with current protocols."
+    // Add more as needed
+};
+
+const commonObjectives = {
+    "Driver (Roadway)": `- Maneuvering large vehicles, including backing up and parallel parking with limited visibility\n- Negotiating narrow streets, sharp turns, and intersections safely\n- Defensive driving techniques and collision avoidance\n- Operating the vehicle under various weather and road conditions`,
+    "Driver (Area Familiarization)": `- Ensuring knowledge of street locations and optimal response routes\n- Locating water sources\n- Identifying target hazards\n- Understanding building construction types\n- Familiarization with a building's fire suppression and alarm system\n- Locating critical access points`,
+    "EMS": `- Review and practice patient assessment skills\n- Demonstrate proper airway management techniques\n- Perform trauma care per current protocols\n- Respond appropriately to medical emergencies`
+};
+
+const gradingPoints = [
+    "Street Familiarization",
+    "Acceleration",
+    "Speed Consistency",
+    "Braking",
+    "Downgrade Braking",
+    "Left Turns",
+    "Right Turns",
+    "Intersections",
+    "Lane Changing",
+    "Low Clearance",
+    "Use of Lighting (Non-Emergent)",
+    "Use of Lighting (Emergent)",
+    "Cone Course",
+    "Pump Operations Training",
+    "Aerial Operations Training"
+];
+
+const equipmentList = [
+    "Apparatus",
+    "Suppression Equipment",
+    "PPE",
+    "EMS Equipment",
+    "Office Equipment",
+    "Training Facility Equipment",
+    "Equipment from another organization"
+];
