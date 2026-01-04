@@ -5,446 +5,134 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Centerville FD Training Report</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Inter', sans-serif;
-            background: #f8fafc;
-            color: #000;
-            line-height: 1.6;
-            font-size: 16px;
-            min-height: 100vh;
-        }
-        .container {
-            max-width: 1000px;
-            margin: 40px auto;
-            background: white;
-            padding: 40px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            border-radius: 12px;
-        }
-        header {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-bottom: 40px;
-            text-align: center;
-        }
-        header img {
-            width: 140px;
-            height: auto;
-            margin-bottom: 20px;
-        }
-        .header-text h1 {
-            font-size: 2.8rem;
-            color: #000;
-            margin-bottom: 8px;
-        }
-        .header-text p {
-            font-size: 1.4rem;
-            color: #d32f2f;
-        }
-        .section {
-            margin-bottom: 50px;
-        }
+        body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #000; line-height: 1.6; font-size: 16px; min-height: 100vh; }
+        .container { max-width: 1000px; margin: 20px auto; background: white; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border-radius: 12px; }
+        header { display: flex; flex-direction: column; align-items: center; margin-bottom: 30px; text-align: center; }
+        .header-text h1 { font-size: 2.4rem; color: #000; margin-bottom: 8px; }
+        .header-text p { font-size: 1.3rem; color: #d32f2f; }
+        .section { margin-bottom: 40px; }
         .section h2 {
-            font-size: 1.5rem;
-            border-bottom: 2px solid #ffd700;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-        }
-        #training-details .form-group {
-            margin-bottom: 15px;
-        }
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 15px;
-        }
-        .time-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .time-input {
-            width: 70px;
-            text-align: center;
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            font-size: 1rem;
-        }
-        .colon {
             font-size: 1.4rem;
-            font-weight: bold;
-            margin: 0 5px;
+            border-bottom: 2px solid #d32f2f;
+            padding-bottom: 8px;
+            margin-bottom: 16px;
+            color: #d32f2f;
+            font-weight: 700;
         }
-        label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-        input, select, textarea {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            font-size: 1rem;
-        }
-        textarea {
-            height: 100px;
-            resize: vertical;
-        }
-        #description, #objectives {
-            color: #0000ff !important;
-        }
-        .copy-wrapper {
-            display: flex;
-            justify-content: flex-end;
-            margin-top: 8px;
-        }
-        .copy-btn {
-            padding: 8px 16px;
-            background: #2563eb;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            cursor: pointer;
-        }
-        .copy-btn:hover {
-            background: #1d4ed8;
-        }
-        .copy-feedback {
-            margin-left: 10px;
-            padding: 8px 16px;
-            background: #16a34a;
-            color: white;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-        }
-        .table th, .table td {
-            padding: 12px;
-            border: 1px solid #ccc;
-            text-align: left;
-            vertical-align: top;
-        }
-        .table th {
-            background: #f1f5f9;
-            font-weight: 600;
-        }
-        #instructors-table td, #students-centerville-table td {
-            font-size: 0.85rem;
-        }
-        /* Column widths */
-        #instructors-table th:nth-child(1), #instructors-table td:nth-child(1),
-        #students-centerville-table th:nth-child(1), #students-centerville-table td:nth-child(1),
-        #students-outside-table th:nth-child(1), #students-outside-table td:nth-child(1) { width: 300px; }
-        #instructors-table th:nth-child(2), #instructors-table td:nth-child(2),
-        #students-centerville-table th:nth-child(2), #students-centerville-table td:nth-child(2) { width: 200px; }
-        #instructors-table th:nth-child(3), #instructors-table td:nth-child(3),
-        #students-centerville-table th:nth-child(3), #students-centerville-table td:nth-child(3) { width: 160px; }
-        #instructors-table th:nth-child(4), #instructors-table td:nth-child(4),
-        #students-centerville-table th:nth-child(4), #students-centerville-table td:nth-child(4),
-        #students-outside-table th:nth-child(4), #students-outside-table td:nth-child(4) { width: 340px; }
-        #students-outside-table th:nth-child(2), #students-outside-table td:nth-child(2),
-        #students-outside-table th:nth-child(3), #students-outside-table td:nth-child(3) { width: 180px; }
-        /* Grading Points & Equipment tables */
-        #grading-points-table th:nth-child(1), #grading-points-table td:nth-child(1),
-        #facility-equipment-table th:nth-child(1), #facility-equipment-table td:nth-child(1) { width: 380px; }
-        #grading-points-table th:nth-child(2), #grading-points-table td:nth-child(2),
-        #facility-equipment-table th:nth-child(2), #facility-equipment-table td:nth-child(2) { width: 180px; }
-        #grading-points-table th:nth-child(3), #grading-points-table td:nth-child(3),
-        #facility-equipment-table th:nth-child(3), #facility-equipment-table td:nth-child(3) { width: 440px; }
-        #drivers-training-section .drivers-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-        #drivers-training-section .form-group {
-            margin-bottom: 0;
-        }
-        #drivers-training-section select {
-            width: 100%;
-            min-width: 220px;
-        }
-        .miles-line {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 20px;
-        }
-        .shift-under-date {
-            margin-top: 20px;
-        }
-        .time-and-total {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .time-row {
-            display: flex;
-            gap: 40px;
-            justify-content: center;
-            margin-bottom: 15px;
-        }
-        .total-hours-in-between {
-            width: 180px;
-            text-align: center;
-        }
-        .shift-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 8px;
-        }
-        .shift-btn {
-            padding: 10px 16px;
-            border: 2px solid #000;
-            border-radius: 8px;
-            background: white;
-            color: #000;
-            font-size: 0.95rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            min-width: 80px;
-            text-align: center;
-        }
-        .shift-btn:hover {
-            opacity: 0.8;
-        }
-        .shift-btn.selected {
-            color: white;
-        }
+        .form-group { margin-bottom: 15px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        label { display: block; font-weight: 600; margin-bottom: 6px; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; }
+        textarea { height: 90px; resize: vertical; }
+        #description, #objectives { color: #0000ff !important; }
+        .copy-wrapper { display: flex; justify-content: flex-end; margin-top: 6px; }
+        .copy-btn { padding: 6px 12px; background: #2563eb; color: white; border: none; border-radius: 6px; font-size: 0.85rem; cursor: pointer; }
+        .copy-btn:hover { background: #1d4ed8; }
+        .copy-feedback { margin-left: 8px; padding: 6px 12px; background: #16a34a; color: white; border-radius: 6px; font-size: 0.85rem; opacity: 0; transition: opacity 0.3s; }
+        .table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        .table th, .table td { padding: 10px; border: 1px solid #ccc; text-align: left; vertical-align: top; font-size: 0.9rem; }
+        .table th { background: #f1f5f9; font-weight: 600; }
+        .shift-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+        .shift-btn { padding: 8px 14px; border: 2px solid #000; border-radius: 8px; background: white; color: #000; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.2s; min-width: 70px; text-align: center; }
+        .shift-btn:hover { opacity: 0.8; }
+        .shift-btn.selected { color: white; }
         #shift-days.selected { background: #fbbf24; border-color: #fbbf24; }
         #shift-1.selected { background: #16a34a; border-color: #16a34a; }
         #shift-2.selected { background: #2563eb; border-color: #2563eb; }
         #shift-3.selected { background: #dc2626; border-color: #dc2626; }
         #shift-pt.selected { background: #f97316; border-color: #f97316; }
-        .damaged-buttons {
-            display: flex;
-            gap: 15px;
-            margin-top: 8px;
+        .damaged-buttons { display: flex; gap: 10px; margin-top: 6px; }
+        .damaged-btn { padding: 8px 16px; border: 1px solid #ccc; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; width: 70px; text-align: center; background: white; color: #000; transition: all 0.2s; }
+        .damaged-yes.selected { background: #dc2626; color: white; border-color: #dc2626; }
+        .damaged-no.selected { background: #2563eb; color: white; border-color: #2563eb; }
+        .damaged-btn:hover { opacity: 0.9; }
+        .remove-btn { display: block; margin-top: 8px; padding: 5px 10px; font-size: 0.8rem; background: #dc2626; color: white; border: none; border-radius: 4px; cursor: pointer; width: 100%; }
+        .remove-btn:hover { background: #b91c1c; }
+        .signature-display { border: 1px solid #ccc; border-radius: 8px; background: #fff; width: 100%; height: 100px; object-fit: contain; }
+        .sign-btn { padding: 6px 12px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
+        .sign-btn:hover { background: #1d4ed8; }
+        #other-personnel-toggle { padding: 10px 20px; background: #dc2626; color: white; border: none; border-radius: 8px; font-weight: 700; font-size: 0.95rem; cursor: pointer; margin-top: 12px; display: block; }
+        #other-personnel-toggle:hover { background: #b91c1c; }
+        #other-personnel-toggle.active { background: #16a34a; }
+        #other-personnel-toggle.active:hover { background: #15803d; }
+        .signature-modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 20px; border-radius: 12px; text-align: center; max-width: 90%; max-height: 90%; }
+        .modal-canvas { border: 2px solid #ccc; background: #fff; cursor: crosshair; touch-action: none; width: 100%; height: 250px; }
+        .modal-buttons { margin-top: 15px; }
+        .modal-buttons button { padding: 10px 20px; margin: 0 10px; border: none; border-radius: 6px; cursor: pointer; font-size: 1rem; }
+        .clear-btn { background: #dc2626; color: white; }
+        .clear-btn:hover { background: #b91c1c; }
+        .done-btn { background: #2563eb; color: white; }
+        .done-btn:hover { background: #1d4ed8; }
+
+        .buttons-row { display: flex; flex-direction: column; gap: 16px; margin: 40px 0 30px; align-items: stretch; }
+        .main-btn {
+            padding: 18px 24px; font-size: 1.4rem; font-weight: 700; border-radius: 12px; border: none; cursor: pointer;
+            transition: all 0.3s ease; min-height: 64px; display: flex; align-items: center; justify-content: center; gap: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15); color: white;
         }
-        .damaged-btn {
-            padding: 10px 20px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            width: 80px;
-            text-align: center;
-            background: white;
-            color: #000;
-            transition: all 0.2s;
+        #save-report-btn { background: #2563eb; }
+        #save-report-btn:hover { background: #1d4ed8; transform: translateY(-2px); }
+        #send-email-btn { background: #16a34a; }
+        #send-email-btn:hover { background: #15803d; transform: translateY(-2px); }
+        #print-preview-btn { background: #f97316; }
+        #print-preview-btn:hover { background: #ea580c; transform: translateY(-2px); }
+        #clear-form-btn { background: #dc2626; }
+        #clear-form-btn:hover { background: #b91c1c; transform: translateY(-2px); }
+
+        .add-row-btn {
+            padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 1rem;
+            cursor: pointer; margin-top: 12px; display: block; transition: all 0.3s ease; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
-        .damaged-yes.selected {
-            background: #dc2626;
-            color: white;
-            border-color: #dc2626;
-        }
-        .damaged-no.selected {
-            background: #2563eb;
-            color: white;
-            border-color: #2563eb;
-        }
-        .damaged-btn:hover {
-            opacity: 0.9;
-        }
-        .remove-btn, .remove-grading-btn, .remove-equipment-btn {
-            display: block;
-            margin-top: 10px;
-            padding: 6px 12px;
-            font-size: 0.85rem;
-            background: #dc2626;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            width: 100%;
-        }
-        .remove-btn:hover, .remove-grading-btn:hover, .remove-equipment-btn:hover {
-            background: #b91c1c;
-        }
-        .signature-display {
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            background: #fff;
-            width: 100%;
-            height: 120px;
-            object-fit: contain;
-        }
-        .sign-btn {
-            padding: 8px 16px;
-            background: #2563eb;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.9rem;
-        }
-        .sign-btn:hover {
-            background: #1d4ed8;
-        }
-        #other-personnel-toggle {
-            padding: 12px 24px;
-            background: #dc2626;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-weight: 700;
-            font-size: 1rem;
-            cursor: pointer;
-            margin-top: 15px;
-            display: block;
-        }
-        #other-personnel-toggle:hover {
-            background: #b91c1c;
-        }
-        #other-personnel-toggle.active {
-            background: #16a34a;
-        }
-        #other-personnel-toggle.active:hover {
-            background: #15803d;
-        }
-        .signature-modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.8);
-            justify-content: center;
-            align-items: center;
-        }
-        .modal-content {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            text-align: center;
-            max-width: 90%;
-            max-height: 90%;
-        }
-        .modal-canvas {
-            border: 2px solid #ccc;
-            background: #fff;
-            cursor: crosshair;
-            touch-action: none;
-        }
-        .modal-buttons {
-            margin-top: 15px;
-        }
-        .modal-buttons button {
-            padding: 10px 20px;
-            margin: 0 10px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 1rem;
-        }
-        .clear-btn {
-            background: #dc2626;
-            color: white;
-        }
-        .clear-btn:hover {
-            background: #b91c1c;
-        }
-        .done-btn {
-            background: #2563eb;
-            color: white;
-        }
-        .done-btn:hover {
-            background: #1d4ed8;
-        }
-        .buttons-row {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin: 40px 0 20px;
-        }
-        .submit-btn, .print-btn {
-            padding: 18px 30px;
-            background: #2563eb;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-weight: 700;
-            cursor: pointer;
-            font-size: 1.4rem;
-        }
-        .print-btn {
-            background: #16a34a;
-        }
-        .print-btn:hover {
-            background: #15803d;
-        }
-        .city-logo {
-            width: 300px;
-            height: auto;
-            margin: 40px auto;
-            display: block;
-        }
-        #add-instructor, #add-student-centerville, #add-student-outside, #add-grading-point, #add-equipment {
-            padding: 8px 16px;
-            background: #2563eb;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 15px;
-            display: block;
-        }
-        #add-instructor:hover, #add-student-centerville:hover, #add-student-outside:hover, #add-grading-point:hover, #add-equipment:hover {
-            background: #1d4ed8;
+        .add-row-btn:hover { background: #1d4ed8; transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.15); }
+
+        @media (max-width: 1024px) {
+            .container { padding: 20px; margin: 10px; }
+            .header-text h1 { font-size: 2.2rem; }
+            .form-row { grid-template-columns: 1fr; }
         }
         @media (max-width: 768px) {
-            .container { padding: 20px; }
-            header img { width: 120px; }
-            h1 { font-size: 2.2rem; }
-            .city-logo { width: 250px; }
-            .buttons-row { flex-direction: column; }
-            .submit-btn, .print-btn { width: 100%; margin: 10px 0; }
-            .form-row { grid-template-columns: 1fr; }
-            .table th, .table td { font-size: 0.8rem; padding: 8px; }
+            .container { padding: 15px; margin: 5px; }
+            .header-text h1 { font-size: 2rem; }
+            .header-text p { font-size: 1.2rem; }
+            .section h2 { font-size: 1.3rem; }
             .shift-group { justify-content: center; }
+            .main-btn { font-size: 1.5rem; min-height: 70px; }
+            .add-row-btn { font-size: 1.1rem; padding: 12px 24px; }
+        }
+
+        @media print {
+            body { background: white; }
+            .container { box-shadow: none; margin: 0; max-width: none; padding: 30px; }
+            .no-print, .sign-btn, .remove-btn, .copy-wrapper, #other-personnel-toggle, button { display: none !important; }
+            .signature-display { height: 80px; }
+            .section h2 { color: #000 !important; border-bottom: 2px solid #000 !important; }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <img src="../patch.png" alt="Centerville FD Patch" onerror="this.style.display='none'">
             <div class="header-text">
                 <h1>Centerville Fire Department</h1>
                 <p>Training Report</p>
             </div>
         </header>
-
         <form id="trainingForm">
             <div class="section" id="training-details">
                 <h2>Training Details</h2>
                 <div class="form-group">
                     <label for="training-title">Training Course Title:</label>
-                    <input type="text" id="training-title" name="training_title" required>
+                    <input type="text" id="training-title" required>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label for="date">Date:</label>
-                        <input type="date" id="date" name="date" required>
+                        <input type="date" id="date" required>
                         <div class="shift-under-date">
                             <label>Shift (select all that apply):</label>
                             <div class="shift-group">
@@ -462,35 +150,35 @@
                                 <div>
                                     <label>Start Time (24-hour):</label>
                                     <div class="time-group">
-                                        <input type="text" id="start-hour" maxlength="2" placeholder="HH" class="time-input" required>
-                                        <span class="colon">:</span>
-                                        <input type="text" id="start-minute" maxlength="2" placeholder="MM" class="time-input" required>
+                                        <input type="text" id="start-hour" maxlength="2" placeholder="HH" required>
+                                        <span>:</span>
+                                        <input type="text" id="start-minute" maxlength="2" placeholder="MM" required>
                                     </div>
                                 </div>
                                 <div>
                                     <label>End Time (24-hour):</label>
                                     <div class="time-group">
-                                        <input type="text" id="end-hour" maxlength="2" placeholder="HH" class="time-input" required>
-                                        <span class="colon">:</span>
-                                        <input type="text" id="end-minute" maxlength="2" placeholder="MM" class="time-input" required>
+                                        <input type="text" id="end-hour" maxlength="2" placeholder="HH" required>
+                                        <span>:</span>
+                                        <input type="text" id="end-minute" maxlength="2" placeholder="MM" required>
                                     </div>
                                 </div>
                             </div>
                             <div class="total-hours-in-between">
                                 <label for="total-hours">Total Hours:</label>
-                                <input type="number" id="total-hours" name="total_hours" step="0.5" readonly>
+                                <input type="number" id="total-hours" step="0.5" readonly>
                             </div>
                         </div>
                     </div>
                 </div>
-                <input type="hidden" id="selected-shifts" name="selected_shifts">
+                <input type="hidden" id="selected-shifts">
                 <div class="form-group">
                     <label for="location">Location:</label>
-                    <input type="text" id="location" name="location" required>
+                    <input type="text" id="location" required>
                 </div>
                 <div class="form-group">
                     <label for="iso-category">ISO Category:</label>
-                    <select id="iso-category" name="iso_category" required>
+                    <select id="iso-category" required>
                         <option value="">-- Select ISO Category --</option>
                         <option value="Company">Company</option>
                         <option value="Facility">Facility</option>
@@ -506,18 +194,18 @@
                 </div>
                 <div class="form-group">
                     <label for="description">Description of Training:</label>
-                    <textarea id="description" name="description" required></textarea>
+                    <textarea id="description" required></textarea>
                     <div class="copy-wrapper">
                         <button type="button" class="copy-btn">Copy Description</button>
-                        <span class="copy-feedback" id="description-feedback">Copied!</span>
+                        <span class="copy-feedback">Copied!</span>
                     </div>
                 </div>
                 <div class="form-group">
                     <label for="objectives">Training Objectives:</label>
-                    <textarea id="objectives" name="objectives" required></textarea>
+                    <textarea id="objectives" required></textarea>
                     <div class="copy-wrapper">
                         <button type="button" class="copy-btn">Copy Objectives</button>
-                        <span class="copy-feedback" id="objectives-feedback">Copied!</span>
+                        <span class="copy-feedback">Copied!</span>
                     </div>
                 </div>
             </div>
@@ -525,149 +213,72 @@
             <div class="section">
                 <h2>Instructors</h2>
                 <table class="table" id="instructors-table">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Rank</th>
-                            <th>GFSTC #</th>
-                            <th>Signature</th>
-                        </tr>
-                    </thead>
+                    <thead><tr><th>Name</th><th>Rank</th><th>GFSTC #</th><th>Signature</th></tr></thead>
                     <tbody></tbody>
                 </table>
-                <button type="button" id="add-instructor">Add Instructor</button>
+                <button type="button" id="add-instructor" class="add-row-btn no-print">Add Instructor</button>
             </div>
 
             <div class="section">
                 <h2>Students (Centerville)</h2>
                 <table class="table" id="students-centerville-table">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Rank</th>
-                            <th>GFSTC #</th>
-                            <th>Signature</th>
-                        </tr>
-                    </thead>
+                    <thead><tr><th>Name</th><th>Rank</th><th>GFSTC #</th><th>Signature</th></tr></thead>
                     <tbody></tbody>
                 </table>
-                <button type="button" id="add-student-centerville">Add Student</button>
-                <button type="button" id="other-personnel-toggle">Other Personnel</button>
+                <button type="button" id="add-student-centerville" class="add-row-btn no-print">Add Student</button>
+                <button type="button" id="other-personnel-toggle" class="no-print">Other Personnel</button>
             </div>
 
             <div class="section" id="outside-students-section" style="display:none;">
                 <h2>Students (Outside Dept.)</h2>
                 <table class="table" id="students-outside-table">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Rank</th>
-                            <th>GFSTC #</th>
-                            <th>Signature</th>
-                        </tr>
-                    </thead>
+                    <thead><tr><th>Name</th><th>Rank</th><th>GFSTC #</th><th>Signature</th></tr></thead>
                     <tbody></tbody>
                 </table>
-                <button type="button" id="add-student-outside">Add Student</button>
+                <button type="button" id="add-student-outside" class="add-row-btn no-print">Add Student</button>
             </div>
 
             <div class="section" id="drivers-training-section" style="display:none;">
                 <h2>Drivers Training Report</h2>
-                <div class="drivers-grid">
-                    <div class="form-group">
-                        <label for="apparatus-type">Apparatus Type:</label>
-                        <select id="apparatus-type" name="apparatus_type">
-                            <option value="">-- Select --</option>
-                            <option value="Rescue">Rescue</option>
-                            <option value="Pumper">Pumper</option>
-                            <option value="Aerial">Aerial</option>
-                            <option value="Brush">Brush</option>
-                            <option value="Command Car">Command Car</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="road-conditions">Road Conditions:</label>
-                        <select id="road-conditions" name="road_conditions">
-                            <option value="">-- Select --</option>
-                            <option value="Dry">Dry</option>
-                            <option value="Wet">Wet</option>
-                            <option value="Icey">Icey</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="weather-conditions">Weather Conditions:</label>
-                        <select id="weather-conditions" name="weather_conditions">
-                            <option value="">-- Select --</option>
-                            <option value="Clear">Clear</option>
-                            <option value="Cloudy">Cloudy</option>
-                            <option value="Mist">Mist</option>
-                            <option value="Rain">Rain</option>
-                            <option value="Thunderstorm">Thunderstorm</option>
-                            <option value="Foggy">Foggy</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="traffic-conditions">Traffic Conditions:</label>
-                        <select id="traffic-conditions" name="traffic_conditions">
-                            <option value="">-- Select --</option>
-                            <option value="Light">Light</option>
-                            <option value="Moderate">Moderate</option>
-                            <option value="Heavy">Heavy</option>
-                        </select>
-                    </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
+                    <div class="form-group"><label for="apparatus-type">Apparatus Type:</label><select id="apparatus-type"><option value="">-- Select --</option><option>Rescue</option><option>Pumper</option><option>Aerial</option><option>Brush</option><option>Command Car</option></select></div>
+                    <div class="form-group"><label for="road-conditions">Road Conditions:</label><select id="road-conditions"><option value="">-- Select --</option><option>Dry</option><option>Wet</option><option>Icey</option></select></div>
+                    <div class="form-group"><label for="weather-conditions">Weather Conditions:</label><select id="weather-conditions"><option value="">-- Select --</option><option>Clear</option><option>Cloudy</option><option>Mist</option><option>Rain</option><option>Thunderstorm</option><option>Foggy</option></select></div>
+                    <div class="form-group"><label for="traffic-conditions">Traffic Conditions:</label><select id="traffic-conditions"><option value="">-- Select --</option><option>Light</option><option>Moderate</option><option>Heavy</option></select></div>
                 </div>
-                <div class="miles-line">
-                    <div class="form-group">
-                        <label for="apparatus-miles">Apparatus Miles:</label>
-                        <input type="number" id="apparatus-miles" name="apparatus_miles">
-                    </div>
-                    <div class="form-group">
-                        <label for="apparatus-hours">Apparatus Hours:</label>
-                        <input type="number" id="apparatus-hours" name="apparatus_hours" step="0.5">
-                    </div>
-                    <div class="form-group">
-                        <label for="actual-miles">Actual Miles Driven:</label>
-                        <input type="number" id="actual-miles" name="actual_miles">
-                    </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-top: 15px;">
+                    <div class="form-group"><label for="apparatus-miles">Apparatus Miles:</label><input type="number" id="apparatus-miles"></div>
+                    <div class="form-group"><label for="apparatus-hours">Apparatus Hours:</label><input type="number" id="apparatus-hours" step="0.5"></div>
+                    <div class="form-group"><label for="actual-miles">Actual Miles Driven:</label><input type="number" id="actual-miles"></div>
                 </div>
-                <table class="table" id="grading-points-table">
-                    <thead>
-                        <tr>
-                            <th>Grading Points</th>
-                            <th>Proficiency</th>
-                            <th>Comments</th>
-                        </tr>
-                    </thead>
+                <table class="table" id="grading-points-table" style="margin-top: 20px;">
+                    <thead><tr><th>Grading Points</th><th>Proficiency</th><th>Comments</th></tr></thead>
                     <tbody></tbody>
                 </table>
-                <button type="button" id="add-grading-point">Add Grading Point</button>
+                <button type="button" id="add-grading-point" class="add-row-btn no-print">Add Grading Point</button>
             </div>
 
             <div class="section">
                 <h2>Facility Equipment Used</h2>
                 <table class="table" id="facility-equipment-table">
-                    <thead>
-                        <tr>
-                            <th>Equipment Used</th>
-                            <th>Damaged</th>
-                            <th>Equipment Use Comments</th>
-                        </tr>
-                    </thead>
+                    <thead><tr><th>Equipment Used</th><th>Damaged</th><th>Equipment Use Comments</th></tr></thead>
                     <tbody></tbody>
                 </table>
-                <button type="button" id="add-equipment">Add Equipment</button>
+                <button type="button" id="add-equipment" class="add-row-btn no-print">Add Equipment</button>
             </div>
 
             <div class="buttons-row">
-                <button type="submit" class="submit-btn">Submit Training Report</button>
-                <button type="button" class="print-btn" onclick="window.print()">Print / Save as PDF</button>
+                <button type="button" class="main-btn" id="save-report-btn">
+                    <span class="btn-text">Save Report</span>
+                    <span class="btn-loading" style="display:none;">Saving...</span>
+                </button>
+                <button type="button" class="main-btn" id="send-email-btn">Send via Email</button>
+                <button type="button" class="main-btn" id="print-preview-btn">Print Preview</button>
+                <button type="button" class="main-btn" id="clear-form-btn">Clear Form</button>
             </div>
         </form>
-
-        <img src="../city-logo.png" alt="City of Centerville Logo" class="city-logo" onerror="this.style.display='none'">
     </div>
 
-    <!-- Signature Modal -->
     <div id="signatureModal" class="signature-modal">
         <div class="modal-content">
             <h3>Sign Here</h3>
@@ -679,14 +290,62 @@
         </div>
     </div>
 
-    <!-- Libraries -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-
     <script>
-        // Initialize EmailJS with your public key
         emailjs.init("0149jkoCQjJZn6JwD");
+
+        const centervilleStaff = [
+            { name: "Barr, Harvey", rank: "Firefighter", gfstc: "3353-4774" },
+            { name: "Bennett, Kyle", rank: "Firefighter", gfstc: "0869-5796" },
+            { name: "Bostick, David", rank: "Assistant Chief", gfstc: "7615-2424" },
+            { name: "Cannon, James", rank: "Firefighter", gfstc: "7905-1906" },
+            { name: "Carroll, James", rank: "Firefighter", gfstc: "7560-2340" },
+            { name: "Dorman, David", rank: "Sergeant", gfstc: "3081-2978" },
+            { name: "Dunn, Pierson", rank: "Firefighter", gfstc: "6345-7684" },
+            { name: "Jones, Jason", rank: "Fire Chief", gfstc: "4472-9279" },
+            { name: "Kahley, Chad", rank: "Captain", gfstc: "5486-6025" },
+            { name: "Laimana, Joe", rank: "Firefighter", gfstc: "9183-2797" },
+            { name: "Leatherwood, Jonathan", rank: "Firefighter", gfstc: "9823-3446" },
+            { name: "Lightning, Larry", rank: "Firefighter", gfstc: "0711-8310" },
+            { name: "McNeil, Drew", rank: "Firefighter", gfstc: "2676-9943" },
+            { name: "Mixon, Joshua", rank: "Firefighter", gfstc: "4670-9305" },
+            { name: "Mooney, William", rank: "Firefighter", gfstc: "9213-3048" },
+            { name: "Orona, Adam", rank: "Firefighter", gfstc: "4438-5982" },
+            { name: "Redd, Allen", rank: "Sergeant", gfstc: "7135-8934" },
+            { name: "Rice, Aaron", rank: "Firefighter", gfstc: "9228-1494" },
+            { name: "Schuler, Andrew", rank: "Firefighter", gfstc: "6748-5231" },
+            { name: "Smith, Mikayla", rank: "Firefighter", gfstc: "1159-4178" },
+            { name: "Stockholm, Jacob", rank: "Firefighter", gfstc: "5655-4571" },
+            { name: "Talley, Dustin", rank: "Sergeant", gfstc: "3887-0449" },
+            { name: "Thornton, Ethan", rank: "Firefighter", gfstc: "4221-3437" },
+            { name: "Traxler, Clint", rank: "Engineer", gfstc: "3623-4177" },
+            { name: "Wall, Kaleb", rank: "Firefighter", gfstc: "0701-7229" }
+        ];
+
+        const commonDescriptions = {
+            "Company": "Company-level training focused on effective teamwork, communication, and task execution during fireground operations.",
+            "Facility": "Training Conducted at the Centerville Training Facility located at 1111 Dunbar Road or an approved facility deemed by the Fire Chief or Georgia Firefighters Standards and Training. Facility Training Must be at least 3 hours and be considered fire suppression, victim rescue and other related fire task with PPE to be considered facility training.",
+            "Officer": "Officer development training emphasizing leadership, decision-making, incident command, and crew supervision.",
+            "Hazmat": "Hazardous materials awareness, operations, or technician-level training covering recognition, identification, and mitigation strategies.",
+            "Driver (Roadway)": "Firefighter driver training is a comprehensive program designed to equip emergency personnel with the knowledge, skills, and judgment to operate large, heavy fire apparatus safely and efficiently in emergency and non-emergency situations. This training emphasizes safety through accident avoidance and adherence to legal requirements.",
+            "Driver (Area Familiarization)": "Area familiarization training for firefighters is a continuous and proactive process designed to ensure that crews possess intimate knowledge of their first-due response area and the specific structures within it. This knowledge enhances situational awareness, improves response times, and is critical for both public and firefighter safety during emergencies.",
+            "Driver (Pumper Training)": "Pumper operations training focusing on safe apparatus positioning, pump operation, water supply management, and hose deployment techniques.",
+            "Driver (Aerial Training)": "Aerial operations training covering safe setup, stabilization, aerial device operation, and rescue/evacuation techniques from elevated positions.",
+            "Recruit": "Recruit academy training covering foundational firefighting skills, safety, equipment use, and department policies and procedures.",
+            "EMS": "Emergency medical services training focusing on patient assessment, treatment protocols, and safe patient handling and transport."
+        };
+
+        const commonObjectives = {
+            "Company": "- Demonstrate effective fireground communication\n- Perform assigned tasks efficiently\n- Work as a cohesive team unit",
+            "Facility": "- Training conducted at approved facility with minimum 3 hours duration\n- Focus on fire suppression, victim rescue, and related tasks while wearing full PPE",
+            "Officer": "- Apply incident command principles\n- Make effective tactical decisions\n- Supervise personnel safely",
+            "Hazmat": "- Recognize and identify hazardous materials\n- Implement initial protective actions\n- Initiate proper notification procedures",
+            "Driver (Roadway)": "- Maneuvering large vehicles, including backing up and parallel parking with limited visibility\n- Negotiating narrow streets, sharp turns, and intersections safely\n- Defensive driving techniques and collision avoidance\n- Operating the vehicle under various weather and road conditions",
+            "Driver (Area Familiarization)": "- Ensuring knowledge of street locations and optimal response routes\n- Locating water sources\n- Identifying target hazards\n- Understanding building construction types\n- Familiarization with a building's fire suppression and alarm system\n- Locating critical access points",
+            "Driver (Pumper Training)": "- Correctly position apparatus for effective water supply\n- Operate pump controls accurately\n- Establish and maintain water supply\n- Deploy attack and supply lines efficiently",
+            "Driver (Aerial Training)": "- Properly stabilize and set up aerial device\n- Safely operate aerial controls\n- Perform elevated rescues\n- Maintain safe working distances and angles",
+            "Recruit": "- Demonstrate basic firefighting skills\n- Use personal protective equipment correctly\n- Follow department safety policies",
+            "EMS": "- Perform accurate patient assessments\n- Administer appropriate treatments\n- Document patient care accurately"
+        };
 
         let currentSignatureCell = null;
         const modal = document.getElementById('signatureModal');
@@ -695,7 +354,6 @@
         ctx.strokeStyle = '#0000ff';
         ctx.lineWidth = 3;
         ctx.lineCap = 'round';
-
         let drawing = false;
 
         function startDrawing(e) {
@@ -706,7 +364,6 @@
             const y = (e.clientY || e.touches[0].clientY) - rect.top;
             ctx.moveTo(x, y);
         }
-
         function draw(e) {
             if (!drawing) return;
             e.preventDefault();
@@ -716,10 +373,7 @@
             ctx.lineTo(x, y);
             ctx.stroke();
         }
-
-        function stopDrawing() {
-            drawing = false;
-        }
+        function stopDrawing() { drawing = false; }
 
         canvas.addEventListener('mousedown', startDrawing);
         canvas.addEventListener('mousemove', draw);
@@ -730,24 +384,23 @@
         canvas.addEventListener('touchend', stopDrawing);
 
         document.getElementById('clearSignature').onclick = () => ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) modal.style.display = 'none';
-        });
+        modal.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
 
         document.getElementById('doneSignature').onclick = () => {
             if (!currentSignatureCell) return;
-            const dataURL = canvas.toDataURL();
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = canvas.width;
+            tempCanvas.height = canvas.height;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.fillStyle = '#ffffff';
+            tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+            tempCtx.drawImage(canvas, 0, 0);
+            const dataURL = tempCanvas.toDataURL('image/jpeg', 0.95);
             const img = document.createElement('img');
             img.className = 'signature-display';
             img.src = dataURL;
-
-            let sigName = prompt('Enter name for this signature (e.g., Jason Jones):', '');
-            if (sigName === null) sigName = 'Signature';
-
             currentSignatureCell.innerHTML = '';
             currentSignatureCell.appendChild(img);
-
             const removeBtn = document.createElement('button');
             removeBtn.className = 'remove-btn';
             removeBtn.textContent = 'Remove Signature';
@@ -756,7 +409,6 @@
                 addSignatureListener(currentSignatureCell);
             };
             currentSignatureCell.appendChild(removeBtn);
-
             modal.style.display = 'none';
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         };
@@ -772,7 +424,6 @@
             }
         }
 
-        // Time calculation
         const timeInputs = ['start-hour', 'start-minute', 'end-hour', 'end-minute'];
         timeInputs.forEach(id => {
             const input = document.getElementById(id);
@@ -805,227 +456,523 @@
             document.getElementById('total-hours').value = (hours + mins / 60).toFixed(2);
         }
 
-        // Shift buttons
         ['shift-days', 'shift-1', 'shift-2', 'shift-3', 'shift-pt'].forEach(id => {
-            document.getElementById(id).addEventListener('click', () => {
-                document.getElementById(id).classList.toggle('selected');
-                updateSelectedShifts();
-            });
+            const btn = document.getElementById(id);
+            if (btn) {
+                btn.addEventListener('click', () => {
+                    btn.classList.toggle('selected');
+                    updateSelectedShifts();
+                });
+            }
         });
 
         function updateSelectedShifts() {
-            const selected = ['shift-days', 'shift-1', 'shift-2', 'shift-3', 'shift-pt']
-                .filter(id => document.getElementById(id).classList.contains('selected'))
-                .map(id => document.getElementById(id).textContent.trim());
+            const selected = Array.from(document.querySelectorAll('.shift-btn.selected')).map(btn => btn.textContent.trim());
             document.getElementById('selected-shifts').value = selected.join(', ') || 'None';
         }
 
-        // Copy buttons
         document.querySelectorAll('.copy-btn').forEach(btn => {
             btn.addEventListener('click', async () => {
                 const textarea = btn.closest('.form-group').querySelector('textarea');
-                try {
-                    await navigator.clipboard.writeText(textarea.value);
-                } catch {
-                    textarea.select();
-                    document.execCommand('copy');
+                if (textarea) {
+                    try {
+                        await navigator.clipboard.writeText(textarea.value);
+                    } catch {
+                        textarea.select();
+                        document.execCommand('copy');
+                    }
+                    const feedback = btn.closest('.form-group').querySelector('.copy-feedback');
+                    feedback.style.opacity = 1;
+                    setTimeout(() => feedback.style.opacity = 0, 1500);
                 }
-                const feedback = btn.closest('.form-group').querySelector('.copy-feedback');
-                feedback.style.opacity = 1;
-                setTimeout(() => feedback.style.opacity = 0, 1500);
             });
         });
 
-        // Other personnel toggle
         document.getElementById('other-personnel-toggle').addEventListener('click', () => {
             const section = document.getElementById('outside-students-section');
-            const toggle = document.getElementById('other-personnel-toggle');
             section.style.display = section.style.display === 'none' ? 'block' : 'none';
-            toggle.classList.toggle('active');
+            document.getElementById('other-personnel-toggle').classList.toggle('active');
         });
 
-        // ISO category auto-fill
         document.getElementById('iso-category').addEventListener('change', function () {
             const val = this.value;
             const driversSection = document.getElementById('drivers-training-section');
             const isDriver = ['Driver (Roadway)', 'Driver (Pumper Training)', 'Driver (Aerial Training)'].includes(val);
             driversSection.style.display = isDriver ? 'block' : 'none';
-
-            if (val === 'Driver (Roadway)') {
-                document.getElementById('description').value = "Firefighter driver training is a comprehensive program designed to equip emergency personnel with the knowledge, skills, and judgment to operate large, heavy fire apparatus safely and efficiently in emergency and non-emergency situations. This training emphasizes safety through accident avoidance and adherence to legal requirements.";
-                document.getElementById('objectives').value = `- Maneuvering large vehicles, including backing up and parallel parking with limited visibility\n- Negotiating narrow streets, sharp turns, and intersections safely\n- Defensive driving techniques and collision avoidance\n- Operating the vehicle under various weather and road conditions`;
-            } else if (val === 'Driver (Area Familiarization)') {
-                document.getElementById('description').value = "Area familiarization training for firefighters is a continuous and proactive process designed to ensure that crews possess intimate knowledge of their first-due response area and the specific structures within it. This knowledge enhances situational awareness, improves response times, and is critical for both public and firefighter safety during emergencies.";
-                document.getElementById('objectives').value = `- Ensuring knowledge of street locations and optimal response routes\n- Locating water sources\n- Identifying target hazards\n- Understanding building construction types\n- Familiarization with a building's fire suppression and alarm system\n- Locating critical access points`;
-            } else if (!isDriver) {
-                document.getElementById('description').value = '';
-                document.getElementById('objectives').value = '';
-            }
+            document.getElementById('description').value = commonDescriptions[val] || '';
+            document.getElementById('objectives').value = commonObjectives[val] || '';
         });
 
-        // Add rows
-        document.getElementById('add-instructor').addEventListener('click', () => {
-            const tbody = document.querySelector('#instructors-table tbody');
-            const row = tbody.insertRow();
-            row.innerHTML = `
-                <td><input type="text" placeholder="Name"></td>
-                <td><input type="text" placeholder="Rank"></td>
-                <td><input type="text" placeholder="GFSTC #"></td>
-                <td><button type="button" class="sign-btn">Sign</button></td>
-            `;
-            addSignatureListener(row.cells[3]);
-            const removeBtn = document.createElement('button');
-            removeBtn.className = 'remove-btn';
-            removeBtn.textContent = 'Remove Row';
-            removeBtn.onclick = () => row.remove();
-            row.cells[3].appendChild(removeBtn);
-        });
+        document.getElementById('add-instructor').addEventListener('click', () => addPersonRow('instructors-table', true));
+        document.getElementById('add-student-centerville').addEventListener('click', () => addPersonRow('students-centerville-table', true));
+        document.getElementById('add-student-outside').addEventListener('click', () => addPersonRow('students-outside-table', false));
+        document.getElementById('add-grading-point').addEventListener('click', addGradingRow);
+        document.getElementById('add-equipment').addEventListener('click', addEquipmentRow);
 
-        document.getElementById('add-student-centerville').addEventListener('click', () => {
-            const tbody = document.querySelector('#students-centerville-table tbody');
+        function addPersonRow(tableId, isCenterville) {
+            const tbody = document.querySelector(`#${tableId} tbody`);
             const row = tbody.insertRow();
-            row.innerHTML = `
-                <td><input type="text" placeholder="Name"></td>
-                <td><input type="text" placeholder="Rank"></td>
-                <td><input type="text" placeholder="GFSTC #"></td>
-                <td><button type="button" class="sign-btn">Sign</button></td>
-            `;
-            addSignatureListener(row.cells[3]);
-            const removeBtn = document.createElement('button');
-            removeBtn.className = 'remove-btn';
-            removeBtn.textContent = 'Remove Row';
-            removeBtn.onclick = () => row.remove();
-            row.cells[3].appendChild(removeBtn);
-        });
-
-        document.getElementById('add-student-outside').addEventListener('click', () => {
-            const tbody = document.querySelector('#students-outside-table tbody');
-            const row = tbody.insertRow();
-            row.innerHTML = `
-                <td><input type="text" placeholder="Name"></td>
-                <td><input type="text" placeholder="Rank"></td>
-                <td><input type="text" placeholder="GFSTC #"></td>
-                <td><button type="button" class="sign-btn">Sign</button></td>
-            `;
-            addSignatureListener(row.cells[3]);
-            const removeBtn = document.createElement('button');
-            removeBtn.className = 'remove-btn';
-            removeBtn.textContent = 'Remove Row';
-            removeBtn.onclick = () => row.remove();
-            row.cells[3].appendChild(removeBtn);
-        });
-
-        document.getElementById('add-grading-point').addEventListener('click', () => {
-            const tbody = document.querySelector('#grading-points-table tbody');
-            const row = tbody.insertRow();
-            row.innerHTML = `
-                <td><input type="text" placeholder="Grading Point"></td>
-                <td><select><option>-- Proficiency --</option><option>Proficient</option><option>Needs Improvement</option></select></td>
-                <td><input type="text" placeholder="Comments"></td>
-            `;
-            const removeBtn = document.createElement('button');
-            removeBtn.className = 'remove-grading-btn';
-            removeBtn.textContent = 'Remove';
-            removeBtn.onclick = () => row.remove();
-            row.insertCell().appendChild(removeBtn);
-        });
-
-        document.getElementById('add-equipment').addEventListener('click', () => {
-            const tbody = document.querySelector('#facility-equipment-table tbody');
-            const row = tbody.insertRow();
-            row.innerHTML = `
-                <td><input type="text" placeholder="Equipment Used"></td>
-                <td>
-                    <div class="damaged-buttons">
-                        <button type="button" class="damaged-btn damaged-no">No</button>
-                        <button type="button" class="damaged-btn damaged-yes">Yes</button>
-                    </div>
-                </td>
-                <td><input type="text" placeholder="Comments"></td>
-            `;
-            row.querySelectorAll('.damaged-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    row.querySelectorAll('.damaged-btn').forEach(b => b.classList.remove('selected'));
-                    btn.classList.add('selected');
+            if (isCenterville) {
+                let options = '<option value="">-- Select Name --</option>';
+                centervilleStaff.forEach(p => options += `<option value="${p.name}">${p.name}</option>`);
+                row.innerHTML = `<td><select class="person-name">${options}</select></td><td><input type="text" class="person-rank" readonly></td><td><input type="text" class="person-gfstc" readonly></td><td><button type="button" class="sign-btn">Sign</button></td>`;
+                row.querySelector('.person-name').addEventListener('change', function () {
+                    const person = centervilleStaff.find(p => p.name === this.value);
+                    row.querySelector('.person-rank').value = person ? person.rank : '';
+                    row.querySelector('.person-gfstc').value = person ? person.gfstc : '';
                 });
-            });
+            } else {
+                row.innerHTML = `<td><input type="text" placeholder="Name"></td><td><input type="text" placeholder="Rank"></td><td><input type="text" placeholder="GFSTC #"></td><td><button type="button" class="sign-btn">Sign</button></td>`;
+            }
+            addSignatureListener(row.cells[3]);
             const removeBtn = document.createElement('button');
-            removeBtn.className = 'remove-equipment-btn';
-            removeBtn.textContent = 'Remove';
+            removeBtn.className = 'remove-btn';
+            removeBtn.textContent = 'Remove Row';
             removeBtn.onclick = () => row.remove();
-            row.insertCell().appendChild(removeBtn);
-        });
-
-        // Collect participants into description (optional)
-        function collectParticipants() {
-            let extra = '';
-            let instructors = [];
-            document.querySelectorAll('#instructors-table tbody tr').forEach(row => {
-                const name = row.cells[0].querySelector('input').value.trim();
-                if (name) instructors.push(name);
-            });
-            if (instructors.length) extra += `\n\nInstructors: ${instructors.join(', ')}`;
-            document.getElementById('description').value += extra;
+            row.cells[3].appendChild(removeBtn);
         }
 
-        // Submit: Generate PDF, download, and email
-        document.getElementById('trainingForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            collectParticipants();
+        function addGradingRow() {
+            const tbody = document.querySelector('#grading-points-table tbody');
+            const row = tbody.insertRow();
+            row.innerHTML = `<td><input type="text" placeholder="Grading Point"></td><td><select><option>-- Proficiency --</option><option>Proficient</option><option>Needs Improvement</option></select></td><td><input type="text" placeholder="Comments"></td>`;
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'remove-btn';
+            removeBtn.textContent = 'Remove';
+            removeBtn.onclick = () => row.remove();
+            row.insertCell().appendChild(removeBtn);
+        }
 
-            const btn = document.querySelector('.submit-btn');
-            btn.textContent = 'Generating & Sending...';
-            btn.disabled = true;
+        function addEquipmentRow() {
+            const tbody = document.querySelector('#facility-equipment-table tbody');
+            const row = tbody.insertRow();
+            row.innerHTML = `<td><input type="text" placeholder="Equipment Used"></td><td><div class="damaged-buttons"><button type="button" class="damaged-btn damaged-no">No</button><button type="button" class="damaged-btn damaged-yes">Yes</button></div></td><td><input type="text" placeholder="Comments"></td><td></td>`;
+            const noBtn = row.querySelector('.damaged-no');
+            const yesBtn = row.querySelector('.damaged-yes');
+            noBtn.classList.add('selected');
+            noBtn.onclick = () => { noBtn.classList.add('selected'); yesBtn.classList.remove('selected'); };
+            yesBtn.onclick = () => { yesBtn.classList.add('selected'); noBtn.classList.remove('selected'); };
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'remove-btn';
+            removeBtn.textContent = 'Remove';
+            removeBtn.onclick = () => row.remove();
+            row.cells[3].appendChild(removeBtn);
+        }
 
-            try {
-                const captureCanvas = await html2canvas(document.querySelector('.container'), {
-                    scale: 2,
-                    useCORS: true,
-                    allowTaint: true,
-                    backgroundColor: '#ffffff',
-                    scrollX: 0,
-                    scrollY: -window.scrollY,
-                    windowWidth: document.documentElement.scrollWidth,
-                    windowHeight: document.documentElement.scrollHeight
+        const FORM_STORAGE_KEY = 'centervilleTrainingReportDraft';
+
+        function collectFormData() {
+            const data = {
+                trainingTitle: document.getElementById('training-title').value,
+                date: document.getElementById('date').value,
+                selectedShifts: document.getElementById('selected-shifts').value,
+                startHour: document.getElementById('start-hour').value,
+                startMinute: document.getElementById('start-minute').value,
+                endHour: document.getElementById('end-hour').value,
+                endMinute: document.getElementById('end-minute').value,
+                totalHours: document.getElementById('total-hours').value,
+                location: document.getElementById('location').value,
+                isoCategory: document.getElementById('iso-category').value,
+                description: document.getElementById('description').value,
+                objectives: document.getElementById('objectives').value,
+                instructors: [],
+                studentsCenterville: [],
+                studentsOutside: [],
+                gradingPoints: [],
+                equipment: []
+            };
+            if (document.getElementById('drivers-training-section').style.display !== 'none') {
+                data.drivers = {
+                    apparatusType: document.getElementById('apparatus-type').value || '',
+                    roadConditions: document.getElementById('road-conditions').value || '',
+                    weatherConditions: document.getElementById('weather-conditions').value || '',
+                    trafficConditions: document.getElementById('traffic-conditions').value || '',
+                    apparatusMiles: document.getElementById('apparatus-miles').value || '',
+                    apparatusHours: document.getElementById('apparatus-hours').value || '',
+                    actualMiles: document.getElementById('actual-miles').value || ''
+                };
+            }
+            const collectTable = (tableId, isPerson = false) => {
+                const rows = [];
+                document.querySelectorAll(`#${tableId} tbody tr`).forEach(row => {
+                    const cells = row.cells;
+                    const rowData = {};
+                    if (isPerson) {
+                        rowData.name = cells[0].querySelector('input, select')?.value || '';
+                        rowData.rank = cells[1].querySelector('input')?.value || '';
+                        rowData.gfstc = cells[2].querySelector('input')?.value || '';
+                        rowData.signature = cells[3].querySelector('img')?.src || '';
+                    } else if (tableId.includes('equipment')) {
+                        rowData.equipment = cells[0].querySelector('input')?.value || '';
+                        rowData.damaged = row.querySelector('.damaged-btn.selected')?.textContent.trim() || 'No';
+                        rowData.comments = cells[2].querySelector('input')?.value || '';
+                    } else {
+                        rowData.point = cells[0].querySelector('input')?.value || '';
+                        rowData.proficiency = cells[1].querySelector('select')?.value || '';
+                        rowData.comments = cells[2].querySelector('input')?.value || '';
+                    }
+                    if (Object.values(rowData).some(v => v)) rows.push(rowData);
                 });
+                return rows;
+            };
+            data.instructors = collectTable('instructors-table', true);
+            data.studentsCenterville = collectTable('students-centerville-table', true);
+            data.studentsOutside = collectTable('students-outside-table', true);
+            data.gradingPoints = collectTable('grading-points-table');
+            data.equipment = collectTable('facility-equipment-table');
+            return data;
+        }
 
-                const { jsPDF } = window.jspdf;
-                const pdf = new jsPDF('p', 'mm', 'a4');
-                const pdfWidth = pdf.internal.pageSize.getWidth();
-                let pdfHeight = (captureCanvas.height * pdfWidth) / captureCanvas.width;
+        async function generateTrainingReportPDF() {
+            const data = collectFormData();
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
 
-                pdf.addImage(captureCanvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pdfHeight);
+            const RED = [220, 38, 38];
+            const BLACK = [0, 0, 0];
+            const pageW = pdf.internal.pageSize.getWidth();
+            const pageH = pdf.internal.pageSize.getHeight();
+            const margin = 15;
+            const headerH = 28;
+            let y = margin + headerH;
+            let pageCount = 1;
+            const maxPages = 5;
+            let truncated = false;
 
-                let position = 0;
-                while (pdfHeight > 297) {
-                    pdf.addPage();
-                    position -= 297;
-                    pdf.addImage(captureCanvas.toDataURL('image/png'), 'PNG', 0, position, pdfWidth, pdfHeight);
-                    pdfHeight -= 297;
+            function drawHeader() {
+                pdf.setFont('times', 'bold');
+                pdf.setFontSize(20);
+                pdf.setTextColor(...BLACK);
+                pdf.text('Centerville Fire Department', pageW / 2, margin + 8, { align: 'center' });
+                pdf.setFontSize(16);
+                pdf.text('Training Report', pageW / 2, margin + 16, { align: 'center' });
+                pdf.setFontSize(14);
+                pdf.text(data.trainingTitle || 'Untitled Training', pageW / 2, margin + 24, { align: 'center' });
+                pdf.setDrawColor(...RED);
+                pdf.setLineWidth(0.8);
+                pdf.line(margin, margin + 30, pageW - margin, margin + 30);
+            }
+
+            function addNewPage() {
+                if (pageCount >= maxPages) {
+                    truncated = true;
+                    return false;
+                }
+                pdf.addPage();
+                pageCount++;
+                drawHeader();
+                y = margin + headerH;
+                return true;
+            }
+
+            function sectionTitle(title) {
+                pdf.setFontSize(14);
+                pdf.setTextColor(...RED);
+                pdf.text(title, margin, y);
+                y += 8;
+                pdf.setDrawColor(...RED);
+                pdf.setLineWidth(0.5);
+                pdf.line(margin, y - 2, margin + pdf.getTextWidth(title), y - 2);
+                y += 6;
+            }
+
+            function renderPerson(person, centerX, startY) {
+                let currY = startY;
+                pdf.setFontSize(11);
+                pdf.setFont('times', 'bold');
+                pdf.setTextColor(...BLACK);
+                const nameLine = `${person.name || 'N/A'}${person.gfstc ? ` (GFSTC: ${person.gfstc})` : ''}`;
+                pdf.text(nameLine, centerX, currY, { align: 'center' });
+                currY += 2;
+                if (person.signature) {
+                    pdf.addImage(person.signature, 'JPEG', centerX - 35, currY, 60, 20, undefined, 'FAST');
+                    currY += 25;
+                } else {
+                    currY += 25;
+                }
+                pdf.setFont('times', 'bold');
+                pdf.setFontSize(10);
+                pdf.text(`Rank: ${person.rank || 'N/A'}`, centerX, currY, { align: 'center' });
+                return currY + 10;
+            }
+
+            function renderFourStudents(students, startIdx) {
+                const positions = [pageW * 0.25, pageW * 0.75, pageW * 0.25, pageW * 0.75];
+                let row1H = 0, row2H = 0, currY = y;
+                for (let i = 0; i < 2 && startIdx + i < students.length; i++) {
+                    const h = renderPerson(students[startIdx + i], positions[i], currY) - currY;
+                    row1H = Math.max(row1H, h);
+                }
+                currY += row1H;
+                for (let i = 0; i < 2 && startIdx + 2 + i < students.length; i++) {
+                    const h = renderPerson(students[startIdx + 2 + i], positions[i + 2], currY) - currY;
+                    row2H = Math.max(row2H, h);
+                }
+                y = currY + row2H + 10;
+                return Math.min(4, students.length - startIdx);
+            }
+
+            function drawPage1Content() {
+    y += 10;
+
+    // Meta information (left side)
+    pdf.setFontSize(11);
+    pdf.setTextColor(...BLACK);
+    const meta = [
+        `Date: ${data.date || 'N/A'}`,
+        `Shift(s): ${data.selectedShifts || 'None'}`,
+        `Time: ${data.startHour || '??'}:${data.startMinute || '??'} – ${data.endHour || '??'}:${data.endMinute || '??'} (${data.totalHours || '0'} hours)`,
+        `Location: ${data.location || 'N/A'}`,
+        `ISO Category: ${data.isoCategory || 'N/A'}`
+    ];
+    meta.forEach((line, i) => pdf.text(line, margin, y + i * 6));
+
+    // Primary Instructor (right side, level with Date)
+    if (data.instructors.length > 0) {
+        const instructorX = pageW - margin - 80; // Right-aligned
+        pdf.setFontSize(11);
+        pdf.setFont('times', 'bold');
+        pdf.setTextColor(...BLACK);
+        pdf.text('Primary Instructor:', instructorX, y);
+        y += 12;
+
+        renderPerson(data.instructors[0], instructorX + 40, y - 7); // Center the person box under the label
+    }
+
+    y += 40; // Move down for Description
+
+    sectionTitle('Description of Training');
+    pdf.setFont('times', 'normal');
+    pdf.setFontSize(11);
+    pdf.setTextColor(...BLACK);
+    const descLines = pdf.splitTextToSize(data.description || 'No description provided', pageW - 25);
+    pdf.text(descLines, margin, y);
+    y += descLines.length * 5 + 2;
+
+    sectionTitle('Training Objectives');
+    pdf.setFontSize(11);
+    pdf.setTextColor(...BLACK);
+    const objLines = pdf.splitTextToSize(data.objectives || 'No objectives provided', pageW - 22);
+    pdf.text(objLines, margin, y);
+    y += objLines.length * 5.5 + 5;
+}
+
+            drawHeader();
+            drawPage1Content();
+
+            const allStudents = [...data.studentsCenterville, ...data.studentsOutside];
+            let studentIdx = 0;
+            if (allStudents.length > 0) {
+                sectionTitle('Students');
+                while (studentIdx < allStudents.length) {
+                    const added = renderFourStudents(allStudents, studentIdx);
+                    studentIdx += added;
+                    if (studentIdx < allStudents.length) {
+                        if (!addNewPage()) break;
+                        drawPage1Content();
+                        sectionTitle('Students (Continued)');
+                    }
+                }
+            }
+
+            const extraInstructors = data.instructors.slice(1);
+            const hasSupplemental = data.drivers || data.equipment.length > 0 || extraInstructors.length > 0;
+            if (hasSupplemental && pageCount < maxPages) {
+                addNewPage();
+                pdf.setFontSize(16);
+                pdf.setTextColor(...RED);
+                pdf.text('Supplemental Training Form', pageW / 2, margin + headerH - 30, { align: 'center' });
+                y = margin + headerH + 10;
+
+                if (data.drivers) {
+                    sectionTitle('Drivers Training Report');
+                    pdf.setFontSize(11);
+                    pdf.setTextColor(...BLACK);
+                    pdf.text(`Apparatus Type: ${data.drivers.apparatusType || 'N/A'}`, margin, y);
+                    y += 6;
+                    pdf.text(`Road Conditions: ${data.drivers.roadConditions || 'N/A'}`, margin, y);
+                    y += 6;
+                    pdf.text(`Weather Conditions: ${data.drivers.weatherConditions || 'N/A'}`, margin, y);
+                    y += 6;
+                    pdf.text(`Traffic Conditions: ${data.drivers.trafficConditions || 'N/A'}`, margin, y);
+                    y += 6;
+                    pdf.text(`Apparatus Miles: ${data.drivers.apparatusMiles || 'N/A'}`, margin, y);
+                    y += 6;
+                    pdf.text(`Apparatus Hours: ${data.drivers.apparatusHours || 'N/A'}`, margin, y);
+                    y += 6;
+                    pdf.text(`Actual Miles Driven: ${data.drivers.actualMiles || 'N/A'}`, margin, y);
+                    y += 10;
+
+                    if (data.gradingPoints.length > 0) {
+                        sectionTitle('Driver Grading Points');
+                        data.gradingPoints.forEach(gp => {
+                            pdf.setFontSize(11);
+                            pdf.setTextColor(...BLACK);
+                            pdf.text(`${gp.point || 'Point'}: ${gp.proficiency || 'Not assessed'}`, margin, y);
+                            y += 6;
+                            if (gp.comments) {
+                                pdf.setFontSize(11);
+                                pdf.setTextColor(...BLACK);
+                                pdf.text(`Comment: ${gp.comments}`, margin + 10, y);
+                                y += 6;
+                            }
+                            y += 4;
+                        });
+                    }
+                    y += 10;
                 }
 
-                const pdfBase64 = pdf.output('datauristring').split(',')[1];
+                if (data.equipment.length > 0) {
+                    sectionTitle('Facility Equipment Used');
+                    data.equipment.forEach(eq => {
+                        pdf.setFontSize(11);
+                        pdf.setTextColor(...BLACK);
+                        pdf.text(`Equipment: ${eq.equipment || 'Unknown'}`, margin, y);
+                        y += 6;
+                        pdf.text(`Damaged: ${eq.damaged || 'No'}`, margin, y);
+                        y += 6;
+                        if (eq.comments) {
+                            pdf.setFontSize(11);
+                            pdf.setTextColor(...BLACK);
+                            pdf.text(`Comment: ${eq.comments}`, margin + 10, y);
+                            y += 6;
+                        }
+                        y += 4;
+                    });
+                    y += 10;
+                }
 
-                const title = (document.getElementById('training-title').value || 'Training').replace(/[^a-z0-9]/gi, '_');
-                const dateStr = new Date().toISOString().slice(0,10);
-                const filename = `Centerville_Training_${title}_${dateStr}_Signed.pdf`;
+                if (extraInstructors.length > 0) {
+                    sectionTitle('Additional Instructors');
+                    extraInstructors.forEach(inst => {
+                        renderPerson(inst, pageW / 2, y);
+                        y += 50;
+                    });
+                }
+            }
 
-                pdf.save(filename);
+            if (truncated) {
+                pdf.setFontSize(10);
+                pdf.setTextColor(...BLACK);
+                pdf.text('Content truncated to fit 5-page limit.', margin, y);
+            }
 
-                await emailjs.send('service_2gdxvws', 'template_wj80wlx', {
-                    training_title: document.getElementById('training-title').value,
-                    training_date: document.getElementById('date').value,
-                    attachment_pdf: pdfBase64,
-                    attachment_filename: filename
-                });
+            const safeTitle = (data.trainingTitle || 'Training_Report').replace(/[^a-z0-9]/gi, '_').substring(0, 50);
+            const filename = `Centerville_Training_${safeTitle}_${new Date().toISOString().slice(0,10)}_Signed.pdf`;
+            const pdfBase64 = pdf.output('datauristring').split(',')[1];
+            return { pdfBase64, filename };
+        }
 
-                alert(`Success! "${filename}" downloaded and emailed.`);
-            } catch (err) {
-                console.error(err);
-                alert('Error generating PDF or sending email. Check console.');
-            } finally {
-                btn.textContent = 'Submit Training Report';
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('save-report-btn').addEventListener('click', () => {
+                const btn = document.getElementById('save-report-btn');
+                const text = btn.querySelector('.btn-text');
+                const loading = btn.querySelector('.btn-loading');
+                text.style.display = 'none';
+                loading.style.display = 'inline';
+                btn.disabled = true;
+                const data = collectFormData();
+                localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(data));
+                setTimeout(() => {
+                    text.textContent = 'Saved!';
+                    text.style.display = 'inline';
+                    loading.style.display = 'none';
+                    btn.style.background = '#16a34a';
+                    setTimeout(() => {
+                        text.textContent = 'Save Report';
+                        btn.style.background = '#2563eb';
+                        btn.disabled = false;
+                    }, 1500);
+                }, 500);
+            });
+
+            document.getElementById('send-email-btn').addEventListener('click', async () => {
+                const btn = document.getElementById('send-email-btn');
+                btn.disabled = true;
+                btn.textContent = 'Sending...';
+                try {
+                    const { pdfBase64, filename } = await generateTrainingReportPDF();
+                    await emailjs.send('service_2gdxvws', 'template_wj80wlx', {
+                        training_title: document.getElementById('training-title').value || 'Centerville Training Report',
+                        training_date: document.getElementById('date').value || new Date().toISOString().slice(0,10),
+                        attachment_pdf: pdfBase64,
+                        attachment_filename: filename
+                    });
+                    alert('Training report emailed successfully!');
+                    if (confirm('Do Not Hit Ok if Other Shifts Have to Sign!')) {
+                        localStorage.removeItem(FORM_STORAGE_KEY);
+                    }
+                } catch (err) {
+                    console.error('Error:', err);
+                    alert('Send failed. Check console for details.');
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = 'Send via Email';
+                }
+            });
+
+            document.getElementById('print-preview-btn').addEventListener('click', async () => {
+                const btn = document.getElementById('print-preview-btn');
+                btn.disabled = true;
+                btn.textContent = 'Generating...';
+                try {
+                    const { pdfBase64 } = await generateTrainingReportPDF();
+                    const byteCharacters = atob(pdfBase64);
+                    const byteNumbers = new Array(byteCharacters.length);
+                    for (let i = 0; i < byteCharacters.length; i++) {
+                        byteNumbers[i] = byteCharacters.charCodeAt(i);
+                    }
+                    const byteArray = new Uint8Array(byteNumbers);
+                    const blob = new Blob([byteArray], { type: 'application/pdf' });
+                    const url = URL.createObjectURL(blob);
+                    const printWindow = window.open(url, '_blank');
+                    if (printWindow) {
+                        printWindow.onload = function() {
+                            printWindow.focus();
+                            printWindow.print();
+                        };
+                    } else {
+                        alert('Please allow popups for Print Preview to work.');
+                    }
+                    setTimeout(() => URL.revokeObjectURL(url), 30000);
+                } catch (err) {
+                    console.error(err);
+                    alert('Preview failed');
+                }
+                btn.textContent = 'Print Preview';
                 btn.disabled = false;
+            });
+
+            document.getElementById('clear-form-btn').addEventListener('click', () => {
+                if (confirm('Clear everything and delete saved draft?')) {
+                    document.getElementById('trainingForm').reset();
+                    localStorage.removeItem(FORM_STORAGE_KEY);
+                    location.reload();
+                }
+            });
+        });
+
+        window.addEventListener('load', () => {
+            const saved = localStorage.getItem(FORM_STORAGE_KEY);
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    document.getElementById('training-title').value = data.trainingTitle || '';
+                    document.getElementById('date').value = data.date || '';
+                    document.getElementById('selected-shifts').value = data.selectedShifts || '';
+                    document.getElementById('start-hour').value = data.startHour || '';
+                    document.getElementById('start-minute').value = data.startMinute || '';
+                    document.getElementById('end-hour').value = data.endHour || '';
+                    document.getElementById('end-minute').value = data.endMinute || '';
+                    document.getElementById('total-hours').value = data.totalHours || '';
+                    document.getElementById('location').value = data.location || '';
+                    document.getElementById('iso-category').value = data.isoCategory || '';
+                    document.getElementById('description').value = data.description || '';
+                    document.getElementById('objectives').value = data.objectives || '';
+                    const shifts = (data.selectedShifts || '').split(', ');
+                    document.querySelectorAll('.shift-btn').forEach(btn => btn.classList.toggle('selected', shifts.includes(btn.textContent.trim())));
+                    document.getElementById('iso-category').dispatchEvent(new Event('change'));
+                } catch (e) { console.error(e); }
             }
         });
     </script>
