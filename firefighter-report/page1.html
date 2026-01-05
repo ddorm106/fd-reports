@@ -13,6 +13,10 @@
     <link rel="manifest" href="manifest.json">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            height: 100%;
+            overflow-x: hidden;
+        }
         body {
             font-family: 'Inter', sans-serif;
             background: #0f172a;
@@ -22,7 +26,7 @@
             flex-direction: column;
         }
         .page-wrapper {
-            min-height: 100vh;
+            flex: 1;
             display: flex;
             flex-direction: column;
         }
@@ -171,135 +175,134 @@
             .header-top { flex-direction: column; }
             .header-text h1 { font-size: 2.2rem; }
             .header-text h2 { font-size: 1.5rem; }
-            .form-actions { flex-direction: column; gap: 15px; }
             .form-actions button { width: 100%; }
         }
-        @media (min-width: 769px) and (max-width: 1024px) {
-            .container { padding: 30px; max-width: 95%; }
-            .header-text h1 { font-size: 2.5rem; }
-            .header-text h2 { font-size: 1.6rem; }
-            .form-actions button { padding: 12px 25px; font-size: 1.1rem; }
-        }
     </style>
-<script>
-  // Cache-busting version - update this number whenever you deploy changes
-  const APP_VERSION = "20260105.1"; // Change this (e.g., date + increment) on every GitHub push
 
-  // Reload if a newer version is detected
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistration().then(reg => {
-      if (reg) {
-        fetch(`version.json?v=${Date.now()}`).then(r => r.json()).then(data => {
-          if (data.version !== APP_VERSION) {
-            // New version available - force refresh
-            caches.keys().then(names => {
-              names.forEach(name => caches.delete(name));
+    <!-- Fixed Cache-Busting Script -->
+    <script>
+        const APP_VERSION = "20260105.1"; // Update this on every deploy
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistration().then(reg => {
+                if (reg) {
+                    fetch('version.json?t=' + Date.now())
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.version !== APP_VERSION) {
+                                caches.keys().then(names => {
+                                    names.forEach(name => caches.delete(name));
+                                });
+                                reg.unregister().then(() => {
+                                    window.location.reload(true);
+                                });
+                            }
+                        })
+                        .catch(() => {});
+                }
             });
-            reg.unregister().then(() => window.location.reload(true));
-          }
-        }).catch(() => {});
-      }
-    });
-  }
-</script>
+        }
+    </script>
 </head>
 <body>
-  <div class="page-wrapper">
-    <div class="container">
-        <header class="report-header">
-            <div class="header-top">
-                <img src="patch.png" alt="Centerville FD Patch" class="patch-logo">
-                <div class="header-text">
-                    <h1>Centerville Fire Department</h1>
-                    <h2>Firefighter Weekly Performance Report</h2>
+    <div class="page-wrapper">
+        <div class="container">
+            <header class="report-header">
+                <div class="header-top">
+                    <img src="patch.png" alt="Centerville FD Patch" class="patch-logo">
+                    <div class="header-text">
+                        <h1>Centerville Fire Department</h1>
+                        <h2>Firefighter Weekly Performance Report</h2>
+                    </div>
                 </div>
-            </div>
-        </header>
+            </header>
 
-        <h3>1. Personnel Information</h3>
+            <h3>1. Personnel Information</h3>
 
-        <form id="pageForm">
-            <div class="form-row">
-                <div class="form-field">
-                    <label for="report-date">Week Ending Date:</label>
-                    <input type="date" id="report-date" name="Week Ending Date">
+            <form id="pageForm">
+                <div class="form-row">
+                    <div class="form-field">
+                        <label for="report-date">Week Ending Date:</label>
+                        <input type="date" id="report-date" name="Week Ending Date">
+                    </div>
+                    <div class="form-field">
+                        <label for="shift">Shift:</label>
+                        <select id="shift" name="Shift">
+                            <option value="">-- Select Shift --</option>
+                            <option value="Shift 1">Shift 1</option>
+                            <option value="Shift 2">Shift 2</option>
+                            <option value="Shift 3">Shift 3</option>
+                            <option value="Day Shift">Day Shift</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="form-field">
-                    <label for="shift">Shift:</label>
-                    <select id="shift" name="Shift">
-                        <option value="">-- Select Shift --</option>
-                        <option value="Shift 1">Shift 1</option>
-                        <option value="Shift 2">Shift 2</option>
-                        <option value="Shift 3">Shift 3</option>
-                        <option value="Day Shift">Day Shift</option>
-                    </select>
-                </div>
-            </div>
 
-            <div class="form-row">
-                <div class="form-field">
-                    <label for="officer">Officer:</label>
-                    <select id="officer" name="Officer">
-                        <option value="">-- Select Officer --</option>
-                        <option value="Sergeant Dorman">Sergeant Dorman</option>
-                        <option value="Sergeant Redd">Sergeant Redd</option>
-                        <option value="Sergeant Talley">Sergeant Talley</option>
-                        <option value="Engineer Traxler">Engineer Traxler</option>
-                    </select>
+                <div class="form-row">
+                    <div class="form-field">
+                        <label for="officer">Officer:</label>
+                        <select id="officer" name="Officer">
+                            <option value="">-- Select Officer --</option>
+                            <option value="Sergeant Dorman">Sergeant Dorman</option>
+                            <option value="Sergeant Redd">Sergeant Redd</option>
+                            <option value="Sergeant Talley">Sergeant Talley</option>
+                            <option value="Engineer Traxler">Engineer Traxler</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label for="firefighter">Firefighter:</label>
+                        <select id="firefighter" name="Firefighter">
+                            <option value="">-- Select Firefighter --</option>
+                            <option value="Barr, H">Barr, H</option>
+                            <option value="Bennett, K">Bennett, K</option>
+                            <option value="Cannon, J">Cannon, J</option>
+                            <option value="Dunn, P">Dunn, P</option>
+                            <option value="Lightning, L">Lightning, L</option>
+                            <option value="Mixon, J">Mixon, J</option>
+                            <option value="Mooney, W">Mooney, W</option>
+                            <option value="Orona, A">Orona, A</option>
+                            <option value="Schuler, A">Schuler, A</option>
+                            <option value="Smith, M">Smith, M</option>
+                            <option value="Stockholm, J">Stockholm, J</option>
+                            <option value="Thornton, E">Thornton, E</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="form-field">
-                    <label for="firefighter">Firefighter:</label>
-                    <select id="firefighter" name="Firefighter">
-                        <option value="">-- Select Firefighter --</option>
-                        <option value="Barr, H">Barr, H</option>
-                        <option value="Bennett, K">Bennett, K</option>
-                        <option value="Cannon, J">Cannon, J</option>
-                        <option value="Dunn, P">Dunn, P</option>
-                        <option value="Lightning, L">Lightning, L</option>
-                        <option value="Mixon, J">Mixon, J</option>
-                        <option value="Mooney, W">Mooney, W</option>
-                        <option value="Orona, A">Orona, A</option>
-                        <option value="Schuler, A">Schuler, A</option>
-                        <option value="Smith, M">Smith, M</option>
-                        <option value="Stockholm, J">Stockholm, J</option>
-                        <option value="Thornton, E">Thornton, E</option>
-                    </select>
-                </div>
-            </div>
 
-            <div class="form-group apparatus-group">
-                <label>Assigned Apparatus for this Week:</label>
-                <div class="apparatus-buttons">
-                    <label class="apparatus-btn">
-                        <input type="checkbox" name="Apparatus" value="Engine 1">
-                        <span>Engine 1</span>
-                    </label>
-                    <label class="apparatus-btn">
-                        <input type="checkbox" name="Apparatus" value="Engine 2">
-                        <span>Engine 2</span>
-                    </label>
-                    <label class="apparatus-btn">
-                        <input type="checkbox" name="Apparatus" value="Truck 1">
-                        <span>Truck 1</span>
-                    </label>
-                    <label class="apparatus-btn">
-                        <input type="checkbox" name="Apparatus" value="Rescue 1">
-                        <span>Rescue 1</span>
-                    </label>
+                <div class="form-group apparatus-group">
+                    <label>Assigned Apparatus for this Week:</label>
+                    <div class="apparatus-buttons">
+                        <label class="apparatus-btn">
+                            <input type="checkbox" name="Apparatus" value="Engine 1">
+                            <span>Engine 1</span>
+                        </label>
+                        <label class="apparatus-btn">
+                            <input type="checkbox" name="Apparatus" value="Engine 2">
+                            <span>Engine 2</span>
+                        </label>
+                        <label class="apparatus-btn">
+                            <input type="checkbox" name="Apparatus" value="Truck 1">
+                            <span>Truck 1</span>
+                        </label>
+                        <label class="apparatus-btn">
+                            <input type="checkbox" name="Apparatus" value="Rescue 1">
+                            <span>Rescue 1</span>
+                        </label>
+                    </div>
                 </div>
-            </div>
 
-            <div class="form-actions">
-                <button type="button" onclick="saveAndGo('page2.html')">Next → Policies & Conduct</button>
-            </div>
-        </form>
+                <div class="form-actions">
+                    <button type="button" onclick="saveAndGo('page2.html')">Next → Policies & Conduct</button>
+                </div>
+            </form>
+        </div>
+
+        <footer>
+            <img src="city-logo.png" alt="City of Centerville Logo" class="city-logo">
+            <p>© 2026 City of Centerville Fire Department Training Division</p>
+        </footer>
     </div>
 
-    <footer>
-        <img src="city-logo.png" alt="City of Centerville Logo" class="city-logo">
-        <p>© 2026 City of Centerville Fire Department Training Division</p>
-    </footer>
-
+    <!-- Main App Logic + Service Worker Registration -->
     <script>
         function saveAndGo(next) {
             const data = {};
@@ -330,18 +333,21 @@
                     }
                 });
             });
+
+            // Auto-fill today's date if empty
             if (!document.getElementById('report-date').value) {
                 document.getElementById('report-date').value = new Date().toISOString().split('T')[0];
             }
         });
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js')
-        .then(reg => console.log('SW registered', reg))
-        .catch(err => console.log('SW registration failed', err));
-    });
-  }
-</script>
+
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Service Worker registered:', reg))
+                    .catch(err => console.error('SW registration failed:', err));
+            });
+        }
+    </script>
 </body>
 </html>
