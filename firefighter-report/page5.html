@@ -9,10 +9,17 @@
     <meta name="apple-mobile-web-app-title" content="CFD Report">
     <meta name="theme-color" content="#0f172a">
     <title>Centerville FD - Weekly Performance Report</title>
+
+    <!-- Fixed Google Fonts link -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="manifest" href="manifest.json">
+
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            height: 100%;
+            overflow-x: hidden;
+        }
         body {
             font-family: 'Inter', sans-serif;
             background: #0f172a;
@@ -22,7 +29,7 @@
             flex-direction: column;
         }
         .page-wrapper {
-            min-height: 100vh;
+            flex: 1;
             display: flex;
             flex-direction: column;
         }
@@ -149,135 +156,135 @@
             .form-actions { flex-direction: column; gap: 15px; }
             .form-actions button { width: 100%; }
         }
-        @media (min-width: 769px) and (max-width: 1024px) {
-            .container { padding: 30px; max-width: 95%; }
-            .header-text h1 { font-size: 2.5rem; }
-            .header-text h2 { font-size: 1.6rem; }
-            .form-actions button { padding: 12px 25px; font-size: 1.1rem; }
-        }
     </style>
-<script>
-  // Cache-busting version - update this number whenever you deploy changes
-  const APP_VERSION = "20260105.1"; // Change this (e.g., date + increment) on every GitHub push
 
-  // Reload if a newer version is detected
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistration().then(reg => {
-      if (reg) {
-        fetch(`version.json?v=${Date.now()}`).then(r => r.json()).then(data => {
-          if (data.version !== APP_VERSION) {
-            // New version available - force refresh
-            caches.keys().then(names => {
-              names.forEach(name => caches.delete(name));
+    <!-- Cache-busting / version check -->
+    <script>
+        const APP_VERSION = "20260105.1"; // ← Update this on every deploy
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistration().then(reg => {
+                if (reg) {
+                    fetch('version.json?t=' + Date.now())
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.version !== APP_VERSION) {
+                                caches.keys().then(names => {
+                                    names.forEach(name => caches.delete(name));
+                                });
+                                reg.unregister().then(() => {
+                                    window.location.reload(true);
+                                });
+                            }
+                        })
+                        .catch(() => {});
+                }
             });
-            reg.unregister().then(() => window.location.reload(true));
-          }
-        }).catch(() => {});
-      }
-    });
-  }
-</script>
+        }
+    </script>
 </head>
 <body>
     <div class="page-wrapper">
-    <div class="container">
-        <header class="report-header">
-            <div class="header-top">
-                <img src="patch.png" alt="Centerville FD Patch" class="patch-logo">
-                <div class="header-text">
-                    <h1>Centerville Fire Department</h1>
-                    <h2>Firefighter Weekly Performance Report</h2>
+        <div class="container">
+            <header class="report-header">
+                <div class="header-top">
+                    <img src="patch.png" alt="Centerville FD Patch" class="patch-logo">
+                    <div class="header-text">
+                        <h1>Centerville Fire Department</h1>
+                        <h2>Firefighter Weekly Performance Report</h2>
+                    </div>
                 </div>
-            </div>
-        </header>
+            </header>
 
-        <h3>4. Advanced Operations</h3>
+            <h3>4. Advanced Operations</h3>
 
-        <form id="pageForm">
-            <div class="performance-block">
-                <div class="inline-dropdown">
-                    <label class="inline-label">Firefighter demonstrates proper knowledge and proficiency in removing the deck gun for use as a ground monitor.</label>
-                    <select name="Deck Gun Proficiency">
-                        <option value="" selected>Select Proficiency</option>
-                        <option value="Unsatisfactory">Unsatisfactory</option>
-                        <option value="Needs Improvement">Needs Improvement</option>
-                        <option value="Satisfactory">Satisfactory</option>
-                        <option value="Exceeds Expectations">Exceeds Expectations</option>
-                        <option value="Not Applicable">Not Applicable</option>
-                    </select>
+            <form id="pageForm">
+                <div class="performance-block">
+                    <div class="inline-dropdown">
+                        <label class="inline-label">Firefighter demonstrates proper knowledge and proficiency in removing the deck gun for use as a ground monitor.</label>
+                        <select name="Deck Gun Proficiency">
+                            <option value="" selected>Select Proficiency</option>
+                            <option value="Unsatisfactory">Unsatisfactory</option>
+                            <option value="Needs Improvement">Needs Improvement</option>
+                            <option value="Satisfactory">Satisfactory</option>
+                            <option value="Exceeds Expectations">Exceeds Expectations</option>
+                            <option value="Not Applicable">Not Applicable</option>
+                        </select>
+                    </div>
+                    <div class="evaluator-note">
+                        <label>Evaluator Note:</label>
+                        <textarea name="Deck Gun Note" placeholder="Enter any notes regarding deck gun removal, setup as ground monitor, flow control, stability, safety, or related observations..."></textarea>
+                    </div>
                 </div>
-                <div class="evaluator-note">
-                    <label>Evaluator Note:</label>
-                    <textarea name="Deck Gun Note" placeholder="Enter any notes regarding deck gun removal, setup as ground monitor, flow control, stability, safety, or related observations..."></textarea>
-                </div>
-            </div>
 
-            <div class="performance-block">
-                <div class="inline-dropdown">
-                    <label class="inline-label">Firefighter demonstrates proper knowledge and proficiency in removing the BlitzFire rapid attack monitor for exposure protection.</label>
-                    <select name="BlitzFire Proficiency">
-                        <option value="" selected>Select Proficiency</option>
-                        <option value="Unsatisfactory">Unsatisfactory</option>
-                        <option value="Needs Improvement">Needs Improvement</option>
-                        <option value="Satisfactory">Satisfactory</option>
-                        <option value="Exceeds Expectations">Exceeds Expectations</option>
-                        <option value="Not Applicable">Not Applicable</option>
-                    </select>
+                <div class="performance-block">
+                    <div class="inline-dropdown">
+                        <label class="inline-label">Firefighter demonstrates proper knowledge and proficiency in removing the BlitzFire rapid attack monitor for exposure protection.</label>
+                        <select name="BlitzFire Proficiency">
+                            <option value="" selected>Select Proficiency</option>
+                            <option value="Unsatisfactory">Unsatisfactory</option>
+                            <option value="Needs Improvement">Needs Improvement</option>
+                            <option value="Satisfactory">Satisfactory</option>
+                            <option value="Exceeds Expectations">Exceeds Expectations</option>
+                            <option value="Not Applicable">Not Applicable</option>
+                        </select>
+                    </div>
+                    <div class="evaluator-note">
+                        <label>Evaluator Note:</label>
+                        <textarea name="BlitzFire Note" placeholder="Enter any notes regarding BlitzFire removal, setup, anchoring, flow control, exposure protection application, or related observations..."></textarea>
+                    </div>
                 </div>
-                <div class="evaluator-note">
-                    <label>Evaluator Note:</label>
-                    <textarea name="BlitzFire Note" placeholder="Enter any notes regarding BlitzFire removal, setup, anchoring, flow control, exposure protection application, or related observations..."></textarea>
-                </div>
-            </div>
 
-            <div class="performance-block">
-                <div class="inline-dropdown">
-                    <label class="inline-label">Firefighter demonstrates proper knowledge and proficiency in flowing and maneuvering various attack lines in accordance with industry standards.</label>
-                    <select name="Attack Lines Flow Proficiency">
-                        <option value="" selected>Select Proficiency</option>
-                        <option value="Unsatisfactory">Unsatisfactory</option>
-                        <option value="Needs Improvement">Needs Improvement</option>
-                        <option value="Satisfactory">Satisfactory</option>
-                        <option value="Exceeds Expectations">Exceeds Expectations</option>
-                        <option value="Not Applicable">Not Applicable</option>
-                    </select>
+                <div class="performance-block">
+                    <div class="inline-dropdown">
+                        <label class="inline-label">Firefighter demonstrates proper knowledge and proficiency in flowing and maneuvering various attack lines in accordance with industry standards.</label>
+                        <select name="Attack Lines Flow Proficiency">
+                            <option value="" selected>Select Proficiency</option>
+                            <option value="Unsatisfactory">Unsatisfactory</option>
+                            <option value="Needs Improvement">Needs Improvement</option>
+                            <option value="Satisfactory">Satisfactory</option>
+                            <option value="Exceeds Expectations">Exceeds Expectations</option>
+                            <option value="Not Applicable">Not Applicable</option>
+                        </select>
+                    </div>
+                    <div class="evaluator-note">
+                        <label>Evaluator Note:</label>
+                        <textarea name="Attack Lines Flow Note" placeholder="Enter any notes regarding flowing techniques, nozzle control, line advancement, backing up, bleed-off, or related observations..."></textarea>
+                    </div>
                 </div>
-                <div class="evaluator-note">
-                    <label>Evaluator Note:</label>
-                    <textarea name="Attack Lines Flow Note" placeholder="Enter any notes regarding flowing techniques, nozzle control, line advancement, backing up, bleed-off, or related observations..."></textarea>
-                </div>
-            </div>
 
-            <div class="performance-block">
-                <div class="inline-dropdown">
-                    <label class="inline-label">Firefighter demonstrates proper knowledge and proficiency with fire department ground ladders in a given scenario.</label>
-                    <select name="Ground Ladders Proficiency">
-                        <option value="" selected>Select Proficiency</option>
-                        <option value="Unsatisfactory">Unsatisfactory</option>
-                        <option value="Needs Improvement">Needs Improvement</option>
-                        <option value="Satisfactory">Satisfactory</option>
-                        <option value="Exceeds Expectations">Exceeds Expectations</option>
-                        <option value="Not Applicable">Not Applicable</option>
-                    </select>
+                <div class="performance-block">
+                    <div class="inline-dropdown">
+                        <label class="inline-label">Firefighter demonstrates proper knowledge and proficiency with fire department ground ladders in a given scenario.</label>
+                        <select name="Ground Ladders Proficiency">
+                            <option value="" selected>Select Proficiency</option>
+                            <option value="Unsatisfactory">Unsatisfactory</option>
+                            <option value="Needs Improvement">Needs Improvement</option>
+                            <option value="Satisfactory">Satisfactory</option>
+                            <option value="Exceeds Expectations">Exceeds Expectations</option>
+                            <option value="Not Applicable">Not Applicable</option>
+                        </select>
+                    </div>
+                    <div class="evaluator-note">
+                        <label>Evaluator Note:</label>
+                        <textarea name="Ground Ladders Note" placeholder="Enter any notes regarding ladder selection, carry, placement, climbing, footing, securing, or scenario performance..."></textarea>
+                    </div>
                 </div>
-                <div class="evaluator-note">
-                    <label>Evaluator Note:</label>
-                    <textarea name="Ground Ladders Note" placeholder="Enter any notes regarding ladder selection, carry, placement, climbing, footing, securing, or scenario performance..."></textarea>
-                </div>
-            </div>
 
-            <div class="form-actions">
-                <button type="button" onclick="window.history.back()">← Back</button>
-                <button type="button" onclick="saveAndGo('page6.html')">Next → Command & Scene</button>
-            </div>
-        </form>
+                <div class="form-actions">
+                    <button type="button" onclick="window.history.back()">← Back</button>
+                    <button type="button" onclick="saveAndGo('page6.html')">Next → Command & Scene</button>
+                </div>
+            </form>
+        </div>
+
+        <footer>
+            <img src="city-logo.png" alt="City of Centerville Logo" class="city-logo">
+            <p>© 2026 City of Centerville Fire Department Training Division</p>
+        </footer>
     </div>
 
-    <footer>
-        <img src="city-logo.png" alt="City of Centerville Logo" class="city-logo">
-        <p>© 2026 City of Centerville Fire Department Training Division</p>
-    </footer>
-
+    <!-- Form save/load + Service Worker registration -->
     <script>
         function saveAndGo(next) {
             const data = {};
@@ -302,6 +309,15 @@
                 });
             });
         });
+
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Service Worker registered:', reg))
+                    .catch(err => console.error('Service Worker registration failed:', err));
+            });
+        }
     </script>
 </body>
 </html>
