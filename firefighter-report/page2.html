@@ -155,9 +155,34 @@
             .header-text h2 { font-size: 1.5rem; }
             .form-actions { flex-direction: column; gap: 15px; }
             .form-actions button { width: 100%; }
+
         }
     </style>
-
+/* Enhanced tablet support (landscape) */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .container {
+        max-width: 960px;
+        padding: 40px;
+        margin: 30px auto;
+    }
+    .form-actions {
+        gap: 24px;
+    }
+    .form-actions button {
+        padding: 18px 40px;
+        font-size: 1.3rem;
+    }
+    .apparatus-buttons {
+        gap: 24px;
+    }
+    .apparatus-btn span {
+        padding: 20px 40px;
+        font-size: 1.3rem;
+    }
+    .signature-wrapper {
+        height: 280px; /* Slightly larger canvas on tablets */
+    }
+}
     <!-- Fixed Cache-Busting Script -->
     <script>
         const APP_VERSION = "20260105.1"; // Update this on every deploy
