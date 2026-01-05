@@ -9,10 +9,17 @@
     <meta name="apple-mobile-web-app-title" content="CFD Report">
     <meta name="theme-color" content="#0f172a">
     <title>Centerville FD - Weekly Performance Report</title>
+
+    <!-- Fixed Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="manifest" href="manifest.json">
+
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            height: 100%;
+            overflow-x: hidden;
+        }
         body {
             font-family: 'Inter', sans-serif;
             background: #0f172a;
@@ -22,7 +29,7 @@
             flex-direction: column;
         }
         .page-wrapper {
-            min-height: 100vh;
+            flex: 1;
             display: flex;
             flex-direction: column;
         }
@@ -149,117 +156,117 @@
             .form-actions { flex-direction: column; gap: 15px; }
             .form-actions button { width: 100%; }
         }
-        @media (min-width: 769px) and (max-width: 1024px) {
-            .container { padding: 30px; max-width: 95%; }
-            .header-text h1 { font-size: 2.5rem; }
-            .header-text h2 { font-size: 1.6rem; }
-            .form-actions button { padding: 12px 25px; font-size: 1.1rem; }
-        }
     </style>
-<script>
-  // Cache-busting version - update this number whenever you deploy changes
-  const APP_VERSION = "20260105.1"; // Change this (e.g., date + increment) on every GitHub push
 
-  // Reload if a newer version is detected
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistration().then(reg => {
-      if (reg) {
-        fetch(`version.json?v=${Date.now()}`).then(r => r.json()).then(data => {
-          if (data.version !== APP_VERSION) {
-            // New version available - force refresh
-            caches.keys().then(names => {
-              names.forEach(name => caches.delete(name));
+    <!-- Fixed Cache-Busting Script -->
+    <script>
+        const APP_VERSION = "20260105.1"; // Update this on every GitHub deploy
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistration().then(reg => {
+                if (reg) {
+                    fetch('version.json?t=' + Date.now())
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.version !== APP_VERSION) {
+                                caches.keys().then(names => {
+                                    names.forEach(name => caches.delete(name));
+                                });
+                                reg.unregister().then(() => {
+                                    window.location.reload(true);
+                                });
+                            }
+                        })
+                        .catch(() => {});
+                }
             });
-            reg.unregister().then(() => window.location.reload(true));
-          }
-        }).catch(() => {});
-      }
-    });
-  }
-</script>
+        }
+    </script>
 </head>
 <body>
     <div class="page-wrapper">
-    <div class="container">
-        <header class="report-header">
-            <div class="header-top">
-                <img src="patch.png" alt="Centerville FD Patch" class="patch-logo">
-                <div class="header-text">
-                    <h1>Centerville Fire Department</h1>
-                    <h2>Firefighter Weekly Performance Report</h2>
+        <div class="container">
+            <header class="report-header">
+                <div class="header-top">
+                    <img src="patch.png" alt="Centerville FD Patch" class="patch-logo">
+                    <div class="header-text">
+                        <h1>Centerville Fire Department</h1>
+                        <h2>Firefighter Weekly Performance Report</h2>
+                    </div>
                 </div>
-            </div>
-        </header>
+            </header>
 
-        <h3>2. PPE & Medical</h3>
+            <h3>2. PPE & Medical</h3>
 
-        <form id="pageForm">
-            <div class="performance-block">
-                <div class="inline-dropdown">
-                    <label class="inline-label">Firefighter can demonstrate donning of the firefighter's structural PPE with SCBA within two (2) minutes or less.</label>
-                    <select name="PPE/SCBA Donning Proficiency">
-                        <option value="" selected>Select Proficiency</option>
-                        <option value="Unsatisfactory">Unsatisfactory</option>
-                        <option value="Needs Improvement">Needs Improvement</option>
-                        <option value="Satisfactory">Satisfactory</option>
-                        <option value="Exceeds Expectations">Exceeds Expectations</option>
-                        <option value="Not Applicable">Not Applicable</option>
-                    </select>
+            <form id="pageForm">
+                <div class="performance-block">
+                    <div class="inline-dropdown">
+                        <label class="inline-label">Firefighter can demonstrate donning of the firefighter's structural PPE with SCBA within two (2) minutes or less.</label>
+                        <select name="PPE/SCBA Donning Proficiency">
+                            <option value="" selected>Select Proficiency</option>
+                            <option value="Unsatisfactory">Unsatisfactory</option>
+                            <option value="Needs Improvement">Needs Improvement</option>
+                            <option value="Satisfactory">Satisfactory</option>
+                            <option value="Exceeds Expectations">Exceeds Expectations</option>
+                            <option value="Not Applicable">Not Applicable</option>
+                        </select>
+                    </div>
+                    <div class="evaluator-note">
+                        <label>Evaluator Note:</label>
+                        <textarea name="PPE/SCBA Donning Note" placeholder="Enter time achieved, any issues with donning sequence, mask seal, regulator connection, SCBA checks, or related observations..."></textarea>
+                    </div>
                 </div>
-                <div class="evaluator-note">
-                    <label>Evaluator Note:</label>
-                    <textarea name="PPE/SCBA Donning Note" placeholder="Enter time achieved, any issues with donning sequence, mask seal, regulator connection, SCBA checks, or related observations..."></textarea>
-                </div>
-            </div>
 
-            <div class="performance-block">
-                <div class="inline-dropdown">
-                    <label class="inline-label">Firefighter demonstrates proper inventory and function check of medical equipment carried on the Rescue Unit.</label>
-                    <select name="Medical Equipment Proficiency">
-                        <option value="" selected>Select Proficiency</option>
-                        <option value="Unsatisfactory">Unsatisfactory</option>
-                        <option value="Needs Improvement">Needs Improvement</option>
-                        <option value="Satisfactory">Satisfactory</option>
-                        <option value="Exceeds Expectations">Exceeds Expectations</option>
-                        <option value="Not Applicable">Not Applicable</option>
-                    </select>
+                <div class="performance-block">
+                    <div class="inline-dropdown">
+                        <label class="inline-label">Firefighter demonstrates proper inventory and function check of medical equipment carried on the Rescue Unit.</label>
+                        <select name="Medical Equipment Proficiency">
+                            <option value="" selected>Select Proficiency</option>
+                            <option value="Unsatisfactory">Unsatisfactory</option>
+                            <option value="Needs Improvement">Needs Improvement</option>
+                            <option value="Satisfactory">Satisfactory</option>
+                            <option value="Exceeds Expectations">Exceeds Expectations</option>
+                            <option value="Not Applicable">Not Applicable</option>
+                        </select>
+                    </div>
+                    <div class="evaluator-note">
+                        <label>Evaluator Note:</label>
+                        <textarea name="Medical Equipment Note" placeholder="Enter any notes regarding inventory accuracy, function checks of AED, oxygen, trauma bag, or other medical equipment readiness..."></textarea>
+                    </div>
                 </div>
-                <div class="evaluator-note">
-                    <label>Evaluator Note:</label>
-                    <textarea name="Medical Equipment Note" placeholder="Enter any notes regarding inventory accuracy, function checks of AED, oxygen, trauma bag, or other medical equipment readiness..."></textarea>
-                </div>
-            </div>
 
-            <div class="performance-block">
-                <div class="inline-dropdown">
-                    <label class="inline-label">Firefighter demonstrates proper inventory and function check of the RIT pack carried on the engine.</label>
-                    <select name="RIT Pack Proficiency">
-                        <option value="" selected>Select Proficiency</option>
-                        <option value="Unsatisfactory">Unsatisfactory</option>
-                        <option value="Needs Improvement">Needs Improvement</option>
-                        <option value="Satisfactory">Satisfactory</option>
-                        <option value="Exceeds Expectations">Exceeds Expectations</option>
-                        <option value="Not Applicable">Not Applicable</option>
-                    </select>
+                <div class="performance-block">
+                    <div class="inline-dropdown">
+                        <label class="inline-label">Firefighter demonstrates proper inventory and function check of the RIT pack carried on the engine.</label>
+                        <select name="RIT Pack Proficiency">
+                            <option value="" selected>Select Proficiency</option>
+                            <option value="Unsatisfactory">Unsatisfactory</option>
+                            <option value="Needs Improvement">Needs Improvement</option>
+                            <option value="Satisfactory">Satisfactory</option>
+                            <option value="Exceeds Expectations">Exceeds Expectations</option>
+                            <option value="Not Applicable">Not Applicable</option>
+                        </select>
+                    </div>
+                    <div class="evaluator-note">
+                        <label>Evaluator Note:</label>
+                        <textarea name="RIT Pack Note" placeholder="Enter any notes regarding RIT pack inventory, air cylinder pressure, regulator function, mask condition, rope, tools, or related observations..."></textarea>
+                    </div>
                 </div>
-                <div class="evaluator-note">
-                    <label>Evaluator Note:</label>
-                    <textarea name="RIT Pack Note" placeholder="Enter any notes regarding RIT pack inventory, air cylinder pressure, regulator function, mask condition, rope, tools, or related observations..."></textarea>
-                </div>
-            </div>
 
-            <div class="form-actions">
-                <button type="button" onclick="window.history.back()">← Back</button>
-                <button type="button" onclick="saveAndGo('page4.html')">Next → Hose & Equipment</button>
-            </div>
-        </form>
+                <div class="form-actions">
+                    <button type="button" onclick="window.history.back()">← Back</button>
+                    <button type="button" onclick="saveAndGo('page4.html')">Next → Hose & Equipment</button>
+                </div>
+            </form>
+        </div>
+
+        <footer>
+            <img src="city-logo.png" alt="City of Centerville Logo" class="city-logo">
+            <p>© 2026 City of Centerville Fire Department Training Division</p>
+        </footer>
     </div>
 
-    <footer>
-        <img src="city-logo.png" alt="City of Centerville Logo" class="city-logo">
-        <p>© 2026 City of Centerville Fire Department Training Division</p>
-    </footer>
-
+    <!-- Main Script: Save/Load Data + Service Worker Registration -->
     <script>
         function saveAndGo(next) {
             const data = {};
@@ -284,6 +291,15 @@
                 });
             });
         });
+
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Service Worker registered:', reg))
+                    .catch(err => console.error('SW registration failed:', err));
+            });
+        }
     </script>
 </body>
 </html>
