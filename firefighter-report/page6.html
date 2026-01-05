@@ -156,6 +156,27 @@
             .form-actions button { padding: 12px 25px; font-size: 1.1rem; }
         }
     </style>
+<script>
+  // Cache-busting version - update this number whenever you deploy changes
+  const APP_VERSION = "20260105.1"; // Change this (e.g., date + increment) on every GitHub push
+
+  // Reload if a newer version is detected
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistration().then(reg => {
+      if (reg) {
+        fetch(`version.json?v=${Date.now()}`).then(r => r.json()).then(data => {
+          if (data.version !== APP_VERSION) {
+            // New version available - force refresh
+            caches.keys().then(names => {
+              names.forEach(name => caches.delete(name));
+            });
+            reg.unregister().then(() => window.location.reload(true));
+          }
+        }).catch(() => {});
+      }
+    });
+  }
+</script>
 </head>
 <body>
     <div class="page-wrapper">
