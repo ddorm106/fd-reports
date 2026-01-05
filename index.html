@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -8,7 +9,7 @@
     <title>Centerville FD Reports & Training</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="patch.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/patch.png">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body {
@@ -226,7 +227,6 @@
         const sendButton = document.getElementById('send-button');
         const fileInput = document.getElementById('file-upload');
 
-        // Show feedback when files are selected
         fileInput.addEventListener('change', () => {
             if (fileInput.files.length > 0) {
                 statusDiv.textContent = `${fileInput.files.length} file${fileInput.files.length > 1 ? 's' : ''} selected`;
@@ -243,64 +243,54 @@
                 statusDiv.style.color = '#dc2626';
                 return;
             }
-
             statusDiv.textContent = 'Uploading and sending... Please wait.';
             statusDiv.style.color = '#f59e0b';
             sendButton.disabled = true;
             sendButton.textContent = 'Sending...';
         });
-    <script>
-  // Hide/minimize address bar on load and orientation change
-  window.addEventListener('load', function() {
-    setTimeout(function() {
-      window.scrollTo(0, 1);
-    }, 0);
-  });
-
-  window.addEventListener('orientationchange', function() {
-    setTimeout(function() {
-      window.scrollTo(0, 1);
-    }, 0);
-  });
-</script>
     </script>
-<script>
-    // Add this at the end of your existing script
-    if (window.location.search.includes('success')) {
-        statusDiv.textContent = 'Files uploaded and emailed successfully! Thank you.';
-        statusDiv.style.color = '#16a34a';
-        sendButton.disabled = false;
-        sendButton.textContent = 'Send Files via Email →';
-    }
-</script>
-<script>
-    // Auto-update: Poll for changes to index.html and reload if updated (with alert)
-    (function() {
-        const currentPath = window.location.pathname;
-        const pageToCheck = currentPath.endsWith('/') ? currentPath + 'index.html' : currentPath;
 
-        // Get initial Last-Modified on page load
-        fetch(pageToCheck, { method: 'HEAD', cache: 'no-store' })
-            .then(response => {
-                const initialModified = response.headers.get('Last-Modified');
-                if (!initialModified) return; // Fallback if server doesn't support it
+    <script>
+        // Hide address bar
+        window.addEventListener('load', () => setTimeout(() => window.scrollTo(0, 1), 0));
+        window.addEventListener('orientationchange', () => setTimeout(() => window.scrollTo(0, 1), 0));
+    </script>
 
-                // Poll every 30 seconds (30000 ms) - adjust if you want faster/slower
-                setInterval(() => {
-                    fetch(pageToCheck, { method: 'HEAD', cache: 'no-store' })
-                        .then(newResponse => {
-                            const newModified = newResponse.headers.get('Last-Modified');
-                            if (newModified && newModified !== initialModified) {
-                                // Optional enhancement: Friendly alert before reload
-                                alert('A new version of the Reports & Training portal is available!\n\nThe page will now refresh to load the latest updates.');
-                                console.log('Update detected - reloading page...');
-                                window.location.reload();
-                            }
-                        })
-                        .catch(err => console.warn('Polling error:', err));
-                }, 30000);
-            })
-            .catch(err => console.warn('Initial check error:', err));
-    })();
-</script></body>
+    <script>
+        // Success message from FabForm
+        if (window.location.search.includes('success')) {
+            statusDiv.textContent = 'Files uploaded and emailed successfully! Thank you.';
+            statusDiv.style.color = '#16a34a';
+            sendButton.disabled = false;
+            sendButton.textContent = 'Send Files via Email →';
+        }
+    </script>
+
+    <script>
+        // Auto-update with alert
+        (function() {
+            const currentPath = window.location.pathname;
+            const pageToCheck = currentPath.endsWith('/') ? currentPath + 'index.html' : currentPath;
+
+            fetch(pageToCheck, { method: 'HEAD', cache: 'no-store' })
+                .then(response => {
+                    const initialModified = response.headers.get('Last-Modified');
+                    if (!initialModified) return;
+
+                    setInterval(() => {
+                        fetch(pageToCheck, { method: 'HEAD', cache: 'no-store' })
+                            .then(newResponse => {
+                                const newModified = newResponse.headers.get('Last-Modified');
+                                if (newModified && newModified !== initialModified) {
+                                    alert('A new version of the Reports & Training portal is available!\n\nThe page will now refresh to load the latest updates.');
+                                    window.location.reload();
+                                }
+                            })
+                            .catch(err => console.warn('Polling error:', err));
+                    }, 30000);
+                })
+                .catch(err => console.warn('Initial check error:', err));
+        })();
+    </script>
+</body>
 </html>
