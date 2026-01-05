@@ -1,10 +1,12 @@
 {
-  "name": "Centerville FD Training Reports",
-  "short_name": "CFD Training",
-  "start_url": ".",
+  "name": "Centerville Fire Department Reports & Training",
+  "short_name": "Centerville FD",
+  "description": "Reports & Training System",
+  "start_url": "/index.html",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#dc2626",
+  "orientation": "portrait-primary",
   "icons": [
     {
       "src": "patch.png",
@@ -15,6 +17,12 @@
       "src": "patch.png",
       "sizes": "512x512",
       "type": "image/png"
+    },
+    {
+      "src": "patch.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
