@@ -1,10 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>Centerville FD Reports & Training</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="patch.png">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body {
@@ -167,10 +171,10 @@
             </div>
 
             <div class="report-card">
-    <h3>Premade Training Report</h3>
-    <p>Fill details, multiple digital signatures, download signed PDF</p>
-    <a href="premade-sheets/training-report.html" target="_blank">Open Premade Sheet →</a>
-</div>
+            <h3>Premade Training Report</h3>
+            <p>Coming soon</p>
+                <a href="#" class="disabled">Available Soon</a>
+            </div>
 
             <!-- Upload Training Sheets Card -->
             <div class="report-card">
@@ -245,6 +249,20 @@
             sendButton.disabled = true;
             sendButton.textContent = 'Sending...';
         });
+    <script>
+  // Hide/minimize address bar on load and orientation change
+  window.addEventListener('load', function() {
+    setTimeout(function() {
+      window.scrollTo(0, 1);
+    }, 0);
+  });
+
+  window.addEventListener('orientationchange', function() {
+    setTimeout(function() {
+      window.scrollTo(0, 1);
+    }, 0);
+  });
+</script>
     </script>
 <script>
     // Add this at the end of your existing script
@@ -255,5 +273,34 @@
         sendButton.textContent = 'Send Files via Email →';
     }
 </script>
-</body>
+<script>
+    // Auto-update: Poll for changes to index.html and reload if updated (with alert)
+    (function() {
+        const currentPath = window.location.pathname;
+        const pageToCheck = currentPath.endsWith('/') ? currentPath + 'index.html' : currentPath;
+
+        // Get initial Last-Modified on page load
+        fetch(pageToCheck, { method: 'HEAD', cache: 'no-store' })
+            .then(response => {
+                const initialModified = response.headers.get('Last-Modified');
+                if (!initialModified) return; // Fallback if server doesn't support it
+
+                // Poll every 30 seconds (30000 ms) - adjust if you want faster/slower
+                setInterval(() => {
+                    fetch(pageToCheck, { method: 'HEAD', cache: 'no-store' })
+                        .then(newResponse => {
+                            const newModified = newResponse.headers.get('Last-Modified');
+                            if (newModified && newModified !== initialModified) {
+                                // Optional enhancement: Friendly alert before reload
+                                alert('A new version of the Reports & Training portal is available!\n\nThe page will now refresh to load the latest updates.');
+                                console.log('Update detected - reloading page...');
+                                window.location.reload();
+                            }
+                        })
+                        .catch(err => console.warn('Polling error:', err));
+                }, 30000);
+            })
+            .catch(err => console.warn('Initial check error:', err));
+    })();
+</script></body>
 </html>
