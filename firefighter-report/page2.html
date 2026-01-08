@@ -10,10 +10,11 @@
     <meta name="theme-color" content="#0f172a">
     <title>Centerville FD - Weekly Performance Report</title>
 
-    <!-- Fixed Google Fonts Link -->
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="manifest" href="manifest.json">
 
+    <!-- Styles -->
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body {
@@ -65,6 +66,12 @@
             color: #f59e0b;
             font-size: 1.8rem;
             margin: 40px 0 30px;
+        }
+        .progress-indicator {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #cbd5e1;
+            font-size: 1.1rem;
         }
         form { display: flex; flex-direction: column; gap: 30px; }
         .performance-block {
@@ -119,6 +126,7 @@
             display: flex;
             justify-content: space-between;
             margin-top: 30px;
+            gap: 12px;
         }
         .form-actions button {
             padding: 15px 30px;
@@ -129,11 +137,21 @@
             font-size: 1.2rem;
             font-weight: 700;
             cursor: pointer;
-            transition: background 0.3s;
+            transition: background 0.3s ease;
+            flex: 1;
         }
-        .form-actions button:hover { background: #b91c1c; }
-        .form-actions button:first-child { background: #334155; }
-        .form-actions button:first-child:hover { background: #475569; }
+        .form-actions button:hover:not(:disabled) { background: #b91c1c; }
+        .form-actions button:first-child {
+            background: #334155;
+        }
+        .form-actions button:first-child:hover:not(:disabled) {
+            background: #475569;
+        }
+        .form-actions button:disabled {
+            background: #64748b;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
         footer {
             text-align: center;
             padding: 30px 20px 40px;
@@ -155,58 +173,13 @@
             .header-text h2 { font-size: 1.5rem; }
             .form-actions { flex-direction: column; gap: 15px; }
             .form-actions button { width: 100%; }
-
+        }
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .container { max-width: 960px; padding: 40px; margin: 30px auto; }
+            .form-actions { gap: 24px; }
+            .form-actions button { padding: 18px 40px; font-size: 1.3rem; }
         }
     </style>
-/* Enhanced tablet support (landscape) */
-@media (min-width: 769px) and (max-width: 1024px) {
-    .container {
-        max-width: 960px;
-        padding: 40px;
-        margin: 30px auto;
-    }
-    .form-actions {
-        gap: 24px;
-    }
-    .form-actions button {
-        padding: 18px 40px;
-        font-size: 1.3rem;
-    }
-    .apparatus-buttons {
-        gap: 24px;
-    }
-    .apparatus-btn span {
-        padding: 20px 40px;
-        font-size: 1.3rem;
-    }
-    .signature-wrapper {
-        height: 280px; /* Slightly larger canvas on tablets */
-    }
-}
-    <!-- Fixed Cache-Busting Script -->
-    <script>
-        const APP_VERSION = "20260105.1"; // Update this on every deploy
-
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistration().then(reg => {
-                if (reg) {
-                    fetch('version.json?t=' + Date.now())
-                        .then(r => r.json())
-                        .then(data => {
-                            if (data.version !== APP_VERSION) {
-                                caches.keys().then(names => {
-                                    names.forEach(name => caches.delete(name));
-                                });
-                                reg.unregister().then(() => {
-                                    window.location.reload(true);
-                                });
-                            }
-                        })
-                        .catch(() => {});
-                }
-            });
-        }
-    </script>
 </head>
 <body>
     <div class="page-wrapper">
@@ -221,14 +194,16 @@
                 </div>
             </header>
 
+            <div class="progress-indicator">Page 2 of 7</div>
+
             <h3>2. Policies & Conduct</h3>
 
             <form id="pageForm">
                 <div class="performance-block">
                     <div class="inline-dropdown">
-                        <label class="inline-label">Firefighter Reported to Shift on Time and in Proper Uniform:</label>
-                        <select name="On Time & Uniform Rating">
-                            <option value="" selected>Select Proficiency</option>
+                        <label class="inline-label">Firefighter Reported to Shift on Time and in Proper Uniform:<span class="required">*</span></label>
+                        <select name="On Time & Uniform Rating" required>
+                            <option value="">Select Proficiency</option>
                             <option value="Unsatisfactory">Unsatisfactory</option>
                             <option value="Needs Improvement">Needs Improvement</option>
                             <option value="Satisfactory">Satisfactory</option>
@@ -244,9 +219,9 @@
 
                 <div class="performance-block">
                     <div class="inline-dropdown">
-                        <label class="inline-label">Firefighter demonstrates proper use and understanding of the functions of the portable and mobile radios used at Centerville Fire Department:</label>
-                        <select name="Radio Proficiency">
-                            <option value="" selected>Select Proficiency</option>
+                        <label class="inline-label">Firefighter demonstrates proper use and understanding of the functions of the portable and mobile radios used at Centerville Fire Department:<span class="required">*</span></label>
+                        <select name="Radio Proficiency" required>
+                            <option value="">Select Proficiency</option>
                             <option value="Unsatisfactory">Unsatisfactory</option>
                             <option value="Needs Improvement">Needs Improvement</option>
                             <option value="Satisfactory">Satisfactory</option>
@@ -262,9 +237,9 @@
 
                 <div class="performance-block">
                     <div class="inline-dropdown">
-                        <label class="inline-label">Firefighter regards their personal cell phone as a resource that supports, rather than impedes, their professionalism and work ethic.</label>
-                        <select name="Cell Phone Proficiency">
-                            <option value="" selected>Select Proficiency</option>
+                        <label class="inline-label">Firefighter regards their personal cell phone as a resource that supports, rather than impedes, their professionalism and work ethic:<span class="required">*</span></label>
+                        <select name="Cell Phone Proficiency" required>
+                            <option value="">Select Proficiency</option>
                             <option value="Unsatisfactory">Unsatisfactory</option>
                             <option value="Needs Improvement">Needs Improvement</option>
                             <option value="Satisfactory">Satisfactory</option>
@@ -280,9 +255,9 @@
 
                 <div class="performance-block">
                     <div class="inline-dropdown">
-                        <label class="inline-label">Firefighter demonstrates knowledge and understands the city's policies set forth by the governing authority.</label>
-                        <select name="City Policies Proficiency">
-                            <option value="" selected>Select Proficiency</option>
+                        <label class="inline-label">Firefighter demonstrates knowledge and understands the city's policies set forth by the governing authority:<span class="required">*</span></label>
+                        <select name="City Policies Proficiency" required>
+                            <option value="">Select Proficiency</option>
                             <option value="Unsatisfactory">Unsatisfactory</option>
                             <option value="Needs Improvement">Needs Improvement</option>
                             <option value="Satisfactory">Satisfactory</option>
@@ -298,9 +273,9 @@
 
                 <div class="performance-block">
                     <div class="inline-dropdown">
-                        <label class="inline-label">Firefighter demonstrates knowledge and understands the fire department policies set forth by the Centerville Fire Department Command Staff.</label>
-                        <select name="Department Policies Proficiency">
-                            <option value="" selected>Select Proficiency</option>
+                        <label class="inline-label">Firefighter demonstrates knowledge and understands the fire department policies set forth by the Centerville Fire Department Command Staff:<span class="required">*</span></label>
+                        <select name="Department Policies Proficiency" required>
+                            <option value="">Select Proficiency</option>
                             <option value="Unsatisfactory">Unsatisfactory</option>
                             <option value="Needs Improvement">Needs Improvement</option>
                             <option value="Satisfactory">Satisfactory</option>
@@ -315,8 +290,8 @@
                 </div>
 
                 <div class="form-actions">
-                    <button type="button" onclick="window.history.back()">← Back</button>
-                    <button type="button" onclick="saveAndGo('page3.html')">Next → PPE & Medical</button>
+                    <button type="button" id="back-btn">← Back</button>
+                    <button type="button" id="next-btn">Next → PPE & Medical</button>
                 </div>
             </form>
         </div>
@@ -327,33 +302,74 @@
         </footer>
     </div>
 
-    <!-- Main Script: Save Data + Load Previous + Service Worker -->
     <script>
-        function saveAndGo(next) {
+        // App version for cache busting
+        const APP_VERSION = "20260105.2";
+
+        // Cache busting logic
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistration().then(reg => {
+                if (reg) {
+                    fetch('version.json?t=' + Date.now())
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.version !== APP_VERSION) {
+                                caches.keys().then(names => {
+                                    names.forEach(name => caches.delete(name));
+                                });
+                                reg.unregister().then(() => window.location.reload(true));
+                            }
+                        })
+                        .catch(() => {});
+                }
+            });
+        }
+
+        // Save data and navigate
+        function saveAndGo(nextPage) {
+            const form = document.getElementById('pageForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
             const data = {};
-            const formElements = document.querySelectorAll('#pageForm select, #pageForm textarea');
+            const formElements = form.querySelectorAll('select, textarea');
             formElements.forEach(el => {
                 if (el.value !== '') {
                     data[el.name] = el.value;
                 }
             });
+
             const existingData = JSON.parse(localStorage.getItem('reportData') || '{}');
             const mergedData = { ...existingData, ...data };
             localStorage.setItem('reportData', JSON.stringify(mergedData));
-            window.location.href = next;
+
+            window.location.href = nextPage;
         }
 
+        // Load saved data
         window.addEventListener('load', () => {
-            const data = JSON.parse(localStorage.getItem('reportData') || '{}');
-            Object.keys(data).forEach(key => {
+            const savedData = JSON.parse(localStorage.getItem('reportData') || '{}');
+
+            Object.keys(savedData).forEach(key => {
                 const elements = document.querySelectorAll(`[name="${key}"]`);
                 elements.forEach(el => {
-                    el.value = data[key] || '';
+                    el.value = savedData[key] || '';
                 });
+            });
+
+            // Button event listeners
+            document.getElementById('back-btn').addEventListener('click', () => {
+                window.history.back();
+            });
+
+            document.getElementById('next-btn').addEventListener('click', () => {
+                saveAndGo('page3.html');
             });
         });
 
-        // Register Service Worker
+        // Service Worker registration
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js')
