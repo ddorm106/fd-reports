@@ -9,8 +9,12 @@
     <meta name="apple-mobile-web-app-title" content="CFD Report">
     <meta name="theme-color" content="#0f172a">
     <title>Centerville FD - Weekly Performance Report</title>
+
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="manifest" href="manifest.json">
+
+    <!-- Styles -->
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body {
@@ -62,6 +66,12 @@
             color: #f59e0b;
             font-size: 1.8rem;
             margin: 40px 0 30px;
+        }
+        .progress-indicator {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #cbd5e1;
+            font-size: 1.1rem;
         }
         form { display: flex; flex-direction: column; gap: 30px; }
         .form-row {
@@ -142,10 +152,10 @@
         }
         .form-actions {
             text-align: center;
-            margin-top: 20px;
+            margin-top: 30px;
         }
         .form-actions button {
-            padding: 15px 30px;
+            padding: 15px 40px;
             background: #dc2626;
             color: white;
             border: none;
@@ -153,9 +163,14 @@
             font-size: 1.2rem;
             font-weight: 700;
             cursor: pointer;
-            transition: background 0.3s;
+            transition: background 0.3s ease;
         }
-        .form-actions button:hover { background: #b91c1c; }
+        .form-actions button:hover:not(:disabled) { background: #b91c1c; }
+        .form-actions button:disabled {
+            background: #64748b;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
         footer {
             text-align: center;
             padding: 30px 20px 40px;
@@ -175,58 +190,14 @@
             .header-top { flex-direction: column; }
             .header-text h1 { font-size: 2.2rem; }
             .header-text h2 { font-size: 1.5rem; }
-            .form-actions button { width: 100%; }
-/* Enhanced tablet support (landscape) */
-@media (min-width: 769px) and (max-width: 1024px) {
-    .container {
-        max-width: 960px;
-        padding: 40px;
-        margin: 30px auto;
-    }
-    .form-actions {
-        gap: 24px;
-    }
-    .form-actions button {
-        padding: 18px 40px;
-        font-size: 1.3rem;
-    }
-    .apparatus-buttons {
-        gap: 24px;
-    }
-    .apparatus-btn span {
-        padding: 20px 40px;
-        font-size: 1.3rem;
-    }
-    .signature-wrapper {
-        height: 280px; /* Slightly larger canvas on tablets */
-    }
-}
+            .form-actions button { width: 100%; padding: 15px 20px; }
+        }
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .container { max-width: 960px; padding: 40px; margin: 30px auto; }
+            .apparatus-buttons { gap: 24px; }
+            .apparatus-btn span { padding: 20px 40px; font-size: 1.3rem; }
         }
     </style>
-    <!-- Fixed Cache-Busting Script -->
-    <script>
-        const APP_VERSION = "20260105.1"; // Update this on every deploy
-
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistration().then(reg => {
-                if (reg) {
-                    fetch('version.json?t=' + Date.now())
-                        .then(r => r.json())
-                        .then(data => {
-                            if (data.version !== APP_VERSION) {
-                                caches.keys().then(names => {
-                                    names.forEach(name => caches.delete(name));
-                                });
-                                reg.unregister().then(() => {
-                                    window.location.reload(true);
-                                });
-                            }
-                        })
-                        .catch(() => {});
-                }
-            });
-        }
-    </script>
 </head>
 <body>
     <div class="page-wrapper">
@@ -241,17 +212,19 @@
                 </div>
             </header>
 
+            <div class="progress-indicator">Page 1 of 7</div>
+
             <h3>1. Personnel Information</h3>
 
             <form id="pageForm">
                 <div class="form-row">
                     <div class="form-field">
-                        <label for="report-date">Week Ending Date:</label>
-                        <input type="date" id="report-date" name="Week Ending Date">
+                        <label for="report-date">Week Ending Date:<span class="required">*</span></label>
+                        <input type="date" id="report-date" name="Week Ending Date" required>
                     </div>
                     <div class="form-field">
-                        <label for="shift">Shift:</label>
-                        <select id="shift" name="Shift">
+                        <label for="shift">Shift:<span class="required">*</span></label>
+                        <select id="shift" name="Shift" required>
                             <option value="">-- Select Shift --</option>
                             <option value="Shift 1">Shift 1</option>
                             <option value="Shift 2">Shift 2</option>
@@ -263,8 +236,8 @@
 
                 <div class="form-row">
                     <div class="form-field">
-                        <label for="officer">Officer:</label>
-                        <select id="officer" name="Officer">
+                        <label for="officer">Officer:<span class="required">*</span></label>
+                        <select id="officer" name="Officer" required>
                             <option value="">-- Select Officer --</option>
                             <option value="Sergeant Dorman">Sergeant Dorman</option>
                             <option value="Sergeant Redd">Sergeant Redd</option>
@@ -273,8 +246,8 @@
                         </select>
                     </div>
                     <div class="form-field">
-                        <label for="firefighter">Firefighter:</label>
-                        <select id="firefighter" name="Firefighter">
+                        <label for="firefighter">Firefighter:<span class="required">*</span></label>
+                        <select id="firefighter" name="Firefighter" required>
                             <option value="">-- Select Firefighter --</option>
                             <option value="Barr, H">Barr, H</option>
                             <option value="Bennett, K">Bennett, K</option>
@@ -315,7 +288,7 @@
                 </div>
 
                 <div class="form-actions">
-                    <button type="button" onclick="saveAndGo('page2.html')">Next → Policies & Conduct</button>
+                    <button type="button" id="next-btn">Next → Policies & Conduct</button>
                 </div>
             </form>
         </div>
@@ -326,45 +299,88 @@
         </footer>
     </div>
 
-    <!-- Main App Logic + Service Worker Registration -->
     <script>
-        function saveAndGo(next) {
+        // App version for cache busting
+        const APP_VERSION = "20260105.2"; // Updated
+
+        // Cache busting
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistration().then(reg => {
+                if (reg) {
+                    fetch('version.json?t=' + Date.now())
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.version !== APP_VERSION) {
+                                caches.keys().then(names => {
+                                    names.forEach(name => caches.delete(name));
+                                });
+                                reg.unregister().then(() => window.location.reload(true));
+                            }
+                        })
+                        .catch(() => {});
+                }
+            });
+        }
+
+        // Form validation and save
+        function validateAndSave(nextPage) {
+            const form = document.getElementById('pageForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
             const data = {};
-            const formElements = document.querySelectorAll('#pageForm input, #pageForm select');
+            const formElements = form.querySelectorAll('input, select');
             formElements.forEach(el => {
                 if (el.type === 'checkbox') {
                     if (el.checked) {
                         if (!data[el.name]) data[el.name] = [];
                         data[el.name].push(el.value);
                     }
-                } else {
+                } else if (el.value !== '') {
                     data[el.name] = el.value;
                 }
             });
+
             localStorage.setItem('reportData', JSON.stringify(data));
-            window.location.href = next;
+            window.location.href = nextPage;
         }
 
+        // Load saved data + fix date auto-fill
         window.addEventListener('load', () => {
-            const data = JSON.parse(localStorage.getItem('reportData') || '{}');
-            Object.keys(data).forEach(key => {
+            const savedData = JSON.parse(localStorage.getItem('reportData') || '{}');
+
+            // Restore saved values
+            Object.keys(savedData).forEach(key => {
                 const elements = document.querySelectorAll(`[name="${key}"]`);
                 elements.forEach(el => {
                     if (el.type === 'checkbox') {
-                        el.checked = data[key] && data[key].includes(el.value);
+                        el.checked = savedData[key] && savedData[key].includes(el.value);
                     } else {
-                        el.value = data[key] || '';
+                        el.value = savedData[key] || '';
                     }
                 });
             });
 
-            // Auto-fill today's date if empty
-            if (!document.getElementById('report-date').value) {
-                document.getElementById('report-date').value = new Date().toISOString().split('T')[0];
+            // Auto-fill today's date ONLY if no date is already selected or saved
+            const dateInput = document.getElementById('report-date');
+            if (!dateInput.value) {
+                // Use local date without timezone offset issues
+                const today = new Date();
+                const yyyy = today.getFullYear();
+                const mm = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+                const dd = String(today.getDate()).padStart(2, '0');
+                dateInput.value = `${yyyy}-${mm}-${dd}`;
             }
+
+            // Next button
+            document.getElementById('next-btn').addEventListener('click', () => {
+                validateAndSave('page2.html');
+            });
         });
 
-        // Register Service Worker
+        // Service Worker registration
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js')
