@@ -322,7 +322,7 @@
             const pageW = pdf.internal.pageSize.getWidth();
             const pageH = pdf.internal.pageSize.getHeight();
             const margin = 15;
-            const headerH = 28;
+            const headerH = 35; // Increased to make room for red line
             let y = margin + headerH;
             let pageCount = 1;
             const maxPages = 5;
@@ -430,17 +430,18 @@
                 y += 4;
             });
 
-            if (y > pageH - 60) addNewPage();
+            // Move Evaluator Information below the red header line on the last page
+            if (y > pageH - 85) addNewPage(); // Ensure enough space
             sectionTitle('Evaluator Information');
             itemLine('Evaluator Name', allData['Evaluator Name']);
             itemLine('Evaluator Rank', allData['Evaluator Rank']);
 
-            // Ultra-low quality signature for iPad size issues
-            const signatureDataUrl = signaturePad.toDataURL('image/jpeg', 0.3); // Very low quality
+            // Signature
+            const signatureDataUrl = signaturePad.toDataURL('image/jpeg', 0.3);
             pdf.setFontSize(11);
             pdf.text('Evaluator Signature:', margin, y);
             y += 7;
-            pdf.addImage(signatureDataUrl, 'JPEG', margin, y, 60, 30, undefined, 'FAST'); // Smaller signature
+            pdf.addImage(signatureDataUrl, 'JPEG', margin, y, 60, 30, undefined, 'FAST');
             y += 35;
 
             if (truncated) {
