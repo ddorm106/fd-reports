@@ -378,16 +378,16 @@
                 <h2>Training Details</h2>
                 <div class="form-group">
                     <label for="training-title">Training Course Title:</label>
-                    <input type="text" id="training-title" required>
+                    <input type="text" id="training-title" name="training_title" required>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label for="start-date">Start Date:</label>
-                        <input type="date" id="start-date" required>
-                       
+                        <input type="date" id="start-date" name="start_date" required>
+                      
                         <label for="end-date" style="margin-top: 15px; display: block;">End Date (Optional):</label>
-                        <input type="date" id="end-date">
-                       
+                        <input type="date" id="end-date" name="end_date">
+                      
                         <div style="margin-top: 20px;">
                             <label>Shift (select all that apply):</label>
                             <div class="shift-group">
@@ -402,33 +402,33 @@
                     <div class="form-group">
                         <label>Start Time (24-hour):</label>
                         <div class="time-input-group">
-                            <input type="text" id="start-hour" maxlength="2" placeholder="HH" class="time-input" required>
+                            <input type="text" id="start-hour" maxlength="2" placeholder="HH" class="time-input" name="start_hour" required>
                             <span class="time-colon">:</span>
-                            <input type="text" id="start-minute" maxlength="2" placeholder="MM" class="time-input" required>
+                            <input type="text" id="start-minute" maxlength="2" placeholder="MM" class="time-input" name="start_minute" required>
                         </div>
-                       
+                      
                         <label style="margin-top: 15px;">End Time (24-hour):</label>
                         <div class="time-input-group">
-                            <input type="text" id="end-hour" maxlength="2" placeholder="HH" class="time-input" required>
+                            <input type="text" id="end-hour" maxlength="2" placeholder="HH" class="time-input" name="end_hour" required>
                             <span class="time-colon">:</span>
-                            <input type="text" id="end-minute" maxlength="2" placeholder="MM" class="time-input" required>
+                            <input type="text" id="end-minute" maxlength="2" placeholder="MM" class="time-input" name="end_minute" required>
                         </div>
-                       
+                      
                         <div style="margin-top: 15px;">
                             <label for="total-hours">Total Hours (editable):</label>
-                            <input type="number" id="total-hours" step="0.25" min="0">
+                            <input type="number" id="total-hours" name="total_hours" step="0.25" min="0">
                             <small style="color: #666; font-size: 0.85rem;">Auto-calculated, but you can edit manually</small>
                         </div>
                     </div>
                 </div>
-                <input type="hidden" id="selected-shifts">
+                <input type="hidden" id="selected-shifts" name="selected_shifts">
                 <div class="form-group">
                     <label for="location">Location:</label>
-                    <input type="text" id="location" required>
+                    <input type="text" id="location" name="location" required>
                 </div>
                 <div class="form-group">
                     <label for="iso-category">ISO Category:</label>
-                    <select id="iso-category" required>
+                    <select id="iso-category" name="iso_category" required>
                         <option value="">-- Select ISO Category --</option>
                         <option value="Company">Company</option>
                         <option value="Facility">Facility</option>
@@ -444,7 +444,7 @@
                 </div>
                 <div class="form-group">
                     <label for="description">Description of Training:</label>
-                    <textarea id="description" required></textarea>
+                    <textarea id="description" name="description" required></textarea>
                     <div class="copy-wrapper">
                         <button type="button" class="copy-btn">Copy Description</button>
                         <span class="copy-feedback">Copied!</span>
@@ -452,14 +452,13 @@
                 </div>
                 <div class="form-group">
                     <label for="objectives">Training Objectives:</label>
-                    <textarea id="objectives" required></textarea>
+                    <textarea id="objectives" name="objectives" required></textarea>
                     <div class="copy-wrapper">
                         <button type="button" class="copy-btn">Copy Objectives</button>
                         <span class="copy-feedback">Copied!</span>
                     </div>
                 </div>
             </div>
-
             <div class="section">
                 <h2>Instructors</h2>
                 <table class="table" id="instructors-table">
@@ -468,7 +467,6 @@
                 </table>
                 <button type="button" id="add-instructor" class="add-row-btn no-print">Add Instructor</button>
             </div>
-
             <div class="section">
                 <h2>Students (Centerville)</h2>
                 <table class="table" id="students-centerville-table">
@@ -478,7 +476,6 @@
                 <button type="button" id="add-student-centerville" class="add-row-btn no-print">Add Student</button>
                 <button type="button" id="other-personnel-toggle" class="no-print">Other Personnel</button>
             </div>
-
             <div class="section" id="outside-students-section" style="display:none;">
                 <h2>Students (Outside Dept.)</h2>
                 <table class="table" id="students-outside-table">
@@ -487,19 +484,18 @@
                 </table>
                 <button type="button" id="add-student-outside" class="add-row-btn no-print">Add Student</button>
             </div>
-
             <div class="section" id="drivers-training-section" style="display:none;">
                 <h2>Drivers Training Report</h2>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                    <div class="form-group"><label for="apparatus-type">Apparatus Type:</label><select id="apparatus-type"><option value="">-- Select --</option><option>Rescue</option><option>Pumper</option><option>Aerial</option><option>Brush</option><option>Command Car</option></select></div>
-                    <div class="form-group"><label for="road-conditions">Road Conditions:</label><select id="road-conditions"><option value="">-- Select --</option><option>Dry</option><option>Wet</option><option>Icey</option></select></div>
-                    <div class="form-group"><label for="weather-conditions">Weather Conditions:</label><select id="weather-conditions"><option value="">-- Select --</option><option>Clear</option><option>Cloudy</option><option>Mist</option><option>Rain</option><option>Thunderstorm</option><option>Foggy</option></select></div>
-                    <div class="form-group"><label for="traffic-conditions">Traffic Conditions:</label><select id="traffic-conditions"><option value="">-- Select --</option><option>Light</option><option>Moderate</option><option>Heavy</option></select></div>
+                    <div class="form-group"><label for="apparatus-type">Apparatus Type:</label><select id="apparatus-type" name="apparatus_type"><option value="">-- Select --</option><option>Rescue</option><option>Pumper</option><option>Aerial</option><option>Brush</option><option>Command Car</option></select></div>
+                    <div class="form-group"><label for="road-conditions">Road Conditions:</label><select id="road-conditions" name="road_conditions"><option value="">N/A</option><option>Dry</option><option>Wet</option><option>Icey</option></select></div>
+                    <div class="form-group"><label for="weather-conditions">Weather Conditions:</label><select id="weather-conditions" name="weather_conditions"><option value="">N/A</option><option>Clear</option><option>Cloudy</option><option>Mist</option><option>Rain</option><option>Thunderstorm</option><option>Foggy</option></select></div>
+                    <div class="form-group"><label for="traffic-conditions">Traffic Conditions:</label><select id="traffic-conditions" name="traffic_conditions"><option value="">N/A</option><option>Light</option><option>Moderate</option><option>Heavy</option></select></div>
                 </div>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
-                    <div class="form-group"><label for="apparatus-miles">Apparatus Miles:</label><input type="number" id="apparatus-miles"></div>
-                    <div class="form-group"><label for="apparatus-hours">Apparatus Hours:</label><input type="number" id="apparatus-hours" step="0.5"></div>
-                    <div class="form-group"><label for="actual-miles">Actual Miles Driven:</label><input type="number" id="actual-miles"></div>
+                    <div class="form-group"><label for="apparatus-miles">Apparatus Miles:</label><input type="number" id="apparatus-miles" name="apparatus_miles"></div>
+                    <div class="form-group"><label for="apparatus-hours">Apparatus Hours:</label><input type="number" id="apparatus-hours" name="apparatus_hours" step="0.5"></div>
+                    <div class="form-group"><label for="actual-miles">Actual Miles Driven:</label><input type="number" id="actual-miles" name="actual_miles"></div>
                 </div>
                 <table class="table" id="grading-points-table" style="margin-top: 20px;">
                     <thead><tr><th>Grading Points</th><th>Proficiency</th><th>Comments</th></tr></thead>
@@ -507,7 +503,6 @@
                 </table>
                 <button type="button" id="add-grading-point" class="add-row-btn no-print">Add Grading Point</button>
             </div>
-
             <div class="section">
                 <h2>Facility Equipment Used</h2>
                 <table class="table" id="facility-equipment-table">
@@ -516,7 +511,6 @@
                 </table>
                 <button type="button" id="add-equipment" class="add-row-btn no-print">Add Equipment</button>
             </div>
-
             <div class="buttons-row">
                 <button type="button" class="main-btn" id="save-report-btn">
                     <span class="btn-text">Save Report</span>
@@ -528,7 +522,6 @@
             </div>
         </form>
     </div>
-
     <div id="signatureModal" class="signature-modal">
         <div class="modal-content">
             <h3>Sign Here</h3>
@@ -539,10 +532,8 @@
             </div>
         </div>
     </div>
-
     <script>
         emailjs.init("0149jkoCQjJZn6JwD");
-
         const centervilleStaff = [
             { name: "Barr, Harvey", rank: "Firefighter", gfstc: "3353-4774" },
             { name: "Bennett, Kyle", rank: "Firefighter", gfstc: "0869-5796" },
@@ -570,7 +561,6 @@
             { name: "Traxler, Clint", rank: "Engineer", gfstc: "3623-4177" },
             { name: "Wall, Kaleb", rank: "Firefighter", gfstc: "0701-7229" }
         ];
-
         const commonDescriptions = {
             "Company": "Company-level training focused on effective teamwork, communication, and task execution during fireground operations.",
             "Facility": "Training Conducted at the Centerville Training Facility located at 1111 Dunbar Road or an approved facility deemed by the Fire Chief or Georgia Firefighters Standards and Training. Facility Training Must be at least 3 hours and be considered fire suppression, victim rescue and other related fire task with PPE to be considered facility training.",
@@ -583,7 +573,6 @@
             "Recruit": "Recruit academy training covering foundational firefighting skills, safety, equipment use, and department policies and procedures.",
             "EMS": "Emergency medical services training focusing on patient assessment, treatment protocols, and safe patient handling and transport."
         };
-
         const commonObjectives = {
             "Company": "- Demonstrate effective fireground communication\n- Perform assigned tasks efficiently\n- Work as a cohesive team unit",
             "Facility": "- Training conducted at approved facility with minimum 3 hours duration\n- Focus on fire suppression, victim rescue, and related tasks while wearing full PPE",
@@ -596,7 +585,6 @@
             "Recruit": "- Demonstrate basic firefighting skills\n- Use personal protective equipment correctly\n- Follow department safety policies",
             "EMS": "- Perform accurate patient assessments\n- Administer appropriate treatments\n- Document patient care accurately"
         };
-
         let currentSignatureCell = null;
         const modal = document.getElementById('signatureModal');
         const canvas = document.getElementById('modalCanvas');
@@ -605,7 +593,6 @@
         ctx.lineWidth = 3;
         ctx.lineCap = 'round';
         let drawing = false;
-
         function startDrawing(e) {
             drawing = true;
             ctx.beginPath();
@@ -614,7 +601,6 @@
             const y = (e.clientY || e.touches[0].clientY) - rect.top;
             ctx.moveTo(x, y);
         }
-
         function draw(e) {
             if (!drawing) return;
             e.preventDefault();
@@ -624,11 +610,9 @@
             ctx.lineTo(x, y);
             ctx.stroke();
         }
-
         function stopDrawing() {
             drawing = false;
         }
-
         canvas.addEventListener('mousedown', startDrawing);
         canvas.addEventListener('mousemove', draw);
         canvas.addEventListener('mouseup', stopDrawing);
@@ -636,13 +620,10 @@
         canvas.addEventListener('touchstart', startDrawing);
         canvas.addEventListener('touchmove', draw);
         canvas.addEventListener('touchend', stopDrawing);
-
         document.getElementById('clearSignature').onclick = () => ctx.clearRect(0, 0, canvas.width, canvas.height);
-
         modal.addEventListener('click', (e) => {
             if (e.target === modal) modal.style.display = 'none';
         });
-
         document.getElementById('doneSignature').onclick = () => {
             if (!currentSignatureCell) return;
             const tempCanvas = document.createElement('canvas');
@@ -660,16 +641,16 @@
             currentSignatureCell.appendChild(img);
             const removeBtn = document.createElement('button');
             removeBtn.className = 'remove-btn';
-            removeBtn.textContent = 'Remove Signature';
+            removeBtn.textContent = 'Remove Row';
             removeBtn.onclick = () => {
-                currentSignatureCell.innerHTML = '<button type="button" class="sign-btn">Sign</button>';
-                addSignatureListener(currentSignatureCell);
+                if (confirm('Are you sure you want to remove this row?')) {
+                    currentSignatureCell.parentNode.remove();
+                }
             };
             currentSignatureCell.appendChild(removeBtn);
             modal.style.display = 'none';
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         };
-
         function addSignatureListener(cell) {
             const signBtn = cell.querySelector('.sign-btn');
             if (signBtn) {
@@ -680,29 +661,22 @@
                 };
             }
         }
-
         let manualTotalHours = false;
-
         const timeInputs = ['start-hour', 'start-minute', 'end-hour', 'end-minute'];
-
         function calculateTotalHours() {
             const sh = parseInt(document.getElementById('start-hour').value) || 0;
             const sm = parseInt(document.getElementById('start-minute').value) || 0;
             const eh = parseInt(document.getElementById('end-hour').value) || 0;
             const em = parseInt(document.getElementById('end-minute').value) || 0;
-
             if (isNaN(sh) || isNaN(sm) || isNaN(eh) || isNaN(em)) {
                 return;
             }
-
             let hours = eh - sh;
             let mins = em - sm;
             if (mins < 0) { mins += 60; hours--; }
             if (hours < 0) hours += 24;
-
             document.getElementById('total-hours').value = (hours + mins / 60).toFixed(2);
         }
-
         function addPersonRow(tableId, isCenterville) {
             const tbody = document.querySelector(`#${tableId} tbody`);
             const row = tbody.insertRow();
@@ -716,31 +690,50 @@
                     row.querySelector('.person-gfstc').value = person ? person.gfstc : '';
                 });
             } else {
-                row.innerHTML = `<td><input type="text" placeholder="Name"></td><td><input type="text" placeholder="Rank"></td><td><input type="text" placeholder="GFSTC #"></td><td><button type="button" class="sign-btn">Sign</button></td>`;
+                row.innerHTML = `<td><input type="text" placeholder="Name"></td><td><input type="text" placeholder="Rank"></td><td><input type="text" maxlength="9" placeholder="GFSTC #" oninput="this.value = this.value.replace(/[^0-9-]/g, '').slice(0,9)"></td><td><button type="button" class="sign-btn">Sign</button></td>`;
             }
             addSignatureListener(row.cells[3]);
             const removeBtn = document.createElement('button');
             removeBtn.className = 'remove-btn';
             removeBtn.textContent = 'Remove Row';
-            removeBtn.onclick = () => row.remove();
+            removeBtn.onclick = () => {
+                if (confirm('Are you sure you want to remove this row?')) {
+                    row.remove();
+                }
+            };
             row.cells[3].appendChild(removeBtn);
         }
-
         function addGradingRow() {
             const tbody = document.querySelector('#grading-points-table tbody');
             const row = tbody.insertRow();
-            row.innerHTML = `<td><input type="text" placeholder="Grading Point"></td><td><select><option>-- Proficiency --</option><option>Proficient</option><option>Needs Improvement</option></select></td><td><input type="text" placeholder="Comments"></td>`;
+            row.innerHTML = `<td><select><option>-- Select Grading Point --</option>
+                <option>Street Familiarization</option><option>Acceleration</option><option>Speed Consistency</option>
+                <option>Braking</option><option>Downgrade Braking</option><option>Left Turns</option>
+                <option>Right Turns</option><option>Intersections</option><option>Lane Changing</option>
+                <option>Low Clearance</option><option>Use of Lighting (Non-Emergent)</option>
+                <option>Use of Lighting (Emergent)</option><option>Cone Course</option>
+                <option>Pump Operations Training</option><option>Aerial Operations Training</option></select></td>
+                <td><select><option>-- Proficiency --</option><option>Proficient</option><option>Needs Improvement</option></select></td>
+                <td><input type="text" placeholder="Comments"></td>`;
             const removeBtn = document.createElement('button');
             removeBtn.className = 'remove-btn';
             removeBtn.textContent = 'Remove';
-            removeBtn.onclick = () => row.remove();
+            removeBtn.onclick = () => {
+                if (confirm('Are you sure you want to remove this row?')) {
+                    row.remove();
+                }
+            };
             row.insertCell().appendChild(removeBtn);
         }
-
         function addEquipmentRow() {
             const tbody = document.querySelector('#facility-equipment-table tbody');
             const row = tbody.insertRow();
-            row.innerHTML = `<td><input type="text" placeholder="Equipment Used"></td><td><div class="damaged-buttons"><button type="button" class="damaged-btn damaged-no">No</button><button type="button" class="damaged-btn damaged-yes">Yes</button></div></td><td><input type="text" placeholder="Comments"></td><td></td>`;
+            row.innerHTML = `<td><select><option>-- Select Equipment --</option>
+                <option>Apparatus</option><option>Suppression Equipment</option><option>PPE</option>
+                <option>EMS Equipment</option><option>Office Equipment</option>
+                <option>Training Facility Equipment</option><option>Equipment from another organization</option></select></td>
+                <td><div class="damaged-buttons"><button type="button" class="damaged-btn damaged-no">No</button><button type="button" class="damaged-btn damaged-yes">Yes</button></div></td>
+                <td><input type="text" placeholder="Comments"></td><td></td>`;
             const noBtn = row.querySelector('.damaged-no');
             const yesBtn = row.querySelector('.damaged-yes');
             noBtn.classList.add('selected');
@@ -749,12 +742,14 @@
             const removeBtn = document.createElement('button');
             removeBtn.className = 'remove-btn';
             removeBtn.textContent = 'Remove';
-            removeBtn.onclick = () => row.remove();
+            removeBtn.onclick = () => {
+                if (confirm('Are you sure you want to remove this row?')) {
+                    row.remove();
+                }
+            };
             row.cells[3].appendChild(removeBtn);
         }
-
         const FORM_STORAGE_KEY = 'centervilleTrainingReportDraft';
-
         function collectFormData() {
             const data = {
                 trainingTitle: document.getElementById('training-title').value,
@@ -776,7 +771,6 @@
                 gradingPoints: [],
                 equipment: []
             };
-
             if (document.getElementById('drivers-training-section').style.display !== 'none') {
                 data.drivers = {
                     apparatusType: document.getElementById('apparatus-type').value || '',
@@ -788,7 +782,6 @@
                     actualMiles: document.getElementById('actual-miles').value || ''
                 };
             }
-
             const collectTable = (tableId, isPerson = false) => {
                 const rows = [];
                 document.querySelectorAll(`#${tableId} tbody tr`).forEach(row => {
@@ -800,11 +793,11 @@
                         rowData.gfstc = cells[2].querySelector('input')?.value || '';
                         rowData.signature = cells[3].querySelector('img')?.src || '';
                     } else if (tableId.includes('equipment')) {
-                        rowData.equipment = cells[0].querySelector('input')?.value || '';
+                        rowData.equipment = cells[0].querySelector('input, select')?.value || '';
                         rowData.damaged = row.querySelector('.damaged-btn.selected')?.textContent.trim() || 'No';
                         rowData.comments = cells[2].querySelector('input')?.value || '';
                     } else {
-                        rowData.point = cells[0].querySelector('input')?.value || '';
+                        rowData.point = cells[0].querySelector('input, select')?.value || '';
                         rowData.proficiency = cells[1].querySelector('select')?.value || '';
                         rowData.comments = cells[2].querySelector('input')?.value || '';
                     }
@@ -812,7 +805,6 @@
                 });
                 return rows;
             };
-
             data.instructors = collectTable('instructors-table', true);
             data.studentsCenterville = collectTable('students-centerville-table', true);
             data.studentsOutside = collectTable('students-outside-table', true);
@@ -820,14 +812,16 @@
             data.equipment = collectTable('facility-equipment-table');
             return data;
         }
-
         function formatDate(dateStr) {
             if (!dateStr) return 'N/A';
-            const date = new Date(dateStr);
+            const parts = dateStr.split('-');
+            const year = parseInt(parts[0]);
+            const month = parseInt(parts[1]) - 1;
+            const day = parseInt(parts[2]);
+            const date = new Date(year, month, day);
             const options = { year: 'numeric', month: 'long', day: '2-digit' };
             return date.toLocaleDateString('en-US', options);
         }
-
         async function generateTrainingReportPDF() {
             const data = collectFormData();
             const { jsPDF } = window.jspdf;
@@ -842,7 +836,6 @@
             let pageCount = 1;
             const maxPages = 5;
             let truncated = false;
-
             function drawHeader() {
                 pdf.setFont('times', 'bold');
                 pdf.setFontSize(20);
@@ -856,7 +849,6 @@
                 pdf.setLineWidth(0.8);
                 pdf.line(margin, margin + 30, pageW - margin, margin + 30);
             }
-
             function addNewPage() {
                 if (pageCount >= maxPages) {
                     truncated = true;
@@ -868,7 +860,6 @@
                 y = margin + headerH;
                 return true;
             }
-
             function sectionTitle(title) {
                 pdf.setFontSize(14);
                 pdf.setTextColor(...RED);
@@ -879,7 +870,6 @@
                 pdf.line(margin, y - 2, margin + pdf.getTextWidth(title), y - 2);
                 y += 6;
             }
-
             function renderPerson(person, centerX, startY) {
                 let currY = startY;
                 pdf.setFontSize(11);
@@ -899,7 +889,6 @@
                 pdf.text(`Rank: ${person.rank || 'N/A'}`, centerX, currY, { align: 'center' });
                 return currY + 10;
             }
-
             function renderFourStudents(students, startIdx) {
                 const positions = [pageW * 0.25, pageW * 0.75, pageW * 0.25, pageW * 0.75];
                 let row1H = 0, row2H = 0, currY = y;
@@ -915,7 +904,6 @@
                 y = currY + row2H + 10;
                 return Math.min(4, students.length - startIdx);
             }
-
             function renderTwoInstructors(instructors, startIdx) {
                 const positions = [pageW * 0.35, pageW * 0.75];
                 let rowH = 0;
@@ -927,7 +915,6 @@
                 y = currY + rowH + 10;
                 return Math.min(2, instructors.length - startIdx);
             }
-
             function drawPage1Content() {
                 y += 10;
                 pdf.setFontSize(11);
@@ -935,7 +922,6 @@
                 const startFormatted = formatDate(data.startDate);
                 const endFormatted = formatDate(data.endDate);
                 const dateDisplay = (data.endDate && data.endDate !== data.startDate) ? `${startFormatted} – ${endFormatted}` : startFormatted;
-
                 const meta = [
                     `Dates: ${dateDisplay}`,
                     `Shift(s): ${data.selectedShifts || 'None'}`,
@@ -944,7 +930,6 @@
                     `ISO Category: ${data.isoCategory || 'N/A'}`
                 ];
                 meta.forEach((line, i) => pdf.text(line, margin, y + i * 6));
-
                 if (data.instructors.length > 0) {
                     const instructorX = pageW - margin - 80;
                     pdf.setFontSize(11);
@@ -953,7 +938,6 @@
                     y += 12;
                     renderPerson(data.instructors[0], instructorX + 40, y - 7);
                 }
-
                 y += 40;
                 sectionTitle('Description of Training');
                 pdf.setFont('times', 'normal');
@@ -962,7 +946,6 @@
                 const descLines = pdf.splitTextToSize(data.description || 'No description provided', pageW - 25);
                 pdf.text(descLines, margin, y);
                 y += descLines.length * 5 + 2;
-
                 sectionTitle('Training Objectives');
                 pdf.setFont('times', 'normal');
                 pdf.setFontSize(11);
@@ -971,10 +954,8 @@
                 pdf.text(objLines, margin, y);
                 y += objLines.length * 5.5 + 5;
             }
-
             drawHeader();
             drawPage1Content();
-
             const allStudents = [...data.studentsCenterville, ...data.studentsOutside];
             let studentIdx = 0;
             if (allStudents.length > 0) {
@@ -989,7 +970,6 @@
                     }
                 }
             }
-
             const extraInstructors = data.instructors.slice(1);
             const hasSupplemental = data.drivers || data.equipment.length > 0 || extraInstructors.length > 0;
             if (hasSupplemental && pageCount < maxPages) {
@@ -998,7 +978,6 @@
                 pdf.setTextColor(...RED);
                 pdf.text('Supplemental Training Form', pageW / 2, margin + headerH - 30, { align: 'center' });
                 y = margin + headerH + 10;
-
                 if (data.drivers) {
                     sectionTitle('Drivers Training Report');
                     pdf.setFontSize(11);
@@ -1010,38 +989,35 @@
                     pdf.text(`Apparatus Miles: ${data.drivers.apparatusMiles || 'N/A'}`, margin, y); y += 6;
                     pdf.text(`Apparatus Hours: ${data.drivers.apparatusHours || 'N/A'}`, margin, y); y += 6;
                     pdf.text(`Actual Miles Driven: ${data.drivers.actualMiles || 'N/A'}`, margin, y); y += 10;
-
                     if (data.gradingPoints.length > 0) {
                         sectionTitle('Driver Grading Points');
                         pdf.setFontSize(11);
                         pdf.setTextColor(...BLACK);
                         data.gradingPoints.forEach(gp => {
                             pdf.text(`Grading Point: ${gp.point || 'Not specified'}`, margin, y); y += 6;
-                            pdf.text(`  Proficiency: ${gp.proficiency || 'Not assessed'}`, margin, y); y += 6;
+                            pdf.text(` Proficiency: ${gp.proficiency || 'Not assessed'}`, margin, y); y += 6;
                             if (gp.comments) {
-                                pdf.text(`  Comment: ${gp.comments}`, margin, y); y += 6;
+                                pdf.text(` Comment: ${gp.comments}`, margin, y); y += 6;
                             }
                             y += 4;
                         });
                     }
                     y += 10;
                 }
-
                 if (data.equipment.length > 0) {
                     sectionTitle('Facility Equipment Used');
                     pdf.setFontSize(11);
                     pdf.setTextColor(...BLACK);
                     data.equipment.forEach(eq => {
                         pdf.text(`Equipment: ${eq.equipment || 'Unknown'}`, margin, y); y += 6;
-                        pdf.text(`  Damaged: ${eq.damaged || 'No'}`, margin, y); y += 6;
+                        pdf.text(` Damaged: ${eq.damaged || 'No'}`, margin, y); y += 6;
                         if (eq.comments) {
-                            pdf.text(`  Comment: ${eq.comments}`, margin, y); y += 6;
+                            pdf.text(` Comment: ${eq.comments}`, margin, y); y += 6;
                         }
                         y += 4;
                     });
                     y += 10;
                 }
-
                 if (extraInstructors.length > 0) {
                     sectionTitle('Additional Instructors');
                     let instIdx = 0;
@@ -1055,22 +1031,25 @@
                     }
                 }
             }
-
             if (truncated) {
                 pdf.setFontSize(10);
                 pdf.setTextColor(...BLACK);
                 pdf.text('Content truncated to fit 5-page limit.', margin, y);
             }
-
             const safeTitle = (data.trainingTitle || 'Training_Report').replace(/[^a-z0-9]/gi, '_').substring(0, 50);
             const filename = `Centerville_Training_${safeTitle}_${new Date().toISOString().slice(0,10)}_Signed.pdf`;
             const pdfBase64 = pdf.output('datauristring').split(',')[1];
             return { pdfBase64, filename };
         }
-
         document.addEventListener('DOMContentLoaded', () => {
+            // Set start date to today by default
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            const todayStr = `${yyyy}-${mm}-${dd}`;
             if (!document.getElementById('start-date').value) {
-                document.getElementById('start-date').value = '2026-01-04';
+                document.getElementById('start-date').value = todayStr;
             }
 
             document.getElementById('iso-category').addEventListener('change', function () {
@@ -1081,7 +1060,6 @@
                 document.getElementById('description').value = commonDescriptions[val] || '';
                 document.getElementById('objectives').value = commonObjectives[val] || '';
             });
-
             timeInputs.forEach(id => {
                 const input = document.getElementById(id);
                 input.addEventListener('input', function () {
@@ -1100,11 +1078,9 @@
                     if (!manualTotalHours) calculateTotalHours();
                 });
             });
-
             document.getElementById('total-hours').addEventListener('input', () => {
                 manualTotalHours = true;
             });
-
             ['shift-days', 'shift-1', 'shift-2', 'shift-3', 'shift-pt'].forEach(id => {
                 const btn = document.getElementById(id);
                 if (btn) {
@@ -1114,12 +1090,10 @@
                     });
                 }
             });
-
             function updateSelectedShifts() {
                 const selected = Array.from(document.querySelectorAll('.shift-btn.selected')).map(btn => btn.textContent.trim());
                 document.getElementById('selected-shifts').value = selected.join(', ') || 'None';
             }
-
             document.querySelectorAll('.copy-btn').forEach(btn => {
                 btn.addEventListener('click', async () => {
                     const textarea = btn.closest('.form-group').querySelector('textarea');
@@ -1136,19 +1110,16 @@
                     }
                 });
             });
-
             document.getElementById('other-personnel-toggle').addEventListener('click', () => {
                 const section = document.getElementById('outside-students-section');
                 section.style.display = section.style.display === 'none' ? 'block' : 'none';
                 document.getElementById('other-personnel-toggle').classList.toggle('active');
             });
-
             document.getElementById('add-instructor').addEventListener('click', () => addPersonRow('instructors-table', true));
             document.getElementById('add-student-centerville').addEventListener('click', () => addPersonRow('students-centerville-table', true));
             document.getElementById('add-student-outside').addEventListener('click', () => addPersonRow('students-outside-table', false));
             document.getElementById('add-grading-point').addEventListener('click', addGradingRow);
             document.getElementById('add-equipment').addEventListener('click', addEquipmentRow);
-
             document.getElementById('save-report-btn').addEventListener('click', () => {
                 const btn = document.getElementById('save-report-btn');
                 const text = btn.querySelector('.btn-text');
@@ -1170,7 +1141,6 @@
                     }, 1500);
                 }, 500);
             });
-
             document.getElementById('send-email-btn').addEventListener('click', async () => {
                 const btn = document.getElementById('send-email-btn');
                 btn.disabled = true;
@@ -1181,6 +1151,10 @@
                     await emailjs.send('service_2gdxvws', 'template_wj80wlx', {
                         training_title: formData.trainingTitle || 'Centerville Training Report',
                         training_date: formatDate(formData.startDate) + (formData.endDate && formData.endDate !== formData.startDate ? ' to ' + formatDate(formData.endDate) : ''),
+                        location: formData.location || 'N/A',
+                        iso_category: formData.isoCategory || 'N/A',
+                        total_hours: formData.totalHours || 'N/A',
+                        shifts: formData.selectedShifts || 'None',
                         attachment_pdf: pdfBase64,
                         attachment_filename: filename
                     });
@@ -1196,7 +1170,6 @@
                     btn.textContent = 'Send via Email';
                 }
             });
-
             document.getElementById('print-preview-btn').addEventListener('click', async () => {
                 const btn = document.getElementById('print-preview-btn');
                 btn.disabled = true;
@@ -1219,16 +1192,16 @@
                 btn.textContent = 'Print Preview';
                 btn.disabled = false;
             });
-
             document.getElementById('clear-form-btn').addEventListener('click', () => {
-                if (confirm('Clear everything and delete saved draft?')) {
+                if (confirm('Are you sure you want to clear the entire form and delete the saved draft? This cannot be undone.')) {
                     document.getElementById('trainingForm').reset();
+                    document.querySelectorAll('.shift-btn').forEach(btn => btn.classList.remove('selected'));
+                    document.querySelectorAll('table tbody').forEach(tbody => tbody.innerHTML = '');
                     localStorage.removeItem(FORM_STORAGE_KEY);
                     location.reload();
                 }
             });
         });
-
         window.addEventListener('load', () => {
             const saved = localStorage.getItem(FORM_STORAGE_KEY);
             if (saved) {
@@ -1247,12 +1220,10 @@
                     document.getElementById('iso-category').value = data.isoCategory || '';
                     document.getElementById('description').value = data.description || '';
                     document.getElementById('objectives').value = data.objectives || '';
-
                     const shifts = (data.selectedShifts || '').split(', ');
                     document.querySelectorAll('.shift-btn').forEach(btn => {
                         btn.classList.toggle('selected', shifts.includes(btn.textContent.trim()));
                     });
-
                     document.getElementById('iso-category').dispatchEvent(new Event('change'));
                 } catch (e) {
                     console.error(e);
