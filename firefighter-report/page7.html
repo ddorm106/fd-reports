@@ -115,7 +115,7 @@
             max-width: 600px;
             width: 100%;
             margin: 0 auto;
-            height: 300px;
+            height: 220px; /* Reduced for better mobile experience */
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
         .signature-wrapper canvas {
@@ -136,6 +136,7 @@
             display: flex;
             justify-content: center;
             gap: 15px;
+            flex-wrap: wrap;
         }
         .signature-actions button {
             padding: 12px 28px;
@@ -146,39 +147,35 @@
             font-weight: 700;
             cursor: pointer;
             transition: background 0.3s ease;
+            min-width: 140px;
         }
         .signature-actions button:hover { background: #b91c1c; }
         .form-actions {
-            display: flex;
-            justify-content: space-between;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
             margin-top: 40px;
-            gap: 12px;
-            flex-wrap: wrap;
         }
         .form-actions button {
-            padding: 15px 30px;
+            padding: 18px;
             background: #dc2626;
             color: white;
             border: none;
             border-radius: 12px;
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             font-weight: 700;
             cursor: pointer;
             transition: background 0.3s ease;
-            flex: 1;
-            min-width: 140px;
         }
         .form-actions button:hover:not(:disabled) { background: #b91c1c; }
-        .form-actions button:first-child {
+        #back-btn {
             background: #334155;
         }
-        .form-actions button:first-child:hover:not(:disabled) { background: #475569; }
+        #back-btn:hover:not(:disabled) { background: #475569; }
         #preview-btn {
             background: #f97316;
         }
-        #preview-btn:hover:not(:disabled) {
-            background: #ea580c;
-        }
+        #preview-btn:hover:not(:disabled) { background: #ea580c; }
         .form-actions button:disabled {
             background: #64748b;
             cursor: not-allowed;
@@ -204,14 +201,12 @@
             .header-top { flex-direction: column; }
             .header-text h1 { font-size: 2.2rem; }
             .header-text h2 { font-size: 1.5rem; }
-            .form-actions { flex-direction: column; }
-            .signature-wrapper { height: 220px; }
+            .form-actions { grid-template-columns: 1fr; }
+            .signature-wrapper { height: 180px; }
         }
         @media (min-width: 769px) and (max-width: 1024px) {
             .container { max-width: 960px; padding: 40px; margin: 30px auto; }
-            .form-actions { gap: 24px; }
-            .form-actions button { padding: 18px 40px; font-size: 1.3rem; }
-            .signature-wrapper { height: 280px; }
+            .signature-wrapper { height: 250px; }
         }
     </style>
 </head>
@@ -272,7 +267,7 @@
     </div>
     <script>
         // App version
-        const APP_VERSION = "20260105.2";
+        const APP_VERSION = "20260108.1";
         // Cache busting
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.getRegistration().then(reg => {
@@ -322,7 +317,7 @@
             const pageW = pdf.internal.pageSize.getWidth();
             const pageH = pdf.internal.pageSize.getHeight();
             const margin = 15;
-            const headerH = 35; // Increased to make room for red line
+            const headerH = 35;
             let y = margin + headerH;
             let pageCount = 1;
             const maxPages = 5;
@@ -374,9 +369,6 @@
 
             function noteLine(noteText) {
                 if (!noteText || noteText.trim() === '') return;
-                const ratingKey = Object.keys(allData).find(k => allData[k + ' Note'] === noteText);
-                const rating = ratingKey ? allData[ratingKey] : '';
-                if (rating !== 'Unsatisfactory' && rating !== 'Needs Improvement') return;
                 const lines = pdf.splitTextToSize(`Note: ${noteText.trim()}`, pageW - margin * 2);
                 pdf.setFontSize(10);
                 pdf.setTextColor(...BLACK);
@@ -430,13 +422,11 @@
                 y += 4;
             });
 
-            // Move Evaluator Information below the red header line on the last page
-            if (y > pageH - 85) addNewPage(); // Ensure enough space
+            if (y > pageH - 80) addNewPage();
             sectionTitle('Evaluator Information');
             itemLine('Evaluator Name', allData['Evaluator Name']);
             itemLine('Evaluator Rank', allData['Evaluator Rank']);
 
-            // Signature
             const signatureDataUrl = signaturePad.toDataURL('image/jpeg', 0.3);
             pdf.setFontSize(11);
             pdf.text('Evaluator Signature:', margin, y);
@@ -476,9 +466,10 @@
                 canvas.width = canvas.offsetWidth * ratio;
                 canvas.height = canvas.offsetHeight * ratio;
                 canvas.getContext('2d').scale(ratio, ratio);
-                signaturePad.clear();
+                signaturePad.clear(); // Clear on resize to prevent distortion
             }
             window.addEventListener('resize', resizeCanvas);
+            window.addEventListener('orientationchange', resizeCanvas);
             resizeCanvas();
 
             document.getElementById('clear-signature').addEventListener('click', () => {
