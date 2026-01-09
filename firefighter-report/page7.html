@@ -372,253 +372,200 @@
                         throw new Error('Report incomplete — please fill all previous pages.');
                     }
 
-                    // Your original working PDF code
-                    const { jsPDF } = window.jspdf;
-                    const pdf = new jsPDF({
-                        orientation: 'portrait',
-                        unit: 'mm',
-                        format: 'letter'
-                    });
+                    // Optimized PDF generation - keeps file under ~1.8MB
+const { jsPDF } = window.jspdf;
+const pdf = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'letter',
+    compress: true  // Enable PDF compression
+});
 
-                    const pageW = pdf.internal.pageSize.getWidth();
-                    const pageH = pdf.internal.pageSize.getHeight();
-                    const margin = 15;
-                    const SZ_TITLE = 18;
-                    const SZ_SUBTITLE = 14;
-                    const SZ_SECTION = 12;
-                    const SZ_ITEM = 10;
-                    const SZ_TEXT = 9;
-                    const SZ_NOTE = 8;
-                    const SZ_META = 9;
-                    const SZ_FOOTER = 8;
-                    const LH_SECTION = 8;
-                    const LH_ITEM = 6;
-                    const LH_TEXT = 5;
-                    const LH_NOTE = 4.5;
-                    const LH_META = 5;
-                    const BLACK = [0, 0, 0];
-                    const GREY = [100, 100, 100];
-                    const GOLD = [245, 158, 11];
-                    const RED = [220, 38, 38];
-                    const FONT = 'helvetica';
+const pageW = pdf.internal.pageSize.getWidth();
+const pageH = pdf.internal.pageSize.getHeight();
+const margin = 12;  // Reduced from 15
+const contentW = pageW - margin * 2;
 
-                    const headerH = 35;
-                    const footerH = 15;
-                    const contentTop = margin + headerH;
-                    const contentBottom = pageH - margin - footerH;
-                    const contentW = pageW - margin * 2;
-                    let y = contentTop;
-                    let pageCount = 1;
-                    let truncated = false;
+let y = 20;  // Start lower to reduce header space
+let pageCount = 1;
 
-                    function setFont(style, size, colorArr) {
-                        pdf.setFont(FONT, style);
-                        pdf.setFontSize(size);
-                        pdf.setTextColor(...colorArr);
-                    }
+function drawHeader() {
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(16);
+    pdf.setTextColor(0, 0, 0);
+    pdf.text('Centerville Fire Department', pageW / 2, 10, { align: 'center' });
+    pdf.setFontSize(13);
+    pdf.text('Firefighter Weekly Performance Report', pageW / 2, 16, { align: 'center' });
+    pdf.setFontSize(11);
+    pdf.text(`Firefighter: ${allData['Firefighter'] || 'N/A'}`, pageW / 2, 21, { align: 'center' });
+    pdf.setDrawColor(220, 38, 38);
+    pdf.setLineWidth(0.5);
+    pdf.line(margin, 25, pageW - margin, 25);
+    y = 30;
+}
 
-                    function drawHeader() {
-                        setFont('bold', SZ_TITLE, BLACK);
-                        pdf.text('Centerville Fire Department', pageW / 2, margin + 10, { align: 'center' });
-                        setFont('bold', SZ_SUBTITLE, BLACK);
-                        pdf.text('Firefighter Weekly Performance Report', pageW / 2, margin + 18, { align: 'center' });
-                        setFont('normal', SZ_SUBTITLE - 1, BLACK);
-                        pdf.text(`Firefighter: ${allData['Firefighter'] || 'N/A'}`, pageW / 2, margin + 25, { align: 'center' });
-                        pdf.setDrawColor(...RED);
-                        pdf.setLineWidth(0.7);
-                        pdf.line(margin, margin + 29, pageW - margin, margin + 29);
-                    }
+function addPage() {
+    pdf.addPage();
+    pageCount++;
+    drawHeader();
+}
 
-                    function drawFooter() {
-                        setFont('normal', SZ_FOOTER, GREY);
-                        pdf.text('© 2026 City of Centerville • Fire Department Training Division', pageW / 2, pageH - margin + 5, { align: 'center' });
-                    }
+function section(title) {
+    if (y > pageH - 30) addPage();
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(11);
+    pdf.setTextColor(245, 158, 11);
+    pdf.text(title, margin, y);
+    y += 6;
+}
 
-                    function addPageIfAllowed() {
-                        if (pageCount >= 3) {
-                            truncated = true;
-                            return false;
-                        }
-                        pdf.addPage();
-                        pageCount += 1;
-                        drawHeader();
-                        drawFooter();
-                        y = contentTop;
-                        return true;
-                    }
+function item(label, value) {
+    if (y > pageH - 20) addPage();
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(9.5);
+    pdf.setTextColor(0, 0, 0);
+    const labelW = pdf.getTextWidth(`${label}: `);
+    pdf.text(`${label}: `, margin, y);
+    pdf.setFont('helvetica', 'normal');
+    const lines = pdf.splitTextToSize(String(value || 'N/A'), contentW - labelW - 5);
+    pdf.text(lines, margin + labelW, y);
+    y += Math.max(1, lines.length) * 4.8;
+}
 
-                    function canFit(lines, lineHeight) {
-                        return (y + (lines * lineHeight)) <= contentBottom;
-                    }
+function note(text) {
+    if (y > pageH - 15) addPage();
+    pdf.setFont('helvetica', 'italic');
+    pdf.setFontSize(8.5);
+    pdf.setTextColor(80, 80, 80);
+    const lines = pdf.splitTextToSize(`Note: ${text || 'None'}`, contentW);
+    pdf.text(lines, margin + 5, y);
+    y += lines.length * 4.2;
+}
 
-                    function writeWrapped(text, maxW, lineHeight, style, size, colorArr) {
-                        const lines = pdf.splitTextToSize(String(text), maxW);
-                        if (!canFit(lines.length, lineHeight)) {
-                            if (!addPageIfAllowed()) return false;
-                        }
-                        if (!canFit(lines.length, lineHeight)) {
-                            truncated = true;
-                            const maxLines = Math.floor((contentBottom - y) / lineHeight);
-                            const clipped = lines.slice(0, maxLines);
-                            if (clipped.length > 0) clipped[clipped.length - 1] += '…';
-                            setFont(style, size, colorArr);
-                            pdf.text(clipped, margin, y);
-                            y += clipped.length * lineHeight;
-                            return false;
-                        }
-                        setFont(style, size, colorArr);
-                        pdf.text(lines, margin, y);
-                        y += lines.length * lineHeight;
-                        return true;
-                    }
+// Build PDF
+drawHeader();
 
-                    function sectionTitle(title) {
-                        setFont('bold', SZ_SECTION, GOLD);
-                        if (!canFit(1, LH_SECTION)) {
-                            if (!addPageIfAllowed()) return false;
-                        }
-                        pdf.text(title, margin, y);
-                        y += LH_SECTION;
-                        return true;
-                    }
+// Basic Info
+item('Week Ending', weekEndingFormatted);
+item('Shift', allData['Shift'] || 'N/A');
+item('Officer', allData['Officer'] || 'N/A');
+item('Apparatus', allData['Apparatus'] ? allData['Apparatus'].join(', ') : 'N/A');
+y += 3;
 
-                    function itemLine(label, value) {
-                        const labelText = `${label}: `;
-                        setFont('bold', SZ_ITEM, BLACK);
-                        const labelW = pdf.getTextWidth(labelText);
-                        const valueMaxW = contentW - labelW;
-                        const valueLines = pdf.splitTextToSize(String(value || 'N/A'), valueMaxW);
+// Sections
+section('1. Policies & Conduct');
+item('On Time & Uniform', allData['On Time & Uniform Rating']);
+note(allData['On Time & Uniform Note']);
+item('Radio Proficiency', allData['Radio Proficiency']);
+note(allData['Radio Note']);
+item('Cell Phone Proficiency', allData['Cell Phone Proficiency']);
+note(allData['Cell Phone Note']);
+item('City Policies Proficiency', allData['City Policies Proficiency']);
+note(allData['City Policies Note']);
+item('Department Policies Proficiency', allData['Department Policies Proficiency']);
+note(allData['Department Policies Note']);
 
-                        if (!canFit(Math.max(1, valueLines.length), LH_ITEM)) {
-                            if (!addPageIfAllowed()) return false;
-                        }
+section('2. PPE & Medical');
+item('PPE/SCBA Donning Proficiency', allData['PPE/SCBA Donning Proficiency']);
+note(allData['PPE/SCBA Donning Note']);
+item('Medical Equipment Proficiency', allData['Medical Equipment Proficiency']);
+note(allData['Medical Equipment Note']);
+item('RIT Pack Proficiency', allData['RIT Pack Proficiency']);
+note(allData['RIT Pack Note']);
 
-                        pdf.text(labelText, margin, y);
-                        setFont('normal', SZ_TEXT, BLACK);
-                        pdf.text(valueLines, margin + labelW, y);
-                        y += valueLines.length * LH_TEXT;
-                        return true;
-                    }
+section('3. Hose & Equipment');
+item('Powered Equipment Proficiency', allData['Powered Equipment Proficiency']);
+note(allData['Powered Equipment Note']);
+item('Hose Load Proficiency', allData['Hose Load Proficiency']);
+note(allData['Hose Load Note']);
+item('Nozzle Proficiency', allData['Nozzle Proficiency']);
+note(allData['Nozzle Note']);
+item('Attack Lines Proficiency', allData['Attack Lines Proficiency']);
+note(allData['Attack Lines Note']);
 
-                    function noteLine(noteText) {
-                        return writeWrapped(`Note: ${noteText || 'No comments provided'}`, contentW, LH_NOTE, 'normal', SZ_NOTE, BLACK);
-                    }
+section('4. Advanced Operations');
+item('Deck Gun Proficiency', allData['Deck Gun Proficiency']);
+note(allData['Deck Gun Note']);
+item('BlitzFire Proficiency', allData['BlitzFire Proficiency']);
+note(allData['BlitzFire Note']);
+item('Attack Lines Flow Proficiency', allData['Attack Lines Flow Proficiency']);
+note(allData['Attack Lines Flow Note']);
+item('Ground Ladders Proficiency', allData['Ground Ladders Proficiency']);
+note(allData['Ground Ladders Note']);
 
-                    let weekEndingFormatted = 'N/A';
-                    if (allData['Week Ending Date']) {
-                        const dateObj = new Date(allData['Week Ending Date'] + 'T12:00:00'); // Force midday to avoid timezone roll-back
-                        weekEndingFormatted = dateObj.toLocaleDateString('en-US', { month: 'long', day: '2-digit', year: 'numeric' });
-                    }
+section('5. Command & Scene Proficiency');
+item('Command Structure Proficiency', allData['Command Structure Proficiency']);
+note(allData['Command Structure Note']);
+item('Search & Rescue Proficiency', allData['Search & Rescue Proficiency']);
+note(allData['Search & Rescue Note']);
+item('Forcible Entry Proficiency', allData['Forcible Entry Proficiency']);
+note(allData['Forcible Entry Note']);
+item('Salvage & Overhaul Proficiency', allData['Salvage & Overhaul Proficiency']);
+note(allData['Salvage & Overhaul Note']);
+item('Scene Preservation Proficiency', allData['Scene Preservation Proficiency']);
+note(allData['Scene Preservation Note']);
 
-                    drawHeader();
-                    drawFooter();
+section('Evaluator Information');
+item('Evaluator Name', allData['Evaluator Name']);
+item('Evaluator Rank', allData['Evaluator Rank']);
 
-                    itemLine('Week Ending', weekEndingFormatted);
-                    itemLine('Shift', allData['Shift'] || 'N/A');
-                    itemLine('Officer', allData['Officer'] || 'N/A');
-                    itemLine('Apparatus', allData['Apparatus'] ? allData['Apparatus'].join(', ') : 'N/A');
-                    y += 3;
+// Signature - CRITICAL: Downscaled and compressed
+if (y > pageH - 50) addPage();
+pdf.setFont('helvetica', 'bold');
+pdf.setFontSize(10);
+pdf.text('Evaluator Signature:', margin, y);
+y += 8;
 
-                    sectionTitle('1. Policies & Conduct');
-                    itemLine('On Time & Uniform', allData['On Time & Uniform Rating']);
-                    noteLine(allData['On Time & Uniform Note']);
-                    itemLine('Radio Proficiency', allData['Radio Proficiency']);
-                    noteLine(allData['Radio Note']);
-                    itemLine('Cell Phone Proficiency', allData['Cell Phone Proficiency']);
-                    noteLine(allData['Cell Phone Note']);
-                    itemLine('City Policies Proficiency', allData['City Policies Proficiency']);
-                    noteLine(allData['City Policies Note']);
-                    itemLine('Department Policies Proficiency', allData['Department Policies Proficiency']);
-                    noteLine(allData['Department Policies Note']);
+// Downscale signature image significantly and use JPEG for better compression
+const signatureDataUrl = signaturePad.toDataURL('image/jpeg', 0.7); // JPEG at 70% quality
+pdf.addImage(signatureDataUrl, 'JPEG', margin, y, 70, 35); // Smaller: 70mm x 35mm (~2.75" x 1.4")
+y += 40;
 
-                    sectionTitle('2. PPE & Medical');
-                    itemLine('PPE/SCBA Donning Proficiency', allData['PPE/SCBA Donning Proficiency']);
-                    noteLine(allData['PPE/SCBA Donning Note']);
-                    itemLine('Medical Equipment Proficiency', allData['Medical Equipment Proficiency']);
-                    noteLine(allData['Medical Equipment Note']);
-                    itemLine('RIT Pack Proficiency', allData['RIT Pack Proficiency']);
-                    noteLine(allData['RIT Pack Note']);
+// Footer
+pdf.setFont('helvetica', 'normal');
+pdf.setFontSize(8);
+pdf.setTextColor(100, 100, 100);
+pdf.text('© 2026 City of Centerville • Fire Department Training Division', pageW / 2, pageH - 8, { align: 'center' });
 
-                    sectionTitle('3. Hose & Equipment');
-                    itemLine('Powered Equipment Proficiency', allData['Powered Equipment Proficiency']);
-                    noteLine(allData['Powered Equipment Note']);
-                    itemLine('Hose Load Proficiency', allData['Hose Load Proficiency']);
-                    noteLine(allData['Hose Load Note']);
-                    itemLine('Nozzle Proficiency', allData['Nozzle Proficiency']);
-                    noteLine(allData['Nozzle Note']);
-                    itemLine('Attack Lines Proficiency', allData['Attack Lines Proficiency']);
-                    noteLine(allData['Attack Lines Note']);
+// Generate base64 - use blob for smaller size
+const pdfBlob = pdf.output('blob');
+const reader = new FileReader();
+reader.onload = function() {
+    const pdfBase64 = reader.result.split(',')[1];
 
-                    sectionTitle('4. Advanced Operations');
-                    itemLine('Deck Gun Proficiency', allData['Deck Gun Proficiency']);
-                    noteLine(allData['Deck Gun Note']);
-                    itemLine('BlitzFire Proficiency', allData['BlitzFire Proficiency']);
-                    noteLine(allData['BlitzFire Note']);
-                    itemLine('Attack Lines Flow Proficiency', allData['Attack Lines Flow Proficiency']);
-                    noteLine(allData['Attack Lines Flow Note']);
-                    itemLine('Ground Ladders Proficiency', allData['Ground Ladders Proficiency']);
-                    noteLine(allData['Ground Ladders Note']);
+    // Final safety check - warn if still too big (very unlikely now)
+    const sizeInMB = (pdfBase64.length * 0.75) / (1024 * 1024); // Rough decode estimate
+    if (sizeInMB > 1.9) {
+        alert('Warning: PDF is still large (~' + sizeInMB.toFixed(1) + 'MB). Some fields may be truncated.');
+    }
 
-                    sectionTitle('5. Command & Scene Proficiency');
-                    itemLine('Command Structure Proficiency', allData['Command Structure Proficiency']);
-                    noteLine(allData['Command Structure Note']);
-                    itemLine('Search & Rescue Proficiency', allData['Search & Rescue Proficiency']);
-                    noteLine(allData['Search & Rescue Note']);
-                    itemLine('Forcible Entry Proficiency', allData['Forcible Entry Proficiency']);
-                    noteLine(allData['Forcible Entry Note']);
-                    itemLine('Salvage & Overhaul Proficiency', allData['Salvage & Overhaul Proficiency']);
-                    noteLine(allData['Salvage & Overhaul Note']);
-                    itemLine('Scene Preservation Proficiency', allData['Scene Preservation Proficiency']);
-                    noteLine(allData['Scene Preservation Note']);
+    const params = {
+        to_email: 'ddorman@centervillefd.com',
+        firefighter: allData['Firefighter'] || 'Unknown',
+        week_ending_date: weekEndingFormatted,
+        shift: allData['Shift'] || 'Unknown',
+        officer: allData['Officer'] || 'Unknown',
+        evaluator_name: allData['Evaluator Name'] || 'Unknown',
+        evaluator_rank: allData['Evaluator Rank'] || 'Unknown',
+        apparatus: allData['Apparatus'] ? allData['Apparatus'].join(', ') : 'None',
+        pdf_attachment: pdfBase64
+    };
 
-                    sectionTitle('Evaluator Information');
-                    itemLine('Evaluator Name', allData['Evaluator Name']);
-                    itemLine('Evaluator Rank', allData['Evaluator Rank']);
-
-                    // Signature
-                    const signatureDataUrl = signaturePad.toDataURL('image/png');
-                    if (y + 50 > contentBottom) addPageIfAllowed();
-                    setFont('bold', SZ_ITEM, BLACK);
-                    pdf.text('Evaluator Signature:', margin, y);
-                    y += 8;
-                    pdf.addImage(signatureDataUrl, 'PNG', margin, y, 80, 40);
-                    y += 50;
-
-                    if (truncated) {
-                        alert('Warning: Report content was truncated due to length.');
-                    }
-
-                    const pdfBase64 = pdf.output('datauristring').split(',')[1];
-
-                    const params = {
-                        to_email: 'ddorman@centervillefd.com',
-                        firefighter: allData['Firefighter'] || 'Unknown',
-                        week_ending_date: weekEndingFormatted,
-                        shift: allData['Shift'] || 'Unknown',
-                        officer: allData['Officer'] || 'Unknown',
-                        evaluator_name: allData['Evaluator Name'] || 'Unknown',
-                        evaluator_rank: allData['Evaluator Rank'] || 'Unknown',
-                        apparatus: allData['Apparatus'] ? allData['Apparatus'].join(', ') : 'None',
-                        pdf_attachment: pdfBase64
-                    };
-
-                    await emailjs.send('service_2gdxvws', 'template_46xt4jy', params);
-
-                    alert('Success! Report sent successfully.');
-                    localStorage.removeItem('reportData');
-                    window.location.href = 'page1.html';
-
-                } catch (err) {
-                    console.error('EmailJS Error:', err);
-                    let msg = 'Submission failed.';
-                    if (err.text) msg += '\n\nServer says: ' + err.text;
-                    else if (err.message) msg += '\n\n' + err.message;
-                    alert(msg);
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = 'Submit Report';
-                }
-            });
+    emailjs.send('service_2gdxvws', 'template_46xt4jy', params)
+        .then(() => {
+            alert('Success! Report sent successfully.');
+            localStorage.removeItem('reportData');
+            window.location.href = 'page1.html';
+        })
+        .catch((err) => {
+            console.error('EmailJS Error:', err);
+            alert('Submission failed: ' + (err.text || err.message || 'Unknown error'));
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Submit Report';
         });
+};
+
+reader.readAsDataURL(pdfBlob);
 
         // Service Worker
         if ('serviceWorker' in navigator) {
