@@ -153,6 +153,7 @@
             justify-content: space-between;
             margin-top: 40px;
             gap: 12px;
+            flex-wrap: wrap;
         }
         .form-actions button {
             padding: 15px 30px;
@@ -165,12 +166,19 @@
             cursor: pointer;
             transition: background 0.3s ease;
             flex: 1;
+            min-width: 140px;
         }
         .form-actions button:hover:not(:disabled) { background: #b91c1c; }
         .form-actions button:first-child {
             background: #334155;
         }
         .form-actions button:first-child:hover:not(:disabled) { background: #475569; }
+        #preview-btn {
+            background: #f97316;
+        }
+        #preview-btn:hover:not(:disabled) {
+            background: #ea580c;
+        }
         .form-actions button:disabled {
             background: #64748b;
             cursor: not-allowed;
@@ -252,6 +260,7 @@
                 </div>
                 <div class="form-actions">
                     <button type="button" id="back-btn">← Back</button>
+                    <button type="button" id="preview-btn">Preview PDF</button>
                     <button type="button" id="submit-btn" disabled>Submit Report</button>
                 </div>
             </form>
@@ -282,20 +291,185 @@
                 }
             });
         }
-        // CRITICAL: Use your EmailJS PUBLIC KEY here (from EmailJS dashboard → Account → API Keys)
-        emailjs.init('0149jkoCQjJZn6JwD'); // ← Replace if this is not your actual Public Key
+        emailjs.init('0149jkoCQjJZn6JwD');
         let signaturePad;
+
+        // Shared PDF generation function
+        async function generatePDF(forPreview = false) {
+            const name = document.getElementById('evaluator-name').value.trim();
+            const rank = document.getElementById('evaluator-rank').value;
+            if (!name || !rank) throw new Error('Please enter evaluator name and rank.');
+            if (signaturePad.isEmpty()) throw new Error('Please provide a signature.');
+
+            const allData = {
+                ...JSON.parse(localStorage.getItem('reportData') || '{}'),
+                'Evaluator Name': name,
+                'Evaluator Rank': rank
+            };
+            if (!allData['Firefighter'] || !allData['Week Ending Date']) {
+                throw new Error('Report incomplete — please fill all previous pages.');
+            }
+
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4',
+                compress: true
+            });
+            const RED = [220, 38, 38];
+            const BLACK = [0, 0, 0];
+            const pageW = pdf.internal.pageSize.getWidth();
+            const pageH = pdf.internal.pageSize.getHeight();
+            const margin = 15;
+            const headerH = 28;
+            let y = margin + headerH;
+            let pageCount = 1;
+            const maxPages = 5;
+            let truncated = false;
+
+            function drawHeader() {
+                pdf.setFont('helvetica', 'bold');
+                pdf.setFontSize(20);
+                pdf.setTextColor(...BLACK);
+                pdf.text('Centerville Fire Department', pageW / 2, margin + 8, { align: 'center' });
+                pdf.setFontSize(16);
+                pdf.text('Firefighter Weekly Performance Report', pageW / 2, margin + 16, { align: 'center' });
+                pdf.setFontSize(14);
+                pdf.text(`Firefighter: ${allData['Firefighter'] || 'N/A'}`, pageW / 2, margin + 24, { align: 'center' });
+                pdf.setDrawColor(...RED);
+                pdf.setLineWidth(0.8);
+                pdf.line(margin, margin + 30, pageW - margin, margin + 30);
+            }
+
+            function addNewPage() {
+                if (pageCount >= maxPages) {
+                    truncated = true;
+                    return false;
+                }
+                pdf.addPage();
+                pageCount++;
+                drawHeader();
+                y = margin + headerH;
+                return true;
+            }
+
+            function sectionTitle(title) {
+                pdf.setFontSize(14);
+                pdf.setTextColor(...RED);
+                pdf.text(title, margin, y);
+                y += 8;
+                pdf.setDrawColor(...RED);
+                pdf.setLineWidth(0.5);
+                pdf.line(margin, y - 2, margin + pdf.getTextWidth(title), y - 2);
+                y += 6;
+            }
+
+            function itemLine(label, value) {
+                pdf.setFontSize(11);
+                pdf.setTextColor(...BLACK);
+                pdf.text(`${label}: ${value || 'N/A'}`, margin, y);
+                y += 6;
+            }
+
+            function noteLine(noteText) {
+                if (!noteText || noteText.trim() === '') return;
+                const ratingKey = Object.keys(allData).find(k => allData[k + ' Note'] === noteText);
+                const rating = ratingKey ? allData[ratingKey] : '';
+                if (rating !== 'Unsatisfactory' && rating !== 'Needs Improvement') return;
+                const lines = pdf.splitTextToSize(`Note: ${noteText.trim()}`, pageW - margin * 2);
+                pdf.setFontSize(10);
+                pdf.setTextColor(...BLACK);
+                pdf.text(lines, margin, y);
+                y += lines.length * 4.5 + 3;
+            }
+
+            let weekEndingFormatted = 'N/A';
+            if (allData['Week Ending Date']) {
+                const dateObj = new Date(allData['Week Ending Date'] + 'T12:00:00');
+                weekEndingFormatted = dateObj.toLocaleDateString('en-US', { month: 'long', day: '2-digit', year: 'numeric' });
+            }
+
+            drawHeader();
+            y += 10;
+            itemLine('Week Ending', weekEndingFormatted);
+            itemLine('Shift', allData['Shift'] || 'N/A');
+            itemLine('Officer', allData['Officer'] || 'N/A');
+            itemLine('Apparatus', allData['Apparatus'] ? allData['Apparatus'].join(', ') : 'N/A');
+            y += 10;
+
+            const sections = [
+                { title: '1. Policies & Conduct', items: [
+                    'On Time & Uniform', 'Radio Proficiency', 'Cell Phone Proficiency',
+                    'City Policies Proficiency', 'Department Policies Proficiency'
+                ]},
+                { title: '2. PPE & Medical', items: [
+                    'PPE/SCBA Donning Proficiency', 'Medical Equipment Proficiency', 'RIT Pack Proficiency'
+                ]},
+                { title: '3. Hose & Equipment', items: [
+                    'Powered Equipment Proficiency', 'Hose Load Proficiency', 'Nozzle Proficiency', 'Attack Lines Proficiency'
+                ]},
+                { title: '4. Advanced Operations', items: [
+                    'Deck Gun Proficiency', 'BlitzFire Proficiency', 'Attack Lines Flow Proficiency', 'Ground Ladders Proficiency'
+                ]},
+                { title: '5. Command & Scene Proficiency', items: [
+                    'Command Structure Proficiency', 'Search & Rescue Proficiency', 'Forcible Entry Proficiency',
+                    'Salvage & Overhaul Proficiency', 'Scene Preservation Proficiency'
+                ]}
+            ];
+
+            sections.forEach(sec => {
+                if (y > pageH - 50) addNewPage();
+                sectionTitle(sec.title);
+                sec.items.forEach(item => {
+                    const rating = allData[item] || 'N/A';
+                    itemLine(item.replace(' Proficiency', ''), rating);
+                    const noteKey = item.replace(' Proficiency', '') + ' Note';
+                    if (allData[noteKey]) noteLine(allData[noteKey]);
+                });
+                y += 4;
+            });
+
+            if (y > pageH - 60) addNewPage();
+            sectionTitle('Evaluator Information');
+            itemLine('Evaluator Name', allData['Evaluator Name']);
+            itemLine('Evaluator Rank', allData['Evaluator Rank']);
+
+            // Ultra-low quality signature for iPad size issues
+            const signatureDataUrl = signaturePad.toDataURL('image/jpeg', 0.3); // Very low quality
+            pdf.setFontSize(11);
+            pdf.text('Evaluator Signature:', margin, y);
+            y += 7;
+            pdf.addImage(signatureDataUrl, 'JPEG', margin, y, 60, 30, undefined, 'FAST'); // Smaller signature
+            y += 35;
+
+            if (truncated) {
+                pdf.setFontSize(10);
+                pdf.text('Content truncated to fit 5-page limit.', margin, y);
+            }
+
+            if (forPreview) {
+                const pdfBlob = pdf.output('blob');
+                const url = URL.createObjectURL(pdfBlob);
+                const previewWindow = window.open(url, '_blank');
+                if (!previewWindow) alert('Please allow popups for PDF preview.');
+                setTimeout(() => URL.revokeObjectURL(url), 60000);
+            } else {
+                return pdf.output('datauristring').split(',')[1];
+            }
+        }
+
         window.addEventListener('load', () => {
-            // Load saved data
             const savedData = JSON.parse(localStorage.getItem('reportData') || '{}');
             document.getElementById('evaluator-name').value = savedData['Evaluator Name'] || '';
             document.getElementById('evaluator-rank').value = savedData['Evaluator Rank'] || '';
-            // Initialize SignaturePad
+
             const canvas = document.getElementById('signature-pad');
             signaturePad = new SignaturePad(canvas, {
                 backgroundColor: 'rgb(255, 255, 255)',
                 penColor: '#1e40af'
             });
+
             function resizeCanvas() {
                 const ratio = Math.max(window.devicePixelRatio || 1, 1);
                 canvas.width = canvas.offsetWidth * ratio;
@@ -305,7 +479,7 @@
             }
             window.addEventListener('resize', resizeCanvas);
             resizeCanvas();
-            // Buttons
+
             document.getElementById('clear-signature').addEventListener('click', () => {
                 signaturePad.clear();
                 updateSubmitButton();
@@ -321,7 +495,7 @@
             }
             signaturePad.addEventListener('endStroke', updateSubmitButton);
             updateSubmitButton();
-            // Back button
+
             document.getElementById('back-btn').addEventListener('click', () => {
                 const name = document.getElementById('evaluator-name').value.trim();
                 const rank = document.getElementById('evaluator-rank').value;
@@ -329,162 +503,39 @@
                 localStorage.setItem('reportData', JSON.stringify({ ...existing, 'Evaluator Name': name, 'Evaluator Rank': rank }));
                 window.history.back();
             });
-            // Submit
+
+            // Preview button
+            document.getElementById('preview-btn').addEventListener('click', async () => {
+                const btn = document.getElementById('preview-btn');
+                btn.disabled = true;
+                btn.textContent = 'Generating...';
+                try {
+                    await generatePDF(true);
+                } catch (err) {
+                    alert(err.message || 'Failed to generate preview');
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = 'Preview PDF';
+                }
+            });
+
+            // Submit button
             document.getElementById('submit-btn').addEventListener('click', async () => {
                 const submitBtn = document.getElementById('submit-btn');
                 submitBtn.disabled = true;
                 submitBtn.textContent = 'Submitting...';
                 try {
-                    const name = document.getElementById('evaluator-name').value.trim();
-                    const rank = document.getElementById('evaluator-rank').value;
-                    if (!name || !rank) throw new Error('Please enter evaluator name and rank.');
-                    if (signaturePad.isEmpty()) throw new Error('Please provide a signature.');
+                    const pdfBase64 = await generatePDF(false);
+                    let weekEndingFormatted = 'N/A';
                     const allData = {
                         ...JSON.parse(localStorage.getItem('reportData') || '{}'),
-                        'Evaluator Name': name,
-                        'Evaluator Rank': rank
+                        'Evaluator Name': document.getElementById('evaluator-name').value.trim(),
+                        'Evaluator Rank': document.getElementById('evaluator-rank').value
                     };
-                    if (!allData['Firefighter'] || !allData['Week Ending Date']) {
-                        throw new Error('Report incomplete — please fill all previous pages.');
-                    }
-
-                    // === NEW PDF GENERATION USING TRAINING REPORT TEMPLATE STYLE ===
-                    const { jsPDF } = window.jspdf;
-                    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
-                    const RED = [220, 38, 38];
-                    const BLACK = [0, 0, 0];
-                    const pageW = pdf.internal.pageSize.getWidth();
-                    const pageH = pdf.internal.pageSize.getHeight();
-                    const margin = 15;
-                    const headerH = 28;
-                    let y = margin + headerH;
-                    let pageCount = 1;
-                    const maxPages = 5;
-                    let truncated = false;
-
-                    function drawHeader() {
-                        pdf.setFont('times', 'bold');
-                        pdf.setFontSize(20);
-                        pdf.setTextColor(...BLACK);
-                        pdf.text('Centerville Fire Department', pageW / 2, margin + 8, { align: 'center' });
-                        pdf.setFontSize(16);
-                        pdf.text('Firefighter Weekly Performance Report', pageW / 2, margin + 16, { align: 'center' });
-                        pdf.setFontSize(14);
-                        pdf.text(`Firefighter: ${allData['Firefighter'] || 'N/A'}`, pageW / 2, margin + 24, { align: 'center' });
-                        pdf.setDrawColor(...RED);
-                        pdf.setLineWidth(0.8);
-                        pdf.line(margin, margin + 30, pageW - margin, margin + 30);
-                    }
-
-                    function addNewPage() {
-                        if (pageCount >= maxPages) {
-                            truncated = true;
-                            return false;
-                        }
-                        pdf.addPage();
-                        pageCount++;
-                        drawHeader();
-                        y = margin + headerH;
-                        return true;
-                    }
-
-                    function sectionTitle(title) {
-                        pdf.setFontSize(14);
-                        pdf.setTextColor(...RED);
-                        pdf.text(title, margin, y);
-                        y += 8;
-                        pdf.setDrawColor(...RED);
-                        pdf.setLineWidth(0.5);
-                        pdf.line(margin, y - 2, margin + pdf.getTextWidth(title), y - 2);
-                        y += 6;
-                    }
-
-                    function noteLine(noteText) {
-                        if (!noteText || noteText.trim() === '') return true;
-                        // Find corresponding rating key
-                        const ratingKey = Object.keys(allData).find(k => k.includes('Rating') && allData[k + ' Note'] === noteText);
-                        const rating = ratingKey ? allData[ratingKey] : '';
-                        if (rating !== 'Unsatisfactory' && rating !== 'Needs Improvement') return true;
-                        const lines = pdf.splitTextToSize(`Note: ${noteText.trim()}`, pageW - margin * 2);
-                        pdf.setFontSize(11);
-                        pdf.setTextColor(...BLACK);
-                        pdf.text(lines, margin, y);
-                        y += lines.length * 5 + 4;
-                        return true;
-                    }
-
-                    function itemLine(label, value) {
-                        pdf.setFontSize(11);
-                        pdf.setTextColor(...BLACK);
-                        pdf.text(`${label}: ${value || 'N/A'}`, margin, y);
-                        y += 6;
-                    }
-
-                    let weekEndingFormatted = 'N/A';
                     if (allData['Week Ending Date']) {
                         const dateObj = new Date(allData['Week Ending Date'] + 'T12:00:00');
                         weekEndingFormatted = dateObj.toLocaleDateString('en-US', { month: 'long', day: '2-digit', year: 'numeric' });
                     }
-
-                    drawHeader();
-                    y += 10;
-                    itemLine('Week Ending', weekEndingFormatted);
-                    itemLine('Shift', allData['Shift'] || 'N/A');
-                    itemLine('Officer', allData['Officer'] || 'N/A');
-                    itemLine('Apparatus', allData['Apparatus'] ? allData['Apparatus'].join(', ') : 'N/A');
-                    y += 10;
-
-                    // Sections
-                    const sections = [
-                        { title: '1. Policies & Conduct', items: [
-                            'On Time & Uniform', 'Radio Proficiency', 'Cell Phone Proficiency',
-                            'City Policies Proficiency', 'Department Policies Proficiency'
-                        ]},
-                        { title: '2. PPE & Medical', items: [
-                            'PPE/SCBA Donning Proficiency', 'Medical Equipment Proficiency', 'RIT Pack Proficiency'
-                        ]},
-                        { title: '3. Hose & Equipment', items: [
-                            'Powered Equipment Proficiency', 'Hose Load Proficiency', 'Nozzle Proficiency', 'Attack Lines Proficiency'
-                        ]},
-                        { title: '4. Advanced Operations', items: [
-                            'Deck Gun Proficiency', 'BlitzFire Proficiency', 'Attack Lines Flow Proficiency', 'Ground Ladders Proficiency'
-                        ]},
-                        { title: '5. Command & Scene Proficiency', items: [
-                            'Command Structure Proficiency', 'Search & Rescue Proficiency', 'Forcible Entry Proficiency',
-                            'Salvage & Overhaul Proficiency', 'Scene Preservation Proficiency'
-                        ]}
-                    ];
-
-                    sections.forEach(sec => {
-                        if (y > pageH - 50) addNewPage();
-                        sectionTitle(sec.title);
-                        sec.items.forEach(item => {
-                            const ratingKey = item.includes('Rating') ? item : `${item} Rating` in allData ? `${item} Rating` : item;
-                            const noteKey = `${item} Note`;
-                            itemLine(item, allData[ratingKey] || 'N/A');
-                            if (allData[noteKey]) noteLine(allData[noteKey]);
-                        });
-                        y += 6;
-                    });
-
-                    if (y > pageH - 60) addNewPage();
-                    sectionTitle('Evaluator Information');
-                    itemLine('Evaluator Name', allData['Evaluator Name']);
-                    itemLine('Evaluator Rank', allData['Evaluator Rank']);
-
-                    // Signature (80mm x 80mm = ~94px x 94px at 96dpi, but scaled)
-                    const signatureDataUrl = signaturePad.toDataURL('image/jpeg', 0.8);
-                    pdf.text('Evaluator Signature:', margin, y);
-                    y += 8;
-                    pdf.addImage(signatureDataUrl, 'JPEG', margin, y, 80, 80, undefined, 'FAST');
-                    y += 85;
-
-                    if (truncated) {
-                        pdf.setFontSize(10);
-                        pdf.text('Content truncated to fit 5-page limit.', margin, y);
-                    }
-
-                    const pdfBase64 = pdf.output('datauristring').split(',')[1];
                     const params = {
                         to_email: '<ddorman@centervillefd.com>',
                         firefighter: allData['Firefighter'] || 'Unknown',
@@ -502,16 +553,13 @@
                     window.location.href = 'page1.html';
                 } catch (err) {
                     console.error('Error:', err);
-                    let msg = 'Submission failed.';
-                    if (err.text) msg += '\n\nServer says: ' + err.text;
-                    else if (err.message) msg += '\n\n' + err.message;
-                    alert(msg);
+                    alert('Submission failed: ' + (err.message || 'Unknown error'));
                     submitBtn.disabled = false;
                     submitBtn.textContent = 'Submit Report';
                 }
             });
         });
-        // Service Worker
+
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js')
