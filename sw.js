@@ -1,8 +1,8 @@
 // sw.js - Service Worker for Centerville FD Reports & Training
-// Version: 1.2 (update version when making changes)
+// Version: 1.3 (update version when making changes)
 
 // Cache name - change version number to force update
-const CACHE_NAME = 'centerville-fd-v1.2';
+const CACHE_NAME = 'centerville-fd-v1.3';
 
 // Files to cache for offline use
 const FILES_TO_CACHE = [
@@ -11,9 +11,6 @@ const FILES_TO_CACHE = [
     '/patch.png',
     '/city-logo.png',
     '/firefighter-report/page1.html',
-    // Add more pages/files as needed
-    // Example: '/training-sheets/index.html',
-    // '/training-sheets/Firefighter-Safety-Checklist.pdf',
     'https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap',
     'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
     'https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js',
@@ -22,7 +19,7 @@ const FILES_TO_CACHE = [
 
 // Install event - cache all essential files
 self.addEventListener('install', (event) => {
-    console.log('[SW] Install');
+    console.log('[SW] Install v1.3');
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then((cache) => {
@@ -35,7 +32,7 @@ self.addEventListener('install', (event) => {
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
-    console.log('[SW] Activate');
+    console.log('[SW] Activate v1.3');
     event.waitUntil(
         caches.keys().then((cacheNames) => {
             return Promise.all(
@@ -54,6 +51,12 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
     // Only cache GET requests (ignore POST, etc.)
     if (event.request.method !== 'GET') return;
+
+    // NEVER cache API calls — always go to network
+    const url = new URL(event.request.url);
+    if (url.pathname.startsWith('/api/')) {
+        return;
+    }
 
     event.respondWith(
         caches.match(event.request)
@@ -85,6 +88,3 @@ self.addEventListener('fetch', (event) => {
             })
     );
 });
-
-// Optional: Background sync for failed uploads (advanced)
-// self.addEventListener('sync', (event) => { ... });
