@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DivisionScan — Support</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0E0E12;color:#C8C8D0;line-height:1.7}
+.header{background:linear-gradient(135deg,#1A1A22,#12121A);border-bottom:1px solid rgba(255,59,48,0.3);padding:40px 20px;text-align:center}
+.header .logo{display:flex;align-items:baseline;justify-content:center;gap:0;margin-bottom:8px}
+.header .logo .d{font-size:22px;font-weight:800;color:#FF6B35;letter-spacing:2px}
+.header .logo .s{font-size:22px;font-weight:800;color:#fff;letter-spacing:2px}
+.header .subtitle{color:#FF6B35;font-size:14px;font-weight:600;letter-spacing:2px;text-transform:uppercase}
+.container{max-width:720px;margin:0 auto;padding:40px 24px}
+h2{color:#FF3B30;font-size:20px;font-weight:700;margin-top:36px;margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid rgba(255,59,48,0.15)}
+.faq{margin-bottom:20px}
+.faq summary{color:#fff;font-size:16px;font-weight:600;cursor:pointer;padding:14px 18px;background:rgba(255,255,255,0.04);border-radius:10px;border:1px solid rgba(255,255,255,0.06);list-style:none;display:flex;justify-content:space-between;align-items:center}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:'+';color:#FF6B35;font-size:20px;font-weight:700}
+.faq[open] summary::after{content:'−'}
+.faq[open] summary{border-radius:10px 10px 0 0;border-bottom:1px solid rgba(255,59,48,0.15)}
+.faq .answer{padding:16px 18px;background:rgba(255,255,255,0.02);border-radius:0 0 10px 10px;border:1px solid rgba(255,255,255,0.06);border-top:0;font-size:14px}
+.faq .answer p{margin-bottom:10px}
+.faq .answer ul{margin:8px 0 12px 20px}
+.faq .answer li{margin-bottom:6px;font-size:14px}
+.req-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin:20px 0}
+.req-card{background:rgba(255,255,255,0.04);border-radius:10px;padding:16px;border:1px solid rgba(255,255,255,0.06);text-align:center}
+.req-card .icon{font-size:28px;margin-bottom:8px}
+.req-card .label{color:#fff;font-size:14px;font-weight:600}
+.req-card .desc{color:#666;font-size:12px;margin-top:4px}
+.contact{background:rgba(255,59,48,0.06);border-radius:12px;padding:24px;margin-top:30px;border:1px solid rgba(255,59,48,0.15)}
+.contact a{color:#FF6B35;text-decoration:none}
+.footer{text-align:center;padding:30px 20px;color:#444;font-size:12px;border-top:1px solid rgba(255,255,255,0.05);margin-top:40px}
+</style>
+</head>
+<body>
+<div class="header">
+<div class="logo"><span class="d">DIVISION</span><span class="s">SCAN</span></div>
+<div class="subtitle">Support &amp; FAQ</div>
+</div>
+<div class="container">
+<h2>Device Requirements</h2>
+<div class="req-grid">
+<div class="req-card"><div class="icon">📱</div><div class="label">iPhone 12 Pro+</div><div class="desc">LiDAR sensor required</div></div>
+<div class="req-card"><div class="icon">📐</div><div class="label">iOS 17.0+</div><div class="desc">Minimum iOS version</div></div>
+<div class="req-card"><div class="icon">📡</div><div class="label">LiDAR Scanner</div><div class="desc">Built into Pro models</div></div>
+<div class="req-card"><div class="icon">🔒</div><div class="label">Face ID</div><div class="desc">Optional for app lock</div></div>
+</div>
+<p style="font-size:13px;color:#666;margin-top:8px">Compatible devices: iPhone 12 Pro, 12 Pro Max, 13 Pro, 13 Pro Max, 14 Pro, 14 Pro Max, 15 Pro, 15 Pro Max, 16 Pro, 16 Pro Max, and all iPad Pro models with LiDAR.</p>
+
+<h2>Frequently Asked Questions</h2>
+
+<details class="faq">
+<summary>How do I scan a room?</summary>
+<div class="answer">
+<p>1. Tap <strong>"New Building Scan"</strong> on the home screen</p>
+<p>2. Enter the building name, address, and floor number</p>
+<p>3. Point your camera at the room and slowly pan around</p>
+<p>4. The app uses Apple’s RoomPlan to detect walls, doors, windows, and furniture</p>
+<p>5. When finished, tap <strong>"Complete Scan"</strong> to generate the floor plan</p>
+<p><strong>Tip:</strong> Move slowly and steadily. Keep the phone upright. Scan from corners for best results.</p>
+</div>
+</details>
+
+<details class="faq">
+<summary>What are fire service markers?</summary>
+<div class="answer">
+<p>Markers are icons you place on the floor plan to document fire protection equipment and hazards. DivisionScan includes 30+ pre-built markers:</p>
+<ul>
+<li><strong>Fire Protection:</strong> FDC, sprinkler risers, standpipes, pull stations, extinguishers, smoke/CO detectors</li>
+<li><strong>Electrical:</strong> Panels, outlets, switches, lights, exit signs, emergency lights</li>
+<li><strong>Utilities:</strong> Gas/water/electrical shutoffs, HVAC, elevators, generators</li>
+<li><strong>Hazards:</strong> HazMat storage, flammables, chemicals, oxygen, propane</li>
+<li><strong>Access:</strong> Knox boxes, exits, stairwells, elevators, roof access</li>
+</ul>
+</div>
+</details>
+
+<details class="faq">
+<summary>How do I add photos to the floor plan?</summary>
+<div class="answer">
+<p>1. On the floor plan view, tap the <strong>camera icon</strong> in the toolbar</p>
+<p>2. Tap a location on the floor plan where you want to pin the photo</p>
+<p>3. Take a photo or select from your camera roll</p>
+<p>4. Add an optional note to describe what the photo shows</p>
+<p>Photos are pinned to exact locations on the floor plan, making it easy to reference during an incident.</p>
+</div>
+</details>
+
+<details class="faq">
+<summary>How does the compass work?</summary>
+<div class="answer">
+<p>The compass calibration feature orients your floor plan to true north. Tap the compass button, face north, and tap “Calibrate.” The floor plan will rotate to match the building’s actual orientation, which is critical for giving accurate directions during firefighting operations.</p>
+</div>
+</details>
+
+<details class="faq">
+<summary>What is the occupancy calculator?</summary>
+<div class="answer">
+<p>The IBC Table 1004.5 occupancy load calculator estimates the maximum number of occupants based on the room’s area and use type (assembly, business, educational, etc.). This is the same table used by fire marshals for code compliance.</p>
+</div>
+</details>
+
+<details class="faq">
+<summary>How do I share pre-plans with my crew?</summary>
+<div class="answer">
+<p>Several options:</p>
+<ul>
+<li><strong>AirDrop:</strong> Share directly to nearby iPhones/iPads</li>
+<li><strong>Server Export:</strong> Send to your department’s pre-plan server for web viewing</li>
+<li><strong>JSON Export:</strong> Share the raw data file via Messages, Email, or any app</li>
+<li><strong>3D Export:</strong> Export as USDZ 3D model for viewing in AR</li>
+</ul>
+</div>
+</details>
+
+<details class="faq">
+<summary>Is my data private?</summary>
+<div class="answer">
+<p>Yes. All scan data is stored locally on your device. Nothing is transmitted unless you explicitly choose to export or share. There are no analytics, no ads, and no tracking. See our <a href="/divisionscan/privacy">Privacy Policy</a> for full details.</p>
+</div>
+</details>
+
+<details class="faq">
+<summary>The scan doesn’t look right — what can I do?</summary>
+<div class="answer">
+<p>For best results:</p>
+<ul>
+<li>Ensure good lighting (avoid very dark rooms)</li>
+<li>Move slowly and keep the phone steady</li>
+<li>Scan from multiple angles — walk the perimeter</li>
+<li>Avoid reflective surfaces like mirrors and glass walls</li>
+<li>Start from a corner and work your way around</li>
+<li>If a scan fails, simply try again — each scan improves with practice</li>
+</ul>
+</div>
+</details>
+
+<h2>Contact Support</h2>
+<div class="contact">
+<p>Need help? Have a feature request? Found a bug?</p>
+<p style="margin-top:12px"><strong>David Dorman</strong><br>DivisionScan Developer<br>Email: <a href="mailto:ddorman@centervillefd.com">ddorman@centervillefd.com</a></p>
+<p style="margin-top:12px;font-size:13px;color:#666">Response time: Usually within 24-48 hours</p>
+</div>
+</div>
+<div class="footer">&copy; 2026 DivisionScan. All rights reserved.</div>
+</body>
+</html>
