@@ -14,7 +14,7 @@
     <link rel="manifest" href="manifest.json">
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <!-- Email handled via Resend worker --></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.2.0/dist/signature_pad.umd.min.js"></script>
     <!-- Styles -->
     <style>
@@ -286,7 +286,7 @@
                 }
             });
         }
-        emailjs.init('0149jkoCQjJZn6JwD');
+
         let signaturePad;
 
         // Shared PDF generation function
@@ -529,7 +529,6 @@
                         weekEndingFormatted = dateObj.toLocaleDateString('en-US', { month: 'long', day: '2-digit', year: 'numeric' });
                     }
                     const params = {
-                        to_email: '<ddorman@centervillefd.com>',
                         firefighter: allData['Firefighter'] || 'Unknown',
                         week_ending_date: weekEndingFormatted,
                         shift: allData['Shift'] || 'Unknown',
@@ -537,9 +536,25 @@
                         evaluator_name: allData['Evaluator Name'] || 'Unknown',
                         evaluator_rank: allData['Evaluator Rank'] || 'Unknown',
                         apparatus: allData['Apparatus'] ? allData['Apparatus'].join(', ') : 'None',
-                        pdf_attachment: pdfBase64
                     };
-                    await emailjs.send('service_2gdxvws', 'template_46xt4jy', params);
+                    const res = await fetch('/api/send-email', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            subject: 'Firefighter Report - ' + params.firefighter + ' - Week Ending ' + params.week_ending_date,
+                            html: '<h2>Firefighter Weekly Report</h2>' +
+                                '<p><strong>Firefighter:</strong> ' + params.firefighter + '</p>' +
+                                '<p><strong>Week Ending:</strong> ' + params.week_ending_date + '</p>' +
+                                '<p><strong>Shift:</strong> ' + params.shift + '</p>' +
+                                '<p><strong>Officer:</strong> ' + params.officer + '</p>' +
+                                '<p><strong>Evaluator:</strong> ' + params.evaluator_name + ' (' + params.evaluator_rank + ')</p>' +
+                                '<p><strong>Apparatus:</strong> ' + params.apparatus + '</p>' +
+                                '<p><em>PDF report attached.</em></p>',
+                            attachments: [{ filename: params.firefighter.replace(/\s+/g, '_') + '_' + params.week_ending_date.replace(/\s+/g, '_') + '.pdf', content: pdfBase64 }]
+                        })
+                    });
+                    const result = await res.json();
+                    if (!result.success) throw new Error(JSON.stringify(result.error));
                     alert('Success! Report sent successfully.');
                     localStorage.removeItem('reportData');
                     window.location.href = 'page1.html';
