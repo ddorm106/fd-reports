@@ -516,6 +516,8 @@
                     <span class="btn-text">Save Report</span>
                     <span class="btn-loading" style="display:none;">Saving...</span>
                 </button>
+                <button type="button" class="main-btn" id="cloud-save-btn" style="background:#7c3aed;">&#9729; Save to Cloud</button>
+                <button type="button" class="main-btn" id="cloud-resume-btn" style="background:#0891b2;">Resume Draft</button>
                 <button type="button" class="main-btn" id="send-email-btn">Send via Email</button>
                 <button type="button" class="main-btn" id="print-preview-btn">Print Preview</button>
                 <button type="button" class="main-btn" id="clear-form-btn">Clear Form</button>
@@ -1201,6 +1203,127 @@
                     location.reload();
                 }
             });
+
+            // --- CLOUD SAVE/RESUME ---
+            let currentDraftCode = localStorage.getItem('draftCode') || null;
+
+            document.getElementById('cloud-save-btn').addEventListener('click', async () => {
+                const btn = document.getElementById('cloud-save-btn');
+                btn.disabled = true;
+                btn.textContent = 'Saving...';
+                try {
+                    const data = collectFormData();
+                    const res = await fetch('/api/save-draft', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ data, code: currentDraftCode }),
+                    });
+                    const result = await res.json();
+                    if (result.success) {
+                        currentDraftCode = result.code;
+                        document.getElementById('draftCodeDisplay').textContent = result.code;
+                        document.getElementById('draftCodeModal').style.display = 'flex';
+                        localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(data));
+                        localStorage.setItem('draftCode', result.code);
+                    } else {
+                        alert('Save failed: ' + (result.error || 'Unknown error'));
+                    }
+                } catch (err) {
+                    alert('Save failed: ' + err.message);
+                }
+                btn.textContent = '\u2601 Save to Cloud';
+                btn.disabled = false;
+            });
+
+            document.getElementById('cloud-resume-btn').addEventListener('click', () => {
+                document.getElementById('resumeError').style.display = 'none';
+                document.getElementById('resumeCodeInput').value = '';
+                document.getElementById('resumeCodeModal').style.display = 'flex';
+                setTimeout(() => document.getElementById('resumeCodeInput').focus(), 100);
+            });
+
+            document.getElementById('resumeLoadBtn').addEventListener('click', async () => {
+                const code = document.getElementById('resumeCodeInput').value.trim().toUpperCase();
+                const errorEl = document.getElementById('resumeError');
+                if (code.length !== 6) { errorEl.textContent = 'Code must be 6 characters'; errorEl.style.display = 'block'; return; }
+                const btn = document.getElementById('resumeLoadBtn');
+                btn.textContent = 'Loading...'; btn.disabled = true;
+                try {
+                    const res = await fetch('/api/load-draft?code=' + code);
+                    const result = await res.json();
+                    if (result.success) {
+                        currentDraftCode = code;
+                        localStorage.setItem('draftCode', code);
+                        cloudRestoreForm(result.data);
+                        document.getElementById('resumeCodeModal').style.display = 'none';
+                    } else { errorEl.textContent = result.error || 'Draft not found'; errorEl.style.display = 'block'; }
+                } catch (err) { errorEl.textContent = 'Failed: ' + err.message; errorEl.style.display = 'block'; }
+                btn.textContent = 'Load Draft'; btn.disabled = false;
+            });
+
+            document.getElementById('resumeCodeInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('resumeLoadBtn').click(); });
+
+            function cloudRestoreForm(data) {
+                document.getElementById('training-title').value = data.trainingTitle || '';
+                document.getElementById('start-date').value = data.startDate || '';
+                document.getElementById('end-date').value = data.endDate || '';
+                document.getElementById('selected-shifts').value = data.selectedShifts || '';
+                document.getElementById('start-hour').value = data.startHour || '';
+                document.getElementById('start-minute').value = data.startMinute || '';
+                document.getElementById('end-hour').value = data.endHour || '';
+                document.getElementById('end-minute').value = data.endMinute || '';
+                document.getElementById('total-hours').value = data.totalHours || '';
+                document.getElementById('location').value = data.location || '';
+                document.getElementById('iso-category').value = data.isoCategory || '';
+                document.getElementById('description').value = data.description || '';
+                document.getElementById('objectives').value = data.objectives || '';
+                const shifts = (data.selectedShifts || '').split(', ');
+                document.querySelectorAll('.shift-btn').forEach(btn => { btn.classList.toggle('selected', shifts.includes(btn.textContent.trim())); });
+                document.getElementById('iso-category').dispatchEvent(new Event('change'));
+                if (data.drivers) {
+                    if (document.getElementById('drivers-training-section').style.display === 'none') document.getElementById('drivers-training-section').style.display = 'block';
+                    document.getElementById('apparatus-type').value = data.drivers.apparatusType || '';
+                    document.getElementById('road-conditions').value = data.drivers.roadConditions || '';
+                    document.getElementById('weather-conditions').value = data.drivers.weatherConditions || '';
+                    document.getElementById('traffic-conditions').value = data.drivers.trafficConditions || '';
+                    document.getElementById('apparatus-miles').value = data.drivers.apparatusMiles || '';
+                    document.getElementById('apparatus-hours').value = data.drivers.apparatusHours || '';
+                    document.getElementById('actual-miles').value = data.drivers.actualMiles || '';
+                }
+                function restoreRows(tableId, items, isCenterville) {
+                    const tbody = document.querySelector('#' + tableId + ' tbody');
+                    tbody.innerHTML = '';
+                    items.forEach(p => {
+                        if (!p.name && !p.equipment && !p.point) return;
+                        if (tableId.includes('grading')) { addGradingRow(); }
+                        else if (tableId.includes('equipment')) { addEquipmentRow(); }
+                        else { addPersonRow(tableId, isCenterville); }
+                        const row = tbody.lastElementChild;
+                        if (!row) return;
+                        if (p.name !== undefined) {
+                            const nameEl = row.cells[0].querySelector('input, select');
+                            if (nameEl) { nameEl.value = p.name; if (nameEl.tagName === 'SELECT') nameEl.dispatchEvent(new Event('change')); else { const r = row.cells[1].querySelector('input'); const g = row.cells[2].querySelector('input'); if (r) r.value = p.rank || ''; if (g) g.value = p.gfstc || ''; } }
+                            if (p.signature) { const img = document.createElement('img'); img.src = p.signature; img.style.cssText = 'max-width:120px;max-height:40px;'; const btn = row.cells[3].querySelector('.sign-btn'); if (btn) btn.style.display = 'none'; row.cells[3].appendChild(img); }
+                        } else if (p.point !== undefined) {
+                            const s1 = row.cells[0].querySelector('select'); const s2 = row.cells[1].querySelector('select'); const i1 = row.cells[2].querySelector('input');
+                            if (s1) s1.value = p.point; if (s2) s2.value = p.proficiency; if (i1) i1.value = p.comments || '';
+                        } else if (p.equipment !== undefined) {
+                            const s1 = row.cells[0].querySelector('select'); const i1 = row.cells[2].querySelector('input');
+                            if (s1) s1.value = p.equipment; if (i1) i1.value = p.comments || '';
+                        }
+                    });
+                }
+                if (data.instructors) restoreRows('instructors-table', data.instructors, true);
+                if (data.studentsCenterville) restoreRows('students-centerville-table', data.studentsCenterville, true);
+                if (data.studentsOutside && data.studentsOutside.length > 0) { document.getElementById('outside-students-section').style.display = 'block'; restoreRows('students-outside-table', data.studentsOutside, false); }
+                if (data.gradingPoints) restoreRows('grading-points-table', data.gradingPoints, false);
+                if (data.equipment) restoreRows('facility-equipment-table', data.equipment, false);
+                localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(data));
+            }
+
+            // Auto-load from URL code parameter
+            const urlCode = new URLSearchParams(window.location.search).get('code');
+            if (urlCode) { setTimeout(() => { document.getElementById('resumeCodeInput').value = urlCode; document.getElementById('resumeCodeModal').style.display = 'flex'; document.getElementById('resumeLoadBtn').click(); }, 500); }
         });
         window.addEventListener('load', () => {
             const saved = localStorage.getItem(FORM_STORAGE_KEY);
@@ -1231,5 +1354,27 @@
             }
         });
     </script>
+    <div id="draftCodeModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:9999;justify-content:center;align-items:center;">
+        <div style="background:white;border-radius:16px;padding:30px;max-width:400px;width:90%;text-align:center;">
+            <h3 style="margin-bottom:10px;font-size:1.3rem;">Draft Saved to Cloud &#9729;</h3>
+            <p style="margin-bottom:15px;color:#666;">Use this code on any device to resume:</p>
+            <div id="draftCodeDisplay" style="font-size:2.5rem;font-weight:800;letter-spacing:8px;color:#7c3aed;background:#f3f0ff;padding:15px;border-radius:10px;margin-bottom:15px;font-family:monospace;"></div>
+            <p style="font-size:0.85rem;color:#999;margin-bottom:20px;">Code expires in 7 days</p>
+            <button onclick="navigator.clipboard.writeText(document.getElementById('draftCodeDisplay').textContent.trim());this.textContent='Copied!';setTimeout(()=>this.textContent='Copy Code',1500)" style="padding:10px 24px;background:#7c3aed;color:white;border:none;border-radius:8px;font-size:1rem;cursor:pointer;margin-right:8px;">Copy Code</button>
+            <button onclick="document.getElementById('draftCodeModal').style.display='none'" style="padding:10px 24px;background:#e5e7eb;color:#333;border:none;border-radius:8px;font-size:1rem;cursor:pointer;">Close</button>
+        </div>
+    </div>
+    <div id="resumeCodeModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:9999;justify-content:center;align-items:center;">
+        <div style="background:white;border-radius:16px;padding:30px;max-width:400px;width:90%;text-align:center;">
+            <h3 style="margin-bottom:10px;font-size:1.3rem;">Resume Draft</h3>
+            <p style="margin-bottom:15px;color:#666;">Enter your 6-character code:</p>
+            <input type="text" id="resumeCodeInput" maxlength="6" style="font-size:2rem;font-weight:800;letter-spacing:8px;text-align:center;width:100%;padding:12px;border:2px solid #0891b2;border-radius:10px;font-family:monospace;text-transform:uppercase;" placeholder="ABC123">
+            <p id="resumeError" style="color:#dc2626;margin-top:8px;display:none;"></p>
+            <div style="margin-top:20px;">
+                <button id="resumeLoadBtn" style="padding:10px 24px;background:#0891b2;color:white;border:none;border-radius:8px;font-size:1rem;cursor:pointer;margin-right:8px;">Load Draft</button>
+                <button onclick="document.getElementById('resumeCodeModal').style.display='none'" style="padding:10px 24px;background:#e5e7eb;color:#333;border:none;border-radius:8px;font-size:1rem;cursor:pointer;">Cancel</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
