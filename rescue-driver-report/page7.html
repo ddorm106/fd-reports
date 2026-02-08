@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-touch-fullscreen" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="CFD Report">
+    <meta name="theme-color" content="#0f172a">
+    <title>Centerville FD - Rescue Driver Weekly Performance Report - Page 7</title>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
+
+    <!-- External Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.2.0/dist/signature_pad.umd.min.js"></script>
+
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        html, body { height:100%; overflow-x:hidden; }
+        body {
+            font-family:'Inter',sans-serif;
+            background:#0f172a;
+            color:#e2e8f0;
+            min-height:100vh;
+            display:flex;
+            flex-direction:column;
+        }
+        .page-wrapper { flex:1; display:flex; flex-direction:column; }
+        .container {
+            max-width:900px;
+            margin:40px auto;
+            padding:40px;
+            background:#1e293b;
+            border-radius:16px;
+            box-shadow:0 20px 40px rgba(0,0,0,0.4);
+            flex:1;
+        }
+        .report-header { text-align:center; margin-bottom:40px; }
+        .header-top {
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            gap:30px;
+            flex-wrap:wrap;
+        }
+        .patch-logo { width:120px; max-width:100%; height:auto; }
+        .header-text h1 { font-size:2.8rem; color:#fff; margin-bottom:8px; }
+        .header-text h2 { font-size:1.8rem; color:#cbd5e1; }
+        h3 { text-align:center; color:#f59e0b; font-size:1.8rem; margin:40px 0 30px; }
+        .progress-indicator { text-align:center; margin-bottom:20px; color:#cbd5e1; font-size:1.1rem; }
+
+        form { display:flex; flex-direction:column; gap:30px; }
+        .performance-block {
+            background:#334155;
+            padding:24px;
+            border-radius:16px;
+        }
+        .inline-dropdown { margin-bottom:20px; }
+        .inline-label {
+            display:block;
+            margin-bottom:12px;
+            font-weight:600;
+            color:#cbd5e1;
+            font-size:1.1rem;
+            line-height:1.5;
+        }
+        .performance-block select {
+            width:100%;
+            padding:12px 16px;
+            background:#1e293b;
+            border:none;
+            border-radius:12px;
+            color:#e2e8f0;
+            font-size:1rem;
+        }
+        .performance-block select:focus { outline:2px solid #f59e0b; }
+
+        .evaluator-note { margin-top:10px; }
+        .evaluator-note label {
+            display:block;
+            margin-bottom:8px;
+            font-weight:600;
+            color:#cbd5e1;
+        }
+        .evaluator-note textarea {
+            width:100%;
+            padding:12px 16px;
+            background:#1e293b;
+            border:none;
+            border-radius:12px;
+            color:#e2e8f0;
+            font-size:1rem;
+            resize:vertical;
+            min-height:100px;
+        }
+        .evaluator-note textarea:focus { outline:2px solid #f59e0b; }
+        .evaluator-note textarea::placeholder { color:#64748b; }
+
+        .evaluator-bottom-group {
+            display:grid;
+            grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));
+            gap:20px;
+        }
+        .form-group { display:flex; flex-direction:column; }
+        .form-group label { margin-bottom:8px; font-weight:600; color:#cbd5e1; }
+        .form-group input, .form-group select {
+            padding:12px 16px;
+            background:#334155;
+            border:none;
+            border-radius:12px;
+            color:#e2e8f0;
+            font-size:1rem;
+        }
+        .form-group input:focus, .form-group select:focus { outline:2px solid #f59e0b; }
+
+        .signature-group { text-align:center; margin-top:20px; }
+        .signature-label { display:block; margin-bottom:12px; font-weight:600; color:#cbd5e1; font-size:1.1rem; }
+        .signature-wrapper {
+            position:relative;
+            background:#fff;
+            border-radius:12px;
+            border:2px solid #334155;
+            overflow:hidden;
+            max-width:600px;
+            width:100%;
+            margin:0 auto;
+            height:220px;
+            box-shadow:0 4px 12px rgba(0,0,0,0.3);
+        }
+        .signature-wrapper canvas { position:absolute; top:0; left:0; width:100%; height:100%; touch-action:none; }
+        .signature-note { font-size:0.9rem; color:#94a3b8; margin-top:12px; }
+        .signature-actions {
+            margin-top:20px;
+            display:flex;
+            justify-content:center;
+            gap:15px;
+            flex-wrap:wrap;
+        }
+        .signature-actions button {
+            padding:12px 28px;
+            background:#dc2626;
+            color:white;
+            border:none;
+            border-radius:12px;
+            font-weight:700;
+            cursor:pointer;
+        }
+        .signature-actions button:hover { background:#b91c1c; }
+
+        .form-actions {
+            display:flex;
+            justify-content:space-between;
+            margin-top:40px;
+            gap:16px;
+            flex-wrap:wrap;
+        }
+        .form-actions button {
+            padding:18px;
+            background:#dc2626;
+            color:white;
+            border:none;
+            border-radius:12px;
+            font-size:1.3rem;
+            font-weight:700;
+            cursor:pointer;
+            flex:1;
+            min-width:180px;
+            transition:background 0.3s ease;
+        }
+        .form-actions button:hover:not(:disabled) { background:#b91c1c; }
+        #back-btn { background:#334155; }
+        #back-btn:hover:not(:disabled) { background:#475569; }
+        #preview-btn { background:#f97316; }
+        #preview-btn:hover:not(:disabled) { background:#ea580c; }
+        .form-actions button:disabled { background:#64748b; cursor:not-allowed; opacity:0.7; }
+
+        footer { text-align:center; padding:30px 20px 40px; color:#64748b; font-size:0.9rem; margin-top:auto; }
+        footer .city-logo { width:100px; margin-bottom:15px; opacity:0.8; max-width:100%; height:auto; }
+        .required { color:#f59e0b; }
+
+        /* Success overlay */
+        .success-overlay {
+            display:none;
+            position:fixed;
+            top:0; left:0; right:0; bottom:0;
+            background:rgba(15,23,42,0.95);
+            z-index:1000;
+            justify-content:center;
+            align-items:center;
+        }
+        .success-overlay.active { display:flex; }
+        .success-content {
+            background:#1e293b;
+            padding:50px;
+            border-radius:20px;
+            text-align:center;
+            max-width:500px;
+            box-shadow:0 25px 50px rgba(0,0,0,0.5);
+        }
+        .success-icon {
+            width:80px; height:80px;
+            background:#16a34a;
+            border-radius:50%;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            margin:0 auto 25px;
+            font-size:40px;
+        }
+        .success-content h2 { color:#fff; font-size:1.8rem; margin-bottom:15px; }
+        .success-content p { color:#94a3b8; font-size:1.1rem; margin-bottom:25px; line-height:1.6; }
+        .success-content button {
+            padding:14px 40px;
+            background:#dc2626;
+            color:white;
+            border:none;
+            border-radius:12px;
+            font-size:1.1rem;
+            font-weight:700;
+            cursor:pointer;
+        }
+        .success-content button:hover { background:#b91c1c; }
+
+        @media (max-width:768px) {
+            .container { padding:20px; margin:20px auto; max-width:100%; }
+            .header-top { flex-direction:column; }
+            .header-text h1 { font-size:2.2rem; }
+            .header-text h2 { font-size:1.5rem; }
+            .signature-wrapper { height:180px; }
+            .form-actions { flex-direction:column; gap:15px; }
+            .form-actions button { width:100%; min-width:auto; }
+            .success-content { padding:30px 20px; margin:20px; }
+        }
+        @media (min-width:769px) and (max-width:1024px) {
+            .container { max-width:960px; padding:40px; margin:30px auto; }
+            .form-actions { gap:24px; }
+            .form-actions button { padding:18px 40px; font-size:1.3rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-wrapper">
+        <div class="container">
+            <header class="report-header">
+                <div class="header-top">
+                    <img src="patch.png" alt="Centerville FD Patch" class="patch-logo">
+                    <div class="header-text">
+                        <h1>Centerville Fire Department</h1>
+                        <h2>Rescue Driver Weekly Performance Report</h2>
+                    </div>
+                </div>
+            </header>
+            <div class="progress-indicator">Page 7 of 7</div>
+            <h3>7. Evaluator & Signature</h3>
+
+            <form id="pageForm">
+                <div class="performance-block">
+                    <div class="inline-dropdown">
+                        <label class="inline-label">
+                            Overall Driver / Operator Proficiency: <span class="required">*</span>
+                        </label>
+                        <select name="Overall Driver Proficiency" id="overall-proficiency" required>
+                            <option value="">Select Overall Proficiency</option>
+                            <option value="Unsatisfactory">Unsatisfactory</option>
+                            <option value="Needs Improvement">Needs Improvement</option>
+                            <option value="Satisfactory">Satisfactory</option>
+                            <option value="Exceeds Expectations">Exceeds Expectations</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="performance-block">
+                    <div class="evaluator-note">
+                        <label>Strengths Observed:</label>
+                        <textarea name="Strengths Observed" placeholder="Document observed strengths, competencies, and positive performance..."></textarea>
+                    </div>
+                </div>
+
+                <div class="performance-block">
+                    <div class="evaluator-note">
+                        <label>Areas for Improvement:</label>
+                        <textarea name="Areas for Improvement" placeholder="Document any deficiencies, improvement needs, or performance gaps..."></textarea>
+                    </div>
+                </div>
+
+                <div class="performance-block">
+                    <div class="evaluator-note">
+                        <label>Recommended Remedial Training (if applicable):</label>
+                        <textarea name="Recommended Remedial Training" placeholder="List any required or recommended training, re-evaluation timelines, or corrective actions..."></textarea>
+                    </div>
+                </div>
+
+                <input type="hidden" name="Final Evaluation Result" id="finalResult">
+
+                <div class="evaluator-bottom-group">
+                    <div class="form-group">
+                        <label for="evaluator-name">Evaluator Name: <span class="required">*</span></label>
+                        <input type="text" id="evaluator-name" name="Evaluator Name" placeholder="Enter full name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="evaluator-rank">Evaluator Rank: <span class="required">*</span></label>
+                        <select id="evaluator-rank" name="Evaluator Rank" required>
+                            <option value="">-- Select Rank --</option>
+                            <option value="Firefighter">Firefighter</option>
+                            <option value="Engineer">Engineer</option>
+                            <option value="Sergeant">Sergeant</option>
+                            <option value="Captain">Captain</option>
+                            <option value="Chief">Chief</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="signature-group">
+                    <label class="signature-label">Evaluator Signature: <span class="required">*</span></label>
+                    <div class="signature-wrapper">
+                        <canvas id="signature-pad"></canvas>
+                    </div>
+                    <p class="signature-note">Sign above using mouse, touch, or stylus. Required for submission.</p>
+                    <div class="signature-actions">
+                        <button type="button" id="clear-signature">Clear Signature</button>
+                        <button type="button" id="undo-signature">Undo Last Stroke</button>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" id="back-btn">← Back</button>
+                    <button type="button" id="preview-btn">Preview PDF</button>
+                    <button type="button" id="submit-btn" disabled>Submit Report</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Success Overlay -->
+        <div class="success-overlay" id="success-overlay">
+            <div class="success-content">
+                <div class="success-icon">✓</div>
+                <h2>Report Submitted!</h2>
+                <p>The Rescue Driver Weekly Performance Report has been emailed to the Training Division successfully.</p>
+                <button onclick="startNewReport()">Start New Report</button>
+            </div>
+        </div>
+
+        <footer>
+            <img src="city-logo.png" alt="City of Centerville Logo" class="city-logo">
+            <p>© 2026 City of Centerville Fire Department Training Division</p>
+        </footer>
+    </div>
+
+    <script>
+        // ──────────────────────────────────────────────────────────────
+        //  App Version & Cache Busting
+        // ──────────────────────────────────────────────────────────────
+        const APP_VERSION = "20260207.1";
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistration().then(reg => {
+                if (reg) {
+                    fetch('version.json?t=' + Date.now())
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.version !== APP_VERSION) {
+                                caches.keys().then(names => names.forEach(name => caches.delete(name)));
+                                reg.unregister().then(() => window.location.reload(true));
+                            }
+                        })
+                        .catch(() => {});
+                }
+            });
+        }
+
+        // Service Worker registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Service Worker registered:', reg))
+                    .catch(err => console.error('SW registration failed:', err));
+            });
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        //  PDF GENERATION
+        // ──────────────────────────────────────────────────────────────
+
+        let signaturePad;
+
+        async function generatePDF(forPreview = false) {
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+            const pageWidth  = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            const margin     = 18;
+            const lineHeight = 6;
+            let   y          = margin;
+
+            const BLACK = [0, 0, 0];
+            const RED   = [220, 38, 38];
+            const GRAY  = [100, 100, 100];
+
+            // ─── Helper: Draw centered header ─────────────────────────
+            function drawHeader(firefighterName = 'N/A') {
+                pdf.setFont('helvetica', 'bold');
+                pdf.setFontSize(20);
+                pdf.setTextColor(...BLACK);
+                pdf.text('Centerville Fire Department', pageWidth/2, y + 8, { align: 'center' });
+
+                pdf.setFontSize(15);
+                pdf.text('Rescue Driver Weekly Performance Report', pageWidth/2, y + 18, { align: 'center' });
+
+                pdf.setFontSize(12);
+                pdf.setTextColor(...GRAY);
+                pdf.text(`Driver: ${firefighterName}`, pageWidth/2, y + 26, { align: 'center' });
+
+                pdf.setDrawColor(...RED);
+                pdf.setLineWidth(0.8);
+                pdf.line(margin, y + 32, pageWidth - margin, y + 32);
+
+                y += 38;
+            }
+
+            // ─── Helper: New page with header ─────────────────────────
+            function newPage() {
+                pdf.addPage();
+                y = margin;
+                drawHeader(allData['Firefighter'] || 'N/A');
+            }
+
+            // ─── Helper: Section title ────────────────────────────────
+            function sectionTitle(title) {
+                if (y > pageHeight - 60) newPage();
+                pdf.setFont('helvetica', 'bold');
+                pdf.setFontSize(14);
+                pdf.setTextColor(...RED);
+                pdf.text(title, margin, y);
+                y += 8;
+
+                pdf.setDrawColor(...RED);
+                pdf.setLineWidth(0.6);
+                pdf.line(margin, y - 2, margin + pdf.getTextWidth(title) + 4, y - 2);
+                y += 6;
+            }
+
+            // ─── Helper: Label + Value ────────────────────────────────
+            function itemLine(label, value = 'N/A') {
+                if (y > pageHeight - 40) newPage();
+                pdf.setFont('helvetica', 'normal');
+                pdf.setFontSize(11);
+                pdf.setTextColor(...BLACK);
+
+                const labelText = `${label}: `;
+                const valueText = value || 'N/A';
+
+                pdf.text(labelText, margin, y);
+                const labelW = pdf.getTextWidth(labelText);
+                pdf.setFont('helvetica', 'bold');
+                pdf.text(valueText, margin + labelW, y);
+                y += lineHeight + 2;
+            }
+
+            // ─── Helper: Multi-line note with proper wrapping ─────────
+            function noteBlock(title, text) {
+                if (!text?.trim()) return;
+                if (y > pageHeight - 80) newPage();
+
+                pdf.setFont('helvetica', 'bold');
+                pdf.setFontSize(11);
+                pdf.setTextColor(...RED);
+                pdf.text(`${title}:`, margin, y);
+                y += 7;
+
+                pdf.setFont('helvetica', 'normal');
+                pdf.setTextColor(...BLACK);
+                pdf.setFontSize(10);
+
+                const maxWidth = pageWidth - margin * 2;
+                const lines = pdf.splitTextToSize(text.trim(), maxWidth);
+                pdf.text(lines, margin, y);
+                y += lines.length * 5 + 6;
+            }
+
+            // ─── Collect all data ─────────────────────────────────────
+            const allData = JSON.parse(localStorage.getItem('reportData') || '{}');
+
+            // Page 7 fields
+            allData['Overall Driver Proficiency'] = document.getElementById('overall-proficiency')?.value || '';
+            allData['Strengths Observed']         = document.querySelector('textarea[name="Strengths Observed"]')?.value.trim() || '';
+            allData['Areas for Improvement']      = document.querySelector('textarea[name="Areas for Improvement"]')?.value.trim() || '';
+            allData['Recommended Remedial Training'] = document.querySelector('textarea[name="Recommended Remedial Training"]')?.value.trim() || '';
+            allData['Evaluator Name']             = document.getElementById('evaluator-name')?.value.trim() || '';
+            allData['Evaluator Rank']             = document.getElementById('evaluator-rank')?.value || '';
+
+            // Basic validation
+            if (!allData['Firefighter'] || !allData['Evaluator Name'] || !allData['Evaluator Rank'] || signaturePad.isEmpty()) {
+                throw new Error('Missing required fields or signature.');
+            }
+
+            // ─── Start PDF ────────────────────────────────────────────
+            drawHeader(allData['Firefighter']);
+
+            // Basic info
+            const weekDate = allData['Week Ending Date'] || 'N/A';
+            const formattedDate = weekDate !== 'N/A' ? new Date(weekDate + 'T12:00:00').toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' }) : weekDate;
+            itemLine('Week Ending Date', formattedDate);
+            itemLine('Shift', allData['Shift'] || 'N/A');
+            itemLine('Officer', allData['Officer'] || 'N/A');
+            itemLine('Apparatus Assignment', allData['Apparatus Assignment'] || 'Rescue 1');
+            itemLine('Apparatus Type', allData['Apparatus Type'] || 'N/A');
+            if (allData['Total Mileage / Engine Hours']) itemLine('Total Mileage / Engine Hours', allData['Total Mileage / Engine Hours']);
+            if (allData['Weather / Road Conditions']) itemLine('Weather / Road Conditions', allData['Weather / Road Conditions']);
+            y += 8;
+
+            // ─── All Sections ─────────────────────────────────────────
+            const sections = [
+                { title: '2. Safe Driving & Policy Compliance', items: [
+                    'Emergency Vehicle Operation Proficiency', 'Warning Devices Proficiency', 'Speed Control Proficiency',
+                    'Intersection Clearing Proficiency', 'Crew Safety Proficiency'
+                ]},
+                { title: '3. PPE, SCBA & Medical Equipment', items: [
+                    'PPE & SCBA Use Proficiency', 'SCBA Management Proficiency', 'Medical Equipment Check Proficiency',
+                    'Medical Compartment Organization Proficiency', 'Patient Movement Proficiency'
+                ]},
+                { title: '4. Rescue Tools & Equipment', items: [
+                    'Hydraulic Rescue Tools Proficiency', 'Cribbing & Stabilization Proficiency', 'Chainsaw Proficiency',
+                    'Forcible Entry Tools Proficiency', 'Lighting & Power Proficiency', 'Rope Rescue Equipment Proficiency'
+                ]},
+                { title: '5. MVC & Technical Rescue Operations', items: [
+                    'MVC Apparatus Positioning Proficiency', 'Scene Size-Up Proficiency', 'Tool Staging Proficiency',
+                    'Patient Access Proficiency', 'Interagency Coordination Proficiency'
+                ]},
+                { title: '6. Scene Management & Decision Making', items: [
+                    'ICS Compliance Proficiency', 'Communication Proficiency', 'Scene Flow Proficiency',
+                    'Extended Incident Control Proficiency', 'Decision Making Proficiency'
+                ]},
+                { title: '7. Overall Driver / Operator Proficiency', items: [
+                    'Overall Driver Proficiency'
+                ]},
+                { title: '8. Evaluator Notes & Recommendation', items: [] }
+            ];
+
+            sections.forEach(sec => {
+                sectionTitle(sec.title);
+
+                sec.items.forEach(item => {
+                    const rating = allData[item] || 'N/A';
+                    itemLine(item.replace(' Proficiency', ''), rating);
+
+                    const noteKey = item.replace(' Proficiency', '') + ' Note';
+                    if (allData[noteKey]?.trim()) {
+                        noteBlock('Note', allData[noteKey]);
+                    }
+                });
+
+                // Special handling for evaluator notes section
+                if (sec.title.includes('8.')) {
+                    y += 4;
+                    noteBlock('Strengths Observed', allData['Strengths Observed']);
+                    noteBlock('Areas for Improvement', allData['Areas for Improvement']);
+                    noteBlock('Recommended Remedial Training', allData['Recommended Remedial Training']);
+                }
+
+                y += 6;
+            });
+
+            // ─── Evaluator Information & Signature ────────────────────
+            if (y > pageHeight - 100) newPage();
+            sectionTitle('Evaluator Certification');
+
+            itemLine('Evaluator Name', allData['Evaluator Name']);
+            itemLine('Evaluator Rank', allData['Evaluator Rank']);
+
+            y += 8;
+            pdf.setFontSize(11);
+            pdf.setTextColor(...BLACK);
+            pdf.text('Evaluator Signature:', margin, y);
+            y += 8;
+
+            const sigData = signaturePad.toDataURL('image/png', 1.0);
+            pdf.addImage(sigData, 'PNG', margin, y, 80, 40, undefined, 'SLOW');
+            y += 48;
+
+            // ─── Final note ───────────────────────────────────────────
+            pdf.setFontSize(9);
+            pdf.setTextColor(...GRAY);
+            pdf.text('This report is electronically signed and certified by the evaluator.', margin, y);
+
+            // ─── Output ───────────────────────────────────────────────
+            if (forPreview) {
+                const blob = pdf.output('blob');
+                const url = URL.createObjectURL(blob);
+                window.open(url, '_blank');
+                setTimeout(() => URL.revokeObjectURL(url), 60000);
+            } else {
+                return pdf.output('datauristring');
+            }
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        //  BUILD EMAIL HTML
+        // ──────────────────────────────────────────────────────────────
+
+        function buildEmailHtml(allData) {
+            const weekDate = allData['Week Ending Date'] || 'N/A';
+            const formattedDate = weekDate !== 'N/A'
+                ? new Date(weekDate + 'T12:00:00').toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' })
+                : weekDate;
+
+            const overall = allData['Overall Driver Proficiency'] || 'N/A';
+
+            // Color code the overall rating
+            let ratingColor = '#64748b';
+            if (overall === 'Exceeds Expectations') ratingColor = '#16a34a';
+            else if (overall === 'Satisfactory') ratingColor = '#2563eb';
+            else if (overall === 'Needs Improvement') ratingColor = '#f59e0b';
+            else if (overall === 'Unsatisfactory') ratingColor = '#dc2626';
+
+            return `
+            <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+                <div style="background:#0f172a;padding:25px;text-align:center;border-radius:12px 12px 0 0;">
+                    <h1 style="color:#fff;margin:0;font-size:22px;">Centerville Fire Department</h1>
+                    <p style="color:#f59e0b;margin:8px 0 0;font-size:16px;font-weight:bold;">Rescue Driver Weekly Performance Report</p>
+                </div>
+                <div style="padding:30px;background:#f8fafc;border-radius:0 0 12px 12px;border:1px solid #e2e8f0;">
+                    <table style="width:100%;border-collapse:collapse;margin-bottom:20px;">
+                        <tr>
+                            <td style="padding:8px 12px;font-weight:bold;color:#334155;width:40%;">Driver:</td>
+                            <td style="padding:8px 12px;color:#0f172a;">${allData['Firefighter'] || 'N/A'}</td>
+                        </tr>
+                        <tr style="background:#fff;">
+                            <td style="padding:8px 12px;font-weight:bold;color:#334155;">Week Ending:</td>
+                            <td style="padding:8px 12px;color:#0f172a;">${formattedDate}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:8px 12px;font-weight:bold;color:#334155;">Shift:</td>
+                            <td style="padding:8px 12px;color:#0f172a;">${allData['Shift'] || 'N/A'}</td>
+                        </tr>
+                        <tr style="background:#fff;">
+                            <td style="padding:8px 12px;font-weight:bold;color:#334155;">Officer:</td>
+                            <td style="padding:8px 12px;color:#0f172a;">${allData['Officer'] || 'N/A'}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:8px 12px;font-weight:bold;color:#334155;">Apparatus:</td>
+                            <td style="padding:8px 12px;color:#0f172a;">${allData['Apparatus Assignment'] || 'Rescue 1'}</td>
+                        </tr>
+                        <tr style="background:#fff;">
+                            <td style="padding:8px 12px;font-weight:bold;color:#334155;">Overall Proficiency:</td>
+                            <td style="padding:8px 12px;"><span style="color:${ratingColor};font-weight:bold;font-size:15px;">${overall}</span></td>
+                        </tr>
+                        <tr>
+                            <td style="padding:8px 12px;font-weight:bold;color:#334155;">Evaluator:</td>
+                            <td style="padding:8px 12px;color:#0f172a;">${allData['Evaluator Rank'] || ''} ${allData['Evaluator Name'] || 'N/A'}</td>
+                        </tr>
+                    </table>
+                    ${allData['Strengths Observed'] ? `<p style="margin:10px 0 5px;font-weight:bold;color:#16a34a;">Strengths:</p><p style="margin:0 0 15px;color:#334155;line-height:1.5;">${allData['Strengths Observed']}</p>` : ''}
+                    ${allData['Areas for Improvement'] ? `<p style="margin:10px 0 5px;font-weight:bold;color:#f59e0b;">Areas for Improvement:</p><p style="margin:0 0 15px;color:#334155;line-height:1.5;">${allData['Areas for Improvement']}</p>` : ''}
+                    ${allData['Recommended Remedial Training'] ? `<p style="margin:10px 0 5px;font-weight:bold;color:#dc2626;">Remedial Training:</p><p style="margin:0 0 15px;color:#334155;line-height:1.5;">${allData['Recommended Remedial Training']}</p>` : ''}
+                    <p style="color:#64748b;font-size:12px;margin-top:20px;border-top:1px solid #e2e8f0;padding-top:15px;">Full report with all section ratings is attached as a PDF. This report was electronically signed and submitted via fdtraining.org.</p>
+                </div>
+            </div>`;
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        //  SUCCESS / NEW REPORT
+        // ──────────────────────────────────────────────────────────────
+
+        function showSuccess() {
+            document.getElementById('success-overlay').classList.add('active');
+        }
+
+        function startNewReport() {
+            localStorage.removeItem('reportData');
+            window.location.href = 'page1.html';
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        //  LOAD SAVED DATA
+        // ──────────────────────────────────────────────────────────────
+
+        window.addEventListener('load', () => {
+            const savedData = JSON.parse(localStorage.getItem('reportData') || '{}');
+            Object.keys(savedData).forEach(key => {
+                const elements = document.querySelectorAll(`[name="${key}"]`);
+                elements.forEach(el => {
+                    el.value = savedData[key] || '';
+                });
+            });
+        });
+
+        // ──────────────────────────────────────────────────────────────
+        //  SIGNATURE PAD SETUP
+        // ──────────────────────────────────────────────────────────────
+
+        const canvas = document.getElementById('signature-pad');
+        signaturePad = new SignaturePad(canvas, {
+            backgroundColor: 'rgb(255,255,255)',
+            penColor: '#1e40af'
+        });
+
+        function resizeCanvas() {
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
+            canvas.width = canvas.offsetWidth * ratio;
+            canvas.height = canvas.offsetHeight * ratio;
+            const ctx = canvas.getContext('2d');
+            ctx.scale(ratio, ratio);
+            signaturePad.clear();
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // ──────────────────────────────────────────────────────────────
+        //  BUTTON HANDLERS
+        // ──────────────────────────────────────────────────────────────
+
+        const submitBtn  = document.getElementById('submit-btn');
+        const previewBtn = document.getElementById('preview-btn');
+        const backBtn    = document.getElementById('back-btn');
+
+        function updateSubmitButton() {
+            const hasSig  = !signaturePad.isEmpty();
+            const hasName = document.getElementById('evaluator-name').value.trim().length > 0;
+            const hasRank = document.getElementById('evaluator-rank').value.length > 0;
+            submitBtn.disabled = !(hasSig && hasName && hasRank);
+        }
+
+        signaturePad.addEventListener('endStroke', updateSubmitButton);
+        document.getElementById('evaluator-name').addEventListener('input', updateSubmitButton);
+        document.getElementById('evaluator-rank').addEventListener('change', updateSubmitButton);
+
+        document.getElementById('clear-signature').onclick = () => { signaturePad.clear(); updateSubmitButton(); };
+        document.getElementById('undo-signature').onclick = () => {
+            const data = signaturePad.toData();
+            if (data.length > 0) {
+                data.pop();
+                signaturePad.fromData(data);
+            }
+            updateSubmitButton();
+        };
+
+        backBtn.onclick = () => window.history.back();
+
+        previewBtn.onclick = async () => {
+            try { await generatePDF(true); }
+            catch (e) { alert(e.message); }
+        };
+
+        // ──────────────────────────────────────────────────────────────
+        //  SUBMIT → Resend via /api/send-email
+        // ──────────────────────────────────────────────────────────────
+
+        submitBtn.onclick = async () => {
+            try {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Generating PDF...';
+
+                // Generate PDF as base64
+                const pdfDataUri = await generatePDF(false);
+                const pdfBase64  = pdfDataUri.split(',')[1];
+
+                // Collect all data for email body
+                const allData = JSON.parse(localStorage.getItem('reportData') || '{}');
+                allData['Overall Driver Proficiency'] = document.getElementById('overall-proficiency')?.value || '';
+                allData['Strengths Observed']         = document.querySelector('textarea[name="Strengths Observed"]')?.value.trim() || '';
+                allData['Areas for Improvement']      = document.querySelector('textarea[name="Areas for Improvement"]')?.value.trim() || '';
+                allData['Recommended Remedial Training'] = document.querySelector('textarea[name="Recommended Remedial Training"]')?.value.trim() || '';
+                allData['Evaluator Name']             = document.getElementById('evaluator-name')?.value.trim() || '';
+                allData['Evaluator Rank']             = document.getElementById('evaluator-rank')?.value || '';
+
+                const firefighter = allData['Firefighter'] || 'Unknown';
+                const weekDate    = allData['Week Ending Date'] || new Date().toISOString().split('T')[0];
+
+                // Build filename
+                const dateStr = weekDate.replace(/-/g, '');
+                const nameStr = firefighter.replace(/[^a-zA-Z]/g, '_');
+                const filename = `Rescue_Driver_Report_${nameStr}_${dateStr}.pdf`;
+
+                submitBtn.textContent = 'Sending Email...';
+
+                // Send via Resend through Cloudflare Worker
+                const response = await fetch('/api/send-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        subject: `Rescue Driver Weekly Report – ${firefighter} – Week Ending ${weekDate}`,
+                        html: buildEmailHtml(allData),
+                        from_name: 'CFD Training Division',
+                        attachments: [{
+                            filename: filename,
+                            content: pdfBase64
+                        }]
+                    })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok || result.error) {
+                    throw new Error(result.error?.message || result.error || 'Email send failed');
+                }
+
+                // Success!
+                showSuccess();
+
+            } catch (err) {
+                alert('Submission failed: ' + err.message);
+                submitBtn.textContent = 'Submit Report';
+                submitBtn.disabled = false;
+                updateSubmitButton();
+            }
+        };
+
+        updateSubmitButton();
+    </script>
+</body>
+</html>

@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-touch-fullscreen" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="CFD Report">
+    <meta name="theme-color" content="#0f172a">
+    <title>Centerville FD - Rescue Driver Weekly Performance Report</title>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
+
+    <!-- Styles -->
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            height: 100%;
+            overflow-x: hidden;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .page-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 40px;
+            background: #1e293b;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            flex: 1;
+        }
+        .report-header { text-align: center; margin-bottom: 40px; }
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+        .patch-logo { width: 120px; max-width: 100%; height: auto; }
+        .header-text h1 {
+            font-size: 2.8rem;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+        .header-text h2 {
+            font-size: 1.8rem;
+            color: #cbd5e1;
+        }
+        h3 {
+            text-align: center;
+            color: #f59e0b;
+            font-size: 1.8rem;
+            margin: 40px 0 30px;
+        }
+        .progress-indicator {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #cbd5e1;
+            font-size: 1.1rem;
+        }
+        form { display: flex; flex-direction: column; gap: 30px; }
+        .performance-block {
+            background: #334155;
+            padding: 24px;
+            border-radius: 16px;
+        }
+        .inline-dropdown {
+            margin-bottom: 20px;
+        }
+        .inline-label {
+            display: block;
+            margin-bottom: 12px;
+            font-weight: 600;
+            color: #cbd5e1;
+            font-size: 1.1rem;
+            line-height: 1.5;
+        }
+        select {
+            width: 100%;
+            padding: 12px 16px;
+            background: #1e293b;
+            border: none;
+            border-radius: 12px;
+            color: #e2e8f0;
+            font-size: 1rem;
+        }
+        select:focus { outline: 2px solid #f59e0b; }
+        .evaluator-note {
+            margin-top: 10px;
+        }
+        .evaluator-note label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #cbd5e1;
+        }
+        .evaluator-note textarea {
+            width: 100%;
+            padding: 12px 16px;
+            background: #1e293b;
+            border: none;
+            border-radius: 12px;
+            color: #e2e8f0;
+            font-size: 1rem;
+            resize: vertical;
+            min-height: 100px;
+        }
+        .evaluator-note textarea:focus { outline: 2px solid #f59e0b; }
+        .evaluator-note textarea::placeholder { color: #64748b; }
+        .required { color: #f59e0b; }
+        .form-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            gap: 12px;
+        }
+        .form-actions button {
+            padding: 15px 30px;
+            background: #dc2626;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            flex: 1;
+        }
+        .form-actions button:hover:not(:disabled) { background: #b91c1c; }
+        .form-actions button:first-child {
+            background: #334155;
+        }
+        .form-actions button:first-child:hover:not(:disabled) {
+            background: #475569;
+        }
+        .form-actions button:disabled {
+            background: #64748b;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        footer {
+            text-align: center;
+            padding: 30px 20px 40px;
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-top: auto;
+        }
+        footer .city-logo {
+            width: 100px;
+            margin-bottom: 15px;
+            opacity: 0.8;
+            max-width: 100%;
+            height: auto;
+        }
+        @media (max-width: 768px) {
+            .container { padding: 20px; margin: 20px auto; max-width: 100%; }
+            .header-top { flex-direction: column; }
+            .header-text h1 { font-size: 2.2rem; }
+            .header-text h2 { font-size: 1.5rem; }
+            .form-actions { flex-direction: column; gap: 15px; }
+            .form-actions button { width: 100%; }
+        }
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .container { max-width: 960px; padding: 40px; margin: 30px auto; }
+            .form-actions { gap: 24px; }
+            .form-actions button { padding: 18px 40px; font-size: 1.3rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-wrapper">
+        <div class="container">
+            <header class="report-header">
+                <div class="header-top">
+                    <img src="patch.png" alt="Centerville FD Patch" class="patch-logo">
+                    <div class="header-text">
+                        <h1>Centerville Fire Department</h1>
+                        <h2>Rescue Driver Weekly Performance Report</h2>
+                    </div>
+                </div>
+            </header>
+
+            <div class="progress-indicator">Page 6 of 7</div>
+
+            <h3>6. Scene Management & Decision Making</h3>
+
+            <form id="pageForm">
+                <div class="performance-block">
+  <div class="inline-dropdown">
+    <label class="inline-label">
+      Operates within the Incident Command System on medical and motor vehicle collision scenes.
+      <span class="required">*</span>
+    </label>
+    <select name="ICS Compliance Proficiency" required>
+      <option value="">Select Proficiency</option>
+      <option value="Unsatisfactory">Unsatisfactory</option>
+      <option value="Needs Improvement">Needs Improvement</option>
+      <option value="Satisfactory">Satisfactory</option>
+      <option value="Exceeds Expectations">Exceeds Expectations</option>
+      <option value="Not Applicable">Not Applicable</option>
+    </select>
+  </div>
+  <div class="evaluator-note">
+    <label>Evaluator Note:</label>
+    <textarea
+      name="ICS Compliance Note"
+      placeholder="Notes regarding command structure adherence, task assignment, or communication..."
+    ></textarea>
+  </div>
+</div>
+
+<div class="performance-block">
+  <div class="inline-dropdown">
+    <label class="inline-label">
+      Communicates clearly and effectively with command and other responding units.
+      <span class="required">*</span>
+    </label>
+    <select name="Communication Proficiency" required>
+      <option value="">Select Proficiency</option>
+      <option value="Unsatisfactory">Unsatisfactory</option>
+      <option value="Needs Improvement">Needs Improvement</option>
+      <option value="Satisfactory">Satisfactory</option>
+      <option value="Exceeds Expectations">Exceeds Expectations</option>
+      <option value="Not Applicable">Not Applicable</option>
+    </select>
+  </div>
+  <div class="evaluator-note">
+    <label>Evaluator Note:</label>
+    <textarea
+      name="Communication Note"
+      placeholder="Notes regarding radio traffic, face-to-face communication, or clarity of information..."
+    ></textarea>
+  </div>
+</div>
+
+<div class="performance-block">
+  <div class="inline-dropdown">
+    <label class="inline-label">
+      Anticipates apparatus movement and scene flow needs.
+      <span class="required">*</span>
+    </label>
+    <select name="Scene Flow Proficiency" required>
+      <option value="">Select Proficiency</option>
+      <option value="Unsatisfactory">Unsatisfactory</option>
+      <option value="Needs Improvement">Needs Improvement</option>
+      <option value="Satisfactory">Satisfactory</option>
+      <option value="Exceeds Expectations">Exceeds Expectations</option>
+      <option value="Not Applicable">Not Applicable</option>
+    </select>
+  </div>
+  <div class="evaluator-note">
+    <label>Evaluator Note:</label>
+    <textarea
+      name="Scene Flow Note"
+      placeholder="Notes regarding repositioning, foresight, or scene management decisions..."
+    ></textarea>
+  </div>
+</div>
+
+<div class="performance-block">
+  <div class="inline-dropdown">
+    <label class="inline-label">
+      Maintains control of the rescue unit during extended incidents.
+      <span class="required">*</span>
+    </label>
+    <select name="Extended Incident Control Proficiency" required>
+      <option value="">Select Proficiency</option>
+      <option value="Unsatisfactory">Unsatisfactory</option>
+      <option value="Needs Improvement">Needs Improvement</option>
+      <option value="Satisfactory">Satisfactory</option>
+      <option value="Exceeds Expectations">Exceeds Expectations</option>
+      <option value="Not Applicable">Not Applicable</option>
+    </select>
+  </div>
+  <div class="evaluator-note">
+    <label>Evaluator Note:</label>
+    <textarea
+      name="Extended Incident Control Note"
+      placeholder="Notes regarding apparatus security, accountability, or sustained operations..."
+    ></textarea>
+  </div>
+</div>
+
+<div class="performance-block">
+  <div class="inline-dropdown">
+    <label class="inline-label">
+      Demonstrates sound judgment and decision making under stress.
+      <span class="required">*</span>
+    </label>
+    <select name="Decision Making Proficiency" required>
+      <option value="">Select Proficiency</option>
+      <option value="Unsatisfactory">Unsatisfactory</option>
+      <option value="Needs Improvement">Needs Improvement</option>
+      <option value="Satisfactory">Satisfactory</option>
+      <option value="Exceeds Expectations">Exceeds Expectations</option>
+      <option value="Not Applicable">Not Applicable</option>
+    </select>
+  </div>
+  <div class="evaluator-note">
+    <label>Evaluator Note:</label>
+    <textarea
+      name="Decision Making Note"
+      placeholder="Notes regarding risk assessment, adaptability, or judgment during operations..."
+    ></textarea>
+  </div>
+</div>
+
+                <div class="form-actions">
+                    <button type="button" id="back-btn">← Back</button>
+                    <button type="button" id="next-btn">Next → Evaluation Summary & Signatures</button>
+                </div>
+            </form>
+        </div>
+
+        <footer>
+            <img src="city-logo.png" alt="City of Centerville Logo" class="city-logo">
+            <p>© 2026 City of Centerville Fire Department Training Division</p>
+        </footer>
+    </div>
+
+    <script>
+        // App version for cache busting
+        const APP_VERSION = "20260207.1";
+
+        // Cache busting logic
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistration().then(reg => {
+                if (reg) {
+                    fetch('version.json?t=' + Date.now())
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.version !== APP_VERSION) {
+                                caches.keys().then(names => {
+                                    names.forEach(name => caches.delete(name));
+                                });
+                                reg.unregister().then(() => window.location.reload(true));
+                            }
+                        })
+                        .catch(() => {});
+                }
+            });
+        }
+
+        // Save data and navigate
+        function saveAndGo(nextPage) {
+            const form = document.getElementById('pageForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            const data = {};
+            const formElements = form.querySelectorAll('select, textarea');
+            formElements.forEach(el => {
+                if (el.value !== '') {
+                    data[el.name] = el.value;
+                }
+            });
+
+            const existingData = JSON.parse(localStorage.getItem('reportData') || '{}');
+            const mergedData = { ...existingData, ...data };
+            localStorage.setItem('reportData', JSON.stringify(mergedData));
+
+            window.location.href = nextPage;
+        }
+
+        // Load saved data
+        window.addEventListener('load', () => {
+            const savedData = JSON.parse(localStorage.getItem('reportData') || '{}');
+
+            Object.keys(savedData).forEach(key => {
+                const elements = document.querySelectorAll(`[name="${key}"]`);
+                elements.forEach(el => {
+                    el.value = savedData[key] || '';
+                });
+            });
+
+            // Button event listeners
+            document.getElementById('back-btn').addEventListener('click', () => {
+                window.history.back();
+            });
+
+            document.getElementById('next-btn').addEventListener('click', () => {
+                saveAndGo('page7.html');
+            });
+        });
+
+        // Service Worker registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Service Worker registered:', reg))
+                    .catch(err => console.error('SW registration failed:', err));
+            });
+        }
+    </script>
+</body>
+</html>

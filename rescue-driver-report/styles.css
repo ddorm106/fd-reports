@@ -1,0 +1,359 @@
+/* styles.css - Shared styles for all pages of CFD Report */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+    height: 100%;
+    overflow-x: hidden;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.page-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.container {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 40px;
+    background: #1e293b;
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    flex: 1;
+}
+
+.report-header { text-align: center; margin-bottom: 40px; }
+
+.header-top {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 30px;
+    flex-wrap: wrap;
+}
+
+.patch-logo { width: 120px; max-width: 100%; height: auto; }
+
+.header-text h1 {
+    font-size: 2.8rem;
+    color: #fff;
+    margin-bottom: 8px;
+}
+
+.header-text h2 {
+    font-size: 1.8rem;
+    color: #cbd5e1;
+}
+
+h3 {
+    text-align: center;
+    color: #f59e0b;
+    font-size: 1.8rem;
+    margin: 40px 0 30px;
+}
+
+.progress-indicator {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #cbd5e1;
+    font-size: 1.1rem;
+}
+
+form { display: flex; flex-direction: column; gap: 30px; }
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-field label {
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #cbd5e1;
+}
+
+.form-field input,
+.form-field select {
+    padding: 12px 16px;
+    background: #334155;
+    border: none;
+    border-radius: 12px;
+    color: #e2e8f0;
+    font-size: 1rem;
+}
+
+.form-field input:focus,
+.form-field select:focus { outline: 2px solid #f59e0b; }
+
+.form-group.apparatus-group {
+    background: #334155;
+    padding: 20px;
+    border-radius: 16px;
+}
+
+.apparatus-group > label {
+    display: block;
+    margin-bottom: 15px;
+    font-weight: 600;
+    color: #cbd5e1;
+    font-size: 1.1rem;
+}
+
+.apparatus-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    justify-content: center;
+}
+
+.apparatus-btn {
+    position: relative;
+    cursor: pointer;
+}
+
+.apparatus-btn input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+}
+
+.apparatus-btn span {
+    display: block;
+    background: #1e293b;
+    padding: 16px 32px;
+    border-radius: 14px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: #e2e8f0;
+    transition: all 0.3s ease;
+    min-width: 140px;
+}
+
+.apparatus-btn:hover span {
+    background: #334155;
+    transform: translateY(-3px);
+}
+
+.apparatus-btn input[type="checkbox"]:checked + span {
+    background: #dc2626;
+    color: white;
+    box-shadow: 0 0 20px rgba(220, 38, 38, 0.5);
+    transform: translateY(-3px);
+}
+
+.performance-block {
+    background: #334155;
+    padding: 24px;
+    border-radius: 16px;
+}
+
+.inline-dropdown {
+    margin-bottom: 20px;
+}
+
+.inline-label {
+    display: block;
+    margin-bottom: 12px;
+    font-weight: 600;
+    color: #cbd5e1;
+    font-size: 1.1rem;
+    line-height: 1.5;
+}
+
+select {
+    width: 100%;
+    padding: 12px 16px;
+    background: #1e293b;
+    border: none;
+    border-radius: 12px;
+    color: #e2e8f0;
+    font-size: 1rem;
+}
+
+select:focus { outline: 2px solid #f59e0b; }
+
+.evaluator-note {
+    margin-top: 10px;
+}
+
+.evaluator-note label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #cbd5e1;
+}
+
+.evaluator-note textarea {
+    width: 100%;
+    padding: 12px 16px;
+    background: #1e293b;
+    border: none;
+    border-radius: 12px;
+    color: #e2e8f0;
+    font-size: 1rem;
+    resize: vertical;
+    min-height: 100px;
+}
+
+.evaluator-note textarea:focus { outline: 2px solid #f59e0b; }
+
+.evaluator-note textarea::placeholder { color: #64748b; }
+
+.required { color: #f59e0b; }
+
+.form-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 30px;
+    gap: 12px;
+}
+
+.form-actions button {
+    padding: 15px 30px;
+    background: #dc2626;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    flex: 1;
+}
+
+.form-actions button:hover:not(:disabled) { background: #b91c1c; }
+
+.form-actions button:first-child {
+    background: #334155;
+}
+
+.form-actions button:first-child:hover:not(:disabled) {
+    background: #475569;
+}
+
+.form-actions button:disabled {
+    background: #64748b;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+footer {
+    text-align: center;
+    padding: 30px 20px 40px;
+    color: #64748b;
+    font-size: 0.9rem;
+    margin-top: auto;
+}
+
+footer .city-logo {
+    width: 100px;
+    margin-bottom: 15px;
+    opacity: 0.8;
+    max-width: 100%;
+    height: auto;
+}
+
+/* Page 7 Specific */
+.evaluator-bottom-group {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.signature-group { grid-column: 1 / -1; text-align: center; margin-top: 20px; }
+
+.signature-label {
+    display: block;
+    margin-bottom: 12px;
+    font-weight: 600;
+    color: #cbd5e1;
+    font-size: 1.1rem;
+}
+
+.signature-wrapper {
+    position: relative;
+    background: #fff;
+    border-radius: 12px;
+    border: 2px solid #334155;
+    overflow: hidden;
+    max-width: 600px;
+    width: 100%;
+    margin: 0 auto;
+    height: 300px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.signature-wrapper canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+}
+
+.signature-note {
+    font-size: 0.9rem;
+    color: #94a3b8;
+    margin-top: 12px;
+}
+
+.signature-actions {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.signature-actions button {
+    padding: 12px 28px;
+    background: #dc2626;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.signature-actions button:hover { background: #b91c1c; }
+
+/* Responsive */
+@media (max-width: 768px) {
+    .container { padding: 20px; margin: 20px auto; max-width: 100%; }
+    .header-top { flex-direction: column; }
+    .header-text h1 { font-size: 2.2rem; }
+    .header-text h2 { font-size: 1.5rem; }
+    .form-actions { flex-direction: column; gap: 15px; }
+    .form-actions button { width: 100%; }
+    .signature-wrapper { height: 220px; }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+    .container { max-width: 960px; padding: 40px; margin: 30px auto; }
+    .form-actions { gap: 24px; }
+    .form-actions button { padding: 18px 40px; font-size: 1.3rem; }
+    .apparatus-buttons { gap: 24px; }
+    .apparatus-btn span { padding: 20px 40px; font-size: 1.3rem; }
+    .signature-wrapper { height: 280px; }
+}
+

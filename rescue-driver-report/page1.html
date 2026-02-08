@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-touch-fullscreen" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="CFD Report">
+    <meta name="theme-color" content="#0f172a">
+    <title>Centerville FD - Rescue Driver Weekly Performance Report</title>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
+
+    <!-- Styles -->
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            height: 100%;
+            overflow-x: hidden;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .page-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 40px;
+            background: #1e293b;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            flex: 1;
+        }
+        .report-header { text-align: center; margin-bottom: 40px; }
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+        .patch-logo { width: 120px; max-width: 100%; height: auto; }
+        .header-text h1 {
+            font-size: 2.8rem;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+        .header-text h2 {
+            font-size: 1.8rem;
+            color: #cbd5e1;
+        }
+        h3 {
+            text-align: center;
+            color: #f59e0b;
+            font-size: 1.8rem;
+            margin: 40px 0 30px;
+        }
+        .progress-indicator {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #cbd5e1;
+            font-size: 1.1rem;
+        }
+        form { display: flex; flex-direction: column; gap: 30px; }
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .form-field {
+            display: flex;
+            flex-direction: column;
+        }
+        .form-field label {
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #cbd5e1;
+        }
+        .form-field input,
+        .form-field select {
+            padding: 12px 16px;
+            background: #334155;
+            border: none;
+            border-radius: 12px;
+            color: #e2e8f0;
+            font-size: 1rem;
+        }
+        .form-field input:focus,
+        .form-field select:focus { outline: 2px solid #f59e0b; }
+        .form-group.apparatus-group {
+            background: #334155;
+            padding: 20px;
+            border-radius: 16px;
+        }
+        .apparatus-group > label {
+            display: block;
+            margin-bottom: 15px;
+            font-weight: 600;
+            color: #cbd5e1;
+            font-size: 1.1rem;
+        }
+        .apparatus-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 18px;
+            justify-content: center;
+        }
+        .apparatus-btn {
+            position: relative;
+            cursor: pointer;
+        }
+        .apparatus-btn input[type="checkbox"] {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        .apparatus-btn span {
+            display: block;
+            background: #1e293b;
+            padding: 16px 32px;
+            border-radius: 14px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: #e2e8f0;
+            transition: all 0.3s ease;
+            min-width: 140px;
+        }
+        .apparatus-btn:hover span {
+            background: #334155;
+            transform: translateY(-3px);
+        }
+        .apparatus-btn input[type="checkbox"]:checked + span {
+            background: #dc2626;
+            color: white;
+            box-shadow: 0 0 20px rgba(220, 38, 38, 0.5);
+            transform: translateY(-3px);
+        }
+        .form-actions {
+            text-align: center;
+            margin-top: 30px;
+        }
+        .form-actions button {
+            padding: 15px 40px;
+            background: #dc2626;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        .form-actions button:hover:not(:disabled) { background: #b91c1c; }
+        .form-actions button:disabled {
+            background: #64748b;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        footer {
+            text-align: center;
+            padding: 30px 20px 40px;
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-top: auto;
+        }
+        footer .city-logo {
+            width: 100px;
+            margin-bottom: 15px;
+            opacity: 0.8;
+            max-width: 100%;
+            height: auto;
+        }
+        @media (max-width: 768px) {
+            .container { padding: 20px; margin: 20px auto; max-width: 100%; }
+            .header-top { flex-direction: column; }
+            .header-text h1 { font-size: 2.2rem; }
+            .header-text h2 { font-size: 1.5rem; }
+            .form-actions button { width: 100%; padding: 15px 20px; }
+        }
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .container { max-width: 960px; padding: 40px; margin: 30px auto; }
+            .apparatus-buttons { gap: 24px; }
+            .apparatus-btn span { padding: 20px 40px; font-size: 1.3rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-wrapper">
+        <div class="container">
+            <header class="report-header">
+                <div class="header-top">
+                    <img src="patch.png" alt="Centerville FD Patch" class="patch-logo">
+                    <div class="header-text">
+                        <h1>Centerville Fire Department</h1>
+                        <h2>Rescue Driver Weekly Performance Report</h2>
+                    </div>
+                </div>
+            </header>
+
+            <div class="progress-indicator">Page 1 of 7</div>
+
+            <h3>1. Driver & Apparatus Information</h3>
+
+            <form id="pageForm">
+                <div class="form-row">
+                    <div class="form-field">
+                        <label for="report-date">Week Ending Date:<span class="required">*</span></label>
+                        <input type="date" id="report-date" name="Week Ending Date" required>
+                    </div>
+                    <div class="form-field">
+                        <label for="shift">Shift:<span class="required">*</span></label>
+                        <select id="shift" name="Shift" required>
+                            <option value="">-- Select Shift --</option>
+                            <option value="Shift 1">Shift 1</option>
+                            <option value="Shift 2">Shift 2</option>
+                            <option value="Shift 3">Shift 3</option>
+                            <option value="Day Shift">Day Shift</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-field">
+                        <label for="officer">Officer:<span class="required">*</span></label>
+                        <select id="officer" name="Officer" required>
+                            <option value="">-- Select Officer --</option>
+                            <option value="Sergeant Dorman">Sergeant Dorman</option>
+                            <option value="Sergeant Redd">Sergeant Redd</option>
+                            <option value="Sergeant Talley">Sergeant Talley</option>
+                            <option value="Engineer Traxler">Engineer Traxler</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                    <label for="driver-operator">Driver:<span class="required">*</span></label>
+                        <select id="firefighter" name="Firefighter" required>
+                            <option value="">-- Select Firefighter --</option>
+                            <option value="Barr, H">Barr, H</option>
+                            <option value="Bennett, K">Bennett, K</option>
+                            <option value="Cannon, J">Cannon, J</option>
+                            <option value="Dunn, P">Dunn, P</option>
+                            <option value="Lightning, L">Lightning, L</option>
+                            <option value="Mixon, J">Mixon, J</option>
+                            <option value="Mooney, W">Mooney, W</option>
+                            <option value="Orona, A">Orona, A</option>
+                            <option value="Schuler, A">Schuler, A</option>
+                            <option value="Smith, M">Smith, M</option>
+                            <option value="Stockholm, J">Stockholm, J</option>
+                            <option value="Thornton, E">Thornton, E</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+  <div class="form-field">
+    <label for="apparatus-assignment">
+      Apparatus Assignment:<span class="required">*</span>
+    </label>
+    <input
+      type="text"
+      id="apparatus-assignment"
+      name="Apparatus Assignment"
+      value="Rescue 1"
+      readonly
+    >
+  </div>
+
+  <div class="form-field">
+    <label for="apparatus-type">
+      Apparatus Type:
+    </label>
+    <input
+      type="text"
+      id="apparatus-type"
+      name="Apparatus Type"
+      value="2002 Ford F-550 Rescue Chassis"
+      readonly
+    >
+  </div>
+</div>
+
+<div class="form-row">
+  <div class="form-field">
+    <label for="total mileage-hours">
+      Total Mileage / Total Engine Hours:
+    </label>
+    <input
+      type="text"
+      id="total-mileage-hours"
+      name="Total Mileage / Engine Hours"
+      placeholder="Example: 45,210 miles or 3,120 hours or N/A"
+    >
+  </div>
+
+  <div class="form-field">
+    <label for="conditions">
+      Weather / Road Conditions:
+    </label>
+    <input
+      type="text"
+      id="conditions"
+      name="Weather / Road Conditions"
+      placeholder="Clear, rain, wet roads, low visibility, etc."
+    >
+  </div>
+</div>
+                <div class="form-actions">
+                    <button type="button" id="next-btn">Next → Safe Driving & Policy Compliance</button>
+                </div>
+            </form>
+        </div>
+
+        <footer>
+            <img src="city-logo.png" alt="City of Centerville Logo" class="city-logo">
+            <p>© 2026 City of Centerville Fire Department Training Division</p>
+        </footer>
+    </div>
+
+    <script>
+        // App version for cache busting
+        const APP_VERSION = "20260207.1"; // Updated
+
+        // Cache busting
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistration().then(reg => {
+                if (reg) {
+                    fetch('version.json?t=' + Date.now())
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.version !== APP_VERSION) {
+                                caches.keys().then(names => {
+                                    names.forEach(name => caches.delete(name));
+                                });
+                                reg.unregister().then(() => window.location.reload(true));
+                            }
+                        })
+                        .catch(() => {});
+                }
+            });
+        }
+
+        // Form validation and save
+        function validateAndSave(nextPage) {
+            const form = document.getElementById('pageForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            const data = {};
+            const formElements = form.querySelectorAll('input, select');
+            formElements.forEach(el => {
+                if (el.type === 'checkbox') {
+                    if (el.checked) {
+                        if (!data[el.name]) data[el.name] = [];
+                        data[el.name].push(el.value);
+                    }
+                } else if (el.value !== '') {
+                    data[el.name] = el.value;
+                }
+            });
+
+            localStorage.setItem('reportData', JSON.stringify(data));
+            window.location.href = nextPage;
+        }
+
+        // Load saved data + fix date auto-fill
+        window.addEventListener('load', () => {
+            const savedData = JSON.parse(localStorage.getItem('reportData') || '{}');
+
+            // Restore saved values
+            Object.keys(savedData).forEach(key => {
+                const elements = document.querySelectorAll(`[name="${key}"]`);
+                elements.forEach(el => {
+                    if (el.type === 'checkbox') {
+                        el.checked = savedData[key] && savedData[key].includes(el.value);
+                    } else {
+                        el.value = savedData[key] || '';
+                    }
+                });
+            });
+
+            // Auto-fill today's date ONLY if no date is already selected or saved
+            const dateInput = document.getElementById('report-date');
+            if (!dateInput.value) {
+                // Use local date without timezone offset issues
+                const today = new Date();
+                const yyyy = today.getFullYear();
+                const mm = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+                const dd = String(today.getDate()).padStart(2, '0');
+                dateInput.value = `${yyyy}-${mm}-${dd}`;
+            }
+
+            // Next button
+            document.getElementById('next-btn').addEventListener('click', () => {
+                validateAndSave('page2.html');
+            });
+        });
+
+        // Service Worker registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Service Worker registered:', reg))
+                    .catch(err => console.error('SW registration failed:', err));
+            });
+        }
+    </script>
+</body>
+</html>
