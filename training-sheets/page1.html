@@ -6,7 +6,7 @@
     <title>Centerville FD Training Report</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -535,7 +535,7 @@
         </div>
     </div>
     <script>
-        emailjs.init("0149jkoCQjJZn6JwD");
+
         const centervilleStaff = [
             { name: "Barr, Harvey", rank: "Firefighter", gfstc: "3353-4774" },
             { name: "Bennett, Kyle", rank: "Firefighter", gfstc: "0869-5796" },
@@ -1150,19 +1150,29 @@
                 try {
                     const { pdfBase64, filename } = await generateTrainingReportPDF();
                     const formData = collectFormData();
-                    await emailjs.send('service_2gdxvws', 'template_wj80wlx', {
-                        training_title: formData.trainingTitle || 'Centerville Training Report',
-                        training_date: formatDate(formData.startDate) + (formData.endDate && formData.endDate !== formData.startDate ? ' to ' + formatDate(formData.endDate) : ''),
-                        location: formData.location || 'N/A',
-                        iso_category: formData.isoCategory || 'N/A',
-                        total_hours: formData.totalHours || 'N/A',
-                        shifts: formData.selectedShifts || 'None',
-                        attachment_pdf: pdfBase64,
-                        attachment_filename: filename
+                    const res = await fetch('/api/send-email', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            subject: (formData.trainingTitle || 'Centerville Training Report') + ' - ' + formatDate(formData.startDate),
+                            html: '<h2>' + (formData.trainingTitle || 'Training Report') + '</h2>' +
+                                '<p><strong>Date:</strong> ' + formatDate(formData.startDate) + (formData.endDate && formData.endDate !== formData.startDate ? ' to ' + formatDate(formData.endDate) : '') + '</p>' +
+                                '<p><strong>Location:</strong> ' + (formData.location || 'N/A') + '</p>' +
+                                '<p><strong>ISO Category:</strong> ' + (formData.isoCategory || 'N/A') + '</p>' +
+                                '<p><strong>Total Hours:</strong> ' + (formData.totalHours || 'N/A') + '</p>' +
+                                '<p><strong>Shifts:</strong> ' + (formData.selectedShifts || 'None') + '</p>' +
+                                '<p><em>PDF report attached.</em></p>',
+                            attachments: [{ filename: filename, content: pdfBase64 }]
+                        })
                     });
-                    alert('Training report emailed successfully!');
-                    if (confirm('Clear saved draft? (Only OK if all shifts have signed)')) {
-                        localStorage.removeItem(FORM_STORAGE_KEY);
+                    const result = await res.json();
+                    if (result.success) {
+                        alert('Training report emailed successfully!');
+                        if (confirm('Clear saved draft? (Only OK if all shifts have signed)')) {
+                            localStorage.removeItem(FORM_STORAGE_KEY);
+                        }
+                    } else {
+                        alert('Send failed: ' + JSON.stringify(result.error));
                     }
                 } catch (err) {
                     console.error('Email error:', err);
