@@ -1,4 +1,3 @@
-// Shared preplan JS
 function showToast(msg, type) {
     type = type || 'info';
     var c = document.getElementById('toast-container');
@@ -18,7 +17,7 @@ function loadFormData(form) {
         var val = data[el.name];
         if (val === undefined || val === null) return;
         if (el.type === 'radio') { if (el.value === val) el.checked = true; }
-        else if (el.type === 'checkbox') { 
+        else if (el.type === 'checkbox') {
             if (Array.isArray(val)) el.checked = val.indexOf(el.value) > -1;
             else el.checked = !!val;
         }

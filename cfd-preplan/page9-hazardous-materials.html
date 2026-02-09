@@ -3,43 +3,68 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Pre-Fire Plan: Hazardous Materials</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles-preplan.css">
+
 </head>
 <body>
-<div class="preplan-container">
-    <div class="preplan-header"><h3>Page 9: Hazardous Materials Data</h3></div>
-    <form id="theForm" class="preplan-section">
-        <div class="form-row">
-            <div class="form-field"><label class="inline-label">Tier II Reporting?</label><div class="apparatus-buttons"><label class="apparatus-btn"><input type="radio" name="tier_ii" value="Yes"><span>Yes</span></label><label class="apparatus-btn"><input type="radio" name="tier_ii" value="No"><span>No</span></label></div></div>
-            <div class="form-field"><label class="inline-label">MSDS/SDS On-Site?</label><div class="apparatus-buttons"><label class="apparatus-btn"><input type="radio" name="msds_onsite" value="Yes"><span>Yes</span></label><label class="apparatus-btn"><input type="radio" name="msds_onsite" value="No"><span>No</span></label></div></div>
+<div class="page-wrapper">
+    <div class="container">
+        <header class="report-header">
+            <div class="header-top">
+                <img src="images/cfd-logo.png" alt="Centerville Fire Department" class="patch-logo">
+                <div class="header-text">
+                    <h1>Centerville Fire Department</h1>
+                    <h2>Pre-Fire Plan Data Sheet</h2>
+                </div>
+            </div>
+        </header>
+
+        <div class="progress-indicator">Page 9 of 12: Hazardous Materials</div>
+        <div class="progress-bar-container">
+            <div class="progress-bar" style="width: 75%"></div>
         </div>
-        <h3 class="section-title">Chemical Inventory</h3>
-        <div class="info-tip">List significant chemicals, quantities, and storage locations</div>
-        <div id="chemRows">
-            <div style="display:grid;grid-template-columns:2fr 1fr 2fr;gap:8px;margin-bottom:4px;font-weight:600;font-size:0.8rem"><span>Chemical Name</span><span>Quantity</span><span>Storage Location</span></div>
-            <div class="chem-row"><input name="chem_name_1" placeholder="Chemical name"><input name="chem_qty_1" placeholder="Qty"><input name="chem_loc_1" placeholder="Location"></div>
-            <div class="chem-row"><input name="chem_name_2" placeholder="Chemical name"><input name="chem_qty_2" placeholder="Qty"><input name="chem_loc_2" placeholder="Location"></div>
-            <div class="chem-row"><input name="chem_name_3" placeholder="Chemical name"><input name="chem_qty_3" placeholder="Qty"><input name="chem_loc_3" placeholder="Location"></div>
-            <div class="chem-row"><input name="chem_name_4" placeholder="Chemical name"><input name="chem_qty_4" placeholder="Qty"><input name="chem_loc_4" placeholder="Location"></div>
-            <div class="chem-row"><input name="chem_name_5" placeholder="Chemical name"><input name="chem_qty_5" placeholder="Qty"><input name="chem_loc_5" placeholder="Location"></div>
+
+
+        <h3 class="section-title">9. Hazardous Materials Data</h3>
+        <form id="theForm">
+            <div class="preplan-section">
+                <div class="form-row">
+                    <div class="form-field"><label class="inline-label">Tier II Reporting?</label><div class="apparatus-buttons"><label class="apparatus-btn"><input type="radio" name="tier_ii" value="Yes"><span>Yes</span></label><label class="apparatus-btn"><input type="radio" name="tier_ii" value="No"><span>No</span></label></div></div>
+                    <div class="form-field"><label class="inline-label">MSDS/SDS On-Site?</label><div class="apparatus-buttons"><label class="apparatus-btn"><input type="radio" name="msds_onsite" value="Yes"><span>Yes</span></label><label class="apparatus-btn"><input type="radio" name="msds_onsite" value="No"><span>No</span></label></div></div>
+                </div>
+            </div>
+            <div class="preplan-section">
+                <h3 class="section-title">Chemical Inventory</h3>
+                <button type="button" class="add-row-btn" onclick="addChemRow()">+ Add Chemical</button>
+                <div style="overflow-x:auto">
+                    <table id="chemTable">
+                        <thead><tr><th>Chemical Name</th><th>UN/ID #</th><th>Quantity</th><th>Location</th><th>Hazard Class</th><th></th></tr></thead>
+                        <tbody id="chemTbody">
+                            <tr><td><input name="chem_name_1" placeholder="e.g., Sulfuric Acid"></td><td><input name="chem_id_1" placeholder="UN1830"></td><td><input name="chem_qty_1" placeholder="500 gal"></td><td><input name="chem_loc_1" placeholder="Storage room B"></td><td><input name="chem_class_1" placeholder="Corrosive"></td><td><button type="button" class="remove-row-btn" onclick="this.closest('tr').remove()">×</button></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="form-field"><label>Hazmat Notes:</label><textarea name="hazmat_notes" rows="3" placeholder="Special hazmat considerations, response procedures..."></textarea></div>
+        </form>
+
+
+        <div class="nav-buttons">
+            <button type="button" class="btn-secondary" onclick="navigate('page8-fire-flow.html',document.getElementById('theForm'))">← Previous</button>
+            <button type="button" class="btn-primary" onclick="navigate('page10-site-plan.html',document.getElementById('theForm'))">Next →</button>
         </div>
-        <button type="button" class="btn-secondary" style="margin-top:8px" onclick="addChemRow()">+ Add Row</button>
-        <div class="form-field" style="margin-top:16px"><label>Hazmat Notes:</label><textarea name="hazmat_notes" rows="3" placeholder="Special hazmat considerations, response procedures..."></textarea></div>
-    </form>
-    <div class="form-actions">
-        <button type="button" class="btn-secondary" onclick="navigate('page8-fire-flow.html',document.getElementById('theForm'))">← Previous</button>
-        <button type="button" class="btn-primary" onclick="navigate('page10-site-plan.html',document.getElementById('theForm'))">Next → Site Plan</button>
     </div>
 </div>
-<footer><p>© 2026 City of Centerville Fire Department</p></footer>
+<footer>
+    <img src="images/city-logo.png" alt="City of Centerville" class="city-logo">
+    <p>© 2026 City of Centerville Fire Department</p>
+</footer>
 <div class="toast-container" id="toast-container"></div>
 <script src="preplan-common.js"></script>
 <script>
-var form=document.getElementById('theForm'),chemCount=5;
-loadFormData(form);autoSave(form);
-function addChemRow(){chemCount++;var d=document.getElementById('chemRows'),r=document.createElement('div');r.className='chem-row';
-r.innerHTML='<input name="chem_name_'+chemCount+'" placeholder="Chemical name"><input name="chem_qty_'+chemCount+'" placeholder="Qty"><input name="chem_loc_'+chemCount+'" placeholder="Location">';d.appendChild(r)}
+var form=document.getElementById('theForm');
+if(form){loadFormData(form);autoSave(form);}
+var chemCount=1;function addChemRow(){chemCount++;var tb=document.getElementById("chemTbody"),tr=document.createElement("tr");tr.innerHTML='<td><input name="chem_name_'+chemCount+'" placeholder="Chemical name"></td><td><input name="chem_id_'+chemCount+'" placeholder="UN#"></td><td><input name="chem_qty_'+chemCount+'" placeholder="Qty"></td><td><input name="chem_loc_'+chemCount+'" placeholder="Location"></td><td><input name="chem_class_'+chemCount+'" placeholder="Class"></td><td><button type=button class=remove-row-btn onclick=this.closest(\'tr\').remove()>×</button></td>';tb.appendChild(tr)}
 </script>
 </body>
 </html>

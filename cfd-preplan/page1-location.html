@@ -3,43 +3,66 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Pre-Fire Plan: Location</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles-preplan.css">
+
 </head>
 <body>
-<div class="preplan-container">
-    <div class="preplan-header"><h3>Page 1: Location Information</h3></div>
-    <form id="theForm" class="preplan-section">
-        <div class="form-row">
-            <div class="form-field"><label for="pfp_number">Pre-Fire Plan #:</label><input type="text" id="pfp_number" name="pfp_number" placeholder="PFP-2026-001"></div>
-            <div class="form-field"><label for="business_name">Business / Building Name:</label><input type="text" id="business_name" name="business_name" placeholder="Walmart Supercenter"></div>
+<div class="page-wrapper">
+    <div class="container">
+        <header class="report-header">
+            <div class="header-top">
+                <img src="images/cfd-logo.png" alt="Centerville Fire Department" class="patch-logo">
+                <div class="header-text">
+                    <h1>Centerville Fire Department</h1>
+                    <h2>Pre-Fire Plan Data Sheet</h2>
+                </div>
+            </div>
+        </header>
+
+        <div class="progress-indicator">Page 1 of 12: Location</div>
+        <div class="progress-bar-container">
+            <div class="progress-bar" style="width: 8.33%"></div>
         </div>
-        <div class="form-field"><label for="address">Street Address:</label><input type="text" id="address" name="address" placeholder="123 Main Street, Centerville, GA 31028"></div>
-        <div class="form-row">
-            <div class="form-field"><label for="telephone_no">Telephone:</label><input type="tel" id="telephone_no" name="telephone_no" placeholder="(478) 555-1234"></div>
-            <div class="form-field"><label for="tax_id">Tax ID:</label><input type="text" id="tax_id" name="tax_id" placeholder="T001-234-567"></div>
+
+
+        <h3 class="section-title">1. Location Information</h3>
+        <form id="theForm">
+            <div class="form-row">
+                        <div class="form-field"><label for="pfp_number">Pre-Plan #:<span class="required">*</span></label><input type="text" id="pfp_number" name="pfp_number" required placeholder="PFP-2026-001"></div>
+                        <div class="form-field"><label for="business_name">Business / Building Name:<span class="required">*</span></label><input type="text" id="business_name" name="business_name" required placeholder="Walmart Supercenter"></div>
+            </div>
+            <div class="form-row">
+                        <div class="form-field"><label for="address">Address:<span class="required">*</span></label><input type="text" id="address" name="address" required placeholder="123 Main St, Centerville, GA 31028"></div>
+                        <div class="form-field"><label for="telephone_no">Telephone:</label><input type="tel" id="telephone_no" name="telephone_no" placeholder="(478) 555-1234"></div>
+            </div>
+            <div class="form-row">
+                        <div class="form-field"><label for="tax_id">Tax ID:</label><input type="text" id="tax_id" name="tax_id" placeholder="T001-234-567"></div>
+                        <div class="form-field"><label for="fire_district">Fire District:</label><input type="text" id="fire_district" name="fire_district" placeholder="District 1"></div>
+            </div>
+            <div class="form-row">
+                        <div class="form-field"><label for="latitude">Latitude:</label><input type="text" id="latitude" name="latitude" placeholder="32.8407"></div>
+                        <div class="form-field"><label for="longitude">Longitude:</label><input type="text" id="longitude" name="longitude" placeholder="-83.6499"></div>
+            </div>
+                    <div class="form-field"><label for="general_directions">General Directions to Site:</label><textarea id="general_directions" name="general_directions" rows="3" placeholder="Main entrance off Houston Rd, 2nd driveway past the light..."></textarea></div>
+        </form>
+
+
+        <div class="nav-buttons">
+            <a href="preplan-index.html" class="btn-secondary">← Overview</a>
+            <button type="button" class="btn-primary" onclick="navigate('page2-operating.html',document.getElementById('theForm'))">Next →</button>
         </div>
-        <div class="form-row">
-            <div class="form-field"><label for="fire_district">Fire District:</label><input type="text" id="fire_district" name="fire_district" placeholder="District 1"></div>
-            <div class="form-field"><label for="zone">Zone / Area:</label><input type="text" id="zone" name="zone" placeholder="Commercial"></div>
-        </div>
-        <div class="form-row">
-            <div class="form-field"><label for="latitude">Latitude:</label><input type="text" id="latitude" name="latitude" placeholder="32.8407"></div>
-            <div class="form-field"><label for="longitude">Longitude:</label><input type="text" id="longitude" name="longitude" placeholder="-83.6499"></div>
-        </div>
-        <div class="form-field"><label for="general_directions">General Directions to Site:</label><textarea id="general_directions" name="general_directions" rows="3" placeholder="Main entrance off Houston Rd, 2nd driveway past the traffic light..."></textarea></div>
-    </form>
-    <div class="form-actions">
-        <a href="preplan-index.html" class="btn-secondary">← Overview</a>
-        <button type="button" class="btn-primary" onclick="navigate('page2-operating.html',document.getElementById('theForm'))">Next → Operating Info</button>
     </div>
 </div>
-<footer><p>© 2026 City of Centerville Fire Department</p></footer>
+<footer>
+    <img src="images/city-logo.png" alt="City of Centerville" class="city-logo">
+    <p>© 2026 City of Centerville Fire Department</p>
+</footer>
 <div class="toast-container" id="toast-container"></div>
 <script src="preplan-common.js"></script>
 <script>
 var form=document.getElementById('theForm');
-loadFormData(form);autoSave(form);
+if(form){loadFormData(form);autoSave(form);}
+
 </script>
 </body>
 </html>

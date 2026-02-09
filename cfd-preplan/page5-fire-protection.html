@@ -3,14 +3,32 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Pre-Fire Plan: Fire Protection</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles-preplan.css">
+
 </head>
 <body>
-<div class="preplan-container">
-    <div class="preplan-header"><h3>Page 5: Fire Protection Services</h3></div>
-    <form id="theForm" class="preplan-section">
-        <h3 class="section-title">Sprinkler System</h3>
+<div class="page-wrapper">
+    <div class="container">
+        <header class="report-header">
+            <div class="header-top">
+                <img src="images/cfd-logo.png" alt="Centerville Fire Department" class="patch-logo">
+                <div class="header-text">
+                    <h1>Centerville Fire Department</h1>
+                    <h2>Pre-Fire Plan Data Sheet</h2>
+                </div>
+            </div>
+        </header>
+
+        <div class="progress-indicator">Page 5 of 12: Fire Protection</div>
+        <div class="progress-bar-container">
+            <div class="progress-bar" style="width: 41.66%"></div>
+        </div>
+
+
+        <h3 class="section-title">5. Fire Protection Services</h3>
+        <form id="theForm">
+            <div class="preplan-section">
+                <h3 class="section-title">Sprinkler System</h3>
         <div class="form-field">
             <label class="inline-label">Sprinklered?</label>
             <div class="apparatus-buttons">
@@ -19,12 +37,14 @@
                 <label class="apparatus-btn"><input type="radio" name="sprinklered" value="Partial"><span>Partial</span></label>
             </div>
         </div>
-        <div class="form-row">
-            <div class="form-field"><label>Sprinkler Type:</label><input type="text" name="sprinkler_type" placeholder="Wet, Dry, Deluge, Pre-action"></div>
-            <div class="form-field"><label>FDC Location:</label><input type="text" name="fdc_loc" placeholder="Alpha side, near main entrance"></div>
-        </div>
-        <div class="form-field"><label>Sprinkler Coverage Notes:</label><textarea name="sprinkler_notes" rows="2" placeholder="Full coverage except loading dock area..."></textarea></div>
-        <h3 class="section-title">Standpipe & Fire Pumps</h3>
+                <div class="form-row">
+                            <div class="form-field"><label for="sprinkler_type">Sprinkler Type:</label><input type="text" id="sprinkler_type" name="sprinkler_type" placeholder="Wet, Dry, Deluge, Pre-action"></div>
+                            <div class="form-field"><label for="fdc_loc">FDC Location:</label><input type="text" id="fdc_loc" name="fdc_loc" placeholder="Alpha side, near main entrance"></div>
+                </div>
+                        <div class="form-field"><label for="sprinkler_notes">Sprinkler Coverage Notes:</label><textarea id="sprinkler_notes" name="sprinkler_notes" rows="2" placeholder="Full coverage except loading dock area..."></textarea></div>
+            </div>
+            <div class="preplan-section">
+                <h3 class="section-title">Standpipe & Fire Pumps</h3>
         <div class="form-field">
             <label class="inline-label">Standpipe?</label>
             <div class="apparatus-buttons">
@@ -32,7 +52,7 @@
                 <label class="apparatus-btn"><input type="radio" name="standpipe" value="No"><span>No</span></label>
             </div>
         </div>
-        <div class="form-field"><label>Standpipe Location/Type:</label><input type="text" name="standpipe_loc" placeholder="Class I in both stairwells"></div>
+                        <div class="form-field"><label for="standpipe_loc">Standpipe Location/Type:</label><input type="text" id="standpipe_loc" name="standpipe_loc" placeholder="Class I in both stairwells"></div>
         <div class="form-field">
             <label class="inline-label">Fire Pump?</label>
             <div class="apparatus-buttons">
@@ -40,8 +60,10 @@
                 <label class="apparatus-btn"><input type="radio" name="fire_pumps" value="No"><span>No</span></label>
             </div>
         </div>
-        <div class="form-field"><label>Fire Pump Details:</label><input type="text" name="fire_pump_details" placeholder="500 GPM electric, pump room Alpha side"></div>
-        <h3 class="section-title">Fire Alarm</h3>
+                        <div class="form-field"><label for="fire_pump_details">Fire Pump Details:</label><input type="text" id="fire_pump_details" name="fire_pump_details" placeholder="500 GPM electric, pump room Alpha side"></div>
+            </div>
+            <div class="preplan-section">
+                <h3 class="section-title">Fire Alarm</h3>
         <div class="form-field">
             <label class="inline-label">Fire Alarm System?</label>
             <div class="apparatus-buttons">
@@ -49,10 +71,10 @@
                 <label class="apparatus-btn"><input type="radio" name="fire_alarm" value="No"><span>No</span></label>
             </div>
         </div>
-        <div class="form-row">
-            <div class="form-field"><label>FACP Location:</label><input type="text" name="panel_loc" placeholder="Main entrance lobby"></div>
-            <div class="form-field"><label>Annunciator Location:</label><input type="text" name="annunciator_loc" placeholder="Front entrance, right of door"></div>
-        </div>
+                <div class="form-row">
+                            <div class="form-field"><label for="panel_loc">FACP Location:</label><input type="text" id="panel_loc" name="panel_loc" placeholder="Main entrance lobby"></div>
+                            <div class="form-field"><label for="annunciator_loc">Annunciator Location:</label><input type="text" id="annunciator_loc" name="annunciator_loc" placeholder="Front entrance, right of door"></div>
+                </div>
         <div class="form-field">
             <label class="inline-label">Knox Box?</label>
             <div class="apparatus-buttons">
@@ -60,16 +82,27 @@
                 <label class="apparatus-btn"><input type="radio" name="knox_box" value="No"><span>No</span></label>
             </div>
         </div>
-        <div class="form-field"><label>Knox Box Location:</label><input type="text" name="knox_box_loc" placeholder="Right of main entrance"></div>
-    </form>
-    <div class="form-actions">
-        <button type="button" class="btn-secondary" onclick="navigate('page4-construction.html',document.getElementById('theForm'))">← Previous</button>
-        <button type="button" class="btn-primary" onclick="navigate('page6-utilities.html',document.getElementById('theForm'))">Next → Utilities</button>
+                        <div class="form-field"><label for="knox_box_loc">Knox Box Location:</label><input type="text" id="knox_box_loc" name="knox_box_loc" placeholder="Right of main entrance"></div>
+            </div>
+        </form>
+
+
+        <div class="nav-buttons">
+            <button type="button" class="btn-secondary" onclick="navigate('page4-construction.html',document.getElementById('theForm'))">← Previous</button>
+            <button type="button" class="btn-primary" onclick="navigate('page6-utilities.html',document.getElementById('theForm'))">Next →</button>
+        </div>
     </div>
 </div>
-<footer><p>© 2026 City of Centerville Fire Department</p></footer>
+<footer>
+    <img src="images/city-logo.png" alt="City of Centerville" class="city-logo">
+    <p>© 2026 City of Centerville Fire Department</p>
+</footer>
 <div class="toast-container" id="toast-container"></div>
 <script src="preplan-common.js"></script>
-<script>var form=document.getElementById('theForm');loadFormData(form);autoSave(form);</script>
+<script>
+var form=document.getElementById('theForm');
+if(form){loadFormData(form);autoSave(form);}
+
+</script>
 </body>
 </html>

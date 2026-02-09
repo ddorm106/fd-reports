@@ -3,61 +3,82 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Pre-Fire Plan: Construction</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles-preplan.css">
+
 </head>
 <body>
-<div class="preplan-container">
-    <div class="preplan-header"><h3>Page 4: Construction Details</h3></div>
-    <form id="theForm" class="preplan-section">
-        <h3 class="section-title">Construction Type</h3>
-        <div class="construction-cards">
-            <label class="construction-card"><input type="radio" name="construction_type" value="Type I - Fire Resistive"><span class="card-label">Type I<br>Fire Resistive</span></label>
-            <label class="construction-card"><input type="radio" name="construction_type" value="Type II - Non-Combustible"><span class="card-label">Type II<br>Non-Combustible</span></label>
-            <label class="construction-card"><input type="radio" name="construction_type" value="Type III - Ordinary"><span class="card-label">Type III<br>Ordinary</span></label>
-            <label class="construction-card"><input type="radio" name="construction_type" value="Type IV - Heavy Timber"><span class="card-label">Type IV<br>Heavy Timber</span></label>
-            <label class="construction-card"><input type="radio" name="construction_type" value="Type V - Wood Frame"><span class="card-label">Type V<br>Wood Frame</span></label>
-        </div>
-        <h3 class="section-title">Dimensions</h3>
-        <div class="form-row">
-            <div class="form-field"><label>Length (ft):</label><input type="number" name="length" placeholder="200"></div>
-            <div class="form-field"><label>Width (ft):</label><input type="number" name="width" placeholder="150"></div>
-        </div>
-        <div class="form-row">
-            <div class="form-field"><label>Height (ft):</label><input type="number" name="height" placeholder="30"></div>
-            <div class="form-field"><label>Total Sq Ft:</label><input type="number" name="total_sq_ft" placeholder="30000"></div>
-        </div>
-        <div class="form-row">
-            <div class="form-field"><label>Number of Stories:</label><input type="number" name="num_stories" placeholder="2"></div>
-            <div class="form-field"><label>Basement?</label>
-                <div class="apparatus-buttons">
-                    <label class="apparatus-btn"><input type="radio" name="basement" value="Yes"><span>Yes</span></label>
-                    <label class="apparatus-btn"><input type="radio" name="basement" value="No"><span>No</span></label>
+<div class="page-wrapper">
+    <div class="container">
+        <header class="report-header">
+            <div class="header-top">
+                <img src="images/cfd-logo.png" alt="Centerville Fire Department" class="patch-logo">
+                <div class="header-text">
+                    <h1>Centerville Fire Department</h1>
+                    <h2>Pre-Fire Plan Data Sheet</h2>
                 </div>
             </div>
+        </header>
+
+        <div class="progress-indicator">Page 4 of 12: Construction</div>
+        <div class="progress-bar-container">
+            <div class="progress-bar" style="width: 33.33%"></div>
         </div>
-        <h3 class="section-title">Construction Materials</h3>
-        <div class="form-field"><label>Roof Construction:</label><input type="text" name="roof_construction" placeholder="Steel bar joist with metal deck, built-up roof"></div>
-        <div class="form-field">
-            <label class="inline-label">Roof Trusses?</label>
-            <div class="apparatus-buttons">
-                <label class="apparatus-btn"><input type="radio" name="roof_trusses" value="Yes"><span>Yes</span></label>
-                <label class="apparatus-btn"><input type="radio" name="roof_trusses" value="No"><span>No</span></label>
-                <label class="apparatus-btn"><input type="radio" name="roof_trusses" value="Unknown"><span>Unknown</span></label>
+
+
+        <h3 class="section-title">4. Construction Details</h3>
+        <form id="theForm">
+            <div class="preplan-section">
+                <h3 class="section-title">Construction Type</h3>
+                <div class="construction-cards">
+                    <label class="construction-card"><input type="radio" name="construction_type" value="Type I - Fire Resistive"><span class="card-label">Type I<br>Fire Resistive</span></label>
+                    <label class="construction-card"><input type="radio" name="construction_type" value="Type II - Non-Combustible"><span class="card-label">Type II<br>Non-Combustible</span></label>
+                    <label class="construction-card"><input type="radio" name="construction_type" value="Type III - Ordinary"><span class="card-label">Type III<br>Ordinary</span></label>
+                    <label class="construction-card"><input type="radio" name="construction_type" value="Type IV - Heavy Timber"><span class="card-label">Type IV<br>Heavy Timber</span></label>
+                    <label class="construction-card"><input type="radio" name="construction_type" value="Type V - Wood Frame"><span class="card-label">Type V<br>Wood Frame</span></label>
+                </div>
             </div>
+            <div class="preplan-section">
+                <h3 class="section-title">Dimensions</h3>
+                <div class="form-row">
+                    <div class="form-field"><label>Length (ft):</label><input type="number" name="length" placeholder="200"></div>
+                    <div class="form-field"><label>Width (ft):</label><input type="number" name="width" placeholder="150"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-field"><label>Height (ft):</label><input type="number" name="height" placeholder="30"></div>
+                    <div class="form-field"><label>Total Sq Ft:</label><input type="number" name="total_sq_ft" placeholder="30000"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-field"><label>Number of Stories:</label><input type="number" name="num_stories" placeholder="2"></div>
+                    <div class="form-field"><label class="inline-label">Basement?</label><div class="apparatus-buttons"><label class="apparatus-btn"><input type="radio" name="basement" value="Yes"><span>Yes</span></label><label class="apparatus-btn"><input type="radio" name="basement" value="No"><span>No</span></label></div></div>
+                </div>
+            </div>
+            <div class="preplan-section">
+                <h3 class="section-title">Construction Materials</h3>
+                <div class="form-field"><label>Roof Construction:</label><input type="text" name="roof_construction" placeholder="Steel bar joist with metal deck, built-up roof"></div>
+                <div class="form-field"><label class="inline-label">Roof Trusses?</label><div class="apparatus-buttons"><label class="apparatus-btn"><input type="radio" name="roof_trusses" value="Yes"><span>Yes</span></label><label class="apparatus-btn"><input type="radio" name="roof_trusses" value="No"><span>No</span></label><label class="apparatus-btn"><input type="radio" name="roof_trusses" value="Unknown"><span>Unknown</span></label></div></div>
+                <div class="form-field"><label>Truss Type:</label><input type="text" name="truss_type" placeholder="Lightweight wood, steel bar joist, bowstring..."></div>
+                <div class="form-field"><label>Floor Construction:</label><input type="text" name="floor_construction" placeholder="Concrete slab on grade"></div>
+                <div class="form-field"><label>Wall Construction:</label><input type="text" name="wall_construction" placeholder="CMU block, steel frame with metal panels"></div>
+            </div>
+        </form>
+
+
+        <div class="nav-buttons">
+            <button type="button" class="btn-secondary" onclick="navigate('page3-occupancy.html',document.getElementById('theForm'))">← Previous</button>
+            <button type="button" class="btn-primary" onclick="navigate('page5-fire-protection.html',document.getElementById('theForm'))">Next →</button>
         </div>
-        <div class="form-field"><label>Truss Type:</label><input type="text" name="truss_type" placeholder="Lightweight wood, steel bar joist, bowstring..."></div>
-        <div class="form-field"><label>Floor Construction:</label><input type="text" name="floor_construction" placeholder="Concrete slab on grade"></div>
-        <div class="form-field"><label>Wall Construction:</label><input type="text" name="wall_construction" placeholder="CMU block, steel frame with metal panels"></div>
-    </form>
-    <div class="form-actions">
-        <button type="button" class="btn-secondary" onclick="navigate('page3-occupancy.html',document.getElementById('theForm'))">← Previous</button>
-        <button type="button" class="btn-primary" onclick="navigate('page5-fire-protection.html',document.getElementById('theForm'))">Next → Fire Protection</button>
     </div>
 </div>
-<footer><p>© 2026 City of Centerville Fire Department</p></footer>
+<footer>
+    <img src="images/city-logo.png" alt="City of Centerville" class="city-logo">
+    <p>© 2026 City of Centerville Fire Department</p>
+</footer>
 <div class="toast-container" id="toast-container"></div>
 <script src="preplan-common.js"></script>
-<script>var form=document.getElementById('theForm');loadFormData(form);autoSave(form);</script>
+<script>
+var form=document.getElementById('theForm');
+if(form){loadFormData(form);autoSave(form);}
+
+</script>
 </body>
 </html>

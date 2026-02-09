@@ -3,49 +3,56 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Pre-Fire Plan Overview</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles-preplan.css">
 </head>
 <body>
-<div class="preplan-container">
-    <div class="preplan-header">
-        <h3>🔥 Pre-Fire Plan Data Sheet</h3>
-        <p style="font-size:0.85rem;opacity:0.8;margin-top:4px">Centerville Fire Department</p>
-    </div>
-    <div class="preplan-overview">
-        <div class="info-tip">Complete each section. Progress is saved automatically to your device. Use the cloud save toolbar at the bottom of any page to transfer between devices.</div>
+<div class="page-wrapper">
+    <div class="container">
+        <div class="landing-hero">
+            <img src="images/cfd-logo.png" alt="Centerville Fire Department" class="hero-logo">
+            <h1>Pre-Fire Plan</h1>
+            <p>Centerville Fire Department — Building Data Sheet</p>
+        </div>
+
+        <div class="info-tip">Complete each section. Progress is saved automatically to your device. Use the cloud save toolbar at the bottom of any page to sync between devices.</div>
+
         <div class="page-nav" id="page-nav"></div>
-        <div style="text-align:center;margin-top:20px">
-            <button class="btn-secondary" onclick="if(confirm('Clear ALL pre-plan data?')){localStorage.removeItem('preFirePlan');location.reload()}">🗑️ Reset All Data</button>
+
+        <div style="display:flex;gap:12px;justify-content:center;margin-top:24px;flex-wrap:wrap">
+            <a href="page1-location.html" class="btn-primary" style="font-size:1.1rem;padding:12px 32px">Start / Continue →</a>
+            <button class="btn-secondary" onclick="if(confirm('Clear ALL pre-plan data? This cannot be undone.')){localStorage.removeItem('preFirePlan');location.reload()}">🗑️ Reset All Data</button>
+        </div>
+
+        <div class="nav-buttons">
+            <a href="/" class="btn-secondary">← Back to Main Site</a>
+            <a href="/preplan/import" class="btn-primary">📄 Import PDF</a>
         </div>
     </div>
-    <div class="form-actions" style="border-radius:0 0 8px 8px">
-        <a href="/" class="btn-secondary">← Back to Main Site</a>
-        <a href="page1-location.html" class="btn-primary">Start / Continue →</a>
-    </div>
 </div>
-<footer><p>© 2026 City of Centerville Fire Department</p></footer>
+<footer>
+    <img src="images/city-logo.png" alt="City of Centerville" class="city-logo">
+    <p>© 2026 City of Centerville Fire Department</p>
+</footer>
 <script>
-const pages = [
-    { num:1, title:'Location Information', desc:'Address, GPS, contact info', file:'page1-location.html', fields:['pfp_number','business_name','address','tax_id'] },
-    { num:2, title:'Operating Information', desc:'Contacts, hours, access', file:'page2-operating.html', fields:['primary_contact','operating_hours','primary_access'] },
-    { num:3, title:'Occupancy & Life Safety', desc:'Occupancy type, hazards, loads', file:'page3-occupancy.html', fields:['occupancy_types','life_safety_concerns'] },
-    { num:4, title:'Construction', desc:'Type, dimensions, materials', file:'page4-construction.html', fields:['construction_type','length','width','total_sq_ft'] },
-    { num:5, title:'Fire Protection', desc:'Sprinklers, alarms, standpipes', file:'page5-fire-protection.html', fields:['sprinklered','fire_alarm'] },
-    { num:6, title:'Utilities', desc:'Gas, electric, water shutoffs', file:'page6-utilities.html', fields:['natural_gas','electric'] },
-    { num:7, title:'Special Rescue', desc:'Confined space, high angle, water', file:'page7-special-rescue.html', fields:['pre_plan_conducted_by','date'] },
-    { num:8, title:'Fire Flow Data', desc:'Hydrant data, needed fire flow', file:'page8-fire-flow.html', fields:['effective_area','calculated_nff'] },
-    { num:9, title:'Hazardous Materials', desc:'Chemical inventory, NFPA 704', file:'page9-hazardous-materials.html', fields:['tier_ii','msds_onsite'] },
-    { num:10, title:'Site Plan', desc:'Aerial view with annotations', file:'page10-site-plan.html', fields:['site_plan_data'] },
-    { num:11, title:'Floor Plan', desc:'Interior layout drawing', file:'page11-floor-plan.html', fields:['floor_plan_data'] },
-    { num:12, title:'Review & Submit', desc:'Final review and submission', file:'page12-submit.html', fields:[] }
+var pages=[
+    {num:1,title:'Location Information',desc:'Address, GPS, contact info',file:'page1-location.html',fields:['pfp_number','business_name','address','tax_id']},
+    {num:2,title:'Operating Information',desc:'Contacts, hours, access concerns',file:'page2-operating.html',fields:['primary_contact','operating_hours','primary_access']},
+    {num:3,title:'Occupancy & Life Safety',desc:'Occupancy type, hazards, loads',file:'page3-occupancy.html',fields:['occupancy_types','life_safety_concerns']},
+    {num:4,title:'Construction',desc:'Type, dimensions, materials',file:'page4-construction.html',fields:['construction_type','length','width','total_sq_ft']},
+    {num:5,title:'Fire Protection',desc:'Sprinklers, alarms, standpipes',file:'page5-fire-protection.html',fields:['sprinklered','fire_alarm']},
+    {num:6,title:'Utilities',desc:'Gas, electric, water shutoffs',file:'page6-utilities.html',fields:['natural_gas','electric']},
+    {num:7,title:'Special Rescue',desc:'Confined space, high angle, water',file:'page7-special-rescue.html',fields:['pre_plan_conducted_by','date']},
+    {num:8,title:'Fire Flow Data',desc:'Hydrant data, needed fire flow',file:'page8-fire-flow.html',fields:['effective_area','calculated_nff']},
+    {num:9,title:'Hazardous Materials',desc:'Chemical inventory, NFPA 704',file:'page9-hazardous-materials.html',fields:['tier_ii','msds_onsite']},
+    {num:10,title:'Site Plan',desc:'Aerial view with annotations',file:'page10-site-plan.html',fields:['site_plan_data']},
+    {num:11,title:'Floor Plan',desc:'Interior layout drawing',file:'page11-floor-plan.html',fields:['floor_plan_data']},
+    {num:12,title:'Review & Submit',desc:'Final review and submission',file:'page12-submit.html',fields:[]}
 ];
-function render() {
-    var data;
-    try { data = JSON.parse(localStorage.getItem('preFirePlan')||'{}'); } catch(e) { data = {}; }
-    var nav = document.getElementById('page-nav');
-    nav.innerHTML = pages.map(function(p) {
-        var done = p.fields.length > 0 && p.fields.some(function(f){ return data[f] && data[f] !== '' });
+function render(){
+    var data;try{data=JSON.parse(localStorage.getItem('preFirePlan')||'{}');}catch(e){data={}}
+    var nav=document.getElementById('page-nav');
+    nav.innerHTML=pages.map(function(p){
+        var done=p.fields.length>0&&p.fields.some(function(f){return data[f]&&data[f]!==''});
         return '<a href="'+p.file+'" class="page-link'+(done?' completed':'')+'">'+
             '<div class="page-number">'+p.num+'</div>'+
             '<div class="page-info"><h4>'+p.title+'</h4><p>'+p.desc+'</p></div>'+

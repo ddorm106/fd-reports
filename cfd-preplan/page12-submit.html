@@ -3,37 +3,39 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Pre-Fire Plan: Review & Submit</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles-preplan.css">
-<style>
-.review-section{background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:12px}
-.review-section h4{color:var(--primary);margin-bottom:12px;font-size:0.95rem;border-bottom:2px solid var(--primary);padding-bottom:6px}
-.review-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-@media(max-width:600px){.review-grid{grid-template-columns:1fr}}
-.review-item{padding:6px 0;font-size:0.85rem}
-.review-label{font-weight:600;color:var(--text-light);font-size:0.75rem;text-transform:uppercase}
-.review-value{color:var(--text);margin-top:2px}
-.review-value.empty{color:#94a3b8;font-style:italic}
-.submit-actions{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin:20px 0}
-</style>
 </head>
 <body>
-<div class="preplan-container">
-    <div class="preplan-header"><h3>Page 12: Review & Submit</h3></div>
-    <div class="preplan-section">
+<div class="page-wrapper">
+    <div class="container">
+        <header class="report-header">
+            <div class="header-top">
+                <img src="images/cfd-logo.png" alt="Centerville Fire Department" class="patch-logo">
+                <div class="header-text"><h1>Centerville Fire Department</h1><h2>Pre-Fire Plan Data Sheet</h2></div>
+            </div>
+        </header>
+        <div class="progress-indicator">Page 12 of 12: Review & Submit</div>
+        <div class="progress-bar-container"><div class="progress-bar" style="width:100%"></div></div>
+
+        <h3 class="section-title">12. Review & Submit</h3>
         <div class="info-tip">Review all information below. Click any section header to go back and edit. When ready, submit or export your pre-plan.</div>
         <div id="reviewContent"></div>
-        <div class="submit-actions">
-            <button class="btn-primary" onclick="submitPlan()">📤 Submit Pre-Plan</button>
+
+        <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin:24px 0">
+            <button class="btn-primary" onclick="submitPlan()" style="font-size:1.1rem;padding:12px 32px">📤 Submit Pre-Plan</button>
             <button class="btn-secondary" onclick="exportJSON()">💾 Export JSON</button>
         </div>
-    </div>
-    <div class="form-actions">
-        <button type="button" class="btn-secondary" onclick="window.location.href='page11-floor-plan.html'">← Previous</button>
-        <a href="preplan-index.html" class="btn-primary">Back to Overview</a>
+
+        <div class="nav-buttons">
+            <button type="button" class="btn-secondary" onclick="window.location.href='page11-floor-plan.html'">← Previous</button>
+            <a href="preplan-index.html" class="btn-primary">Back to Overview</a>
+        </div>
     </div>
 </div>
-<footer><p>© 2026 City of Centerville Fire Department</p></footer>
+<footer>
+    <img src="images/city-logo.png" alt="City of Centerville" class="city-logo">
+    <p>© 2026 City of Centerville Fire Department</p>
+</footer>
 <div class="toast-container" id="toast-container"></div>
 <script src="preplan-common.js"></script>
 <script>

@@ -3,44 +3,95 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Pre-Fire Plan: Special Rescue</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles-preplan.css">
+
 </head>
 <body>
-<div class="preplan-container">
-    <div class="preplan-header"><h3>Page 7: Special Rescue Considerations</h3></div>
-    <form id="theForm" class="preplan-section">
-        <div class="form-field"><label class="inline-label">Confined Space Hazards?</label><div class="apparatus-buttons"><label class="apparatus-btn"><input type="radio" name="confined_space" value="Yes"><span>Yes</span></label><label class="apparatus-btn"><input type="radio" name="confined_space" value="No"><span>No</span></label></div></div>
-        <div class="form-field"><label>Confined Space Details:</label><textarea name="confined_space_locs" rows="2" placeholder="Underground storage tanks, utility vaults..."></textarea></div>
-        <div class="form-field"><label class="inline-label">High Angle / Elevated Rescue?</label><div class="apparatus-buttons"><label class="apparatus-btn"><input type="radio" name="high_angle" value="Yes"><span>Yes</span></label><label class="apparatus-btn"><input type="radio" name="high_angle" value="No"><span>No</span></label></div></div>
-        <div class="form-field"><label>High Angle Details:</label><textarea name="high_angle_locs" rows="2" placeholder="Multi-story atrium, communication tower..."></textarea></div>
-        <div class="form-field"><label class="inline-label">Water Rescue Hazards?</label><div class="apparatus-buttons"><label class="apparatus-btn"><input type="radio" name="water_rescue" value="Yes"><span>Yes</span></label><label class="apparatus-btn"><input type="radio" name="water_rescue" value="No"><span>No</span></label></div></div>
-        <div class="form-field"><label>Water Rescue Details:</label><textarea name="water_rescue_locs" rows="2" placeholder="Retention pond on site, nearby creek..."></textarea></div>
-        <div class="form-field"><label>Other Special Hazards/Rescue Concerns:</label><textarea name="other_rescue" rows="3" placeholder="Trench work, machinery entanglement, elevator..."></textarea></div>
-        <h3 class="section-title">NFPA 704 Diamond</h3>
-        <div class="form-row">
-            <div class="form-field"><label>Health (Blue, 0-4):</label><input type="number" name="nfpa_health" min="0" max="4" placeholder="0"></div>
-            <div class="form-field"><label>Fire (Red, 0-4):</label><input type="number" name="nfpa_fire" min="0" max="4" placeholder="0"></div>
+<div class="page-wrapper">
+    <div class="container">
+        <header class="report-header">
+            <div class="header-top">
+                <img src="images/cfd-logo.png" alt="Centerville Fire Department" class="patch-logo">
+                <div class="header-text">
+                    <h1>Centerville Fire Department</h1>
+                    <h2>Pre-Fire Plan Data Sheet</h2>
+                </div>
+            </div>
+        </header>
+
+        <div class="progress-indicator">Page 7 of 12: Special Rescue</div>
+        <div class="progress-bar-container">
+            <div class="progress-bar" style="width: 58.33%"></div>
         </div>
-        <div class="form-row">
-            <div class="form-field"><label>Reactivity (Yellow, 0-4):</label><input type="number" name="nfpa_reactivity" min="0" max="4" placeholder="0"></div>
-            <div class="form-field"><label>Special (White):</label><input type="text" name="nfpa_special" placeholder="W, OX, etc."></div>
+
+
+        <h3 class="section-title">7. Special Rescue Considerations</h3>
+        <form id="theForm">
+            <div class="preplan-section">
+        <div class="form-field">
+            <label class="inline-label">Confined Space Hazards?</label>
+            <div class="apparatus-buttons">
+                <label class="apparatus-btn"><input type="radio" name="confined_space" value="Yes"><span>Yes</span></label>
+                <label class="apparatus-btn"><input type="radio" name="confined_space" value="No"><span>No</span></label>
+            </div>
         </div>
-        <h3 class="section-title">Plan Information</h3>
-        <div class="form-row">
-            <div class="form-field"><label>Pre-Plan Conducted By:</label><input type="text" name="pre_plan_conducted_by" placeholder="Lt. Smith, Engine 1"></div>
-            <div class="form-field"><label>Date:</label><input type="date" name="date"></div>
+                        <div class="form-field"><label for="confined_space_locs">Confined Space Details:</label><textarea id="confined_space_locs" name="confined_space_locs" rows="2" placeholder="Underground storage tanks, utility vaults..."></textarea></div>
+        <div class="form-field">
+            <label class="inline-label">High Angle / Elevated Rescue?</label>
+            <div class="apparatus-buttons">
+                <label class="apparatus-btn"><input type="radio" name="high_angle" value="Yes"><span>Yes</span></label>
+                <label class="apparatus-btn"><input type="radio" name="high_angle" value="No"><span>No</span></label>
+            </div>
         </div>
-        <div class="form-field"><label>Additional Notes:</label><textarea name="additional_notes" rows="3" placeholder="Special tactical considerations, mutual aid..."></textarea></div>
-    </form>
-    <div class="form-actions">
-        <button type="button" class="btn-secondary" onclick="navigate('page6-utilities.html',document.getElementById('theForm'))">← Previous</button>
-        <button type="button" class="btn-primary" onclick="navigate('page8-fire-flow.html',document.getElementById('theForm'))">Next → Fire Flow</button>
+                        <div class="form-field"><label for="high_angle_locs">High Angle Details:</label><textarea id="high_angle_locs" name="high_angle_locs" rows="2" placeholder="Multi-story atrium, communication tower..."></textarea></div>
+        <div class="form-field">
+            <label class="inline-label">Water Rescue Hazards?</label>
+            <div class="apparatus-buttons">
+                <label class="apparatus-btn"><input type="radio" name="water_rescue" value="Yes"><span>Yes</span></label>
+                <label class="apparatus-btn"><input type="radio" name="water_rescue" value="No"><span>No</span></label>
+            </div>
+        </div>
+                        <div class="form-field"><label for="water_rescue_locs">Water Rescue Details:</label><textarea id="water_rescue_locs" name="water_rescue_locs" rows="2" placeholder="Retention pond on site, nearby creek..."></textarea></div>
+                        <div class="form-field"><label for="other_rescue">Other Special Hazards/Rescue Concerns:</label><textarea id="other_rescue" name="other_rescue" rows="3" placeholder="Trench work, machinery entanglement, elevator..."></textarea></div>
+            </div>
+            <div class="preplan-section">
+                <h3 class="section-title">NFPA 704 Diamond</h3>
+                <div class="form-row">
+                            <div class="form-field"><label for="nfpa_health">Health (Blue, 0-4):</label><input type="number" id="nfpa_health" name="nfpa_health" placeholder="0"></div>
+                            <div class="form-field"><label for="nfpa_fire">Fire (Red, 0-4):</label><input type="number" id="nfpa_fire" name="nfpa_fire" placeholder="0"></div>
+                </div>
+                <div class="form-row">
+                            <div class="form-field"><label for="nfpa_reactivity">Reactivity (Yellow, 0-4):</label><input type="number" id="nfpa_reactivity" name="nfpa_reactivity" placeholder="0"></div>
+                            <div class="form-field"><label for="nfpa_special">Special (White):</label><input type="text" id="nfpa_special" name="nfpa_special" placeholder="W, OX, etc."></div>
+                </div>
+            </div>
+            <div class="preplan-section">
+                <h3 class="section-title">Plan Information</h3>
+                <div class="form-row">
+                            <div class="form-field"><label for="pre_plan_conducted_by">Pre-Plan Conducted By:</label><input type="text" id="pre_plan_conducted_by" name="pre_plan_conducted_by" placeholder="Lt. Smith, Engine 1"></div>
+                            <div class="form-field"><label for="date">Date:</label><input type="date" id="date" name="date" placeholder=""></div>
+                </div>
+                        <div class="form-field"><label for="additional_notes">Additional Notes:</label><textarea id="additional_notes" name="additional_notes" rows="3" placeholder="Special tactical considerations, mutual aid..."></textarea></div>
+            </div>
+        </form>
+
+
+        <div class="nav-buttons">
+            <button type="button" class="btn-secondary" onclick="navigate('page6-utilities.html',document.getElementById('theForm'))">← Previous</button>
+            <button type="button" class="btn-primary" onclick="navigate('page8-fire-flow.html',document.getElementById('theForm'))">Next →</button>
+        </div>
     </div>
 </div>
-<footer><p>© 2026 City of Centerville Fire Department</p></footer>
+<footer>
+    <img src="images/city-logo.png" alt="City of Centerville" class="city-logo">
+    <p>© 2026 City of Centerville Fire Department</p>
+</footer>
 <div class="toast-container" id="toast-container"></div>
 <script src="preplan-common.js"></script>
-<script>var form=document.getElementById('theForm');loadFormData(form);autoSave(form);</script>
+<script>
+var form=document.getElementById('theForm');
+if(form){loadFormData(form);autoSave(form);}
+
+</script>
 </body>
 </html>

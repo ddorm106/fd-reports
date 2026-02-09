@@ -3,39 +3,99 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Pre-Fire Plan: Utilities</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles-preplan.css">
+
 </head>
 <body>
-<div class="preplan-container">
-    <div class="preplan-header"><h3>Page 6: Utilities</h3></div>
-    <form id="theForm" class="preplan-section">
-        <h3 class="section-title">Natural Gas</h3>
-        <div class="form-field"><label class="inline-label">Natural Gas?</label><div class="apparatus-buttons"><label class="apparatus-btn"><input type="radio" name="natural_gas" value="Yes"><span>Yes</span></label><label class="apparatus-btn"><input type="radio" name="natural_gas" value="No"><span>No</span></label></div></div>
-        <div class="form-field"><label>Gas Meter/Shutoff Location:</label><input type="text" name="natural_gas_loc" placeholder="Delta side, rear of building"></div>
-        <h3 class="section-title">LP Gas</h3>
-        <div class="form-field"><label class="inline-label">LP Gas?</label><div class="apparatus-buttons"><label class="apparatus-btn"><input type="radio" name="lp_gas" value="Yes"><span>Yes</span></label><label class="apparatus-btn"><input type="radio" name="lp_gas" value="No"><span>No</span></label></div></div>
-        <div class="form-field"><label>LP Tank Location:</label><input type="text" name="lp_gas_loc" placeholder="500 gal tank, Charlie side"></div>
-        <h3 class="section-title">Electrical</h3>
-        <div class="form-field"><label class="inline-label">Electrical Service?</label><div class="apparatus-buttons"><label class="apparatus-btn"><input type="radio" name="electric" value="Yes"><span>Yes</span></label><label class="apparatus-btn"><input type="radio" name="electric" value="No"><span>No</span></label></div></div>
-        <div class="form-field"><label>Main Panel/Disconnect Location:</label><input type="text" name="electric_loc" placeholder="Electrical room, Alpha side"></div>
-        <h3 class="section-title">Emergency Power</h3>
-        <div class="form-field"><label class="inline-label">Emergency/Backup Power?</label><div class="apparatus-buttons"><label class="apparatus-btn"><input type="radio" name="emergency_power" value="Yes"><span>Yes</span></label><label class="apparatus-btn"><input type="radio" name="emergency_power" value="No"><span>No</span></label></div></div>
-        <div class="form-field"><label>Generator Location:</label><input type="text" name="emergency_power_loc" placeholder="Generator pad, Bravo side"></div>
-        <h3 class="section-title">Solar Power</h3>
-        <div class="form-field"><label class="inline-label">Solar Panels?</label><div class="apparatus-buttons"><label class="apparatus-btn"><input type="radio" name="solar_power" value="Yes"><span>Yes</span></label><label class="apparatus-btn"><input type="radio" name="solar_power" value="No"><span>No</span></label></div></div>
-        <div class="form-field"><label>Solar Panel Location/Notes:</label><input type="text" name="solar_power_loc" placeholder="Roof-mounted array, inverter in mech room"></div>
-        <h3 class="section-title">Water</h3>
-        <div class="form-field"><label>Water Shutoff Location:</label><input type="text" name="water_shutoff_loc" placeholder="Alpha side, near meter pit"></div>
-    </form>
-    <div class="form-actions">
-        <button type="button" class="btn-secondary" onclick="navigate('page5-fire-protection.html',document.getElementById('theForm'))">← Previous</button>
-        <button type="button" class="btn-primary" onclick="navigate('page7-special-rescue.html',document.getElementById('theForm'))">Next → Special Rescue</button>
+<div class="page-wrapper">
+    <div class="container">
+        <header class="report-header">
+            <div class="header-top">
+                <img src="images/cfd-logo.png" alt="Centerville Fire Department" class="patch-logo">
+                <div class="header-text">
+                    <h1>Centerville Fire Department</h1>
+                    <h2>Pre-Fire Plan Data Sheet</h2>
+                </div>
+            </div>
+        </header>
+
+        <div class="progress-indicator">Page 6 of 12: Utilities</div>
+        <div class="progress-bar-container">
+            <div class="progress-bar" style="width: 50%"></div>
+        </div>
+
+
+        <h3 class="section-title">6. Utilities</h3>
+        <form id="theForm">
+            <div class="preplan-section">
+        <div class="form-field">
+            <label class="inline-label">Natural Gas?</label>
+            <div class="apparatus-buttons">
+                <label class="apparatus-btn"><input type="radio" name="natural_gas" value="Yes"><span>Yes</span></label>
+                <label class="apparatus-btn"><input type="radio" name="natural_gas" value="No"><span>No</span></label>
+            </div>
+        </div>
+                        <div class="form-field"><label for="natural_gas_loc">Gas Meter/Shutoff Location:</label><input type="text" id="natural_gas_loc" name="natural_gas_loc" placeholder="Delta side, rear of building"></div>
+            </div>
+            <div class="preplan-section">
+        <div class="form-field">
+            <label class="inline-label">LP Gas?</label>
+            <div class="apparatus-buttons">
+                <label class="apparatus-btn"><input type="radio" name="lp_gas" value="Yes"><span>Yes</span></label>
+                <label class="apparatus-btn"><input type="radio" name="lp_gas" value="No"><span>No</span></label>
+            </div>
+        </div>
+                        <div class="form-field"><label for="lp_gas_loc">LP Tank Location:</label><input type="text" id="lp_gas_loc" name="lp_gas_loc" placeholder="500 gal tank, Charlie side"></div>
+            </div>
+            <div class="preplan-section">
+        <div class="form-field">
+            <label class="inline-label">Electrical Service?</label>
+            <div class="apparatus-buttons">
+                <label class="apparatus-btn"><input type="radio" name="electric" value="Yes"><span>Yes</span></label>
+                <label class="apparatus-btn"><input type="radio" name="electric" value="No"><span>No</span></label>
+            </div>
+        </div>
+                        <div class="form-field"><label for="electric_loc">Main Panel/Disconnect Location:</label><input type="text" id="electric_loc" name="electric_loc" placeholder="Electrical room, Alpha side"></div>
+            </div>
+            <div class="preplan-section">
+        <div class="form-field">
+            <label class="inline-label">Emergency/Backup Power?</label>
+            <div class="apparatus-buttons">
+                <label class="apparatus-btn"><input type="radio" name="emergency_power" value="Yes"><span>Yes</span></label>
+                <label class="apparatus-btn"><input type="radio" name="emergency_power" value="No"><span>No</span></label>
+            </div>
+        </div>
+                        <div class="form-field"><label for="emergency_power_loc">Generator Location:</label><input type="text" id="emergency_power_loc" name="emergency_power_loc" placeholder="Generator pad, Bravo side"></div>
+            </div>
+            <div class="preplan-section">
+        <div class="form-field">
+            <label class="inline-label">Solar Panels?</label>
+            <div class="apparatus-buttons">
+                <label class="apparatus-btn"><input type="radio" name="solar_power" value="Yes"><span>Yes</span></label>
+                <label class="apparatus-btn"><input type="radio" name="solar_power" value="No"><span>No</span></label>
+            </div>
+        </div>
+                        <div class="form-field"><label for="solar_power_loc">Solar Panel Location/Notes:</label><input type="text" id="solar_power_loc" name="solar_power_loc" placeholder="Roof-mounted array, inverter in mech room"></div>
+            </div>
+                    <div class="form-field"><label for="water_shutoff_loc">Water Shutoff Location:</label><input type="text" id="water_shutoff_loc" name="water_shutoff_loc" placeholder="Alpha side, near meter pit"></div>
+        </form>
+
+        <div class="nav-buttons">
+            <button type="button" class="btn-secondary" onclick="navigate('page5-fire-protection.html',document.getElementById('theForm'))">← Previous</button>
+            <button type="button" class="btn-primary" onclick="navigate('page7-special-rescue.html',document.getElementById('theForm'))">Next →</button>
+        </div>
     </div>
 </div>
-<footer><p>© 2026 City of Centerville Fire Department</p></footer>
+<footer>
+    <img src="images/city-logo.png" alt="City of Centerville" class="city-logo">
+    <p>© 2026 City of Centerville Fire Department</p>
+</footer>
 <div class="toast-container" id="toast-container"></div>
 <script src="preplan-common.js"></script>
-<script>var form=document.getElementById('theForm');loadFormData(form);autoSave(form);</script>
+<script>
+var form=document.getElementById('theForm');
+if(form){loadFormData(form);autoSave(form);}
+
+</script>
 </body>
 </html>

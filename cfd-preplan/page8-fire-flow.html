@@ -2,57 +2,75 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Pre-Fire Plan: Fire Flow</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<title>Pre-Fire Plan: Fire Flow Data</title>
 <link rel="stylesheet" href="styles-preplan.css">
-<style>
-.hydrant-table{width:100%;border-collapse:collapse;margin-top:12px;font-size:0.8rem}
-.hydrant-table th{background:var(--primary);color:white;padding:6px 8px;font-size:0.75rem;text-align:left}
-.hydrant-table td{padding:4px 6px;border:1px solid var(--border)}
-.hydrant-table input{width:100%;padding:4px;border:1px solid var(--border);border-radius:4px;font-size:0.8rem}
-</style>
+
 </head>
 <body>
-<div class="preplan-container">
-    <div class="preplan-header"><h3>Page 8: Fire Flow Data</h3></div>
-    <form id="theForm" class="preplan-section">
-        <h3 class="section-title">Building / Area Fire Flow</h3>
-        <div class="info-tip">ISO Needed Fire Flow: NFF = Ci × Oi × (X+P) where Ci=construction factor, Oi=occupancy factor</div>
-        <div class="form-row">
-            <div class="form-field"><label>Effective Area (sq ft):</label><input type="number" name="effective_area" placeholder="30000"></div>
-            <div class="form-field"><label>Calculated NFF (GPM):</label><input type="number" name="calculated_nff" placeholder="3000"></div>
+<div class="page-wrapper">
+    <div class="container">
+        <header class="report-header">
+            <div class="header-top">
+                <img src="images/cfd-logo.png" alt="Centerville Fire Department" class="patch-logo">
+                <div class="header-text">
+                    <h1>Centerville Fire Department</h1>
+                    <h2>Pre-Fire Plan Data Sheet</h2>
+                </div>
+            </div>
+        </header>
+
+        <div class="progress-indicator">Page 8 of 12: Fire Flow Data</div>
+        <div class="progress-bar-container">
+            <div class="progress-bar" style="width: 66.66%"></div>
         </div>
-        <div class="form-row">
-            <div class="form-field"><label>Required Duration (hours):</label><input type="number" name="nff_duration" step="0.5" placeholder="3"></div>
-            <div class="form-field"><label>Available Water Supply (GPM):</label><input type="number" name="available_supply" placeholder="4500"></div>
+
+
+        <h3 class="section-title">8. Fire Flow Data</h3>
+        <form id="theForm">
+            <div class="preplan-section">
+                <h3 class="section-title">Building / Area Fire Flow</h3>
+                <div class="info-tip">ISO Needed Fire Flow: NFF = Ci × Oi × (X+P) where Ci=construction factor, Oi=occupancy factor</div>
+                <div class="form-row">
+                    <div class="form-field"><label>Effective Area (sq ft):</label><input type="number" name="effective_area" placeholder="30000"></div>
+                    <div class="form-field"><label>Calculated NFF (GPM):</label><input type="number" name="calculated_nff" placeholder="3000"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-field"><label>Required Duration (hours):</label><input type="number" name="nff_duration" step="0.5" placeholder="3"></div>
+                    <div class="form-field"><label>Available Water Supply (GPM):</label><input type="number" name="available_supply" placeholder="4500"></div>
+                </div>
+            </div>
+            <div class="preplan-section">
+                <h3 class="section-title">Hydrant Data</h3>
+                <div class="info-tip">ISO Hydrant Flow: Q = 29.83 × d² × √P where Q=flow(GPM), d=outlet diameter(in), P=pitot pressure(psi)</div>
+                <table>
+                    <thead><tr><th>#</th><th>Location</th><th>Static PSI</th><th>Residual PSI</th><th>Flow GPM</th><th>Distance</th></tr></thead>
+                    <tbody id="hydTbody">
+                        <tr><td>1</td><td><input name="hyd_loc_1" placeholder="Location"></td><td><input name="hyd_static_1" type="number"></td><td><input name="hyd_res_1" type="number"></td><td><input name="hyd_flow_1" type="number"></td><td><input name="hyd_dist_1"></td></tr>
+                        <tr><td>2</td><td><input name="hyd_loc_2" placeholder="Location"></td><td><input name="hyd_static_2" type="number"></td><td><input name="hyd_res_2" type="number"></td><td><input name="hyd_flow_2" type="number"></td><td><input name="hyd_dist_2"></td></tr>
+                        <tr><td>3</td><td><input name="hyd_loc_3" placeholder="Location"></td><td><input name="hyd_static_3" type="number"></td><td><input name="hyd_res_3" type="number"></td><td><input name="hyd_flow_3" type="number"></td><td><input name="hyd_dist_3"></td></tr>
+                    </tbody>
+                </table>
+                <button type="button" class="add-row-btn" onclick="addHydRow()">+ Add Hydrant Row</button>
+            </div>
+        </form>
+
+
+        <div class="nav-buttons">
+            <button type="button" class="btn-secondary" onclick="navigate('page7-special-rescue.html',document.getElementById('theForm'))">← Previous</button>
+            <button type="button" class="btn-primary" onclick="navigate('page9-hazardous-materials.html',document.getElementById('theForm'))">Next →</button>
         </div>
-        <h3 class="section-title">Hydrant Data</h3>
-        <div class="info-tip">ISO Hydrant Flow: Q = 29.83 × d² × √P where Q=flow(GPM), d=outlet diameter(in), P=pitot pressure(psi)</div>
-        <div class="form-field"><label>Business GPS (for auto-match):</label><input type="text" id="business_gps" name="business_gps" placeholder="32.8407, -83.6499"></div>
-        <table class="hydrant-table">
-            <thead><tr><th>#</th><th>Location</th><th>Static PSI</th><th>Residual PSI</th><th>Flow GPM</th><th>Distance (ft)</th></tr></thead>
-            <tbody id="hydTbody">
-                <tr><td>1</td><td><input name="hyd_loc_1" placeholder="Location"></td><td><input name="hyd_static_1" type="number" placeholder="0"></td><td><input name="hyd_res_1" type="number" placeholder="0"></td><td><input name="hyd_flow_1" type="number" placeholder="0"></td><td><input name="hyd_dist_1" placeholder="0"></td></tr>
-                <tr><td>2</td><td><input name="hyd_loc_2" placeholder="Location"></td><td><input name="hyd_static_2" type="number" placeholder="0"></td><td><input name="hyd_res_2" type="number" placeholder="0"></td><td><input name="hyd_flow_2" type="number" placeholder="0"></td><td><input name="hyd_dist_2" placeholder="0"></td></tr>
-                <tr><td>3</td><td><input name="hyd_loc_3" placeholder="Location"></td><td><input name="hyd_static_3" type="number" placeholder="0"></td><td><input name="hyd_res_3" type="number" placeholder="0"></td><td><input name="hyd_flow_3" type="number" placeholder="0"></td><td><input name="hyd_dist_3" placeholder="0"></td></tr>
-            </tbody>
-        </table>
-        <button type="button" class="btn-secondary" style="margin-top:12px" onclick="addHydRow()">+ Add Hydrant Row</button>
-    </form>
-    <div class="form-actions">
-        <button type="button" class="btn-secondary" onclick="navigate('page7-special-rescue.html',document.getElementById('theForm'))">← Previous</button>
-        <button type="button" class="btn-primary" onclick="navigate('page9-hazardous-materials.html',document.getElementById('theForm'))">Next → Hazmat</button>
     </div>
 </div>
-<footer><p>© 2026 City of Centerville Fire Department</p></footer>
+<footer>
+    <img src="images/city-logo.png" alt="City of Centerville" class="city-logo">
+    <p>© 2026 City of Centerville Fire Department</p>
+</footer>
 <div class="toast-container" id="toast-container"></div>
 <script src="preplan-common.js"></script>
 <script>
-var form=document.getElementById('theForm'),hydCount=3;
-loadFormData(form);autoSave(form);
-function addHydRow(){hydCount++;var tb=document.getElementById('hydTbody'),tr=document.createElement('tr');
-tr.innerHTML='<td>'+hydCount+'</td><td><input name="hyd_loc_'+hydCount+'" placeholder="Location"></td><td><input name="hyd_static_'+hydCount+'" type="number" placeholder="0"></td><td><input name="hyd_res_'+hydCount+'" type="number" placeholder="0"></td><td><input name="hyd_flow_'+hydCount+'" type="number" placeholder="0"></td><td><input name="hyd_dist_'+hydCount+'" placeholder="0"></td>';
-tb.appendChild(tr)}
+var form=document.getElementById('theForm');
+if(form){loadFormData(form);autoSave(form);}
+var hydCount=3;function addHydRow(){hydCount++;var tb=document.getElementById("hydTbody"),tr=document.createElement("tr");tr.innerHTML="<td>"+hydCount+"</td><td><input name=\"hyd_loc_"+hydCount+"\" placeholder=\"Location\"></td><td><input name=\"hyd_static_"+hydCount+"\" type=\"number\"></td><td><input name=\"hyd_res_"+hydCount+"\" type=\"number\"></td><td><input name=\"hyd_flow_"+hydCount+"\" type=\"number\"></td><td><input name=\"hyd_dist_"+hydCount+"\"></td>";tb.appendChild(tr)}
 </script>
 </body>
 </html>

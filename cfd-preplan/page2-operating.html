@@ -3,27 +3,47 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Pre-Fire Plan: Operating Information</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles-preplan.css">
+
 </head>
 <body>
-<div class="preplan-container">
-    <div class="preplan-header"><h3>Page 2: Operating Information & Access</h3></div>
-    <form id="theForm" class="preplan-section">
-        <h3 class="section-title">Key Contacts</h3>
-        <div class="form-row">
-            <div class="form-field"><label>Primary Contact Name:</label><input type="text" name="primary_contact" placeholder="John Smith"></div>
-            <div class="form-field"><label>Primary Contact Phone:</label><input type="tel" name="primary_tel" placeholder="(478) 555-1234"></div>
+<div class="page-wrapper">
+    <div class="container">
+        <header class="report-header">
+            <div class="header-top">
+                <img src="images/cfd-logo.png" alt="Centerville Fire Department" class="patch-logo">
+                <div class="header-text">
+                    <h1>Centerville Fire Department</h1>
+                    <h2>Pre-Fire Plan Data Sheet</h2>
+                </div>
+            </div>
+        </header>
+
+        <div class="progress-indicator">Page 2 of 12: Operating Information</div>
+        <div class="progress-bar-container">
+            <div class="progress-bar" style="width: 16.66%"></div>
         </div>
-        <div class="form-row">
-            <div class="form-field"><label>Secondary Contact:</label><input type="text" name="secondary_contact" placeholder="Jane Doe"></div>
-            <div class="form-field"><label>Secondary Phone:</label><input type="tel" name="secondary_tel" placeholder="(478) 555-5678"></div>
-        </div>
-        <div class="form-row">
-            <div class="form-field"><label>Normal Operating Hours:</label><input type="text" name="operating_hours" placeholder="Mon-Fri 8AM-5PM"></div>
-            <div class="form-field"><label>Primary Access Point:</label><input type="text" name="primary_access" placeholder="Main entrance off Houston Rd"></div>
-        </div>
-        <h3 class="section-title">Access & Apparatus Concerns</h3>
+
+
+        <h3 class="section-title">2. Operating Information & Access</h3>
+        <form id="theForm">
+            <div class="preplan-section">
+                <h3 class="section-title">Key Contacts</h3>
+                <div class="form-row">
+                            <div class="form-field"><label for="primary_contact">Primary Contact:</label><input type="text" id="primary_contact" name="primary_contact" placeholder="John Smith"></div>
+                            <div class="form-field"><label for="primary_tel">Primary Phone:</label><input type="tel" id="primary_tel" name="primary_tel" placeholder="(478) 555-1234"></div>
+                </div>
+                <div class="form-row">
+                            <div class="form-field"><label for="secondary_contact">Secondary Contact:</label><input type="text" id="secondary_contact" name="secondary_contact" placeholder="Jane Doe"></div>
+                            <div class="form-field"><label for="secondary_tel">Secondary Phone:</label><input type="tel" id="secondary_tel" name="secondary_tel" placeholder="(478) 555-5678"></div>
+                </div>
+                <div class="form-row">
+                            <div class="form-field"><label for="operating_hours">Normal Operating Hours:</label><input type="text" id="operating_hours" name="operating_hours" placeholder="Mon-Fri 8AM-5PM"></div>
+                            <div class="form-field"><label for="primary_access">Primary Access Point:</label><input type="text" id="primary_access" name="primary_access" placeholder="Main entrance off Houston Rd"></div>
+                </div>
+            </div>
+            <div class="preplan-section">
+                <h3 class="section-title">Access & Apparatus Concerns</h3>
         <div class="form-field">
             <label class="inline-label">Exterior Access Concerns?</label>
             <div class="apparatus-buttons">
@@ -31,7 +51,7 @@
                 <label class="apparatus-btn"><input type="radio" name="exterior_access" value="No"><span>No</span></label>
             </div>
         </div>
-        <div class="form-field"><label>Describe Exterior Concerns:</label><textarea name="exterior_access_locs" rows="2" placeholder="Narrow driveways, gated entry, low wires..."></textarea></div>
+                        <div class="form-field"><label for="exterior_access_locs">Describe Exterior Concerns:</label><textarea id="exterior_access_locs" name="exterior_access_locs" rows="2" placeholder="Narrow driveways, gated entry, low wires..."></textarea></div>
         <div class="form-field">
             <label class="inline-label">Exterior Doors (overhead, roll-up, loading docks)?</label>
             <div class="apparatus-buttons">
@@ -39,7 +59,7 @@
                 <label class="apparatus-btn"><input type="radio" name="exterior_door" value="No"><span>No</span></label>
             </div>
         </div>
-        <div class="form-field"><label>Describe Door Locations:</label><textarea name="exterior_door_locs" rows="2" placeholder="Loading dock on Charlie side..."></textarea></div>
+                        <div class="form-field"><label for="exterior_door_locs">Describe Door Locations:</label><textarea id="exterior_door_locs" name="exterior_door_locs" rows="2" placeholder="Loading dock on Charlie side..."></textarea></div>
         <div class="form-field">
             <label class="inline-label">Interior Roof/Ceiling Access Issues?</label>
             <div class="apparatus-buttons">
@@ -47,7 +67,7 @@
                 <label class="apparatus-btn"><input type="radio" name="interior_roof" value="No"><span>No</span></label>
             </div>
         </div>
-        <div class="form-field"><label>Describe Ceiling/Roof Concerns:</label><textarea name="interior_roof_locs" rows="2" placeholder="Drop ceiling throughout, attic void above..."></textarea></div>
+                        <div class="form-field"><label for="interior_roof_locs">Describe Ceiling/Roof Concerns:</label><textarea id="interior_roof_locs" name="interior_roof_locs" rows="2" placeholder="Drop ceiling throughout, attic void above..."></textarea></div>
         <div class="form-field">
             <label class="inline-label">Aerial Obstructions?</label>
             <div class="apparatus-buttons">
@@ -55,16 +75,27 @@
                 <label class="apparatus-btn"><input type="radio" name="aerial_obstructions" value="No"><span>No</span></label>
             </div>
         </div>
-        <div class="form-field"><label>Describe Obstructions:</label><textarea name="aerial_obstruction_locs" rows="2" placeholder="Power lines along Alpha side, trees on Bravo..."></textarea></div>
-    </form>
-    <div class="form-actions">
-        <button type="button" class="btn-secondary" onclick="navigate('page1-location.html',document.getElementById('theForm'))">← Previous</button>
-        <button type="button" class="btn-primary" onclick="navigate('page3-occupancy.html',document.getElementById('theForm'))">Next → Occupancy</button>
+                        <div class="form-field"><label for="aerial_obstruction_locs">Describe Obstructions:</label><textarea id="aerial_obstruction_locs" name="aerial_obstruction_locs" rows="2" placeholder="Power lines along Alpha side, trees on Bravo..."></textarea></div>
+            </div>
+        </form>
+
+
+        <div class="nav-buttons">
+            <button type="button" class="btn-secondary" onclick="navigate('page1-location.html',document.getElementById('theForm'))">← Previous</button>
+            <button type="button" class="btn-primary" onclick="navigate('page3-occupancy.html',document.getElementById('theForm'))">Next →</button>
+        </div>
     </div>
 </div>
-<footer><p>© 2026 City of Centerville Fire Department</p></footer>
+<footer>
+    <img src="images/city-logo.png" alt="City of Centerville" class="city-logo">
+    <p>© 2026 City of Centerville Fire Department</p>
+</footer>
 <div class="toast-container" id="toast-container"></div>
 <script src="preplan-common.js"></script>
-<script>var form=document.getElementById('theForm');loadFormData(form);autoSave(form);</script>
+<script>
+var form=document.getElementById('theForm');
+if(form){loadFormData(form);autoSave(form);}
+
+</script>
 </body>
 </html>
