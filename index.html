@@ -87,7 +87,7 @@
             cursor: not-allowed;
         }
         input[type="file"] {
-            display: none; /* Hide the default file input */
+            display: none;
         }
         .upload-buttons {
             display: flex;
@@ -173,8 +173,8 @@
 
             <div class="report-card">
                 <h3>🔥 Pre-Fire Plans</h3>
-                <p>View completed building pre-plans from DivisionScan</p>
-                <a href="https://preplans.fdtraining.org" target="_blank">View Pre-Plans →</a>
+                <p>Create and manage building pre-fire plan data sheets</p>
+                <a href="cfd-preplan/index.html">Start Pre-Plan →</a>
             </div>
 
             <!-- Upload Training Sheets Card -->
@@ -183,7 +183,6 @@
                 <p>Submit completed training documentation (sent via email)</p>
                 
                 <form action="https://fabform.io/f/kGUD6zZ" method="POST" enctype="multipart/form-data" id="upload-form">
-                    <!-- Hidden real file input -->
                     <input
                         type="file"
                         name="files"
@@ -192,7 +191,6 @@
                         accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                         required>
 
-                    <!-- Custom styled "Select Files" button -->
                     <label for="file-upload" class="file-label">
                         Select Files →
                     </label>
@@ -220,7 +218,6 @@
         <p>© 2026 City of Centerville Fire Department Training Division</p>
     </footer>
 
-    <!-- Simple UX script -->
     <script>
         const form = document.getElementById('upload-form');
         const statusDiv = document.getElementById('upload-status');
@@ -251,13 +248,11 @@
     </script>
 
     <script>
-        // Hide address bar
         window.addEventListener('load', () => setTimeout(() => window.scrollTo(0, 1), 0));
         window.addEventListener('orientationchange', () => setTimeout(() => window.scrollTo(0, 1), 0));
     </script>
 
     <script>
-        // Success message from FabForm
         if (window.location.search.includes('success')) {
             statusDiv.textContent = 'Files uploaded and emailed successfully! Thank you.';
             statusDiv.style.color = '#16a34a';
@@ -267,7 +262,6 @@
     </script>
 
     <script>
-        // Auto-update with alert
         (function() {
             const currentPath = window.location.pathname;
             const pageToCheck = currentPath.endsWith('/') ? currentPath + 'index.html' : currentPath;
@@ -294,4 +288,3 @@
     </script>
 </body>
 </html>
-
