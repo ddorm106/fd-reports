@@ -4,7 +4,51 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Pre-Fire Plan: Fire Flow Data</title>
 <link rel="stylesheet" href="styles-preplan.css">
-
+<style>
+.tabs{display:flex;gap:0;border-bottom:2px solid #1e3a5f;margin-bottom:16px;flex-wrap:wrap}
+.tab-btn{padding:10px 18px;background:#e8ecf1;border:1px solid #ccc;border-bottom:none;border-radius:8px 8px 0 0;cursor:pointer;font-size:13px;font-weight:600;color:#555;transition:all .15s}
+.tab-btn:hover{background:#dce4ed}
+.tab-btn.active{background:#1e3a5f;color:#fff;border-color:#1e3a5f}
+.tab-content{display:none;padding:0}
+.tab-content.active{display:block}
+.calc-section{background:#f0f4f8;border:1px solid #d0d8e0;border-radius:8px;padding:16px;margin-bottom:16px}
+.calc-section h4{color:#1e3a5f;margin-bottom:10px;font-size:14px;display:flex;align-items:center;gap:8px}
+.calc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.calc-field label{font-size:12px;color:#555;display:block;margin-bottom:3px;font-weight:500}
+.calc-field input,.calc-field select{width:100%;padding:8px 10px;border:1px solid #ccc;border-radius:6px;font-size:13px;background:#fff}
+.calc-field select{appearance:auto}
+.calc-btn{background:#c0392b;color:#fff;border:none;padding:10px 24px;border-radius:6px;font-weight:600;cursor:pointer;font-size:13px;margin-top:12px;transition:all .15s}
+.calc-btn:hover{background:#e74c3c}
+.result-box{background:#1e3a5f;color:#fff;border-radius:8px;padding:16px;margin-top:12px;display:none}
+.result-box .result-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px}
+.result-label{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px}
+.result-value{font-size:24px;font-weight:700;color:#e67e22;margin-top:2px}
+.result-formula{color:#94a3b8;font-size:11px;margin-top:2px}
+.result-breakdown{margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.15);font-size:12px;color:#cbd5e1;line-height:1.6}
+.gps-row{display:flex;gap:8px;align-items:end;flex-wrap:wrap}
+.gps-row .calc-field{flex:1;min-width:180px}
+.gps-btn{padding:8px 14px;border-radius:6px;border:1px solid #1e3a5f;background:#1e3a5f;color:#fff;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap;height:36px;margin-top:auto}
+.gps-btn:hover{background:#2c5282}
+.matched-box{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;margin-top:12px;display:none;overflow:hidden}
+.matched-box h5{background:#166534;color:#fff;padding:10px 14px;font-size:13px;margin:0}
+.matched-item{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;border-bottom:1px solid #e5e7eb;font-size:12px;gap:8px;flex-wrap:wrap}
+.matched-item:hover{background:#f0f9f0}
+.matched-item .loc{font-weight:600;color:#1e3a5f;flex:1;min-width:120px}
+.matched-item .dist{color:#059669;font-weight:600;white-space:nowrap}
+.matched-item .flow{color:#1e3a5f;font-weight:700;white-space:nowrap}
+.matched-item button{padding:4px 10px;background:#059669;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:11px;font-weight:600;white-space:nowrap}
+.matched-item button:hover{background:#047857}
+.info-tip{background:#fff7ed;border-left:3px solid #e67e22;padding:10px 14px;font-size:12px;color:#9a3412;margin-bottom:12px;border-radius:0 6px 6px 0;line-height:1.5}
+table{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}
+th{background:#1e3a5f;color:#fff;padding:8px 6px;text-align:left;font-size:11px;font-weight:600}
+td{padding:6px;border-bottom:1px solid #e5e7eb}
+td input{width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:4px;font-size:12px}
+td input[type=number]{width:80px}
+.add-row-btn{background:transparent;border:1px dashed #1e3a5f;color:#1e3a5f;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;margin-top:8px;width:100%;transition:all .15s}
+.add-row-btn:hover{background:#f0f4f8}
+.loading-spinner{display:inline-block;width:14px;height:14px;border:2px solid #ccc;border-top-color:#1e3a5f;border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
 </head>
 <body>
 <div class="page-wrapper">
@@ -24,36 +68,268 @@
             <div class="progress-bar" style="width: 66.66%"></div>
         </div>
 
-
         <h3 class="section-title">8. Fire Flow Data</h3>
-        <form id="theForm">
-            <div class="preplan-section">
-                <h3 class="section-title">Building / Area Fire Flow</h3>
-                <div class="info-tip">ISO Needed Fire Flow: NFF = Ci × Oi × (X+P) where Ci=construction factor, Oi=occupancy factor</div>
-                <div class="form-row">
-                    <div class="form-field"><label>Effective Area (sq ft):</label><input type="number" name="effective_area" placeholder="30000"></div>
-                    <div class="form-field"><label>Calculated NFF (GPM):</label><input type="number" name="calculated_nff" placeholder="3000"></div>
-                </div>
-                <div class="form-row">
-                    <div class="form-field"><label>Required Duration (hours):</label><input type="number" name="nff_duration" step="0.5" placeholder="3"></div>
-                    <div class="form-field"><label>Available Water Supply (GPM):</label><input type="number" name="available_supply" placeholder="4500"></div>
+
+        <!-- TABS -->
+        <div class="tabs">
+            <div class="tab-btn active" onclick="switchTab('nff')">🔥 ISO Needed Fire Flow</div>
+            <div class="tab-btn" onclick="switchTab('hydflow')">💧 Hydrant Flow Test</div>
+            <div class="tab-btn" onclick="switchTab('hyddata')">📊 Hydrant Database</div>
+        </div>
+
+        <!-- TAB 1: ISO NFF CALCULATOR -->
+        <div id="tab-nff" class="tab-content active">
+            <div class="info-tip">
+                <strong>ISO Needed Fire Flow (NFF)</strong> = C<sub>i</sub> × O<sub>i</sub> × [1 + (X + P)]<br>
+                Where C = 18 × F × √A (construction factor), O = occupancy combustibility, X = exposure, P = communication factor
+            </div>
+
+            <div class="calc-section">
+                <h4>📐 Construction Factor (C<sub>i</sub>)</h4>
+                <div class="calc-grid">
+                    <div class="calc-field">
+                        <label>ISO Construction Class:</label>
+                        <select id="nff_const_class" onchange="calcNFF()">
+                            <option value="">Select...</option>
+                            <option value="1">Class 1 - Frame (F=1.5)</option>
+                            <option value="2">Class 2 - Joisted Masonry (F=1.0)</option>
+                            <option value="3">Class 3 - Non-Combustible (F=0.8)</option>
+                            <option value="4">Class 4 - Masonry Non-Comb (F=0.8)</option>
+                            <option value="5">Class 5 - Modified Fire Resistive (F=0.6)</option>
+                            <option value="6">Class 6 - Fire Resistive (F=0.6)</option>
+                        </select>
+                    </div>
+                    <div class="calc-field">
+                        <label>Effective Area (sq ft):</label>
+                        <input type="number" id="nff_area" placeholder="30000" oninput="calcNFF()">
+                    </div>
                 </div>
             </div>
-            <div class="preplan-section">
-                <h3 class="section-title">Hydrant Data</h3>
-                <div class="info-tip">ISO Hydrant Flow: Q = 29.83 × d² × √P where Q=flow(GPM), d=outlet diameter(in), P=pitot pressure(psi)</div>
+
+            <div class="calc-section">
+                <h4>🏭 Occupancy Factor (O<sub>i</sub>)</h4>
+                <div class="calc-grid">
+                    <div class="calc-field">
+                        <label>Combustibility Class:</label>
+                        <select id="nff_occ_class" onchange="calcNFF()">
+                            <option value="">Select...</option>
+                            <option value="1">C-1 Non-Combustible (0.75)</option>
+                            <option value="2">C-2 Limited Combustible (0.85)</option>
+                            <option value="3">C-3 Combustible (1.00)</option>
+                            <option value="4">C-4 Free Burning (1.15)</option>
+                            <option value="5">C-5 Rapid Burning (1.25)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="calc-section">
+                <h4>🏘️ Exposure & Communication</h4>
+                <div class="calc-grid">
+                    <div class="calc-field">
+                        <label>Exposure Factor (X) 0.00-0.50:</label>
+                        <input type="number" id="nff_x" step="0.01" min="0" max="0.50" value="0" oninput="calcNFF()">
+                    </div>
+                    <div class="calc-field">
+                        <label>Communication Factor (P) 0.00-0.25:</label>
+                        <input type="number" id="nff_p" step="0.01" min="0" max="0.25" value="0" oninput="calcNFF()">
+                    </div>
+                    <div class="calc-field">
+                        <label><input type="checkbox" id="nff_shingles" onchange="calcNFF()"> Wood shingle roof (+500 GPM)</label>
+                    </div>
+                </div>
+            </div>
+
+            <button type="button" class="calc-btn" onclick="calcNFF()">Calculate NFF</button>
+
+            <div class="result-box" id="nff-result">
+                <div class="result-grid">
+                    <div>
+                        <div class="result-label">Needed Fire Flow (NFF)</div>
+                        <div class="result-value" id="res-nff">0 GPM</div>
+                        <div class="result-formula">NFF = C × O × [1 + (X + P)]</div>
+                    </div>
+                    <div>
+                        <div class="result-label">Construction Factor (C)</div>
+                        <div class="result-value" id="res-c" style="font-size:18px">0 GPM</div>
+                    </div>
+                    <div>
+                        <div class="result-label">Required Duration</div>
+                        <div class="result-value" id="res-dur" style="font-size:18px">0 hrs</div>
+                    </div>
+                </div>
+                <div class="result-breakdown" id="nff-breakdown"></div>
+            </div>
+        </div>
+
+        <!-- TAB 2: HYDRANT FLOW TEST CALCULATOR -->
+        <div id="tab-hydflow" class="tab-content">
+            <div class="info-tip">
+                <strong>ISO Hydrant Flow</strong>: Q = 29.83 × C × d² × √p<br>
+                <strong>Available Fire Flow (AFF)</strong> at 20 PSI: AFF = Q × [(S - 20) / (S - R)]<sup>0.54</sup>
+            </div>
+
+            <div class="calc-section">
+                <h4>🧪 Hydrant Flow Test Data</h4>
+                <div class="calc-grid">
+                    <div class="calc-field">
+                        <label>Hydrant Location:</label>
+                        <input type="text" id="hft_location" placeholder="Main St & 1st Ave">
+                    </div>
+                    <div class="calc-field">
+                        <label>Coefficient (C):</label>
+                        <select id="hft_coeff">
+                            <option value="0.9">0.90 - Smooth bore</option>
+                            <option value="0.8" selected>0.80 - Average</option>
+                            <option value="0.7">0.70 - Square/rough</option>
+                        </select>
+                    </div>
+                    <div class="calc-field">
+                        <label>Outlet Diameter (inches):</label>
+                        <select id="hft_diameter">
+                            <option value="2.5" selected>2.5"</option>
+                            <option value="2.0">2.0"</option>
+                            <option value="4.0">4.0"</option>
+                            <option value="4.5">4.5"</option>
+                        </select>
+                    </div>
+                    <div class="calc-field">
+                        <label># of Open Outlets:</label>
+                        <input type="number" id="hft_outlets" value="1" min="1" max="6" oninput="calcHydFlow()">
+                    </div>
+                </div>
+                <div class="calc-grid" style="margin-top:10px">
+                    <div class="calc-field">
+                        <label>Static Pressure (PSI):</label>
+                        <input type="number" id="hft_static" placeholder="85" oninput="calcHydFlow()">
+                    </div>
+                    <div class="calc-field">
+                        <label>Residual Pressure (PSI):</label>
+                        <input type="number" id="hft_residual" placeholder="65" oninput="calcHydFlow()">
+                    </div>
+                    <div class="calc-field">
+                        <label>Pitot Pressure (PSI):</label>
+                        <input type="number" id="hft_pitot" placeholder="28" oninput="calcHydFlow()">
+                    </div>
+                </div>
+                <div class="calc-grid" style="margin-top:10px">
+                    <div class="calc-field">
+                        <label>GPS Coordinates:</label>
+                        <div style="display:flex;gap:6px">
+                            <input type="text" id="hft_gps" placeholder="32.6234, -83.6865" style="flex:1">
+                            <button type="button" class="gps-btn" onclick="getHydGPS()" style="margin-top:0">📍</button>
+                        </div>
+                    </div>
+                    <div class="calc-field">
+                        <label>Flow Test Date:</label>
+                        <input type="date" id="hft_date">
+                    </div>
+                    <div class="calc-field">
+                        <label>Witnessed By:</label>
+                        <input type="text" id="hft_witness" placeholder="Name">
+                    </div>
+                </div>
+            </div>
+
+            <button type="button" class="calc-btn" onclick="calcHydFlow()">Calculate Hydrant Flow</button>
+
+            <div class="result-box" id="hydflow-result">
+                <div class="result-grid">
+                    <div>
+                        <div class="result-label">Total Gallons Flowing (Q)</div>
+                        <div class="result-value" id="res-q">0 GPM</div>
+                        <div class="result-formula">Q = 29.83 × C × d² × √p × n</div>
+                    </div>
+                    <div>
+                        <div class="result-label">Available Fire Flow (AFF)</div>
+                        <div class="result-value" id="res-aff">0 GPM</div>
+                        <div class="result-formula">At 20 PSI residual pressure</div>
+                    </div>
+                    <div>
+                        <div class="result-label">Pressure Drop</div>
+                        <div class="result-value" id="res-drop" style="font-size:18px">0 PSI</div>
+                    </div>
+                </div>
+                <div class="result-breakdown" id="hydflow-breakdown"></div>
+            </div>
+        </div>
+
+        <!-- TAB 3: HYDRANT DATABASE & GPS MATCHING -->
+        <div id="tab-hyddata" class="tab-content">
+            <div class="info-tip">
+                Enter the business address or GPS coordinates to <strong>automatically find the nearest hydrants</strong> from the Centerville Fire Department hydrant database (414 hydrants). Click "Add" to populate the hydrant table below.
+            </div>
+
+            <div class="calc-section">
+                <h4>📍 Find Nearest Hydrants to Business</h4>
+                <div class="gps-row">
+                    <div class="calc-field">
+                        <label>Business Address:</label>
+                        <input type="text" id="biz_address" placeholder="Enter address">
+                    </div>
+                    <div class="calc-field">
+                        <label>Business GPS Coordinates:</label>
+                        <input type="text" id="biz_gps" placeholder="32.6234, -83.6865">
+                    </div>
+                    <button type="button" class="gps-btn" onclick="getBizGPS()">📍 Get GPS</button>
+                    <button type="button" class="gps-btn" onclick="findNearestHydrants()" style="background:#059669;border-color:#059669">🔍 Find Nearest</button>
+                </div>
+                <div id="gps-status" style="font-size:11px;color:#888;margin-top:4px"></div>
+            </div>
+
+            <div class="matched-box" id="matched-hydrants">
+                <h5>📍 Nearest Hydrants to Business Location</h5>
+                <div id="hydrant-matches"></div>
+            </div>
+        </div>
+
+        <!-- HYDRANT TABLE (always visible below tabs) -->
+        <form id="theForm">
+            <div class="preplan-section" style="margin-top:16px">
+                <h3 class="section-title">Hydrant Data Table</h3>
+                <div class="info-tip" style="margin-bottom:8px">Hydrants auto-populate from GPS matching above, or enter manually. Q and AFF auto-calculate when you fill in pressure data.</div>
+                <div style="overflow-x:auto">
                 <table>
-                    <thead><tr><th>#</th><th>Location</th><th>Static PSI</th><th>Residual PSI</th><th>Flow GPM</th><th>Distance</th></tr></thead>
+                    <thead><tr>
+                        <th>#</th><th>Location</th><th>Static PSI</th><th>Residual PSI</th><th>Pitot PSI</th><th>Flow GPM</th><th>AFF GPM</th><th>Distance</th>
+                    </tr></thead>
                     <tbody id="hydTbody">
-                        <tr><td>1</td><td><input name="hyd_loc_1" placeholder="Location"></td><td><input name="hyd_static_1" type="number"></td><td><input name="hyd_res_1" type="number"></td><td><input name="hyd_flow_1" type="number"></td><td><input name="hyd_dist_1"></td></tr>
-                        <tr><td>2</td><td><input name="hyd_loc_2" placeholder="Location"></td><td><input name="hyd_static_2" type="number"></td><td><input name="hyd_res_2" type="number"></td><td><input name="hyd_flow_2" type="number"></td><td><input name="hyd_dist_2"></td></tr>
-                        <tr><td>3</td><td><input name="hyd_loc_3" placeholder="Location"></td><td><input name="hyd_static_3" type="number"></td><td><input name="hyd_res_3" type="number"></td><td><input name="hyd_flow_3" type="number"></td><td><input name="hyd_dist_3"></td></tr>
+                        <tr><td>1</td><td><input name="hyd_loc_1" placeholder="Location"></td><td><input name="hyd_static_1" type="number" oninput="autoCalcRow(1)"></td><td><input name="hyd_res_1" type="number" oninput="autoCalcRow(1)"></td><td><input name="hyd_pitot_1" type="number" oninput="autoCalcRow(1)"></td><td><input name="hyd_flow_1" type="number" id="hyd_flow_1" readonly style="background:#f0f4f8;font-weight:700"></td><td><input name="hyd_aff_1" type="number" id="hyd_aff_1" readonly style="background:#f0f4f8;font-weight:700"></td><td><input name="hyd_dist_1" placeholder="ft"></td></tr>
+                        <tr><td>2</td><td><input name="hyd_loc_2" placeholder="Location"></td><td><input name="hyd_static_2" type="number" oninput="autoCalcRow(2)"></td><td><input name="hyd_res_2" type="number" oninput="autoCalcRow(2)"></td><td><input name="hyd_pitot_2" type="number" oninput="autoCalcRow(2)"></td><td><input name="hyd_flow_2" type="number" id="hyd_flow_2" readonly style="background:#f0f4f8;font-weight:700"></td><td><input name="hyd_aff_2" type="number" id="hyd_aff_2" readonly style="background:#f0f4f8;font-weight:700"></td><td><input name="hyd_dist_2" placeholder="ft"></td></tr>
+                        <tr><td>3</td><td><input name="hyd_loc_3" placeholder="Location"></td><td><input name="hyd_static_3" type="number" oninput="autoCalcRow(3)"></td><td><input name="hyd_res_3" type="number" oninput="autoCalcRow(3)"></td><td><input name="hyd_pitot_3" type="number" oninput="autoCalcRow(3)"></td><td><input name="hyd_flow_3" type="number" id="hyd_flow_3" readonly style="background:#f0f4f8;font-weight:700"></td><td><input name="hyd_aff_3" type="number" id="hyd_aff_3" readonly style="background:#f0f4f8;font-weight:700"></td><td><input name="hyd_dist_3" placeholder="ft"></td></tr>
                     </tbody>
                 </table>
+                </div>
                 <button type="button" class="add-row-btn" onclick="addHydRow()">+ Add Hydrant Row</button>
             </div>
-        </form>
 
+            <div class="preplan-section">
+                <h3 class="section-title">Building / Area Fire Flow Summary</h3>
+                <div class="calc-grid">
+                    <div class="calc-field">
+                        <label>Effective Area (sq ft):</label>
+                        <input type="number" name="effective_area" id="summary_area" placeholder="30000">
+                    </div>
+                    <div class="calc-field">
+                        <label>Calculated NFF (GPM):</label>
+                        <input type="number" name="calculated_nff" id="summary_nff" placeholder="Auto from calculator" style="background:#f0f4f8;font-weight:700">
+                    </div>
+                    <div class="calc-field">
+                        <label>Required Duration (hours):</label>
+                        <input type="number" name="nff_duration" id="summary_dur" step="0.5" placeholder="3">
+                    </div>
+                    <div class="calc-field">
+                        <label>Available Water Supply (GPM):</label>
+                        <input type="number" name="available_supply" placeholder="4500">
+                    </div>
+                </div>
+            </div>
+            <!-- Hidden fields for saving NFF calc data -->
+            <input type="hidden" name="nff_const_class" id="save_const_class">
+            <input type="hidden" name="nff_occ_class" id="save_occ_class">
+            <input type="hidden" name="nff_x_factor" id="save_x">
+            <input type="hidden" name="nff_p_factor" id="save_p">
+        </form>
 
         <div class="nav-buttons">
             <button type="button" class="btn-secondary" onclick="navigate('page7-special-rescue.html',document.getElementById('theForm'))">← Previous</button>
@@ -68,9 +344,270 @@
 <div class="toast-container" id="toast-container"></div>
 <script src="preplan-common.js"></script>
 <script>
+// ===== FORM SAVE/LOAD =====
 var form=document.getElementById('theForm');
 if(form){loadFormData(form);autoSave(form);}
-var hydCount=3;function addHydRow(){hydCount++;var tb=document.getElementById("hydTbody"),tr=document.createElement("tr");tr.innerHTML="<td>"+hydCount+"</td><td><input name=\"hyd_loc_"+hydCount+"\" placeholder=\"Location\"></td><td><input name=\"hyd_static_"+hydCount+"\" type=\"number\"></td><td><input name=\"hyd_res_"+hydCount+"\" type=\"number\"></td><td><input name=\"hyd_flow_"+hydCount+"\" type=\"number\"></td><td><input name=\"hyd_dist_"+hydCount+"\"></td>";tb.appendChild(tr)}
+
+// ===== TAB SWITCHING =====
+function switchTab(id){
+    document.querySelectorAll('.tab-btn').forEach(function(b,i){b.classList.remove('active')});
+    document.querySelectorAll('.tab-content').forEach(function(c){c.classList.remove('active')});
+    document.getElementById('tab-'+id).classList.add('active');
+    event.target.classList.add('active');
+}
+
+// ===== ISO NFF CALCULATOR =====
+var fFactors={1:1.5,2:1.0,3:0.8,4:0.8,5:0.6,6:0.6};
+var cMax={1:8000,2:8000,3:6000,4:6000,5:6000,6:6000};
+var oFactors={1:0.75,2:0.85,3:1.00,4:1.15,5:1.25};
+
+function calcNFF(){
+    var cls=document.getElementById('nff_const_class').value;
+    var area=parseFloat(document.getElementById('nff_area').value);
+    var occCls=document.getElementById('nff_occ_class').value;
+    var xf=parseFloat(document.getElementById('nff_x').value)||0;
+    var pf=parseFloat(document.getElementById('nff_p').value)||0;
+    var shingles=document.getElementById('nff_shingles').checked;
+
+    if(!cls||!area||!occCls){return}
+
+    var F=fFactors[cls];
+    var C=18*F*Math.sqrt(area);
+    // Round to nearest 250
+    C=Math.round(C/250)*250;
+    // Apply class max
+    var maxC=cMax[cls];
+    if(C>maxC)C=maxC;
+    // Min 500
+    if(C<500)C=500;
+
+    var O=oFactors[occCls];
+
+    // X+P max 0.60
+    var xpSum=Math.min(xf+pf,0.60);
+
+    var nff=C*O*(1+xpSum);
+    // Round to nearest 250
+    nff=Math.round(nff/250)*250;
+    // Min 500, max 12000
+    nff=Math.max(500,Math.min(12000,nff));
+
+    if(shingles)nff+=500;
+
+    // Duration: NFF<=2500=2hrs, 2501-3500=3hrs, >3500=4hrs
+    var dur=nff<=2500?2:nff<=3500?3:4;
+
+    document.getElementById('nff-result').style.display='block';
+    document.getElementById('res-nff').textContent=nff.toLocaleString()+' GPM';
+    document.getElementById('res-c').textContent=C.toLocaleString()+' GPM';
+    document.getElementById('res-dur').textContent=dur+' hours';
+    document.getElementById('nff-breakdown').innerHTML=
+        '<strong>Breakdown:</strong><br>'+
+        'F factor = '+F+' (Class '+cls+')<br>'+
+        'C = 18 × '+F+' × √'+area.toLocaleString()+' = '+C.toLocaleString()+' GPM<br>'+
+        'O = '+O+' (C-'+occCls+')<br>'+
+        'X + P = '+xf+' + '+pf+' = '+xpSum.toFixed(2)+(xf+pf>0.60?' <em>(capped at 0.60)</em>':'')+'<br>'+
+        'NFF = '+C.toLocaleString()+' × '+O+' × [1 + '+xpSum.toFixed(2)+'] = '+nff.toLocaleString()+' GPM'+
+        (shingles?' (+500 wood shingle)':'')+'<br>'+
+        'Required duration: '+dur+' hours';
+
+    // Auto-fill summary
+    document.getElementById('summary_nff').value=nff;
+    document.getElementById('summary_dur').value=dur;
+    if(area)document.getElementById('summary_area').value=area;
+    // Save hidden fields
+    document.getElementById('save_const_class').value=cls;
+    document.getElementById('save_occ_class').value=occCls;
+    document.getElementById('save_x').value=xf;
+    document.getElementById('save_p').value=pf;
+    saveFormData(form);
+}
+
+// ===== HYDRANT FLOW CALCULATOR =====
+function calcHydFlow(){
+    var C=parseFloat(document.getElementById('hft_coeff').value);
+    var d=parseFloat(document.getElementById('hft_diameter').value);
+    var n=parseInt(document.getElementById('hft_outlets').value)||1;
+    var S=parseFloat(document.getElementById('hft_static').value);
+    var R=parseFloat(document.getElementById('hft_residual').value);
+    var p=parseFloat(document.getElementById('hft_pitot').value);
+
+    if(!S||!R||!p)return;
+
+    var Q=29.83*C*d*d*Math.sqrt(p)*n;
+    Q=Math.round(Q);
+
+    // AFF at 20 PSI residual
+    var drop=S-R;
+    var aff=0;
+    if(drop>0&&S>20){
+        aff=Q*Math.pow((S-20)/(S-R),0.54);
+        aff=Math.round(aff);
+    }
+
+    document.getElementById('hydflow-result').style.display='block';
+    document.getElementById('res-q').textContent=Q.toLocaleString()+' GPM';
+    document.getElementById('res-aff').textContent=aff.toLocaleString()+' GPM';
+    document.getElementById('res-drop').textContent=drop+' PSI';
+    document.getElementById('hydflow-breakdown').innerHTML=
+        '<strong>Breakdown:</strong><br>'+
+        'Q = 29.83 × '+C+' × '+d+'² × √'+p+' × '+n+' = '+Q.toLocaleString()+' GPM<br>'+
+        'AFF = '+Q.toLocaleString()+' × [('+S+' - 20) / ('+S+' - '+R+')]<sup>0.54</sup> = '+aff.toLocaleString()+' GPM<br>'+
+        'Pressure drop: '+S+' - '+R+' = '+drop+' PSI';
+}
+
+function getHydGPS(){
+    if(!navigator.geolocation){showToast('GPS not available','error');return}
+    navigator.geolocation.getCurrentPosition(function(pos){
+        document.getElementById('hft_gps').value=pos.coords.latitude.toFixed(6)+', '+pos.coords.longitude.toFixed(6);
+    },function(){showToast('Location denied','error')});
+}
+
+// ===== HYDRANT DATABASE & GPS MATCHING =====
+function getBizGPS(){
+    if(!navigator.geolocation){showToast('GPS not available','error');return}
+    document.getElementById('gps-status').innerHTML='<span class="loading-spinner"></span> Getting location...';
+    navigator.geolocation.getCurrentPosition(function(pos){
+        document.getElementById('biz_gps').value=pos.coords.latitude.toFixed(6)+', '+pos.coords.longitude.toFixed(6);
+        document.getElementById('gps-status').textContent='GPS acquired';
+        // Auto-save to form
+        var data=getSavedData();
+        data.latitude=pos.coords.latitude.toFixed(6);
+        data.longitude=pos.coords.longitude.toFixed(6);
+        saveAllData(data);
+    },function(){
+        document.getElementById('gps-status').textContent='Location denied';
+        showToast('Location denied','error');
+    });
+}
+
+// Try to load GPS from page 1 saved data
+(function(){
+    var data=getSavedData();
+    if(data.latitude&&data.longitude){
+        document.getElementById('biz_gps').value=data.latitude+', '+data.longitude;
+    }
+    if(data.address){
+        document.getElementById('biz_address').value=data.address;
+    }
+})();
+
+async function findNearestHydrants(){
+    var gpsStr=document.getElementById('biz_gps').value.trim();
+    if(!gpsStr){showToast('Enter GPS coordinates or click Get GPS','error');return}
+    var parts=gpsStr.split(',').map(function(s){return parseFloat(s.trim())});
+    if(parts.length<2||isNaN(parts[0])||isNaN(parts[1])){showToast('Invalid GPS format. Use: lat, lng','error');return}
+
+    var lat=parts[0],lng=parts[1];
+    document.getElementById('gps-status').innerHTML='<span class="loading-spinner"></span> Searching hydrant database...';
+
+    try{
+        // Try API first
+        var r=await fetch('/api/hydrants/nearest?lat='+lat+'&lng='+lng+'&limit=10');
+        var d=await r.json();
+        if(d.success&&d.hydrants&&d.hydrants.length>0){
+            showMatches(d.hydrants.map(function(h){
+                return{id:h.id,location:h.location,lat:h.latitude,lng:h.longitude,
+                       static_psi:h.static_pressure,residual_psi:h.residual_pressure,
+                       pitot_psi:h.pitot_pressure,flow_gpm:h.flow_gpm,color:h.color,
+                       distance:h.distance_ft};
+            }));
+            document.getElementById('gps-status').textContent='Found '+d.hydrants.length+' hydrants nearby (from database)';
+            return;
+        }
+    }catch(e){
+        console.log('API unavailable, will show message');
+    }
+    document.getElementById('gps-status').textContent='No hydrants found nearby. Make sure the hydrant database is loaded.';
+    showToast('No hydrants found nearby','error');
+}
+
+function showMatches(hydrants){
+    var box=document.getElementById('matched-hydrants');
+    var container=document.getElementById('hydrant-matches');
+    box.style.display='block';
+
+    container.innerHTML=hydrants.map(function(h,i){
+        var colorDot='';
+        if(h.color){
+            var colors={Blue:'#3498db',Green:'#27ae60',Orange:'#e67e22',Red:'#e74c3c'};
+            colorDot='<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:'+(colors[h.color]||'#999')+';margin-right:4px;vertical-align:middle"></span>';
+        }
+        return '<div class="matched-item">'+
+            '<span class="loc">'+colorDot+'#'+(i+1)+' '+escH(h.location)+'</span>'+
+            '<span class="dist">'+Math.round(h.distance).toLocaleString()+' ft</span>'+
+            '<span>S:'+( h.static_psi||'—')+'</span>'+
+            '<span>R:'+(h.residual_psi||'—')+'</span>'+
+            '<span class="flow">'+(h.flow_gpm||'—')+' GPM</span>'+
+            '<button type="button" onclick="addToTable('+JSON.stringify(h).replace(/"/g,'&quot;')+')">+ Add</button>'+
+            '</div>';
+    }).join('');
+}
+
+function escH(s){if(!s)return'';var d=document.createElement('div');d.textContent=s;return d.innerHTML}
+
+// ===== HYDRANT TABLE =====
+var hydCount=3;
+
+function addHydRow(){
+    hydCount++;
+    var tb=document.getElementById('hydTbody');
+    var tr=document.createElement('tr');
+    tr.innerHTML='<td>'+hydCount+'</td>'+
+        '<td><input name="hyd_loc_'+hydCount+'" placeholder="Location"></td>'+
+        '<td><input name="hyd_static_'+hydCount+'" type="number" oninput="autoCalcRow('+hydCount+')"></td>'+
+        '<td><input name="hyd_res_'+hydCount+'" type="number" oninput="autoCalcRow('+hydCount+')"></td>'+
+        '<td><input name="hyd_pitot_'+hydCount+'" type="number" oninput="autoCalcRow('+hydCount+')"></td>'+
+        '<td><input name="hyd_flow_'+hydCount+'" type="number" id="hyd_flow_'+hydCount+'" readonly style="background:#f0f4f8;font-weight:700"></td>'+
+        '<td><input name="hyd_aff_'+hydCount+'" type="number" id="hyd_aff_'+hydCount+'" readonly style="background:#f0f4f8;font-weight:700"></td>'+
+        '<td><input name="hyd_dist_'+hydCount+'" placeholder="ft"></td>';
+    tb.appendChild(tr);
+}
+
+function addToTable(h){
+    hydCount++;
+    var tb=document.getElementById('hydTbody');
+    var tr=document.createElement('tr');
+    tr.innerHTML='<td>'+hydCount+'</td>'+
+        '<td><input name="hyd_loc_'+hydCount+'" value="'+escH(h.location)+'"></td>'+
+        '<td><input name="hyd_static_'+hydCount+'" type="number" value="'+(h.static_psi||'')+'" oninput="autoCalcRow('+hydCount+')"></td>'+
+        '<td><input name="hyd_res_'+hydCount+'" type="number" value="'+(h.residual_psi||'')+'" oninput="autoCalcRow('+hydCount+')"></td>'+
+        '<td><input name="hyd_pitot_'+hydCount+'" type="number" value="'+(h.pitot_psi||'')+'" oninput="autoCalcRow('+hydCount+')"></td>'+
+        '<td><input name="hyd_flow_'+hydCount+'" type="number" id="hyd_flow_'+hydCount+'" value="'+(h.flow_gpm||'')+'" readonly style="background:#f0f4f8;font-weight:700"></td>'+
+        '<td><input name="hyd_aff_'+hydCount+'" type="number" id="hyd_aff_'+hydCount+'" readonly style="background:#f0f4f8;font-weight:700"></td>'+
+        '<td><input name="hyd_dist_'+hydCount+'" value="'+(h.distance?Math.round(h.distance)+' ft':'')+'"></td>';
+    tb.appendChild(tr);
+    autoCalcRow(hydCount);
+    saveFormData(form);
+    showToast('Hydrant added to table','success');
+}
+
+// Auto-calculate Q and AFF for each hydrant row
+function autoCalcRow(n){
+    var s=parseFloat(document.querySelector('[name="hyd_static_'+n+'"]')?.value);
+    var r=parseFloat(document.querySelector('[name="hyd_res_'+n+'"]')?.value);
+    var p=parseFloat(document.querySelector('[name="hyd_pitot_'+n+'"]')?.value);
+    var flowEl=document.getElementById('hyd_flow_'+n);
+    var affEl=document.getElementById('hyd_aff_'+n);
+    if(!flowEl)return;
+
+    if(p&&p>0){
+        // Q = 29.83 × 0.8 × 2.5² × √p (default coefficient and diameter)
+        var Q=29.83*0.8*2.5*2.5*Math.sqrt(p);
+        flowEl.value=Math.round(Q);
+    }
+    if(s&&r&&s>20&&s>r){
+        var Q2=parseFloat(flowEl.value)||0;
+        if(Q2>0){
+            var aff=Q2*Math.pow((s-20)/(s-r),0.54);
+            if(affEl)affEl.value=Math.round(aff);
+        }
+    }
+    saveFormData(form);
+}
+
+// Run auto-calc on existing rows on load
+for(var i=1;i<=3;i++){autoCalcRow(i)}
 </script>
 </body>
 </html>

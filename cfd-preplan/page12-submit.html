@@ -4,6 +4,32 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Pre-Fire Plan: Review & Submit</title>
 <link rel="stylesheet" href="styles-preplan.css">
+<style>
+.review-section{background:#f8f9fa;border:1px solid #dee2e6;border-radius:8px;margin-bottom:12px;overflow:hidden}
+.review-section h4{background:#1e3a5f;color:#fff;padding:10px 16px;margin:0;font-size:14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+.review-section h4:hover{background:#2c5282}
+.review-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1px;padding:8px 12px}
+.review-item{padding:6px 8px}
+.review-label{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:0.3px}
+.review-value{font-size:13px;font-weight:600;color:#1e3a5f;margin-top:1px}
+.review-value.empty{color:#ccc;font-weight:400;font-style:italic}
+.plan-info-section{background:#fff7ed;border:2px solid #e67e22;border-radius:8px;padding:20px;margin:20px 0}
+.plan-info-section h4{color:#e67e22;font-size:16px;margin-bottom:12px}
+.plan-info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.plan-info-grid label{font-size:12px;color:#555;display:block;margin-bottom:3px;font-weight:600}
+.plan-info-grid input,.plan-info-grid textarea{width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px}
+.plan-info-grid textarea{min-height:60px;resize:vertical}
+.action-buttons{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin:24px 0;padding:16px;background:#f0f4f8;border-radius:8px}
+.action-btn{padding:12px 28px;border-radius:8px;border:none;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .15s}
+.btn-pdf{background:#c0392b;color:#fff}.btn-pdf:hover{background:#e74c3c}
+.btn-submit{background:#27ae60;color:#fff}.btn-submit:hover{background:#2ecc71}
+.btn-json{background:#2980b9;color:#fff}.btn-json:hover{background:#3498db}
+.btn-import{background:#8e44ad;color:#fff}.btn-import:hover{background:#9b59b6}
+.btn-print{background:#e67e22;color:#fff}.btn-print:hover{background:#f39c12}
+.stats-bar{display:flex;gap:16px;justify-content:center;margin-bottom:16px;flex-wrap:wrap}
+.stat-pill{background:#1e3a5f;color:#fff;padding:6px 16px;border-radius:20px;font-size:12px;font-weight:600}
+.stat-pill .num{color:#e67e22;font-size:16px;margin-right:4px}
+</style>
 </head>
 <body>
 <div class="page-wrapper">
@@ -18,17 +44,51 @@
         <div class="progress-bar-container"><div class="progress-bar" style="width:100%"></div></div>
 
         <h3 class="section-title">12. Review & Submit</h3>
-        <div class="info-tip">Review all information below. Click any section header to go back and edit. When ready, submit or export your pre-plan.</div>
+        <div class="info-tip">Review all information below. Click any section header to go back and edit. When ready, generate a PDF or submit your pre-plan.</div>
+
+        <!-- PLAN CONDUCTED BY - lives here on the final page -->
+        <div class="plan-info-section">
+            <h4>📋 Plan Information</h4>
+            <form id="planInfoForm">
+                <div class="plan-info-grid">
+                    <div>
+                        <label for="pre_plan_conducted_by">Pre-Plan Conducted By:</label>
+                        <input type="text" id="pre_plan_conducted_by" name="pre_plan_conducted_by" placeholder="Lt. Smith, Engine 1">
+                    </div>
+                    <div>
+                        <label for="plan_date">Date:</label>
+                        <input type="date" id="plan_date" name="plan_date">
+                    </div>
+                    <div>
+                        <label for="plan_reviewed_by">Reviewed By:</label>
+                        <input type="text" id="plan_reviewed_by" name="plan_reviewed_by" placeholder="Chief Jones">
+                    </div>
+                    <div style="grid-column:1/-1">
+                        <label for="additional_notes">Additional Notes:</label>
+                        <textarea id="additional_notes" name="additional_notes" placeholder="Special tactical considerations, mutual aid, staging areas..."></textarea>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- STATS -->
+        <div class="stats-bar" id="statsBar"></div>
+
+        <!-- REVIEW CONTENT -->
         <div id="reviewContent"></div>
 
-        <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin:24px 0">
-            <button class="btn-primary" onclick="submitPlan()" style="font-size:1.1rem;padding:12px 32px">📤 Submit Pre-Plan</button>
-            <button class="btn-secondary" onclick="exportJSON()">💾 Export JSON</button>
+        <!-- ACTION BUTTONS -->
+        <div class="action-buttons">
+            <button class="action-btn btn-pdf" onclick="generatePDF()">📄 Generate PDF Report</button>
+            <button class="action-btn btn-print" onclick="printPlan()">🖨️ Print</button>
+            <button class="action-btn btn-submit" onclick="submitPlan()">📤 Submit Pre-Plan</button>
+            <button class="action-btn btn-json" onclick="exportJSON()">💾 Export JSON</button>
+            <a href="/preplan/import" class="action-btn btn-import" style="text-decoration:none">📥 Import from PDF</a>
         </div>
 
         <div class="nav-buttons">
             <button type="button" class="btn-secondary" onclick="window.location.href='page11-floor-plan.html'">← Previous</button>
-            <a href="preplan-index.html" class="btn-primary">Back to Overview</a>
+            <a href="preplan-index.html" class="btn-primary" style="text-decoration:none;text-align:center">Back to Overview</a>
         </div>
     </div>
 </div>
@@ -39,6 +99,10 @@
 <div class="toast-container" id="toast-container"></div>
 <script src="preplan-common.js"></script>
 <script>
+// Load plan info form
+var planForm=document.getElementById('planInfoForm');
+if(planForm){loadFormData(planForm);autoSave(planForm);}
+
 var sections=[
     {title:'1. Location Information',page:'page1-location.html',fields:[
         {k:'pfp_number',l:'Plan #'},{k:'business_name',l:'Business Name'},{k:'address',l:'Address'},{k:'telephone_no',l:'Phone'},
@@ -60,26 +124,144 @@ var sections=[
         {k:'electric_loc',l:'Electric Location'},{k:'emergency_power',l:'Emergency Power'},{k:'solar_power',l:'Solar'}]},
     {title:'7. Special Rescue',page:'page7-special-rescue.html',fields:[
         {k:'confined_space',l:'Confined Space'},{k:'high_angle',l:'High Angle'},{k:'water_rescue',l:'Water Rescue'},
-        {k:'nfpa_health',l:'NFPA Health'},{k:'nfpa_fire',l:'NFPA Fire'},{k:'nfpa_reactivity',l:'NFPA Reactivity'},{k:'nfpa_special',l:'NFPA Special'},
-        {k:'pre_plan_conducted_by',l:'Conducted By'},{k:'date',l:'Date'}]},
+        {k:'nfpa_health',l:'NFPA Health'},{k:'nfpa_fire',l:'NFPA Fire'},{k:'nfpa_reactivity',l:'NFPA Reactivity'},{k:'nfpa_special',l:'NFPA Special'}]},
     {title:'8. Fire Flow',page:'page8-fire-flow.html',fields:[
-        {k:'effective_area',l:'Effective Area'},{k:'calculated_nff',l:'NFF (GPM)'},{k:'available_supply',l:'Available Supply'}]},
+        {k:'effective_area',l:'Effective Area'},{k:'calculated_nff',l:'NFF (GPM)'},{k:'nff_duration',l:'Duration'},{k:'available_supply',l:'Available Supply'}]},
     {title:'9. Hazardous Materials',page:'page9-hazardous-materials.html',fields:[
         {k:'tier_ii',l:'Tier II'},{k:'msds_onsite',l:'MSDS On-Site'},{k:'hazmat_notes',l:'Hazmat Notes'}]}
 ];
+
 function render(){
-    var data=getSavedData(),html='';
+    var data=getSavedData();
+    var filled=0,total=0;
+    var html='';
     sections.forEach(function(s){
-        html+='<div class="review-section"><h4 style="cursor:pointer" onclick="window.location.href=\''+s.page+'\'">'+s.title+' ✏️</h4><div class="review-grid">';
+        html+='<div class="review-section"><h4 onclick="window.location.href=\''+s.page+'\'">'+s.title+' <span style="font-size:11px;opacity:0.7">✏️ Edit</span></h4><div class="review-grid">';
         s.fields.forEach(function(f){
             var v=data[f.k]||'';
-            html+='<div class="review-item"><div class="review-label">'+f.l+'</div><div class="review-value'+(v?'':' empty')+'">'+(v||'Not provided')+'</div></div>';
+            total++;
+            if(v)filled++;
+            html+='<div class="review-item"><div class="review-label">'+f.l+'</div><div class="review-value'+(v?'':' empty')+'">'+(esc(v)||'—')+'</div></div>';
         });
         html+='</div></div>';
     });
+
+    // Add hydrant rows to review
+    var hydHtml='';
+    for(var i=1;i<=10;i++){
+        var loc=data['hyd_loc_'+i];
+        if(loc){
+            hydHtml+='<div class="review-item"><div class="review-label">Hydrant '+i+'</div><div class="review-value">'+esc(loc)+' ('+
+                (data['hyd_flow_'+i]||'—')+' GPM, '+(data['hyd_dist_'+i]||'—')+')</div></div>';
+        }
+    }
+    if(hydHtml){
+        html+='<div class="review-section"><h4 onclick="window.location.href=\'page8-fire-flow.html\'">Hydrant Data <span style="font-size:11px;opacity:0.7">✏️ Edit</span></h4><div class="review-grid">'+hydHtml+'</div></div>';
+    }
+
     document.getElementById('reviewContent').innerHTML=html;
+    document.getElementById('statsBar').innerHTML=
+        '<div class="stat-pill"><span class="num">'+filled+'</span>/ '+total+' fields completed</div>'+
+        '<div class="stat-pill"><span class="num">'+(data.business_name||'—')+'</span></div>';
 }
+
+function esc(s){if(!s)return'';var d=document.createElement('div');d.textContent=s;return d.innerHTML}
+
+// ===== PDF GENERATION =====
+function generatePDF(){
+    var data=getSavedData();
+    if(!data.business_name){showToast('Fill in the business name first','error');return}
+
+    var w=window.open('','_blank');
+    var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Pre-Fire Plan - '+esc(data.business_name)+'</title><style>';
+    html+='@page{size:letter;margin:0.5in}';
+    html+='*{margin:0;padding:0;box-sizing:border-box}';
+    html+='body{font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#000;line-height:1.4;-webkit-print-color-adjust:exact;print-color-adjust:exact}';
+    html+='.header{text-align:center;border-bottom:3px solid #1e3a5f;padding-bottom:8px;margin-bottom:12px}';
+    html+='.header h1{font-size:18px;color:#1e3a5f;letter-spacing:1px}';
+    html+='.header h2{font-size:12px;color:#666;margin-top:2px}';
+    html+='.header .biz{font-size:16px;font-weight:700;color:#c0392b;margin-top:4px}';
+    html+='.section{margin-bottom:10px;page-break-inside:avoid}';
+    html+='.section-title{background:#1e3a5f;color:#fff;padding:4px 8px;font-size:11px;font-weight:700;margin-bottom:0}';
+    html+='.section-grid{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid #ccc;border-top:none}';
+    html+='.field{padding:3px 6px;border-bottom:1px solid #eee;border-right:1px solid #eee}';
+    html+='.field-label{font-size:8px;color:#888;text-transform:uppercase;letter-spacing:0.3px}';
+    html+='.field-value{font-size:11px;font-weight:600;color:#1e3a5f}';
+    html+='.hydrant-table{width:100%;border-collapse:collapse;margin-top:4px;font-size:10px}';
+    html+='.hydrant-table th{background:#1e3a5f;color:#fff;padding:3px 4px;text-align:left;font-size:9px}';
+    html+='.hydrant-table td{padding:2px 4px;border-bottom:1px solid #ddd}';
+    html+='.plan-info{background:#fff7ed;border:1px solid #e67e22;padding:8px;margin-top:12px}';
+    html+='.plan-info-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}';
+    html+='.footer{text-align:center;font-size:8px;color:#999;border-top:1px solid #ccc;padding-top:6px;margin-top:16px}';
+    html+='.nfpa-diamond{display:inline-block;width:60px;height:60px;transform:rotate(45deg);margin:10px auto;position:relative}';
+    html+='.nfpa-diamond div{position:absolute;width:28px;height:28px;text-align:center;line-height:28px;font-weight:700;font-size:12px;color:#fff}';
+    html+='.nfpa-health{top:0;left:0;background:#3498db}.nfpa-fire{top:0;right:0;background:#e74c3c}';
+    html+='.nfpa-react{bottom:0;left:0;background:#f1c40f;color:#000}.nfpa-special{bottom:0;right:0;background:#fff;color:#000;border:1px solid #ccc}';
+    html+='@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}';
+    html+='</style></head><body>';
+
+    // Header
+    html+='<div class="header"><h1>CENTERVILLE FIRE DEPARTMENT</h1><h2>PRE-FIRE PLAN DATA SHEET</h2>';
+    html+='<div class="biz">'+esc(data.business_name||'')+'</div>';
+    html+='<div style="font-size:11px;color:#444">'+esc(data.address||'')+'</div></div>';
+
+    // Sections
+    sections.forEach(function(s){
+        html+='<div class="section"><div class="section-title">'+s.title+'</div><div class="section-grid">';
+        s.fields.forEach(function(f){
+            html+='<div class="field"><div class="field-label">'+f.l+'</div><div class="field-value">'+(esc(data[f.k])||'—')+'</div></div>';
+        });
+        html+='</div></div>';
+    });
+
+    // Hydrant table
+    var hasHyd=false;
+    for(var i=1;i<=10;i++){if(data['hyd_loc_'+i]){hasHyd=true;break}}
+    if(hasHyd){
+        html+='<div class="section"><div class="section-title">Hydrant Data</div>';
+        html+='<table class="hydrant-table"><thead><tr><th>#</th><th>Location</th><th>Static</th><th>Residual</th><th>Flow GPM</th><th>AFF GPM</th><th>Distance</th></tr></thead><tbody>';
+        for(var i=1;i<=10;i++){
+            if(data['hyd_loc_'+i]){
+                html+='<tr><td>'+i+'</td><td>'+esc(data['hyd_loc_'+i])+'</td><td>'+(data['hyd_static_'+i]||'—')+'</td><td>'+(data['hyd_res_'+i]||'—')+'</td><td><strong>'+(data['hyd_flow_'+i]||'—')+'</strong></td><td>'+(data['hyd_aff_'+i]||'—')+'</td><td>'+(data['hyd_dist_'+i]||'—')+'</td></tr>';
+            }
+        }
+        html+='</tbody></table></div>';
+    }
+
+    // NFPA Diamond
+    if(data.nfpa_health||data.nfpa_fire||data.nfpa_reactivity||data.nfpa_special){
+        html+='<div style="text-align:center;margin:12px 0"><div style="font-size:10px;font-weight:700;color:#1e3a5f;margin-bottom:4px">NFPA 704 DIAMOND</div>';
+        html+='<div class="nfpa-diamond"><div class="nfpa-health">'+(data.nfpa_health||'0')+'</div><div class="nfpa-fire">'+(data.nfpa_fire||'0')+'</div><div class="nfpa-react">'+(data.nfpa_reactivity||'0')+'</div><div class="nfpa-special">'+(data.nfpa_special||'')+'</div></div></div>';
+    }
+
+    // Plan info
+    html+='<div class="plan-info"><div style="font-weight:700;color:#e67e22;margin-bottom:6px">Plan Information</div>';
+    html+='<div class="plan-info-grid">';
+    html+='<div><span style="color:#888;font-size:9px">CONDUCTED BY</span><br><strong>'+(esc(data.pre_plan_conducted_by)||'—')+'</strong></div>';
+    html+='<div><span style="color:#888;font-size:9px">DATE</span><br><strong>'+(esc(data.plan_date)||'—')+'</strong></div>';
+    html+='<div><span style="color:#888;font-size:9px">REVIEWED BY</span><br><strong>'+(esc(data.plan_reviewed_by)||'—')+'</strong></div>';
+    html+='</div>';
+    if(data.additional_notes){
+        html+='<div style="margin-top:6px"><span style="color:#888;font-size:9px">NOTES</span><br>'+esc(data.additional_notes)+'</div>';
+    }
+    html+='</div>';
+
+    // Footer
+    html+='<div class="footer">Generated '+new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})+' | Centerville Fire Department Pre-Fire Plan System | fdtraining.org</div>';
+
+    html+='<script>setTimeout(function(){window.print()},500)<\/script>';
+    html+='</body></html>';
+
+    w.document.write(html);
+    w.document.close();
+    showToast('PDF report generated - use Print > Save as PDF','success');
+}
+
+function printPlan(){generatePDF()}
+
 function submitPlan(){
+    // Save plan info first
+    saveFormData(planForm);
     var data=getSavedData();
     if(!data.business_name){showToast('Please fill in the business name first','error');return}
     fetch('/api/save-draft',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:data})})
@@ -87,6 +269,7 @@ function submitPlan(){
     .then(function(d){if(d.code)showToast('Submitted! Code: '+d.code,'success');else showToast('Saved!','success')})
     .catch(function(){showToast('Saved locally. Could not reach server.','info')});
 }
+
 function exportJSON(){
     var data=getSavedData();
     var name=(data.business_name||'preplan').replace(/[^a-zA-Z0-9]/g,'-').toLowerCase();
@@ -95,6 +278,7 @@ function exportJSON(){
     a.href=URL.createObjectURL(blob);a.click();
     showToast('JSON exported','success');
 }
+
 render();
 </script>
 </body>
