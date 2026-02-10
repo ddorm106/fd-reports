@@ -478,20 +478,45 @@ function addHydRow() {
 }
 
 function addToTable(h) {
-    hydCount++;
-    var tb = document.getElementById('hydTbody');
-    var tr = document.createElement('tr');
     var flowRound = h.f ? Math.round(parseFloat(h.f)) : '';
-    tr.innerHTML = '<td>' + hydCount + '</td>' +
-        '<td><input name="hyd_loc_' + hydCount + '" value="' + escH(h.loc) + '"></td>' +
-        '<td><input name="hyd_static_' + hydCount + '" type="number" value="' + (h.s||'') + '" oninput="autoCalcRow(' + hydCount + ')"></td>' +
-        '<td><input name="hyd_res_' + hydCount + '" type="number" value="' + (h.r||'') + '" oninput="autoCalcRow(' + hydCount + ')"></td>' +
-        '<td><input name="hyd_pitot_' + hydCount + '" type="number" value="' + (h.p||'') + '" oninput="autoCalcRow(' + hydCount + ')"></td>' +
-        '<td><input name="hyd_flow_' + hydCount + '" type="number" id="hyd_flow_' + hydCount + '" value="' + flowRound + '" readonly style="background:#f0f4f8;font-weight:700"></td>' +
-        '<td><input name="hyd_aff_' + hydCount + '" type="number" id="hyd_aff_' + hydCount + '" readonly style="background:#f0f4f8;font-weight:700"></td>' +
-        '<td><input name="hyd_dist_' + hydCount + '" value="' + (h.distance ? Math.round(h.distance).toLocaleString() + ' ft' : '') + '"></td>';
-    tb.appendChild(tr);
-    autoCalcRow(hydCount);
+    // Find first empty existing row (check if location field is empty)
+    var filled = false;
+    for (var i = 1; i <= hydCount; i++) {
+        var locInput = document.querySelector('[name="hyd_loc_' + i + '"]');
+        if (locInput && !locInput.value.trim()) {
+            // Fill this empty row
+            locInput.value = h.loc || '';
+            var si = document.querySelector('[name="hyd_static_' + i + '"]');
+            var ri = document.querySelector('[name="hyd_res_' + i + '"]');
+            var pi = document.querySelector('[name="hyd_pitot_' + i + '"]');
+            var fi = document.querySelector('[name="hyd_flow_' + i + '"]');
+            var di = document.querySelector('[name="hyd_dist_' + i + '"]');
+            if (si) si.value = h.s || '';
+            if (ri) ri.value = h.r || '';
+            if (pi) pi.value = h.p || '';
+            if (fi) fi.value = flowRound;
+            if (di) di.value = h.distance ? Math.round(h.distance).toLocaleString() + ' ft' : '';
+            autoCalcRow(i);
+            filled = true;
+            break;
+        }
+    }
+    // All existing rows full — add a new one
+    if (!filled) {
+        hydCount++;
+        var tb = document.getElementById('hydTbody');
+        var tr = document.createElement('tr');
+        tr.innerHTML = '<td>' + hydCount + '</td>' +
+            '<td><input name="hyd_loc_' + hydCount + '" value="' + escH(h.loc) + '"></td>' +
+            '<td><input name="hyd_static_' + hydCount + '" type="number" value="' + (h.s||'') + '" oninput="autoCalcRow(' + hydCount + ')"></td>' +
+            '<td><input name="hyd_res_' + hydCount + '" type="number" value="' + (h.r||'') + '" oninput="autoCalcRow(' + hydCount + ')"></td>' +
+            '<td><input name="hyd_pitot_' + hydCount + '" type="number" value="' + (h.p||'') + '" oninput="autoCalcRow(' + hydCount + ')"></td>' +
+            '<td><input name="hyd_flow_' + hydCount + '" type="number" id="hyd_flow_' + hydCount + '" value="' + flowRound + '" readonly style="background:#f0f4f8;font-weight:700"></td>' +
+            '<td><input name="hyd_aff_' + hydCount + '" type="number" id="hyd_aff_' + hydCount + '" readonly style="background:#f0f4f8;font-weight:700"></td>' +
+            '<td><input name="hyd_dist_' + hydCount + '" value="' + (h.distance ? Math.round(h.distance).toLocaleString() + ' ft' : '') + '"></td>';
+        tb.appendChild(tr);
+        autoCalcRow(hydCount);
+    }
     saveFormData(form);
     showToast('Hydrant added to table','success');
 }
