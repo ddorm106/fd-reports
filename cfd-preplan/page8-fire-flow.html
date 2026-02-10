@@ -5,26 +5,36 @@
 <title>Pre-Fire Plan: Fire Flow Data</title>
 <link rel="stylesheet" href="styles-preplan.css">
 <style>
-.tabs{display:flex;gap:0;border-bottom:2px solid #1e3a5f;margin-bottom:16px;flex-wrap:wrap}
-.tab-btn{padding:10px 18px;background:#e8ecf1;border:1px solid #ccc;border-bottom:none;border-radius:8px 8px 0 0;cursor:pointer;font-size:13px;font-weight:600;color:#555;transition:all .15s}
-.tab-btn:hover{background:#dce4ed}
-.tab-btn.active{background:#1e3a5f;color:#fff;border-color:#1e3a5f}
-.tab-content{display:none;padding:0}
-.tab-content.active{display:block}
-.calc-section{background:#f0f4f8;border:1px solid #d0d8e0;border-radius:8px;padding:16px;margin-bottom:16px}
-.calc-section h4{color:#1e3a5f;margin-bottom:10px;font-size:14px;display:flex;align-items:center;gap:8px}
+.nff-hero{background:#1e3a5f;color:#fff;border-radius:10px;padding:20px;margin-bottom:16px;text-align:center}
+.nff-hero .hero-label{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px}
+.nff-hero .hero-value{font-size:42px;font-weight:800;color:#e67e22;margin:4px 0}
+.nff-hero .hero-formula{font-size:11px;color:#94a3b8}
+.nff-hero .hero-row{display:flex;justify-content:center;gap:30px;margin-top:14px;flex-wrap:wrap}
+.nff-hero .hero-stat{text-align:center}
+.nff-hero .hero-stat .hs-label{font-size:10px;color:#94a3b8}
+.nff-hero .hero-stat .hs-val{font-size:20px;font-weight:700;color:#fff}
+.nff-hero.pending{background:#374151}
+.nff-hero.pending .hero-value{color:#9ca3af;font-size:18px}
+.nff-hero .hero-breakdown{margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.15);font-size:12px;color:#cbd5e1;line-height:1.6;text-align:left;display:none}
+.calc-section{background:#f0f4f8;border:1px solid #d0d8e0;border-radius:8px;padding:16px;margin-bottom:12px;transition:all .3s}
+.calc-section.collapsed{padding:10px 16px}
+.calc-section.collapsed .calc-body{display:none}
+.calc-section h4{color:#1e3a5f;margin-bottom:8px;font-size:14px;display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none}
+.calc-section h4 .toggle-arrow{transition:transform .2s;font-size:12px}
+.calc-section.collapsed h4 .toggle-arrow{transform:rotate(-90deg)}
+.calc-section h4 .section-result{margin-left:auto;font-size:12px;font-weight:700;color:#27ae60;display:none}
+.calc-section.has-value h4 .section-result{display:inline}
 .calc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
 .calc-field label{font-size:12px;color:#555;display:block;margin-bottom:3px;font-weight:500}
 .calc-field input,.calc-field select{width:100%;padding:8px 10px;border:1px solid #ccc;border-radius:6px;font-size:13px;background:#fff}
 .calc-field select{appearance:auto}
-.calc-btn{background:#c0392b;color:#fff;border:none;padding:10px 24px;border-radius:6px;font-weight:600;cursor:pointer;font-size:13px;margin-top:12px;transition:all .15s}
-.calc-btn:hover{background:#e74c3c}
-.result-box{background:#1e3a5f;color:#fff;border-radius:8px;padding:16px;margin-top:12px;display:none}
-.result-box .result-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px}
-.result-label{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px}
-.result-value{font-size:24px;font-weight:700;color:#e67e22;margin-top:2px}
-.result-formula{color:#94a3b8;font-size:11px;margin-top:2px}
-.result-breakdown{margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.15);font-size:12px;color:#cbd5e1;line-height:1.6}
+.guide-toggle{font-size:11px;color:#2980b9;cursor:pointer;text-decoration:underline;margin-top:6px;display:inline-block}
+.guide-box{display:none;background:#fff;border:1px solid #bee3f8;border-radius:6px;padding:12px;margin-top:8px;font-size:11px;line-height:1.6;color:#444}
+.guide-box.show{display:block}
+.guide-box table{width:100%;border-collapse:collapse;font-size:11px;margin-top:6px}
+.guide-box th{background:#edf2f7;padding:4px 8px;text-align:left;font-size:10px;color:#555}
+.guide-box td{padding:4px 8px;border-bottom:1px solid #eee}
+.guide-box .guide-highlight{background:#fffbeb;padding:2px 4px;border-radius:3px;font-weight:600}
 .gps-row{display:flex;gap:8px;align-items:end;flex-wrap:wrap}
 .gps-row .calc-field{flex:1;min-width:180px}
 .gps-btn{padding:8px 14px;border-radius:6px;border:1px solid #1e3a5f;background:#1e3a5f;color:#fff;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap;height:36px;margin-top:auto}
@@ -39,11 +49,11 @@
 .matched-item button{padding:4px 10px;background:#059669;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:11px;font-weight:600;white-space:nowrap}
 .matched-item button:hover{background:#047857}
 .info-tip{background:#fff7ed;border-left:3px solid #e67e22;padding:10px 14px;font-size:12px;color:#9a3412;margin-bottom:12px;border-radius:0 6px 6px 0;line-height:1.5}
-table{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}
-th{background:#1e3a5f;color:#fff;padding:8px 6px;text-align:left;font-size:11px;font-weight:600}
-td{padding:6px;border-bottom:1px solid #e5e7eb}
-td input{width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:4px;font-size:12px}
-td input[type=number]{width:80px}
+table.hyd-table{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}
+table.hyd-table th{background:#1e3a5f;color:#fff;padding:8px 6px;text-align:left;font-size:11px;font-weight:600}
+table.hyd-table td{padding:6px;border-bottom:1px solid #e5e7eb}
+table.hyd-table td input{width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:4px;font-size:12px}
+table.hyd-table td input[type=number]{width:80px}
 .add-row-btn{background:transparent;border:1px dashed #1e3a5f;color:#1e3a5f;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;margin-top:8px;width:100%;transition:all .15s}
 .add-row-btn:hover{background:#f0f4f8}
 .loading-spinner{display:inline-block;width:14px;height:14px;border:2px solid #ccc;border-top-color:#1e3a5f;border-radius:50%;animation:spin .6s linear infinite}
@@ -70,44 +80,64 @@ td input[type=number]{width:80px}
 
         <h3 class="section-title">8. Fire Flow Data</h3>
 
-        <!-- TABS -->
-        <div class="tabs">
-            <div class="tab-btn active" onclick="switchTab('nff')">🔥 ISO Needed Fire Flow</div>
-            <div class="tab-btn" onclick="switchTab('hydflow')">💧 Hydrant Flow Test</div>
-            <div class="tab-btn" onclick="switchTab('hyddata')">📊 Hydrant Database</div>
+        <!-- ===== NFF RESULT HERO (always at top) ===== -->
+        <div class="nff-hero pending" id="nffHero">
+            <div class="hero-label">ISO Needed Fire Flow (NFF)</div>
+            <div class="hero-value" id="heroNFF">Complete the sections below to calculate</div>
+            <div class="hero-formula">NFF = C<sub>i</sub> × O<sub>i</sub> × [1 + (X + P)]</div>
+            <div class="hero-row" id="heroStats" style="display:none">
+                <div class="hero-stat"><div class="hs-label">Construction (C)</div><div class="hs-val" id="heroC">—</div></div>
+                <div class="hero-stat"><div class="hs-label">Occupancy (O)</div><div class="hs-val" id="heroO">—</div></div>
+                <div class="hero-stat"><div class="hs-label">Exposure (X+P)</div><div class="hs-val" id="heroXP">—</div></div>
+                <div class="hero-stat"><div class="hs-label">Duration</div><div class="hs-val" id="heroDur">—</div></div>
+            </div>
+            <div class="hero-breakdown" id="heroBreakdown"></div>
         </div>
 
-        <!-- TAB 1: ISO NFF CALCULATOR -->
-        <div id="tab-nff" class="tab-content active">
-            <div class="info-tip">
-                <strong>ISO Needed Fire Flow (NFF)</strong> = C<sub>i</sub> × O<sub>i</sub> × [1 + (X + P)]<br>
-                Where C = 18 × F × √A (construction factor), O = occupancy combustibility, X = exposure, P = communication factor
-            </div>
+        <!-- ===== NFF INPUT SECTIONS (collapsible) ===== -->
 
-            <div class="calc-section">
-                <h4>📐 Construction Factor (C<sub>i</sub>)</h4>
+        <!-- Construction Factor -->
+        <div class="calc-section" id="secConstruction">
+            <h4 onclick="toggleCalcSection('secConstruction')"><span class="toggle-arrow">▼</span> 📐 Construction Factor (C<sub>i</sub>) <span class="section-result" id="secConstResult"></span></h4>
+            <div class="calc-body">
                 <div class="calc-grid">
                     <div class="calc-field">
                         <label>ISO Construction Class:</label>
                         <select id="nff_const_class" onchange="calcNFF()">
                             <option value="">Select...</option>
-                            <option value="1">Class 1 - Frame (F=1.5)</option>
-                            <option value="2">Class 2 - Joisted Masonry (F=1.0)</option>
-                            <option value="3">Class 3 - Non-Combustible (F=0.8)</option>
-                            <option value="4">Class 4 - Masonry Non-Comb (F=0.8)</option>
-                            <option value="5">Class 5 - Modified Fire Resistive (F=0.6)</option>
-                            <option value="6">Class 6 - Fire Resistive (F=0.6)</option>
+                            <option value="1">Class 1 — Frame (F=1.5)</option>
+                            <option value="2">Class 2 — Joisted Masonry (F=1.0)</option>
+                            <option value="3">Class 3 — Non-Combustible (F=0.8)</option>
+                            <option value="4">Class 4 — Masonry Non-Comb (F=0.8)</option>
+                            <option value="5">Class 5 — Modified Fire Resistive (F=0.6)</option>
+                            <option value="6">Class 6 — Fire Resistive (F=0.6)</option>
                         </select>
                     </div>
                     <div class="calc-field">
                         <label>Effective Area (sq ft):</label>
-                        <input type="number" id="nff_area" placeholder="30000" oninput="calcNFF()">
+                        <input type="number" id="nff_area" placeholder="Auto-loads from pg 4" oninput="calcNFF()">
                     </div>
                 </div>
+                <span class="guide-toggle" onclick="toggleGuide('constGuide')">📖 Which class should I pick?</span>
+                <div class="guide-box" id="constGuide">
+                    <strong>Match your Page 4 Construction Type to ISO Class:</strong>
+                    <table>
+                        <tr><th>IBC Construction Type</th><th>ISO Class</th><th>F Factor</th><th>Description</th></tr>
+                        <tr><td>Type V — Wood Frame</td><td class="guide-highlight">Class 1</td><td>1.5</td><td>Wood frame walls, floors, and roof. Highest fire spread.</td></tr>
+                        <tr><td>Type III — Ordinary</td><td class="guide-highlight">Class 2</td><td>1.0</td><td>Masonry/brick exterior walls, wood interior framing.</td></tr>
+                        <tr><td>Type II — Non-Combustible</td><td class="guide-highlight">Class 3 or 4</td><td>0.8</td><td>Steel frame, metal panels. No fire rating required (Class 3) or masonry exterior (Class 4).</td></tr>
+                        <tr><td>Type IV — Heavy Timber</td><td class="guide-highlight">Class 2</td><td>1.0</td><td>Mass timber / large dimensional lumber. Treated like joisted masonry.</td></tr>
+                        <tr><td>Type I — Fire Resistive</td><td class="guide-highlight">Class 5 or 6</td><td>0.6</td><td>Concrete/steel, 2+ hr rated (Class 5 = modified, Class 6 = full).</td></tr>
+                    </table>
+                    <p style="margin-top:8px"><strong>Effective Area:</strong> Auto-loads from Page 4 "Total Sq Ft". For multi-story buildings with fire separations on each floor, use <em>area per floor</em>. Without separations, use <em>total building area</em>.</p>
+                </div>
             </div>
+        </div>
 
-            <div class="calc-section">
-                <h4>🏭 Occupancy Factor (O<sub>i</sub>)</h4>
+        <!-- Occupancy Factor -->
+        <div class="calc-section" id="secOccupancy">
+            <h4 onclick="toggleCalcSection('secOccupancy')"><span class="toggle-arrow">▼</span> 🏭 Occupancy Factor (O<sub>i</sub>) <span class="section-result" id="secOccResult"></span></h4>
+            <div class="calc-body">
                 <div class="calc-grid">
                     <div class="calc-field">
                         <label>Combustibility Class:</label>
@@ -121,160 +151,81 @@ td input[type=number]{width:80px}
                         </select>
                     </div>
                 </div>
+                <span class="guide-toggle" onclick="toggleGuide('occGuide')">📖 Which combustibility class?</span>
+                <div class="guide-box" id="occGuide">
+                    <strong>Match what's INSIDE the building:</strong>
+                    <table>
+                        <tr><th>Class</th><th>Factor</th><th>Examples</th></tr>
+                        <tr><td class="guide-highlight">C-1 Non-Combustible</td><td>0.75</td><td>Steel/concrete products, empty buildings, parking garages, masonry warehouses with non-combustible contents</td></tr>
+                        <tr><td class="guide-highlight">C-2 Limited Combustible</td><td>0.85</td><td>Metal furniture offices, restaurants with commercial kitchen, churches with wood pews, schools</td></tr>
+                        <tr><td class="guide-highlight">C-3 Combustible</td><td>1.00</td><td>Most retail stores, apartments, hotels, wood furniture, paper/office supplies — <em>this is the default/most common</em></td></tr>
+                        <tr><td class="guide-highlight">C-4 Free Burning</td><td>1.15</td><td>Upholstered furniture stores, clothing/textile stores, fast food restaurants with lots of grease, tire shops</td></tr>
+                        <tr><td class="guide-highlight">C-5 Rapid Burning</td><td>1.25</td><td>Flammable liquid storage, fireworks, paint stores, foam/plastic manufacturing, sawmills, hay/straw storage</td></tr>
+                    </table>
+                    <p style="margin-top:8px"><strong>When in doubt, use C-3 (1.00).</strong> Most commercial buildings fall here.</p>
+                </div>
             </div>
+        </div>
 
-            <div class="calc-section">
-                <h4>🏘️ Exposure & Communication</h4>
+        <!-- Exposure & Communication -->
+        <div class="calc-section" id="secExposure">
+            <h4 onclick="toggleCalcSection('secExposure')"><span class="toggle-arrow">▼</span> 🏘️ Exposures & Communication <span class="section-result" id="secExpResult"></span></h4>
+            <div class="calc-body">
                 <div class="calc-grid">
                     <div class="calc-field">
-                        <label>Exposure Factor (X) 0.00-0.50:</label>
+                        <label>Exposure Factor (X) 0.00–0.50:</label>
                         <input type="number" id="nff_x" step="0.01" min="0" max="0.50" value="0" oninput="calcNFF()">
                     </div>
                     <div class="calc-field">
-                        <label>Communication Factor (P) 0.00-0.25:</label>
+                        <label>Communication Factor (P) 0.00–0.25:</label>
                         <input type="number" id="nff_p" step="0.01" min="0" max="0.25" value="0" oninput="calcNFF()">
                     </div>
-                    <div class="calc-field">
-                        <label><input type="checkbox" id="nff_shingles" onchange="calcNFF()"> Wood shingle roof (+500 GPM)</label>
+                    <div class="calc-field" style="display:flex;align-items:end">
+                        <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="nff_shingles" onchange="calcNFF()"> Wood shingle roof (+500 GPM)</label>
                     </div>
                 </div>
-            </div>
-
-            <button type="button" class="calc-btn" onclick="calcNFF()">Calculate NFF</button>
-
-            <div class="result-box" id="nff-result">
-                <div class="result-grid">
-                    <div>
-                        <div class="result-label">Needed Fire Flow (NFF)</div>
-                        <div class="result-value" id="res-nff">0 GPM</div>
-                        <div class="result-formula">NFF = C × O × [1 + (X + P)]</div>
-                    </div>
-                    <div>
-                        <div class="result-label">Construction Factor (C)</div>
-                        <div class="result-value" id="res-c" style="font-size:18px">0 GPM</div>
-                    </div>
-                    <div>
-                        <div class="result-label">Required Duration</div>
-                        <div class="result-value" id="res-dur" style="font-size:18px">0 hrs</div>
-                    </div>
+                <span class="guide-toggle" onclick="toggleGuide('expGuide')">📖 How do I determine exposure/communication?</span>
+                <div class="guide-box" id="expGuide">
+                    <strong>Exposure (X) — nearby buildings that could catch fire FROM this building:</strong>
+                    <table>
+                        <tr><th>Distance to Nearest Building</th><th>Suggested X Value</th></tr>
+                        <tr><td>> 100 ft away</td><td class="guide-highlight">0.00 — No exposure concern</td></tr>
+                        <tr><td>31–100 ft away</td><td class="guide-highlight">0.10–0.20</td></tr>
+                        <tr><td>11–30 ft away</td><td class="guide-highlight">0.20–0.40</td></tr>
+                        <tr><td>≤ 10 ft away</td><td class="guide-highlight">0.40–0.50</td></tr>
+                    </table>
+                    <p style="margin:8px 0"><strong>Communication (P) — internal connected spaces:</strong></p>
+                    <table>
+                        <tr><th>Connection Type</th><th>Suggested P Value</th></tr>
+                        <tr><td>No shared walls or connected buildings</td><td class="guide-highlight">0.00</td></tr>
+                        <tr><td>Shared fire wall with fire doors</td><td class="guide-highlight">0.05–0.10</td></tr>
+                        <tr><td>Open communication (shared attic, connected strip mall)</td><td class="guide-highlight">0.15–0.25</td></tr>
+                    </table>
+                    <p style="margin-top:8px"><strong>Combined max (X + P) = 0.75.</strong> For standalone buildings with nothing nearby, leave both at 0.</p>
                 </div>
-                <div class="result-breakdown" id="nff-breakdown"></div>
             </div>
         </div>
 
-        <!-- TAB 2: HYDRANT FLOW TEST CALCULATOR -->
-        <div id="tab-hydflow" class="tab-content">
+        <!-- ===== HYDRANT DATABASE & GPS MATCHING ===== -->
+        <div class="preplan-section" style="margin-top:20px">
+            <h3 class="section-title">Nearest Hydrants</h3>
             <div class="info-tip">
-                <strong>ISO Hydrant Flow</strong>: Q = 29.83 × C × d² × √p<br>
-                <strong>Available Fire Flow (AFF)</strong> at 20 PSI: AFF = Q × [(S - 20) / (S - R)]<sup>0.54</sup>
-            </div>
-
-            <div class="calc-section">
-                <h4>🧪 Hydrant Flow Test Data</h4>
-                <div class="calc-grid">
-                    <div class="calc-field">
-                        <label>Hydrant Location:</label>
-                        <input type="text" id="hft_location" placeholder="Main St & 1st Ave">
-                    </div>
-                    <div class="calc-field">
-                        <label>Coefficient (C):</label>
-                        <select id="hft_coeff">
-                            <option value="0.9">0.90 - Smooth bore</option>
-                            <option value="0.8" selected>0.80 - Average</option>
-                            <option value="0.7">0.70 - Square/rough</option>
-                        </select>
-                    </div>
-                    <div class="calc-field">
-                        <label>Outlet Diameter (inches):</label>
-                        <select id="hft_diameter">
-                            <option value="2.5" selected>2.5"</option>
-                            <option value="2.0">2.0"</option>
-                            <option value="4.0">4.0"</option>
-                            <option value="4.5">4.5"</option>
-                        </select>
-                    </div>
-                    <div class="calc-field">
-                        <label># of Open Outlets:</label>
-                        <input type="number" id="hft_outlets" value="1" min="1" max="6" oninput="calcHydFlow()">
-                    </div>
-                </div>
-                <div class="calc-grid" style="margin-top:10px">
-                    <div class="calc-field">
-                        <label>Static Pressure (PSI):</label>
-                        <input type="number" id="hft_static" placeholder="85" oninput="calcHydFlow()">
-                    </div>
-                    <div class="calc-field">
-                        <label>Residual Pressure (PSI):</label>
-                        <input type="number" id="hft_residual" placeholder="65" oninput="calcHydFlow()">
-                    </div>
-                    <div class="calc-field">
-                        <label>Pitot Pressure (PSI):</label>
-                        <input type="number" id="hft_pitot" placeholder="28" oninput="calcHydFlow()">
-                    </div>
-                </div>
-                <div class="calc-grid" style="margin-top:10px">
-                    <div class="calc-field">
-                        <label>GPS Coordinates:</label>
-                        <div style="display:flex;gap:6px">
-                            <input type="text" id="hft_gps" placeholder="32.6234, -83.6865" style="flex:1">
-                            <button type="button" class="gps-btn" onclick="getHydGPS()" style="margin-top:0">📍</button>
-                        </div>
-                    </div>
-                    <div class="calc-field">
-                        <label>Flow Test Date:</label>
-                        <input type="date" id="hft_date">
-                    </div>
-                    <div class="calc-field">
-                        <label>Witnessed By:</label>
-                        <input type="text" id="hft_witness" placeholder="Name">
-                    </div>
-                </div>
-            </div>
-
-            <button type="button" class="calc-btn" onclick="calcHydFlow()">Calculate Hydrant Flow</button>
-
-            <div class="result-box" id="hydflow-result">
-                <div class="result-grid">
-                    <div>
-                        <div class="result-label">Total Gallons Flowing (Q)</div>
-                        <div class="result-value" id="res-q">0 GPM</div>
-                        <div class="result-formula">Q = 29.83 × C × d² × √p × n</div>
-                    </div>
-                    <div>
-                        <div class="result-label">Available Fire Flow (AFF)</div>
-                        <div class="result-value" id="res-aff">0 GPM</div>
-                        <div class="result-formula">At 20 PSI residual pressure</div>
-                    </div>
-                    <div>
-                        <div class="result-label">Pressure Drop</div>
-                        <div class="result-value" id="res-drop" style="font-size:18px">0 PSI</div>
-                    </div>
-                </div>
-                <div class="result-breakdown" id="hydflow-breakdown"></div>
-            </div>
-        </div>
-
-        <!-- TAB 3: HYDRANT DATABASE & GPS MATCHING -->
-        <div id="tab-hyddata" class="tab-content">
-            <div class="info-tip">
-                Enter the business address or GPS coordinates to <strong>automatically find the nearest hydrants</strong> from the Centerville Fire Department hydrant database (414 hydrants). Click "Add" to populate the hydrant table below.
+                Uses GPS from Page 1 to <strong>automatically find the nearest hydrants</strong> from the Centerville hydrant database (414 hydrants). Click "Add" to populate the table below.
             </div>
 
             <div class="calc-section">
                 <h4>📍 Find Nearest Hydrants to Business</h4>
-                <div class="gps-row">
-                    <div class="calc-field">
-                        <label>Business Address:</label>
-                        <input type="text" id="biz_address" placeholder="Enter address">
+                <div class="calc-body">
+                    <div class="gps-row">
+                        <div class="calc-field">
+                            <label>Business GPS Coordinates:</label>
+                            <input type="text" id="biz_gps" placeholder="32.6234, -83.6865">
+                        </div>
+                        <button type="button" class="gps-btn" onclick="getBizGPS()">📍 Get GPS</button>
+                        <button type="button" class="gps-btn" onclick="findNearestHydrants()" style="background:#059669;border-color:#059669">🔍 Find Nearest</button>
                     </div>
-                    <div class="calc-field">
-                        <label>Business GPS Coordinates:</label>
-                        <input type="text" id="biz_gps" placeholder="32.6234, -83.6865">
-                    </div>
-                    <button type="button" class="gps-btn" onclick="getBizGPS()">📍 Get GPS</button>
-                    <button type="button" class="gps-btn" onclick="findNearestHydrants()" style="background:#059669;border-color:#059669">🔍 Find Nearest</button>
+                    <div id="gps-status" style="font-size:11px;color:#888;margin-top:4px"></div>
                 </div>
-                <div id="gps-status" style="font-size:11px;color:#888;margin-top:4px"></div>
             </div>
 
             <div class="matched-box" id="matched-hydrants">
@@ -283,13 +234,12 @@ td input[type=number]{width:80px}
             </div>
         </div>
 
-        <!-- HYDRANT TABLE (always visible below tabs) -->
+        <!-- HYDRANT TABLE -->
         <form id="theForm">
             <div class="preplan-section" style="margin-top:16px">
                 <h3 class="section-title">Hydrant Data Table</h3>
-                <div class="info-tip" style="margin-bottom:8px">Hydrants auto-populate from GPS matching above, or enter manually. Q and AFF auto-calculate when you fill in pressure data.</div>
                 <div style="overflow-x:auto">
-                <table>
+                <table class="hyd-table">
                     <thead><tr>
                         <th>#</th><th>Location</th><th>Static PSI</th><th>Residual PSI</th><th>Pitot PSI</th><th>Flow GPM</th><th>AFF GPM</th><th>Distance</th>
                     </tr></thead>
@@ -303,37 +253,19 @@ td input[type=number]{width:80px}
                 <button type="button" class="add-row-btn" onclick="addHydRow()">+ Add Hydrant Row</button>
             </div>
 
-            <div class="preplan-section">
-                <h3 class="section-title">Building / Area Fire Flow Summary</h3>
-                <div class="calc-grid">
-                    <div class="calc-field">
-                        <label>Effective Area (sq ft):</label>
-                        <input type="number" name="effective_area" id="summary_area" placeholder="30000">
-                    </div>
-                    <div class="calc-field">
-                        <label>Calculated NFF (GPM):</label>
-                        <input type="number" name="calculated_nff" id="summary_nff" placeholder="Auto from calculator" style="background:#f0f4f8;font-weight:700">
-                    </div>
-                    <div class="calc-field">
-                        <label>Required Duration (hours):</label>
-                        <input type="number" name="nff_duration" id="summary_dur" step="0.5" placeholder="3">
-                    </div>
-                    <div class="calc-field">
-                        <label>Available Water Supply (GPM):</label>
-                        <input type="number" name="available_supply" placeholder="4500">
-                    </div>
-                </div>
-            </div>
-            <!-- Hidden fields for saving NFF calc data -->
-            <input type="hidden" name="nff_const_class" id="save_const_class">
-            <input type="hidden" name="nff_occ_class" id="save_occ_class">
-            <input type="hidden" name="nff_x_factor" id="save_x">
-            <input type="hidden" name="nff_p_factor" id="save_p">
+            <!-- Hidden fields for NFF data persistence -->
+            <input type="hidden" name="nff_const_class" id="h_nff_const_class">
+            <input type="hidden" name="nff_area" id="h_nff_area">
+            <input type="hidden" name="nff_occ_class" id="h_nff_occ_class">
+            <input type="hidden" name="nff_x" id="h_nff_x">
+            <input type="hidden" name="nff_p" id="h_nff_p">
+            <input type="hidden" name="nff_shingles" id="h_nff_shingles">
+            <input type="hidden" name="nff_result" id="h_nff_result">
         </form>
 
         <div class="nav-buttons">
             <button type="button" class="btn-secondary" onclick="navigate('page7-special-rescue.html',document.getElementById('theForm'))">← Previous</button>
-            <button type="button" class="btn-primary" onclick="navigate('page9-hazardous-materials.html',document.getElementById('theForm'))">Next →</button>
+            <button type="button" class="btn-primary" onclick="navigate('page9-site-access.html',document.getElementById('theForm'))">Next →</button>
         </div>
     </div>
 </div>
@@ -344,270 +276,276 @@ td input[type=number]{width:80px}
 <div class="toast-container" id="toast-container"></div>
 <script src="preplan-common.js"></script>
 <script>
-// ===== FORM SAVE/LOAD =====
-var form=document.getElementById('theForm');
-if(form){loadFormData(form);autoSave(form);}
+/* ========================================================
+   CENTERVILLE HYDRANT DATABASE (414 hydrants)
+   ======================================================== */
+// 414 hydrants
+var HYDRANTS=[{"id":1,"loc":"2756 Watson Blvd / Warner Robins Supply","lat":32.618465,"lng":-83.675611,"s":"66","r":"32","p":"12.0","f":"1163.0","c":"Green"},{"id":2,"loc":"2764 Watson Blvd / Wingstop","lat":32.618437,"lng":-83.677911,"s":"66","r":"38","p":"10.0","f":"1061.0","c":"Green"},{"id":3,"loc":"2768 Watson Blvd / Peachtree Immediate Care","lat":32.618456,"lng":-83.679207,"s":"62","r":"50","p":"15.0","f":"1300.0","c":"Green"},{"id":4,"loc":"Watson Blvd & N. Houston Lake Blvd","lat":32.618528,"lng":-83.682621,"s":"60","r":"46","p":"20.0","f":"1500.0","c":"Blue"},{"id":5,"loc":"100 N. Houston Lake Blvd","lat":32.619962,"lng":-83.683524,"s":"62","r":"52","p":"30.0","f":"1838.0","c":"Blue"},{"id":6,"loc":"N. Houston Lake Blvd & Arnold Street","lat":32.621223,"lng":-83.684499,"s":"62","r":"54","p":"33.0","f":"1928.0","c":"Blue"},{"id":7,"loc":"N. Houston Lake Blvd & E. Church Street","lat":32.623349,"lng":-83.686481,"s":"53","r":"48","p":"25.0","f":"1678.0","c":"Blue"},{"id":8,"loc":"103 E. Church Street / Center Park Bathrooms","lat":32.624726,"lng":-83.687311,"s":"56","r":"52","p":"20.0","f":"1500.0","c":"Blue"},{"id":9,"loc":"103 E. Church Street / Center Park Pavilion","lat":32.624622,"lng":-83.685941,"s":"56","r":"32","p":"15.0","f":"1300.0","c":"Green"},{"id":10,"loc":"103 E. Church Street / Center Park S. Entrance","lat":32.623611,"lng":-83.685541,"s":"55","r":"44","p":"20.0","f":"1500.0","c":"Blue"},{"id":11,"loc":"E. Church Street & Davis Drive","lat":32.623495,"lng":-83.684203,"s":"58","r":"46","p":"20.0","f":"1500.0","c":"Blue"},{"id":12,"loc":"300 E. Church Street / Main Entrance","lat":32.623563,"lng":-83.683283,"s":"60","r":"54","p":"20.0","f":"1500.0","c":"Blue"},{"id":13,"loc":"300 E. Church Street / Parking Lot","lat":32.623095,"lng":-83.682814,"s":"60","r":"54","p":"20.0","f":"1500.0","c":"Blue"},{"id":14,"loc":"310 E. Church Street / Courthouse","lat":32.623584,"lng":-83.682287,"s":"62","r":"50","p":"25.0","f":"1678.0","c":"Blue"},{"id":15,"loc":"312 E. Church Street / West Entrance","lat":32.623689,"lng":-83.681293,"s":"62","r":"56 / 48","p":"35.0","f":"1500.0","c":"Blue"},{"id":16,"loc":"312 E. Church Street / East Entrance","lat":32.623898,"lng":-83.680583,"s":"62","r":"48","p":"25.0","f":"1678.0","c":"Blue"},{"id":17,"loc":"118 Arnold Street","lat":32.621652,"lng":-83.681576,"s":"58","r":"40","p":"10.0","f":"1061.0","c":"Green"},{"id":18,"loc":"Arnold Street & Linda Drive","lat":32.621453,"lng":-83.683141,"s":"52","r":"22","p":"10.0","f":"1061.0","c":"Green"},{"id":19,"loc":"Linda Drive & Anne Drive","lat":32.620444,"lng":-83.682645,"s":"60","r":"32","p":"20.0","f":"1500.0","c":"Blue"},{"id":20,"loc":"Linda Drive & Collins Avenue","lat":32.619571,"lng":-83.680165,"s":"60","r":"45","p":"18.0","f":"1424.0","c":"Green"},{"id":21,"loc":"105 David Terrace","lat":32.620181,"lng":-83.678807,"s":"62","r":"44","p":"25.0","f":"1678.0","c":"Blue"},{"id":22,"loc":"Shannon Lane & Chase Circle","lat":32.621866,"lng":-83.678616,"s":"58","r":"38","p":"16.0","f":"1342.0","c":"Green"},{"id":23,"loc":"113 Collins Avenue","lat":32.621154,"lng":-83.680113,"s":"52","r":"40","p":"10.0","f":"1061.0","c":"Green"},{"id":24,"loc":"Collins Avenue & Ashlund Drive","lat":32.625678,"lng":-83.679918,"s":"54","r":"34","p":"10.0","f":"1061.0","c":"Green"},{"id":25,"loc":"112 Ridge Court","lat":32.624326,"lng":-83.678984,"s":"54","r":"24","p":"10.0","f":"1061.0","c":"Green"},{"id":26,"loc":"Ashlund Drive & Heather Place","lat":32.625681,"lng":-83.677846,"s":"56","r":"28","p":"5.0","f":"750.0","c":"Orange"},{"id":27,"loc":"112 Heather Place","lat":32.624339,"lng":-83.677989,"s":"56","r":"20","p":"5.0","f":"750.0","c":"Orange"},{"id":28,"loc":"Sedgefiend Road & Elberta Road","lat":32.629617,"lng":-83.677702,"s":"66","r":"60 / 54","p":"40.0","f":"1300.0","c":"Green"},{"id":29,"loc":"Collins Avenue & Elberta Road","lat":32.629611,"lng":-83.679765,"s":"64","r":"60 / 50","p":"40.0","f":"1500.0","c":"Blue"},{"id":30,"loc":"501 Collins Avenue","lat":32.628386,"lng":-83.680052,"s":"64","r":"60 / 52","p":"40.0","f":"1300.0","c":"Green"},{"id":31,"loc":"401 Collins Avenue","lat":32.626595,"lng":-83.680106,"s":"58","r":"52 / 42","p":"40.0","f":"1424.0","c":"Green"},{"id":32,"loc":"Evelyn Drive & Laverne Drive","lat":32.625874,"lng":-83.683125,"s":"60","r":"35","p":"10.0","f":"1061.0","c":"Green"},{"id":33,"loc":"Davis Drive & Laverne Drive","lat":32.625943,"lng":-83.684173,"s":"50","r":"30","p":"10.0","f":"1061.0","c":"Green"},{"id":34,"loc":"Greentree Trail & Sandstone Court","lat":32.626071,"lng":-83.685846,"s":"65","r":"45","p":"10.0","f":"1061.0","c":"Green"},{"id":35,"loc":"208 Davis Drive","lat":32.626912,"lng":-83.684188,"s":"65","r":"40","p":"10.0","f":"1061.0","c":"Green"},{"id":36,"loc":"212 Bassett Street","lat":32.627687,"lng":-83.685297,"s":"65","r":"40","p":"10.0","f":"1061.0","c":"Green"},{"id":37,"loc":"Bassett Street & Garvin Drive","lat":32.627413,"lng":-83.686612,"s":"66","r":"56","p":"10.0","f":"1061.0","c":"Green"},{"id":38,"loc":"Bassett Street & Elizabeth Drive","lat":32.627009,"lng":-83.687877,"s":"45","r":"35","p":"15.0","f":"1300.0","c":"Green"},{"id":39,"loc":"N. Houston Lake Blvd & Bassett Street","lat":32.626651,"lng":-83.689204,"s":"50","r":"40","p":"25.0","f":"1678.0","c":"Blue"},{"id":40,"loc":"312 N. Houston Lake Blvd","lat":32.624943,"lng":-83.688067,"s":"45","r":"40","p":"25.0","f":"1678.0","c":"Blue"},{"id":41,"loc":"108 Gunn Road / Jacob's Ladder","lat":32.623931,"lng":-83.689026,"s":"54","r":"50","p":"30.0","f":"1838.0","c":"Blue"},{"id":42,"loc":"Margie Drive / Water Tower","lat":32.624812,"lng":-83.689879,"s":"52","r":"50","p":"35.0","f":"1985.0","c":"Blue"},{"id":43,"loc":"202 Gunn Road / U-Save-It Pharmacy","lat":32.623983,"lng":-83.691063,"s":"52","r":"48","p":"22.0","f":"1574.0","c":"Blue"},{"id":44,"loc":"206 Gunn Road / Library","lat":32.624053,"lng":-83.692639,"s":"52","r":"46","p":"27.0","f":"1744.0","c":"Blue"},{"id":45,"loc":"N. Houston Lake Blvd & Mustang Alley","lat":32.628523,"lng":-83.689577,"s":"54","r":"52 / 50","p":"45.0","f":"1678.0","c":"Blue"},{"id":46,"loc":"N. Houston Lake Blvd & Miller Drive","lat":32.629861,"lng":-83.689579,"s":"54","r":"54 / 50","p":"45.0","f":"1678.0","c":"Blue"},{"id":47,"loc":"500 N. Houston Lake Blvd / Front of Fire Station","lat":32.630198,"lng":-83.689565,"s":"58","r":"56 / 52","p":"45.0","f":"1500.0","c":"Blue"},{"id":48,"loc":"500 N. Houston Lake Blvd / Behind Fire Station","lat":32.630077,"lng":-83.688992,"s":"58","r":"54 / 46","p":"45.0","f":"1678.0","c":"Blue"},{"id":49,"loc":"Miller Drive & Miller Court","lat":32.629941,"lng":-83.688538,"s":"60","r":"54 / 46","p":"45.0","f":"1500.0","c":"Blue"},{"id":50,"loc":"Miller Drive & Garvin Drive","lat":32.629872,"lng":-83.686588,"s":"58","r":"54 / 42","p":"45.0","f":"1678.0","c":"Blue"},{"id":51,"loc":"104 Virginia Drive","lat":32.628922,"lng":-83.685472,"s":"58","r":"50 / 40","p":"40.0","f":"1500.0","c":"Blue"},{"id":52,"loc":"Virginia Drive & Davis Drive","lat":32.629032,"lng":-83.684419,"s":"60","r":"52 / 40","p":"40.0","f":"1678.0","c":"Blue"},{"id":53,"loc":"Wilson Drive & Davis Drive","lat":32.631552,"lng":-83.684217,"s":"68","r":"60 / 48","p":"50.0","f":"1678.0","c":"Blue"},{"id":54,"loc":"405 Davis Drive","lat":32.632287,"lng":-83.683839,"s":"70","r":"64 / 56","p":"55.0","f":"1500.0","c":"Blue"},{"id":55,"loc":"E. Thomson Drive & Mason Drive","lat":32.634145,"lng":-83.683723,"s":"82","r":"78 / 70","p":"45.0","f":"1500.0","c":"Blue"},{"id":56,"loc":"Mason Drive & Wilson Drive","lat":32.631721,"lng":-83.685239,"s":"66","r":"58 / 52","p":"5.0","f":"750.0","c":"Orange"},{"id":57,"loc":"110 Mason Drive","lat":32.630586,"lng":-83.685324,"s":"60","r":"54 / 40","p":"50.0","f":"1678.0","c":"Blue"},{"id":58,"loc":"201 Wilson Drive","lat":32.631781,"lng":-83.686303,"s":"64","r":"60 / 52","p":"10.0","f":"1061.0","c":"Green"},{"id":59,"loc":"103 Wilson Drive","lat":32.631819,"lng":-83.688019,"s":"64","r":"58 / 48","p":"10.0","f":"750.0","c":"Orange"},{"id":60,"loc":"Walker Drive & Lee Street","lat":32.632487,"lng":-83.687523,"s":"64","r":"52 / 46","p":"45.0","f":"1678.0","c":"Blue"},{"id":61,"loc":"Walker Drive & E. Thomson Drive","lat":32.634166,"lng":-83.687496,"s":"66","r":"52 / 44","p":"40.0","f":"1838.0","c":"Blue"},{"id":62,"loc":"E. Thomson Drive & Lee Street","lat":32.634286,"lng":-83.686251,"s":"70","r":"56 / 46","p":"45.0","f":"1678.0","c":"Blue"},{"id":63,"loc":"107 Manchester Court","lat":32.630191,"lng":-83.683271,"s":"68","r":"56 / 52","p":"50.0","f":"2122.0","c":"Blue"},{"id":64,"loc":"611 Wilson Drive","lat":32.630695,"lng":-83.680789,"s":"72","r":"66 / 62","p":"50.0","f":"2122.0","c":"Blue"},{"id":65,"loc":"Collins Avenue & Collins Estates Avenue","lat":32.632763,"lng":-83.679757,"s":"74","r":"68 / 58","p":"55.0","f":"2251.0","c":"Blue"},{"id":66,"loc":"Collins Avenue & Crestwood Road","lat":32.636851,"lng":-83.679281,"s":"70","r":"48","p":"20.0","f":"1500.0","c":"Blue"},{"id":67,"loc":"104 Crestwood Road","lat":32.636599,"lng":-83.678354,"s":"78","r":"48","p":"10.0","f":"1061.0","c":"Green"},{"id":68,"loc":"Crestwood Road & Crestwood Circle","lat":32.637151,"lng":-83.675078,"s":"70","r":"16","p":"20.0","f":"1500.0","c":"Blue"},{"id":69,"loc":"105 Crestwood Circle","lat":32.635694,"lng":-83.675213,"s":"94","r":"40","p":"5.0","f":"750.0","c":"Orange"},{"id":70,"loc":"Crestwood Circle & Crestwood Court","lat":32.635451,"lng":-83.672197,"s":"68","r":"44","p":"10.0","f":"1061.0","c":"Green"},{"id":71,"loc":"112 Crestwood Court","lat":32.636221,"lng":-83.674203,"s":"80","r":"14","p":"10.0","f":"1061.0","c":"Green"},{"id":72,"loc":"Crestwood Circle & Crestridge Court","lat":32.636782,"lng":-83.671291,"s":"78","r":"34","p":"10.0","f":"1061.0","c":"Green"},{"id":73,"loc":"810 Collins Avenue","lat":32.638953,"lng":-83.678541,"s":"65","r":"40","p":"15.0","f":"1300.0","c":"Green"},{"id":74,"loc":"Bauman Drive & Brown Drive","lat":32.638437,"lng":-83.675028,"s":"52","r":"18","p":"10.0","f":"1061.0","c":"Green"},{"id":75,"loc":"Collins Avenue & Anthony Avenue","lat":32.640899,"lng":-83.678559,"s":"55","r":"24","p":"15.0","f":"1300.0","c":"Green"},{"id":76,"loc":"914 Collins Avenue","lat":32.643205,"lng":-83.680582,"s":"60","r":"50","p":"25.0","f":"1678.0","c":"Blue"},{"id":77,"loc":"1004 Collins Avenue","lat":32.643247,"lng":-83.684832,"s":"58","r":"44","p":"20.0","f":"1500.0","c":"Blue"},{"id":78,"loc":"Collins Avenue & Surrey Drive","lat":32.643256,"lng":-83.687797,"s":"58","r":"50","p":"18.0","f":"1424.0","c":"Green"},{"id":79,"loc":"Surrey Drive & Cherry Court","lat":32.646053,"lng":-83.687543,"s":"42","r":"32","p":"38.0","f":"2069.0","c":"Blue"},{"id":80,"loc":"204 Eagle Trace Drive","lat":32.644949,"lng":-83.689261,"s":"60","r":"42","p":"20.0","f":"1500.0","c":"Blue"},{"id":81,"loc":"142 Eagle Trace Drive","lat":32.646011,"lng":-83.688886,"s":"58","r":"40","p":"20.0","f":"1500.0","c":"Blue"},{"id":82,"loc":"118 Eagle Trace Drive","lat":32.644875,"lng":-83.688498,"s":"58","r":"48","p":"20.0","f":"1500.0","c":"Blue"},{"id":83,"loc":"213 Brianna Drive","lat":32.645349,"lng":-83.689931,"s":"58","r":"52","p":"15.0","f":"1300.0","c":"Green"},{"id":84,"loc":"105 Brianna Drive","lat":32.644866,"lng":-83.691026,"s":"60","r":"40","p":"30.0","f":"1838.0","c":"Blue"},{"id":85,"loc":"Brianna Drive & N. Houston Lake Blvd","lat":32.644571,"lng":-83.691575,"s":"60","r":"46","p":"30.0","f":"1838.0","c":"Blue"},{"id":86,"loc":"Collins Avenue & N. Houston Lake Blvd","lat":32.643057,"lng":-83.690151,"s":"44","r":"34","p":"20.0","f":"1500.0","c":"Blue"},{"id":87,"loc":"812 N. Houston Lake Blvd","lat":32.641336,"lng":-83.689526,"s":"62","r":"58 / 54","p":"45.0","f":"2251.0","c":"Blue"},{"id":88,"loc":"N. Houston Lake Blvd & Brantley Road","lat":32.638969,"lng":-83.689495,"s":"84","r":"70","p":"35.0","f":"1986.0","c":"Blue"},{"id":89,"loc":"Brantley Road & Ridgewood Drive","lat":32.637213,"lng":-83.687373,"s":"90","r":"75","p":"30.0","f":"1838.0","c":"Blue"},{"id":90,"loc":"Ridgewood Drive & Shamrock Drive","lat":32.638211,"lng":-83.687188,"s":"84","r":"70","p":"16.0","f":"1342.0","c":"Green"},{"id":91,"loc":"Ridgewood Drive & Lansbury Drive","lat":32.640439,"lng":-83.687561,"s":"70","r":"44","p":"12.0","f":"1163.0","c":"Green"},{"id":92,"loc":"201 S. Cambridge Drive","lat":32.641176,"lng":-83.686009,"s":"70","r":"50","p":"10.0","f":"1061.0","c":"Green"},{"id":93,"loc":"307 S. Cambridge Drive","lat":32.639465,"lng":-83.686161,"s":"78","r":"20","p":"12.0","f":"1163.0","c":"Green"},{"id":94,"loc":"509 S. Cambridge Drive","lat":32.638143,"lng":-83.685296,"s":"70","r":"40","p":"14.0","f":"1256.0","c":"Green"},{"id":95,"loc":"322 Brantley Road / Lot 6","lat":32.639871,"lng":-83.681646,"s":"58","r":"4 / 0","p":"5.0","f":"475.0","c":"Red"},{"id":96,"loc":"322 Brantley Road / Lot 18","lat":32.639293,"lng":-83.681709,"s":"64","r":"14 / 12","p":"5.0","f":"581.0","c":"Orange"},{"id":97,"loc":"Brantley Road & Calvin Court","lat":32.640551,"lng":-83.683046,"s":"44","r":"20","p":"10.0","f":"1061.0","c":"Green"},{"id":98,"loc":"213 Brantley Road","lat":32.638251,"lng":-83.682548,"s":"70","r":"36","p":"25.0","f":"1678.0","c":"Blue"},{"id":99,"loc":"205 Brantley Road","lat":32.636368,"lng":-83.682954,"s":"86","r":"66","p":"20.0","f":"1500.0","c":"Blue"},{"id":100,"loc":"206 Brantley Road / Down Driveway","lat":32.635681,"lng":-83.682538,"s":"84","r":"60","p":"15.0","f":"1300.0","c":"Green"},{"id":101,"loc":"123 Brantley Road","lat":32.636124,"lng":-83.685594,"s":"92","r":"70","p":"20.0","f":"1500.0","c":"Blue"},{"id":102,"loc":"710 N. Houston Lake Blvd","lat":32.636011,"lng":-83.689559,"s":"70","r":"68 / 66","p":"45.0","f":"1985.0","c":"Blue"},{"id":103,"loc":"202 Thomson Street / Across From","lat":32.634655,"lng":-83.690614,"s":"60","r":"54 / 52","p":"30.0","f":"1300.0","c":"Green"},{"id":104,"loc":"401 Thomson Road","lat":32.634798,"lng":-83.696821,"s":"58","r":"46 / 34","p":"50.0","f":"1500.0","c":"Blue"},{"id":105,"loc":"Thomson Road / Bottom of Hill","lat":32.634759,"lng":-83.700474,"s":"70","r":"58 / 50","p":"45.0","f":"1838.0","c":"Blue"},{"id":106,"loc":"Thomson Road / Village Walk","lat":32.634423,"lng":-83.704015,"s":"70","r":"60 / 50","p":"35.0","f":"1838.0","c":"Blue"},{"id":107,"loc":"105 Ginny Drive","lat":32.635811,"lng":-83.698256,"s":"65","r":"50 / 40","p":"40.0","f":"1838.0","c":"Blue"},{"id":108,"loc":"Pine Terrace & Harold Drive","lat":32.635752,"lng":-83.694274,"s":"60","r":"40 / 30","p":"40.0","f":"1500.0","c":"Blue"},{"id":109,"loc":"Harold Drive & Larry Drive","lat":32.635698,"lng":-83.692311,"s":"64","r":"46 / 42","p":"42.0","f":"1300.0","c":"Green"},{"id":110,"loc":"Northpointe Drive & Charter Court","lat":32.633725,"lng":-83.691281,"s":"60","r":"46 / 24","p":"30.0","f":"1061.0","c":"Green"},{"id":111,"loc":"211 Northpointe Drive","lat":32.632955,"lng":-83.692025,"s":"58","r":"42 / 26","p":"35.0","f":"1061.0","c":"Green"},{"id":112,"loc":"301 Thomson Street / NE Entrance Bus Ramp","lat":32.634639,"lng":-83.692813,"s":"58","r":"48 / 40","p":"40.0","f":"1300.0","c":"Green"},{"id":113,"loc":"301 Thomson Street / NE Corner Bus Ramp","lat":32.634414,"lng":-83.693099,"s":"50","r":"40","p":"18.0","f":"1424.0","c":"Green"},{"id":114,"loc":"301 Thomson Street / E Side Bus Ramp","lat":32.633247,"lng":-83.692923,"s":"50","r":"40","p":"18.0","f":"1424.0","c":"Green"},{"id":115,"loc":"301 Thomson Street / S Side Cafeteria","lat":32.632719,"lng":-83.693438,"s":"50","r":"38","p":"15.0","f":"1300.0","c":"Green"},{"id":116,"loc":"301 Thomson Street / S Side Field","lat":32.632852,"lng":-83.694551,"s":"50","r":"38","p":"15.0","f":"1300.0","c":"Green"},{"id":117,"loc":"301 Thomson Street / NW Entrance Gymnasium","lat":32.634702,"lng":-83.694274,"s":"60","r":"45","p":"25.0","f":"1678.0","c":"Blue"},{"id":118,"loc":"301 Thomson Street / NW Corner Main Building","lat":32.634435,"lng":-83.694149,"s":"50","r":"40","p":"18.0","f":"1424.0","c":"Green"},{"id":119,"loc":"301 Thomson Street / NW Corner Gymnasium","lat":32.633599,"lng":-83.695082,"s":"50","r":"40","p":"18.0","f":"1424.0","c":"Green"},{"id":120,"loc":"630 N. Houston Lake Blvd / Post Office","lat":32.634284,"lng":-83.689512,"s":"64","r":"62 / 58","p":"50.0","f":"1838.0","c":"Green"},{"id":121,"loc":"612 N. Houston Lake Blvd / Lions of Centerville","lat":32.632833,"lng":-83.689537,"s":"60","r":"58 / 54","p":"50.0","f":"1678.0","c":"Blue"},{"id":122,"loc":"510 N. Houston Lake Blvd / Certified Measurements","lat":32.630974,"lng":-83.689579,"s":"58","r":"58 / 52","p":"50.0","f":"1985.0","c":"Blue"},{"id":123,"loc":"2612 Elberta Road","lat":32.630056,"lng":-83.674496,"s":"78","r":"24","p":"6.0","f":"822.0","c":"Orange"},{"id":124,"loc":"Elberta Road & Ridge Bend Drive","lat":32.630871,"lng":-83.671623,"s":"84","r":"68","p":"20.0","f":"1500.0","c":"Blue"},{"id":125,"loc":"2503 Elberta Road / Main Entrance","lat":32.631364,"lng":-83.670663,"s":"90","r":"62","p":"30.0","f":"1838.0","c":"Blue"},{"id":126,"loc":"2503 Elberta Road / Inside Fence","lat":32.631931,"lng":-83.670896,"s":"88","r":"54","p":"20.0","f":"1500.0","c":"Blue"},{"id":127,"loc":"2502 Elberta Road","lat":32.631471,"lng":-83.669466,"s":"95","r":"80","p":"35.0","f":"1985.0","c":"Blue"},{"id":128,"loc":"Northridge Drive & Ridge Bend Drive","lat":32.627085,"lng":-83.671107,"s":"74","r":"30","p":"10.0","f":"1061.0","c":"Green"},{"id":129,"loc":"117 Ridge Bend Drive","lat":32.628661,"lng":-83.670801,"s":"76","r":"50","p":"15.0","f":"1300.0","c":"Green"},{"id":130,"loc":"Ridge Bend Drive & Cross Ridge Drive (Lower)","lat":32.630454,"lng":-83.670434,"s":"78","r":"56","p":"15.0","f":"1300.0","c":"Green"},{"id":131,"loc":"Ridge Bend Drive & Cross Ridge Drive (Upper)","lat":32.630216,"lng":-83.671886,"s":"80","r":"58","p":"20.0","f":"1500.0","c":"Blue"},{"id":132,"loc":"237 Ridge Bend Drive","lat":32.628701,"lng":-83.671889,"s":"78","r":"50","p":"15.0","f":"1300.0","c":"Green"},{"id":133,"loc":"219 Ridge Bend Drive","lat":32.626887,"lng":-83.672325,"s":"74","r":"52","p":"10.0","f":"1061.0","c":"Green"},{"id":134,"loc":"211 Ridge Bend Drive","lat":32.625776,"lng":-83.671823,"s":"70","r":"35","p":"10.0","f":"1061.0","c":"Green"},{"id":135,"loc":"104 Industrial Way","lat":32.631293,"lng":-83.666313,"s":"92","r":"90 / 90","p":"40.0","f":"1300.0","c":"Green"},{"id":136,"loc":"104 Commercial Alley","lat":32.636596,"lng":-83.662966,"s":"62","r":"42 / 24","p":"35.0","f":"1061.0","c":"Green"},{"id":137,"loc":"814 Carl Vinson Pkwy / Bateman Road","lat":32.635671,"lng":-83.660848,"s":"64","r":"60 / 60","p":"35.0","f":"1061.0","c":"Green"},{"id":138,"loc":"1B Ola Drive","lat":32.633932,"lng":-83.658736,"s":"52","r":"42","p":"45.0","f":"2251.0","c":"Blue"},{"id":139,"loc":"3151 Mason Drive","lat":32.632763,"lng":-83.661879,"s":"52","r":"44","p":"25.0","f":"1678.0","c":"Blue"},{"id":140,"loc":"815 Carl Vinson Pkwy / Across From Elite PCH","lat":32.635528,"lng":-83.662641,"s":"64","r":"60 / 58","p":"40.0","f":"1500.0","c":"Green"},{"id":141,"loc":"949 Carl Vinson Pkwy","lat":32.637485,"lng":-83.660888,"s":"62","r":"32","p":"15.0","f":"1300.0","c":"Green"},{"id":142,"loc":"Carl Vinson Pkwy & Woodhaven Road","lat":32.639546,"lng":-83.660841,"s":"62","r":"38","p":"5.0","f":"750.0","c":"Orange"},{"id":143,"loc":"204 Woodhaven Road","lat":32.639563,"lng":-83.662853,"s":"42","r":"22","p":"20.0","f":"1500.0","c":"Blue"},{"id":144,"loc":"302 Woodhaven Road","lat":32.639455,"lng":-83.665295,"s":"56","r":"24","p":"20.0","f":"1500.0","c":"Blue"},{"id":145,"loc":"Woodhaven Road & Dogwood Glen","lat":32.638833,"lng":-83.667817,"s":"70","r":"40","p":"20.0","f":"1500.0","c":"Blue"},{"id":146,"loc":"Woodhaven Road & Willow Glen","lat":32.637571,"lng":-83.667776,"s":"70","r":"44","p":"10.0","f":"1061.0","c":"Green"},{"id":147,"loc":"Woodhaven Road & Brantwood Drive","lat":32.636962,"lng":-83.665886,"s":"68","r":"40","p":"10.0","f":"1061.0","c":"Green"},{"id":148,"loc":"104 Brantwood Drive","lat":32.635027,"lng":-83.665627,"s":"72","r":"64 / 58","p":"40.0","f":"1163.0","c":"Green"},{"id":149,"loc":"Carl Vinson Pkwy & Willow Glen","lat":32.632662,"lng":-83.666712,"s":"82","r":"80 / 80","p":"8.0","f":"0.0","c":"Red"},{"id":150,"loc":"Willow Glen & Cedar Glen Court","lat":32.635655,"lng":-83.667118,"s":"68","r":"42","p":"10.0","f":"1061.0","c":"Green"},{"id":151,"loc":"107 Cedar Glen Court","lat":32.635246,"lng":-83.668577,"s":"76","r":"28","p":"20.0","f":"1500.0","c":"Blue"},{"id":152,"loc":"Carl Vinson Pkwy & Eldorado Avenue","lat":32.634587,"lng":-83.664102,"s":"72","r":"62 / 52","p":"35.0","f":"1163.0","c":"Green"},{"id":153,"loc":"104 Eldorado Avenue","lat":32.635858,"lng":-83.664096,"s":"54","r":"48 / 40","p":"23.0","f":"750.0","c":"Orange"},{"id":154,"loc":"114 Eldorado Avenue","lat":32.638063,"lng":-83.664088,"s":"54","r":"42 / 20","p":"40.0","f":"1300.0","c":"Green"},{"id":155,"loc":"Carl Vinson Pkwy & Durango Drive","lat":32.641597,"lng":-83.660778,"s":"60","r":"30","p":"5.0","f":"750.0","c":"Orange"},{"id":156,"loc":"Durango Drive & Velencia Circle","lat":32.641391,"lng":-83.662146,"s":"46","r":"30","p":"5.0","f":"750.0","c":"Orange"},{"id":157,"loc":"237 Valencia Circle","lat":32.642062,"lng":-83.664719,"s":"46","r":"18","p":"5.0","f":"750.0","c":"Orange"},{"id":158,"loc":"213 Valencia Circle","lat":32.640598,"lng":-83.666541,"s":"40","r":"38","p":"5.0","f":"750.0","c":"Orange"},{"id":159,"loc":"Valencia Circle & Monteigo Drive","lat":32.640415,"lng":-83.664366,"s":"32","r":"20","p":"10.0","f":"1061.0","c":"Green"},{"id":160,"loc":"Monteigo Drive & Monteigo Court","lat":32.641172,"lng":-83.664551,"s":"50","r":"10","p":"15.0","f":"1300.0","c":"Green"},{"id":161,"loc":"Dogwood Glen & Pine Glen Court","lat":32.640005,"lng":-83.668882,"s":"70","r":"40","p":"5.0","f":"750.0","c":"Orange"},{"id":162,"loc":"108 Pine Glen Court","lat":32.640221,"lng":-83.667427,"s":"42","r":"10","p":"10.0","f":"1061.0","c":"Green"},{"id":163,"loc":"Magnolia Glen & Magnolia Glen Court","lat":32.639712,"lng":-83.672241,"s":"60","r":"20","p":"5.0","f":"750.0","c":"Orange"},{"id":164,"loc":"207 Magnolia Glen","lat":32.640974,"lng":-83.672588,"s":"56","r":"0","p":"5.0","f":"750.0","c":"Orange"},{"id":165,"loc":"Dogwood Glen & Persimmon Glen Court","lat":32.641732,"lng":-83.668557,"s":"74","r":"26","p":"20.0","f":"1500.0","c":"Blue"},{"id":166,"loc":"106 Persimmon Glen Court","lat":32.641172,"lng":-83.667877,"s":"80","r":"38","p":"10.0","f":"1061.0","c":"Green"},{"id":167,"loc":"104 Redbud Glen Court","lat":32.642807,"lng":-83.666641,"s":"60","r":"28","p":"10.0","f":"1061.0","c":"Green"},{"id":168,"loc":"Dogwood Glen & Hickory Glen","lat":32.644053,"lng":-83.666853,"s":"62","r":"24","p":"10.0","f":"1061.0","c":"Green"},{"id":169,"loc":"213 Hickory Glen & Red Oak Glen","lat":32.644546,"lng":-83.669884,"s":"80","r":"22","p":"10.0","f":"1061.0","c":"Green"},{"id":170,"loc":"101 Maple Glen Court & Hickory Glen","lat":32.643685,"lng":-83.671206,"s":"80","r":"22","p":"10.0","f":"1061.0","c":"Green"},{"id":171,"loc":"111 Red Oak Glen & Hickory Glen","lat":32.642781,"lng":-83.670061,"s":"80","r":"48 / 30","p":"25.0","f":"750.0","c":"Orange"},{"id":172,"loc":"409 Hickory Glen","lat":32.643709,"lng":-83.669033,"s":"64","r":"28","p":"10.0","f":"1061.0","c":"Green"},{"id":173,"loc":"Carl Vinson Pkwy & Westover Drive","lat":32.645357,"lng":-83.660697,"s":"60","r":"30","p":"5.0","f":"750.0","c":"Orange"},{"id":174,"loc":"301 Tumbleweed Circle","lat":32.646366,"lng":-83.662817,"s":"58","r":"32","p":"10.0","f":"1061.0","c":"Green"},{"id":175,"loc":"Tumbleweed Circle & Brandiron Lane","lat":32.645514,"lng":-83.663953,"s":"64","r":"26","p":"10.0","f":"1061.0","c":"Green"},{"id":176,"loc":"400 Tumbleweed Circle & Prairie Blvd","lat":32.644638,"lng":-83.664133,"s":"66","r":"30","p":"10.0","f":"1061.0","c":"Green"},{"id":177,"loc":"201 Tumbleweed Circle & Prairie Blvd","lat":32.644753,"lng":-83.661733,"s":"64","r":"24","p":"10.0","f":"1061.0","c":"Green"},{"id":178,"loc":"Prairie Blvd & Scarborough Road","lat":32.644822,"lng":-83.664966,"s":"62","r":"30","p":"9.0","f":"1007.0","c":"Green"},{"id":179,"loc":"120 Scarborough Road","lat":32.643037,"lng":-83.663774,"s":"64","r":"40","p":"7.0","f":"888.0","c":"Orange"},{"id":180,"loc":"Carl Vinson Pkwy & Scarborough Road","lat":32.643014,"lng":-83.660716,"s":"60","r":"30","p":"5.0","f":"750.0","c":"Orange"},{"id":181,"loc":"1111 Carl Vinson Pkwy","lat":32.646742,"lng":-83.660659,"s":"60","r":"32","p":"14.0","f":"1256.0","c":"Green"},{"id":182,"loc":"2922 Watson Blvd / NE Corner of Belk Men","lat":32.621556,"lng":-83.685988,"s":"60","r":"55 / 45","p":"50.0","f":"1678.0","c":"Blue"},{"id":183,"loc":"2922 Watson Blvd / NE Corner of Belk","lat":32.621223,"lng":-83.685155,"s":"52","r":"50 / 40","p":"50.0","f":"1678.0","c":"Blue"},{"id":184,"loc":"2922 Watson Blvd / E Side of Belk","lat":32.620521,"lng":-83.685229,"s":"60","r":"36","p":"24.0","f":"1644.0","c":"Blue"},{"id":185,"loc":"2922 Watson Blvd / SE Corner of Belk","lat":32.620038,"lng":-83.685739,"s":"60","r":"36","p":"24.0","f":"1644.0","c":"Blue"},{"id":186,"loc":"2922 Watson Blvd / JCPenney & Belk","lat":32.620339,"lng":-83.686731,"s":"60","r":"38","p":"26.0","f":"1711.0","c":"Blue"},{"id":187,"loc":"2922 Watson Blvd / S Side of JCPenney","lat":32.620173,"lng":-83.687302,"s":"60","r":"38","p":"26.0","f":"1711.0","c":"Blue"},{"id":188,"loc":"2922 Watson Blvd / JCPenney & Crunch Fitness","lat":32.619937,"lng":-83.687843,"s":"60","r":"38","p":"26.0","f":"1711.0","c":"Blue"},{"id":189,"loc":"2922 Watson Blvd / SE Corner of Crunch Fitness","lat":32.619222,"lng":-83.688489,"s":"60","r":"38","p":"28.0","f":"1807.0","c":"Blue"},{"id":190,"loc":"2922 Watson Blvd / W Side of Crunch Fitness","lat":32.619895,"lng":-83.689266,"s":"60","r":"40","p":"28.0","f":"1807.0","c":"Blue"},{"id":191,"loc":"2922 Watson Blvd / SW Corner of Movies","lat":32.620787,"lng":-83.689482,"s":"60","r":"48","p":"30.0","f":"1838.0","c":"Blue"},{"id":192,"loc":"2922 Watson Blvd / NW Corner of Movies","lat":32.621387,"lng":-83.689476,"s":"60","r":"50","p":"30.0","f":"1838.0","c":"Blue"},{"id":193,"loc":"2922 Watson Blvd / NE Corner of Movies","lat":32.621701,"lng":-83.688236,"s":"60","r":"52","p":"32.0","f":"1898.0","c":"Blue"},{"id":194,"loc":"2922 Watson Blvd / N Side at Back Entrance","lat":32.621666,"lng":-83.688087,"s":"60","r":"52","p":"32.0","f":"1898.0","c":"Blue"},{"id":195,"loc":"2970 Watson Blvd / Building 1000 (West)","lat":32.622676,"lng":-83.688079,"s":"60","r":"50","p":"30.0","f":"1838.0","c":"Blue"},{"id":196,"loc":"2970 Watson Blvd / Building 2000 (East)","lat":32.622183,"lng":-83.686712,"s":"60","r":"52","p":"30.0","f":"1838.0","c":"Blue"},{"id":197,"loc":"2924 Watson Blvd / Ole Times Buffet","lat":32.618731,"lng":-83.687331,"s":"66","r":"50","p":"25.0","f":"1678.0","c":"Blue"},{"id":198,"loc":"2990 Watson Blvd / O'Charley's","lat":32.618326,"lng":-83.688498,"s":"58","r":"40","p":"25.0","f":"1678.0","c":"Blue"},{"id":199,"loc":"Carrington Lane & Autumn Court","lat":32.627177,"lng":-83.692501,"s":"50","r":"22","p":"8.0","f":"949.0","c":"Orange"},{"id":200,"loc":"218 Carrington Lane","lat":32.625571,"lng":-83.692693,"s":"46","r":"15","p":"10.0","f":"1061.0","c":"Green"},{"id":201,"loc":"114 Huntington Way","lat":32.628912,"lng":-83.692004,"s":"50","r":"20","p":"5.0","f":"750.0","c":"Orange"},{"id":202,"loc":"Autumn Court & Montrose Lane","lat":32.626927,"lng":-83.691244,"s":"48","r":"28","p":"10.0","f":"1061.0","c":"Green"},{"id":203,"loc":"130 Montrose Lane","lat":32.629091,"lng":-83.690927,"s":"56","r":"24","p":"10.0","f":"1061.0","c":"Green"},{"id":204,"loc":"Lancaster Lane & Greenland Way","lat":32.625631,"lng":-83.691391,"s":"50","r":"18","p":"5.0","f":"750.0","c":"Orange"},{"id":205,"loc":"206 Tivoli Park Road / Right","lat":32.624724,"lng":-83.701567,"s":"50","r":"44","p":"5.0","f":"750.0","c":"Orange"},{"id":206,"loc":"110 Tivoli Park Road / Left","lat":32.625689,"lng":-83.699073,"s":"52","r":"36","p":"5.0","f":"750.0","c":"Orange"},{"id":207,"loc":"106 Saint Marlo Drive","lat":32.623865,"lng":-83.701498,"s":"56","r":"42","p":"5.0","f":"750.0","c":"Orange"},{"id":208,"loc":"Saint Marlo Drive & Oros Point","lat":32.624581,"lng":-83.699237,"s":"54","r":"42","p":"12.0","f":"1163.0","c":"Green"},{"id":209,"loc":"507 Saint Marlo Drive","lat":32.625501,"lng":-83.695994,"s":"58","r":"36","p":"8.0","f":"949.0","c":"Orange"},{"id":210,"loc":"528 Saint Marlo Drive","lat":32.625757,"lng":-83.693853,"s":"54","r":"20","p":"12.0","f":"1163.0","c":"Green"},{"id":211,"loc":"Trellis Walk & Orchard Lane","lat":32.626773,"lng":-83.700474,"s":"52","r":"50 / 50","p":"5.0","f":"0.0","c":"Red"},{"id":212,"loc":"117 Orchard Lane","lat":32.625766,"lng":-83.701871,"s":"54","r":"38","p":"12.0","f":"1163.0","c":"Green"},{"id":213,"loc":"Fall Harvest Drive & Blossom Lane","lat":32.627063,"lng":-83.701566,"s":"52","r":"50 / 50","p":"5.0","f":"0.0","c":"Red"},{"id":214,"loc":"Trellis Walk & Arbor Lane","lat":32.627827,"lng":-83.699274,"s":"32","r":"18","p":"10.0","f":"1061.0","c":"Green"},{"id":215,"loc":"213 Trellis Walk","lat":32.628283,"lng":-83.697172,"s":"32","r":"20","p":"35.0","f":"1061.0","c":"Green"},{"id":216,"loc":"Trellis Walk & Grove Court","lat":32.627566,"lng":-83.693711,"s":"32","r":"10","p":"5.0","f":"750.0","c":"Orange"},{"id":217,"loc":"111 Grove Court / Right","lat":32.626718,"lng":-83.695276,"s":"40","r":"2","p":"10.0","f":"1061.0","c":"Green"},{"id":218,"loc":"213 Grove Court / Left","lat":32.628867,"lng":-83.693808,"s":"26","r":"10","p":"25.0","f":"750.0","c":"Orange"},{"id":219,"loc":"111 Arbor Lane","lat":32.627069,"lng":-83.697326,"s":"44","r":"12","p":"15.0","f":"1300.0","c":"Green"},{"id":220,"loc":"Farmington Court & Chalet Cove","lat":32.629239,"lng":-83.697966,"s":"44","r":"24","p":"5.0","f":"750.0","c":"Orange"},{"id":221,"loc":"106 Chalet Cove","lat":32.630172,"lng":-83.696712,"s":"62","r":"28","p":"10.0","f":"1061.0","c":"Green"},{"id":222,"loc":"107 Bretwood Court","lat":32.630311,"lng":-83.695114,"s":"60","r":"18","p":"10.0","f":"1061.0","c":"Green"},{"id":223,"loc":"Arbor Lane & Pembroke Point","lat":32.630641,"lng":-83.700106,"s":"60","r":"38","p":"20.0","f":"1500.0","c":"Blue"},{"id":224,"loc":"75 Pembroke Point","lat":32.631499,"lng":-83.694692,"s":"60","r":"40","p":"15.0","f":"1300.0","c":"Green"},{"id":225,"loc":"Pembroke Point & Cross Link Trail","lat":32.631586,"lng":-83.697483,"s":"60","r":"42","p":"18.0","f":"1424.0","c":"Green"},{"id":226,"loc":"Jadestone Court / Cul-de-sac","lat":32.632781,"lng":-83.696672,"s":"60","r":"40","p":"20.0","f":"1500.0","c":"Blue"},{"id":227,"loc":"107 Jadestone Court","lat":32.632462,"lng":-83.699196,"s":"62","r":"48","p":"10.0","f":"1061.0","c":"Green"},{"id":228,"loc":"Jadestone Court & Arbor Lane","lat":32.631549,"lng":-83.700304,"s":"62","r":"48","p":"15.0","f":"1300.0","c":"Green"},{"id":229,"loc":"107 Pembroke Point","lat":32.630334,"lng":-83.701698,"s":"54","r":"46 / 25","p":"26.0","f":"1300.0","c":"Green"},{"id":230,"loc":"Pembroke Point & Bartlett Way","lat":32.629884,"lng":-83.703524,"s":"58","r":"42 / 34","p":"34.0","f":"1342.0","c":"Green"},{"id":231,"loc":"Macintosh Lane & Bartlett Way","lat":32.627641,"lng":-83.703629,"s":"50","r":"30 / 10","p":"22.0","f":"0.0","c":"Red"},{"id":232,"loc":"101 Bartlett Way","lat":32.625239,"lng":-83.703854,"s":"52","r":"22 / 20","p":"12.0","f":"1061.0","c":"Green"},{"id":233,"loc":"208 Pembroke Point","lat":32.630703,"lng":-83.704751,"s":"60","r":"44 / 35","p":"30.0","f":"1300.0","c":"Green"},{"id":234,"loc":"110 Fairfax Court","lat":32.630498,"lng":-83.705726,"s":"56","r":"40 / 30","p":"28.0","f":"1300.0","c":"Green"},{"id":235,"loc":"107 Montview Way","lat":32.631756,"lng":-83.705678,"s":"60","r":"46 / 35","p":"30.0","f":"1300.0","c":"Green"},{"id":236,"loc":"304 Montview Way","lat":32.631758,"lng":-83.702934,"s":"58","r":"50 / 20","p":"46.0","f":"750.0","c":"Orange"},{"id":237,"loc":"405 Pembroke Point","lat":32.632551,"lng":-83.704639,"s":"64","r":"38","p":"18.0","f":"1424.0","c":"Green"},{"id":238,"loc":"207 Cashmere Court / Right","lat":32.634341,"lng":-83.700741,"s":"64","r":"42","p":"25.0","f":"1678.0","c":"Blue"},{"id":239,"loc":"103 Cashmere Court / Left","lat":32.633958,"lng":-83.703947,"s":"68","r":"52","p":"15.0","f":"1300.0","c":"Green"},{"id":240,"loc":"Arbor Lane & Vanguard Court","lat":32.632688,"lng":-83.702235,"s":"64","r":"50","p":"15.0","f":"1300.0","c":"Green"},{"id":241,"loc":"111 Vanguard Court","lat":32.633684,"lng":-83.699682,"s":"64","r":"48","p":"25.0","f":"1678.0","c":"Blue"},{"id":242,"loc":"212 Macintosh Lane","lat":32.628658,"lng":-83.700445,"s":"50","r":"30","p":"12.0","f":"1163.0","c":"Green"},{"id":243,"loc":"105 Jonathan Fair","lat":32.628737,"lng":-83.702854,"s":"54","r":"24","p":"12.0","f":"1163.0","c":"Green"},{"id":244,"loc":"312 Blossom Lane","lat":32.629631,"lng":-83.700613,"s":"52","r":"20 / 10","p":"10.0","f":"0.0","c":"Red"},{"id":245,"loc":"100 Eagle Pkwy / Flag Pole","lat":32.623511,"lng":-83.703711,"s":"54","r":"40","p":"15.0","f":"1300.0","c":"Green"},{"id":246,"loc":"104 Eagle Harbor Island","lat":32.625679,"lng":-83.706075,"s":"50","r":"30","p":"15.0","f":"1300.0","c":"Green"},{"id":247,"loc":"111 Nantucket Island","lat":32.626872,"lng":-83.706164,"s":"52","r":"22","p":"10.0","f":"1061.0","c":"Green"},{"id":248,"loc":"111 Newport Island","lat":32.628113,"lng":-83.706136,"s":"58","r":"24","p":"10.0","f":"1061.0","c":"Green"},{"id":249,"loc":"502 Eagle Springs Drive","lat":32.629096,"lng":-83.706776,"s":"62","r":"26","p":"10.0","f":"1061.0","c":"Green"},{"id":250,"loc":"518 Eagle Springs Drive","lat":32.629181,"lng":-83.705484,"s":"56","r":"20","p":"10.0","f":"1061.0","c":"Green"},{"id":251,"loc":"Village Walk & Cottage Court","lat":32.631913,"lng":-83.706918,"s":"56","r":"18 / 10","p":"10.0","f":"0.0","c":"Red"},{"id":252,"loc":"110 Village Walk","lat":32.633135,"lng":-83.706318,"s":"65","r":"30","p":"10.0","f":"1061.0","c":"Green"},{"id":253,"loc":"Eagle Springs Drive & Jamestown Court","lat":32.630639,"lng":-83.692923,"s":"56","r":"30","p":"10.0","f":"1061.0","c":"Green"},{"id":254,"loc":"212 Jamestown Court","lat":32.631433,"lng":-83.694421,"s":"46","r":"24","p":"10.0","f":"1061.0","c":"Green"},{"id":255,"loc":"3510 US-41 N Highway","lat":32.622957,"lng":-83.708899,"s":"44","r":"20","p":"5.0","f":"750.0","c":"Orange"},{"id":256,"loc":"800 Gunn Road / Building 100 SE Corner","lat":32.622079,"lng":-83.705371,"s":"54","r":"15","p":"8.0","f":"950.0","c":"Orange"},{"id":257,"loc":"800 Gunn Road / Building 300 SE Corner","lat":32.623291,"lng":-83.705721,"s":"54","r":"15","p":"8.0","f":"950.0","c":"Orange"},{"id":258,"loc":"800 Gunn Road / Building 700 NE Corner","lat":32.624723,"lng":-83.706363,"s":"52","r":"14","p":"8.0","f":"950.0","c":"Orange"},{"id":259,"loc":"800 Gunn Road / Building 800 SW Corner","lat":32.624394,"lng":-83.707945,"s":"52","r":"14","p":"8.0","f":"950.0","c":"Orange"},{"id":260,"loc":"800 Gunn Road / Clubhouse SW Corner","lat":32.623857,"lng":-83.707109,"s":"50","r":"13","p":"8.0","f":"950.0","c":"Orange"},{"id":261,"loc":"800 Gunn Road / Building 1100 NW Corner","lat":32.623171,"lng":-83.707839,"s":"54","r":"15","p":"8.0","f":"950.0","c":"Orange"},{"id":262,"loc":"800 Gunn Road / Building 1400 SW Corner","lat":32.621723,"lng":-83.706952,"s":"54","r":"15","p":"8.0","f":"950.0","c":"Orange"},{"id":263,"loc":"N. Houston Lake Blvd & Houston Lane","lat":32.649852,"lng":-83.695391,"s":"28","r":"0","p":"5.0","f":"750.0","c":"Orange"},{"id":264,"loc":"223 Sunnymeade Drive","lat":32.649645,"lng":-83.696301,"s":"56","r":"12","p":"8.0","f":"949.0","c":"Orange"},{"id":265,"loc":"107 Sunnymeade Drive","lat":32.649917,"lng":-83.697034,"s":"46","r":"16","p":"8.0","f":"949.0","c":"Orange"},{"id":266,"loc":"119 Sunnymeade Drive","lat":32.649986,"lng":-83.698006,"s":"46","r":"12","p":"10.0","f":"1061.0","c":"Green"},{"id":267,"loc":"138 Sunnymeade Drive","lat":32.649464,"lng":-83.698509,"s":"44","r":"12","p":"8.0","f":"949.0","c":"Orange"},{"id":268,"loc":"104 Ainsley Court","lat":32.648913,"lng":-83.698675,"s":"46","r":"14","p":"8.0","f":"949.0","c":"Orange"},{"id":269,"loc":"207 Sunnymeade Drive","lat":32.649031,"lng":-83.697388,"s":"50","r":"14","p":"10.0","f":"1061.0","c":"Green"},{"id":270,"loc":"217 Sunnymeade Drive","lat":32.648893,"lng":-83.696345,"s":"56","r":"12","p":"10.0","f":"1061.0","c":"Green"},{"id":271,"loc":"414 Sentry Oaks Drive","lat":32.622925,"lng":-83.677283,"s":"40","r":"30","p":"10.0","f":"1061.0","c":"Green"},{"id":272,"loc":"400 Sentry Oaks Drive","lat":32.622944,"lng":-83.674509,"s":"48","r":"32","p":"10.0","f":"1061.0","c":"Green"},{"id":273,"loc":"224 Sentry Oaks Drive","lat":32.622935,"lng":-83.671771,"s":"48","r":"24","p":"10.0","f":"1061.0","c":"Green"},{"id":274,"loc":"Rainbow Avenue & Sunshine Way","lat":32.624175,"lng":-83.673071,"s":"70","r":"48","p":"12.0","f":"1163.0","c":"Green"},{"id":275,"loc":"Sunshine Way & Windy Court","lat":32.624684,"lng":-83.671299,"s":"70","r":"30","p":"10.0","f":"1061.0","c":"Green"},{"id":276,"loc":"Sunshine Way & Misty Court","lat":32.624168,"lng":-83.674366,"s":"62","r":"30","p":"12.0","f":"1163.0","c":"Green"},{"id":277,"loc":"Sunshine Way & Westfield Drive","lat":32.624465,"lng":-83.675882,"s":"66","r":"28","p":"14.0","f":"1256.0","c":"Green"},{"id":278,"loc":"Westfield Drive & Summerwind Place","lat":32.625561,"lng":-83.675345,"s":"70","r":"30","p":"10.0","f":"1061.0","c":"Green"},{"id":279,"loc":"316 Westfield Drive","lat":32.628341,"lng":-83.675141,"s":"74","r":"36","p":"10.0","f":"1061.0","c":"Green"},{"id":280,"loc":"Summerwind Place & Ashlund Drive","lat":32.625696,"lng":-83.676739,"s":"66","r":"30","p":"12.0","f":"1163.0","c":"Green"},{"id":281,"loc":"208 McVey Trail","lat":32.628705,"lng":-83.682831,"s":"70","r":"54","p":"5.0","f":"750.0","c":"Orange"},{"id":282,"loc":"Vanessa Drive & McVey Trail","lat":32.627889,"lng":-83.681509,"s":"74","r":"44","p":"10.0","f":"1061.0","c":"Green"},{"id":283,"loc":"Vanessa Drive & Jeannette Place","lat":32.626045,"lng":-83.681522,"s":"66","r":"30","p":"16.0","f":"1342.0","c":"Green"},{"id":284,"loc":"310 Vanessa Drive","lat":32.624946,"lng":-83.682131,"s":"66","r":"38","p":"11.0","f":"1113.0","c":"Green"},{"id":285,"loc":"103 Collinstown Avenue","lat":32.631829,"lng":-83.679541,"s":"70","r":"58 / 50","p":"50.0","f":"1678.0","c":"Blue"},{"id":286,"loc":"205 Collinstown Avenue","lat":32.631621,"lng":-83.677201,"s":"70","r":"60 / 44","p":"45.0","f":"1500.0","c":"Blue"},{"id":287,"loc":"107 Wanda Drive","lat":32.630907,"lng":-83.677913,"s":"66","r":"56 / 34","p":"50.0","f":"1678.0","c":"Blue"},{"id":288,"loc":"Collinstown Avenue & Kathryn Place","lat":32.631403,"lng":-83.675975,"s":"70","r":"62 / 46","p":"55.0","f":"1838.0","c":"Blue"},{"id":289,"loc":"Collins Estates Avenue & Parker Lane","lat":32.632925,"lng":-83.677094,"s":"84","r":"72 / 52","p":"65.0","f":"1838.0","c":"Blue"},{"id":290,"loc":"Parker Lane / Cul-de-sac","lat":32.634208,"lng":-83.677128,"s":"88","r":"76 / 56","p":"65.0","f":"1838.0","c":"Blue"},{"id":291,"loc":"105 Karlyn Court","lat":32.633997,"lng":-83.676052,"s":"88","r":"74 / 50","p":"65.0","f":"1838.0","c":"Blue"},{"id":292,"loc":"Collins Estates Avenue & Collins Park Drive","lat":32.633012,"lng":-83.675127,"s":"88","r":"74 / 60","p":"50.0","f":"1500.0","c":"Blue"},{"id":293,"loc":"411 Collins Estates Avenue","lat":32.633124,"lng":-83.673151,"s":"86","r":"70 / 46","p":"65.0","f":"1838.0","c":"Blue"},{"id":294,"loc":"301 Collins Park Drive","lat":32.631592,"lng":-83.674912,"s":"72","r":"58 / 46","p":"65.0","f":"1838.0","c":"Blue"},{"id":295,"loc":"111 Wray Street","lat":32.633029,"lng":-83.664021,"s":"50","r":"40","p":"35.0","f":"1985.0","c":"Blue"},{"id":296,"loc":"125 Wray Street","lat":32.631717,"lng":-83.664037,"s":"58","r":"48","p":"30.0","f":"1838.0","c":"Blue"},{"id":297,"loc":"211 Wray Street","lat":32.630382,"lng":-83.664057,"s":"62","r":"48","p":"30.0","f":"1838.0","c":"Blue"},{"id":298,"loc":"226 Wray Street","lat":32.629042,"lng":-83.664071,"s":"60","r":"48","p":"30.0","f":"1838.0","c":"Blue"},{"id":299,"loc":"110 Asbell Way","lat":32.626729,"lng":-83.678615,"s":"62","r":"52","p":"12.0","f":"1163.0","c":"Green"},{"id":300,"loc":"Asbell Way & Astig Court","lat":32.626653,"lng":-83.677111,"s":"64","r":"24","p":"12.0","f":"1163.0","c":"Green"},{"id":301,"loc":"310 Asbell Way","lat":32.626776,"lng":-83.676031,"s":"66","r":"58","p":"8.0","f":"950.0","c":"Orange"},{"id":302,"loc":"108 Gemstone Court","lat":32.657589,"lng":-83.694107,"s":"56","r":"18","p":"5.0","f":"750.0","c":"Orange"},{"id":303,"loc":"110 Limestone Trail","lat":32.656201,"lng":-83.694031,"s":"54","r":"8","p":"5.0","f":"750.0","c":"Orange"},{"id":304,"loc":"103 Claystone Court","lat":32.656371,"lng":-83.692979,"s":"58","r":"12","p":"5.0","f":"750.0","c":"Orange"},{"id":305,"loc":"1111 Dunbar Road / Training Grounds","lat":32.660319,"lng":-83.691923,"s":"36","r":"22","p":"25.0","f":"839.0","c":"Orange"},{"id":306,"loc":"125 Concord Ridge","lat":32.652953,"lng":-83.698191,"s":"46","r":"25","p":"5.0","f":"750.0","c":"Orange"},{"id":307,"loc":"168 Sourwood Lane","lat":32.650615,"lng":-83.704254,"s":"42","r":"26 / 22","p":"15.0","f":"475.0","c":"Red"},{"id":308,"loc":"123 Sourwood Lane","lat":32.652432,"lng":-83.703654,"s":"40","r":"26","p":"10.0","f":"1061.0","c":"Green"},{"id":309,"loc":"100 Red Birch Lane","lat":32.650601,"lng":-83.703111,"s":"40","r":"20","p":"5.0","f":"750.0","c":"Orange"},{"id":310,"loc":"122 Red Birch Lane","lat":32.651291,"lng":-83.701851,"s":"30","r":"18","p":"5.0","f":"750.0","c":"Orange"},{"id":311,"loc":"144 Red Birch Lane","lat":32.652681,"lng":-83.701991,"s":"40","r":"20","p":"5.0","f":"750.0","c":"Orange"},{"id":312,"loc":"166 Red Birch Lane","lat":32.651701,"lng":-83.702821,"s":"40","r":"16","p":"7.0","f":"888.0","c":"Orange"},{"id":313,"loc":"149 Back Cedar Lane","lat":32.651762,"lng":-83.706062,"s":"40","r":"20","p":"5.0","f":"750.0","c":"Orange"},{"id":314,"loc":"115 Back Cedar Lane","lat":32.651751,"lng":-83.705336,"s":"42","r":"20","p":"10.0","f":"1061.0","c":"Green"},{"id":315,"loc":"126 Arbor Creek","lat":32.652598,"lng":-83.707641,"s":"40","r":"28","p":"7.0","f":"888.0","c":"Orange"},{"id":316,"loc":"168 Arbor Creek","lat":32.649822,"lng":-83.707573,"s":"44","r":"30","p":"12.0","f":"1163.0","c":"Green"},{"id":317,"loc":"221 Logans Mill Trail","lat":32.648803,"lng":-83.705385,"s":"38","r":"20","p":"5.0","f":"750.0","c":"Orange"},{"id":318,"loc":"126 Logans Mill Trail","lat":32.648422,"lng":-83.708246,"s":"40","r":"14","p":"10.0","f":"1061.0","c":"Green"},{"id":319,"loc":"100 Logans Mill Trail","lat":32.648037,"lng":-83.707081,"s":"42","r":"18","p":"10.0","f":"1061.0","c":"Green"},{"id":320,"loc":"111 Pilgrim Mill Trail","lat":32.648651,"lng":-83.706101,"s":"42","r":"30","p":"15.0","f":"1300.0","c":"Green"},{"id":321,"loc":"100 Martin Mill Trail","lat":32.649796,"lng":-83.703412,"s":"42","r":"10","p":"10.0","f":"1061.0","c":"Green"},{"id":322,"loc":"120 Martin Mill Trail","lat":32.648856,"lng":-83.704498,"s":"38","r":"10","p":"10.0","f":"1061.0","c":"Green"},{"id":323,"loc":"136 Martin Mill Trail","lat":32.647724,"lng":-83.704314,"s":"40","r":"12","p":"10.0","f":"1061.0","c":"Green"},{"id":324,"loc":"150 Martin Mill Trail","lat":32.648484,"lng":-83.703503,"s":"38","r":"18","p":"10.0","f":"1061.0","c":"Green"},{"id":325,"loc":"Old Stone Crossing #1","lat":32.651191,"lng":-83.699411,"s":"40","r":"28 / 18","p":"20.0","f":"949.0","c":"Orange"},{"id":326,"loc":"Old Stone Crossing #2","lat":32.650371,"lng":-83.700061,"s":"40","r":"28 / 18","p":"20.0","f":"949.0","c":"Orange"},{"id":327,"loc":"Old Stone Crossing #3","lat":32.650133,"lng":-83.701888,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":328,"loc":"166 Rock Run Trail","lat":32.649761,"lng":-83.702771,"s":"42","r":"26 / 16","p":"20.0","f":"750.0","c":"Orange"},{"id":329,"loc":"122 Rock Run Trail","lat":32.649101,"lng":-83.701771,"s":"42","r":"26 / 16","p":"20.0","f":"750.0","c":"Orange"},{"id":330,"loc":"144 Rock Run Trail","lat":32.648171,"lng":-83.702487,"s":"40","r":"26 / 14","p":"20.0","f":"750.0","c":"Orange"},{"id":331,"loc":"108 Rock Run Trail","lat":32.649041,"lng":-83.702741,"s":"40","r":"24 / 16","p":"20.0","f":"750.0","c":"Orange"},{"id":332,"loc":"100 Price Mill Trail","lat":32.650134,"lng":-83.701111,"s":"40","r":"28 / 18","p":"20.0","f":"750.0","c":"Orange"},{"id":333,"loc":"101 Creek Bluff Trail","lat":32.649246,"lng":-83.700892,"s":"42","r":"28 / 20","p":"20.0","f":"475.0","c":"Red"},{"id":334,"loc":"101 Flat Rock Mill Trail","lat":32.648522,"lng":-83.700919,"s":"40","r":"24 / 14","p":"22.0","f":"475.0","c":"Red"},{"id":335,"loc":"142 Price Mill Trail","lat":32.647671,"lng":-83.700409,"s":"42","r":"26 / 16","p":"20.0","f":"475.0","c":"Red"},{"id":336,"loc":"113 Flat Rock Mill Trail","lat":32.648511,"lng":-83.699704,"s":"42","r":"28 / 16","p":"20.0","f":"475.0","c":"Red"},{"id":337,"loc":"113 Creek Bluff Trail","lat":32.649222,"lng":-83.69968,"s":"42","r":"30 / 15","p":"20.0","f":"475.0","c":"Red"},{"id":338,"loc":"190 Price Mill Trail","lat":32.649931,"lng":-83.699726,"s":"42","r":"28 / 18","p":"20.0","f":"671.0","c":"Orange"},{"id":339,"loc":"101 Silver Maple Lane","lat":32.650325,"lng":-83.701181,"s":"40","r":"26 / 18","p":"20.0","f":"750.0","c":"Orange"},{"id":340,"loc":"100 English Oak Lane","lat":32.651276,"lng":-83.700981,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":341,"loc":"120 English Oak Lane","lat":32.651484,"lng":-83.699753,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":342,"loc":"300 Silver Maple Lane","lat":32.652021,"lng":-83.700973,"s":"40","r":"26 / 18","p":"20.0","f":"0.0","c":"Red"},{"id":343,"loc":"308 Silver Maple Lane","lat":32.652827,"lng":-83.700994,"s":"42","r":"28 / 18","p":"20.0","f":"0.0","c":"Red"},{"id":344,"loc":"201 Frankfort Lane","lat":32.658042,"lng":-83.706713,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":345,"loc":"211 Frankfort Lane","lat":32.657026,"lng":-83.706748,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":346,"loc":"107 Brookline Way","lat":32.656181,"lng":-83.707711,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":347,"loc":"123 Brookline Way","lat":32.657191,"lng":-83.708021,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":348,"loc":"143 Brookline Way","lat":32.658181,"lng":-83.707401,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":349,"loc":"101 Brookline Way","lat":32.656171,"lng":-83.706931,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":350,"loc":"102 Trenton Drive","lat":32.655298,"lng":-83.708003,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":351,"loc":"401 Frankfort Lane","lat":32.655266,"lng":-83.706736,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":352,"loc":"402 Frankfort Lane","lat":32.654776,"lng":-83.706952,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":353,"loc":"414 Frankfort Lane","lat":32.653711,"lng":-83.706971,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":354,"loc":"823 Trenton Drive","lat":32.654201,"lng":-83.708049,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":355,"loc":"805 Trenton Drive","lat":32.653611,"lng":-83.707346,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":356,"loc":"Trenton Drive","lat":32.653611,"lng":-83.705101,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":357,"loc":"Trenton Drive","lat":32.653611,"lng":-83.704051,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":358,"loc":"Trenton Drive","lat":32.653611,"lng":-83.701841,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":359,"loc":"Lulu Belle Lane","lat":32.654341,"lng":-83.700782,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":360,"loc":"Lulu Belle Lane","lat":32.654354,"lng":-83.702043,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":361,"loc":"Lulu Belle Lane","lat":32.654381,"lng":-83.703641,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":362,"loc":"Lulu Belle Lane","lat":32.654381,"lng":-83.705131,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":363,"loc":"302 Jewellie Road","lat":32.654928,"lng":-83.705891,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":364,"loc":"404 Jewellie Road","lat":32.654039,"lng":-83.705891,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":365,"loc":"301 Jewellie Road","lat":32.655301,"lng":-83.705091,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":366,"loc":"Trenton Drive","lat":32.655297,"lng":-83.703703,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":367,"loc":"Trenton Drive","lat":32.655293,"lng":-83.702041,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":368,"loc":"Trenton Drive","lat":32.655264,"lng":-83.700799,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":369,"loc":"220 Jewellie Road","lat":32.656231,"lng":-83.705891,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":370,"loc":"202 Jewellie Road","lat":32.657731,"lng":-83.705891,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":371,"loc":"112 Jewellie Road","lat":32.658201,"lng":-83.706051,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":372,"loc":"102 Jewellie Road","lat":32.659021,"lng":-83.705081,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":373,"loc":"Oak Glen #1","lat":NaN,"lng":NaN,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":374,"loc":"Oak Glen #2","lat":NaN,"lng":NaN,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":375,"loc":"Oak Glen #3","lat":NaN,"lng":NaN,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":376,"loc":"Silver Maple Circle #1","lat":NaN,"lng":NaN,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":377,"loc":"Silver Maple Circle #2","lat":NaN,"lng":NaN,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":378,"loc":"Silver Maple Circle #3","lat":NaN,"lng":NaN,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":379,"loc":"Silver Maple Circle #4","lat":NaN,"lng":NaN,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":380,"loc":"Silver Maple Circle #5","lat":NaN,"lng":NaN,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":381,"loc":"Longleaf Road & River Burch Way","lat":NaN,"lng":NaN,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":382,"loc":"210 River Birch Way","lat":NaN,"lng":NaN,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":383,"loc":"River Birch Way","lat":NaN,"lng":NaN,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":384,"loc":"Odetta Place","lat":NaN,"lng":NaN,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":385,"loc":"Odetta Place","lat":NaN,"lng":NaN,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":386,"loc":"Calipurnia Court","lat":NaN,"lng":NaN,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":387,"loc":"Longleaf Road","lat":NaN,"lng":NaN,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":388,"loc":"","lat":NaN,"lng":NaN,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":389,"loc":"","lat":NaN,"lng":NaN,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":390,"loc":"","lat":NaN,"lng":NaN,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":391,"loc":"","lat":NaN,"lng":NaN,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":392,"loc":"","lat":NaN,"lng":NaN,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":393,"loc":"","lat":NaN,"lng":NaN,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":394,"loc":"","lat":NaN,"lng":NaN,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":395,"loc":"","lat":NaN,"lng":NaN,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":396,"loc":"","lat":NaN,"lng":NaN,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":397,"loc":"","lat":NaN,"lng":NaN,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":398,"loc":"","lat":NaN,"lng":NaN,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":399,"loc":"","lat":NaN,"lng":NaN,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":400,"loc":"","lat":NaN,"lng":NaN,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":0,"loc":"","lat":NaN,"lng":NaN,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":0,"loc":"","lat":NaN,"lng":NaN,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":0,"loc":"","lat":NaN,"lng":NaN,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":0,"loc":"","lat":NaN,"lng":NaN,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":0,"loc":"","lat":NaN,"lng":NaN,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":0,"loc":"","lat":NaN,"lng":NaN,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":0,"loc":"","lat":NaN,"lng":NaN,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":0,"loc":"","lat":NaN,"lng":NaN,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":0,"loc":"","lat":NaN,"lng":NaN,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":0,"loc":"","lat":NaN,"lng":NaN,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":0,"loc":"","lat":NaN,"lng":NaN,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":0,"loc":"","lat":NaN,"lng":NaN,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":0,"loc":"","lat":NaN,"lng":NaN,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"},{"id":0,"loc":"","lat":NaN,"lng":NaN,"s":"N/a","r":"N/a","p":"","f":"","c":"N/a"}];
 
-// ===== TAB SWITCHING =====
-function switchTab(id){
-    document.querySelectorAll('.tab-btn').forEach(function(b,i){b.classList.remove('active')});
-    document.querySelectorAll('.tab-content').forEach(function(c){c.classList.remove('active')});
-    document.getElementById('tab-'+id).classList.add('active');
-    event.target.classList.add('active');
-}
+/* ========================================================
+   NFF CALCULATOR
+   ======================================================== */
+var F_FACTORS = {1:1.5, 2:1.0, 3:0.8, 4:0.8, 5:0.6, 6:0.6};
+var O_FACTORS = {1:0.75, 2:0.85, 3:1.00, 4:1.15, 5:1.25};
 
-// ===== ISO NFF CALCULATOR =====
-var fFactors={1:1.5,2:1.0,3:0.8,4:0.8,5:0.6,6:0.6};
-var cMax={1:8000,2:8000,3:6000,4:6000,5:6000,6:6000};
-var oFactors={1:0.75,2:0.85,3:1.00,4:1.15,5:1.25};
+function calcNFF() {
+    var constClass = parseInt(document.getElementById('nff_const_class').value) || 0;
+    var area = parseFloat(document.getElementById('nff_area').value) || 0;
+    var occClass = parseInt(document.getElementById('nff_occ_class').value) || 0;
+    var x = parseFloat(document.getElementById('nff_x').value) || 0;
+    var p = parseFloat(document.getElementById('nff_p').value) || 0;
+    var shingles = document.getElementById('nff_shingles').checked;
 
-function calcNFF(){
-    var cls=document.getElementById('nff_const_class').value;
-    var area=parseFloat(document.getElementById('nff_area').value);
-    var occCls=document.getElementById('nff_occ_class').value;
-    var xf=parseFloat(document.getElementById('nff_x').value)||0;
-    var pf=parseFloat(document.getElementById('nff_p').value)||0;
-    var shingles=document.getElementById('nff_shingles').checked;
+    // Sync to hidden fields for autoSave
+    document.getElementById('h_nff_const_class').value = constClass || '';
+    document.getElementById('h_nff_area').value = area || '';
+    document.getElementById('h_nff_occ_class').value = occClass || '';
+    document.getElementById('h_nff_x').value = x;
+    document.getElementById('h_nff_p').value = p;
+    document.getElementById('h_nff_shingles').value = shingles ? '1' : '';
 
-    if(!cls||!area||!occCls){return}
+    var hero = document.getElementById('nffHero');
 
-    var F=fFactors[cls];
-    var C=18*F*Math.sqrt(area);
-    // Round to nearest 250
-    C=Math.round(C/250)*250;
-    // Apply class max
-    var maxC=cMax[cls];
-    if(C>maxC)C=maxC;
-    // Min 500
-    if(C<500)C=500;
-
-    var O=oFactors[occCls];
-
-    // X+P max 0.60
-    var xpSum=Math.min(xf+pf,0.60);
-
-    var nff=C*O*(1+xpSum);
-    // Round to nearest 250
-    nff=Math.round(nff/250)*250;
-    // Min 500, max 12000
-    nff=Math.max(500,Math.min(12000,nff));
-
-    if(shingles)nff+=500;
-
-    // Duration: NFF<=2500=2hrs, 2501-3500=3hrs, >3500=4hrs
-    var dur=nff<=2500?2:nff<=3500?3:4;
-
-    document.getElementById('nff-result').style.display='block';
-    document.getElementById('res-nff').textContent=nff.toLocaleString()+' GPM';
-    document.getElementById('res-c').textContent=C.toLocaleString()+' GPM';
-    document.getElementById('res-dur').textContent=dur+' hours';
-    document.getElementById('nff-breakdown').innerHTML=
-        '<strong>Breakdown:</strong><br>'+
-        'F factor = '+F+' (Class '+cls+')<br>'+
-        'C = 18 × '+F+' × √'+area.toLocaleString()+' = '+C.toLocaleString()+' GPM<br>'+
-        'O = '+O+' (C-'+occCls+')<br>'+
-        'X + P = '+xf+' + '+pf+' = '+xpSum.toFixed(2)+(xf+pf>0.60?' <em>(capped at 0.60)</em>':'')+'<br>'+
-        'NFF = '+C.toLocaleString()+' × '+O+' × [1 + '+xpSum.toFixed(2)+'] = '+nff.toLocaleString()+' GPM'+
-        (shingles?' (+500 wood shingle)':'')+'<br>'+
-        'Required duration: '+dur+' hours';
-
-    // Auto-fill summary
-    document.getElementById('summary_nff').value=nff;
-    document.getElementById('summary_dur').value=dur;
-    if(area)document.getElementById('summary_area').value=area;
-    // Save hidden fields
-    document.getElementById('save_const_class').value=cls;
-    document.getElementById('save_occ_class').value=occCls;
-    document.getElementById('save_x').value=xf;
-    document.getElementById('save_p').value=pf;
-    saveFormData(form);
-}
-
-// ===== HYDRANT FLOW CALCULATOR =====
-function calcHydFlow(){
-    var C=parseFloat(document.getElementById('hft_coeff').value);
-    var d=parseFloat(document.getElementById('hft_diameter').value);
-    var n=parseInt(document.getElementById('hft_outlets').value)||1;
-    var S=parseFloat(document.getElementById('hft_static').value);
-    var R=parseFloat(document.getElementById('hft_residual').value);
-    var p=parseFloat(document.getElementById('hft_pitot').value);
-
-    if(!S||!R||!p)return;
-
-    var Q=29.83*C*d*d*Math.sqrt(p)*n;
-    Q=Math.round(Q);
-
-    // AFF at 20 PSI residual
-    var drop=S-R;
-    var aff=0;
-    if(drop>0&&S>20){
-        aff=Q*Math.pow((S-20)/(S-R),0.54);
-        aff=Math.round(aff);
+    if (!constClass || !area) {
+        hero.classList.add('pending');
+        hero.classList.remove('has-data');
+        document.getElementById('heroNFF').textContent = 'Select construction class and enter area to calculate';
+        document.getElementById('heroStats').style.display = 'none';
+        document.getElementById('heroBreakdown').style.display = 'none';
+        return;
     }
 
-    document.getElementById('hydflow-result').style.display='block';
-    document.getElementById('res-q').textContent=Q.toLocaleString()+' GPM';
-    document.getElementById('res-aff').textContent=aff.toLocaleString()+' GPM';
-    document.getElementById('res-drop').textContent=drop+' PSI';
-    document.getElementById('hydflow-breakdown').innerHTML=
-        '<strong>Breakdown:</strong><br>'+
-        'Q = 29.83 × '+C+' × '+d+'² × √'+p+' × '+n+' = '+Q.toLocaleString()+' GPM<br>'+
-        'AFF = '+Q.toLocaleString()+' × [('+S+' - 20) / ('+S+' - '+R+')]<sup>0.54</sup> = '+aff.toLocaleString()+' GPM<br>'+
-        'Pressure drop: '+S+' - '+R+' = '+drop+' PSI';
+    var F = F_FACTORS[constClass] || 1.0;
+    var Ci = 18 * F * Math.sqrt(area);
+    Ci = Math.min(Ci, 12000); // ISO cap
+
+    var Oi = O_FACTORS[occClass] || 1.0;
+    if (x + p > 0.75) { x = 0.50; p = 0.25; } // cap
+    var xpFactor = 1 + x + p;
+
+    var nff = Ci * Oi * xpFactor;
+    if (shingles) nff += 500;
+
+    // Round to nearest 250
+    nff = Math.round(nff / 250) * 250;
+    nff = Math.max(500, Math.min(nff, 12000));
+
+    // Duration
+    var dur = nff <= 2500 ? 2 : (nff <= 3500 ? 3 : 4);
+
+    hero.classList.remove('pending');
+    document.getElementById('heroNFF').textContent = nff.toLocaleString() + ' GPM';
+    document.getElementById('heroStats').style.display = 'flex';
+    document.getElementById('heroC').textContent = Math.round(Ci).toLocaleString() + ' GPM';
+    document.getElementById('heroO').textContent = Oi.toFixed(2);
+    document.getElementById('heroXP').textContent = (x + p).toFixed(2);
+    document.getElementById('heroDur').textContent = dur + ' hrs';
+
+    // Section results
+    document.getElementById('secConstResult').textContent = 'C = ' + Math.round(Ci).toLocaleString() + ' GPM';
+    document.getElementById('secConstruction').classList.add('has-value');
+    if (occClass) {
+        document.getElementById('secOccResult').textContent = 'O = ' + Oi.toFixed(2);
+        document.getElementById('secOccupancy').classList.add('has-value');
+    }
+    document.getElementById('secExpResult').textContent = 'X+P = ' + (x + p).toFixed(2);
+    document.getElementById('secExposure').classList.add('has-value');
+
+    // Breakdown
+    var bd = document.getElementById('heroBreakdown');
+    bd.style.display = 'block';
+    var classNames = {1:'Frame',2:'Joisted Masonry',3:'Non-Combustible',4:'Masonry Non-Comb',5:'Modified Fire Resistive',6:'Fire Resistive'};
+    var occNames = {1:'C-1 Non-Combustible',2:'C-2 Limited Combustible',3:'C-3 Combustible',4:'C-4 Free Burning',5:'C-5 Rapid Burning'};
+    bd.innerHTML =
+        '• Construction: Class ' + constClass + ' — ' + (classNames[constClass]||'') + ' (F=' + F + ')<br>' +
+        '• C = 18 × ' + F + ' × √' + area.toLocaleString() + ' = ' + Math.round(Ci).toLocaleString() + ' GPM<br>' +
+        '• Occupancy: ' + (occNames[occClass]||'Not selected (using 1.00)') + '<br>' +
+        '• Exposure: X=' + x.toFixed(2) + ', Communication: P=' + p.toFixed(2) + '<br>' +
+        '• NFF = ' + Math.round(Ci).toLocaleString() + ' × ' + Oi.toFixed(2) + ' × ' + xpFactor.toFixed(2) + (shingles ? ' + 500' : '') + ' = <strong>' + nff.toLocaleString() + ' GPM</strong><br>' +
+        '• Required fire flow duration: <strong>' + dur + ' hours</strong>';
+
+    // Save result
+    document.getElementById('h_nff_result').value = nff;
+    document.getElementById('h_nff_result').dispatchEvent(new Event('input', {bubbles:true}));
+
+    // Auto-collapse input sections
+    setTimeout(function() {
+        ['secConstruction','secOccupancy','secExposure'].forEach(function(id) {
+            document.getElementById(id).classList.add('collapsed');
+        });
+    }, 600);
 }
 
-function getHydGPS(){
-    if(!navigator.geolocation){showToast('GPS not available','error');return}
-    navigator.geolocation.getCurrentPosition(function(pos){
-        document.getElementById('hft_gps').value=pos.coords.latitude.toFixed(6)+', '+pos.coords.longitude.toFixed(6);
-    },function(){showToast('Location denied','error')});
+function toggleCalcSection(id) {
+    document.getElementById(id).classList.toggle('collapsed');
 }
 
-// ===== HYDRANT DATABASE & GPS MATCHING =====
-function getBizGPS(){
-    if(!navigator.geolocation){showToast('GPS not available','error');return}
-    document.getElementById('gps-status').innerHTML='<span class="loading-spinner"></span> Getting location...';
-    navigator.geolocation.getCurrentPosition(function(pos){
-        document.getElementById('biz_gps').value=pos.coords.latitude.toFixed(6)+', '+pos.coords.longitude.toFixed(6);
-        document.getElementById('gps-status').textContent='GPS acquired';
-        // Auto-save to form
-        var data=getSavedData();
-        data.latitude=pos.coords.latitude.toFixed(6);
-        data.longitude=pos.coords.longitude.toFixed(6);
-        saveAllData(data);
-    },function(){
-        document.getElementById('gps-status').textContent='Location denied';
+function toggleGuide(id) {
+    document.getElementById(id).classList.toggle('show');
+}
+
+/* ========================================================
+   HYDRANT GPS MATCHING (client-side, no API needed)
+   ======================================================== */
+function haversine(lat1, lng1, lat2, lng2) {
+    var R = 20902231; // Earth radius in feet
+    var dLat = (lat2 - lat1) * Math.PI / 180;
+    var dLng = (lng2 - lng1) * Math.PI / 180;
+    var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
+            Math.sin(dLng/2) * Math.sin(dLng/2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function getBizGPS() {
+    if (!navigator.geolocation) { showToast('GPS not available','error'); return; }
+    document.getElementById('gps-status').innerHTML = '<span class="loading-spinner"></span> Getting location...';
+    navigator.geolocation.getCurrentPosition(function(pos) {
+        document.getElementById('biz_gps').value = pos.coords.latitude.toFixed(6) + ', ' + pos.coords.longitude.toFixed(6);
+        document.getElementById('gps-status').textContent = '✅ GPS acquired';
+    }, function() {
+        document.getElementById('gps-status').textContent = '❌ Location denied';
         showToast('Location denied','error');
+    }, {enableHighAccuracy:true});
+}
+
+function findNearestHydrants() {
+    var gpsStr = document.getElementById('biz_gps').value.trim();
+    if (!gpsStr) { showToast('Enter GPS coordinates or click Get GPS','error'); return; }
+    var parts = gpsStr.split(',').map(function(s) { return parseFloat(s.trim()); });
+    if (parts.length < 2 || isNaN(parts[0]) || isNaN(parts[1])) { showToast('Invalid GPS format. Use: lat, lng','error'); return; }
+
+    var lat = parts[0], lng = parts[1];
+    document.getElementById('gps-status').innerHTML = '<span class="loading-spinner"></span> Searching ' + HYDRANTS.length + ' hydrants...';
+
+    // Calculate distance to each hydrant
+    var results = HYDRANTS.map(function(h) {
+        return { id:h.id, loc:h.loc, lat:h.lat, lng:h.lng, s:h.s, r:h.r, p:h.p, f:h.f, c:h.c,
+                 distance: haversine(lat, lng, h.lat, h.lng) };
     });
+
+    // Sort by distance, take closest 10
+    results.sort(function(a, b) { return a.distance - b.distance; });
+    var top10 = results.slice(0, 10);
+
+    document.getElementById('gps-status').textContent = '✅ Found ' + top10.length + ' nearest hydrants from database';
+    showMatches(top10);
 }
 
-// Try to load GPS from page 1 saved data
-(function(){
-    var data=getSavedData();
-    if(data.latitude&&data.longitude){
-        document.getElementById('biz_gps').value=data.latitude+', '+data.longitude;
-    }
-    if(data.address){
-        document.getElementById('biz_address').value=data.address;
-    }
-})();
+function showMatches(hydrants) {
+    var box = document.getElementById('matched-hydrants');
+    var container = document.getElementById('hydrant-matches');
+    box.style.display = 'block';
 
-async function findNearestHydrants(){
-    var gpsStr=document.getElementById('biz_gps').value.trim();
-    if(!gpsStr){showToast('Enter GPS coordinates or click Get GPS','error');return}
-    var parts=gpsStr.split(',').map(function(s){return parseFloat(s.trim())});
-    if(parts.length<2||isNaN(parts[0])||isNaN(parts[1])){showToast('Invalid GPS format. Use: lat, lng','error');return}
-
-    var lat=parts[0],lng=parts[1];
-    document.getElementById('gps-status').innerHTML='<span class="loading-spinner"></span> Searching hydrant database...';
-
-    try{
-        // Try API first
-        var r=await fetch('/api/hydrants/nearest?lat='+lat+'&lng='+lng+'&limit=10');
-        var d=await r.json();
-        if(d.success&&d.hydrants&&d.hydrants.length>0){
-            showMatches(d.hydrants.map(function(h){
-                return{id:h.id,location:h.location,lat:h.latitude,lng:h.longitude,
-                       static_psi:h.static_pressure,residual_psi:h.residual_pressure,
-                       pitot_psi:h.pitot_pressure,flow_gpm:h.flow_gpm,color:h.color,
-                       distance:h.distance_ft};
-            }));
-            document.getElementById('gps-status').textContent='Found '+d.hydrants.length+' hydrants nearby (from database)';
-            return;
+    container.innerHTML = hydrants.map(function(h, i) {
+        var colorDot = '';
+        if (h.c) {
+            var colors = {Blue:'#3498db', Green:'#27ae60', Orange:'#e67e22', Red:'#e74c3c'};
+            colorDot = '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + (colors[h.c]||'#999') + ';margin-right:4px;vertical-align:middle"></span>';
         }
-    }catch(e){
-        console.log('API unavailable, will show message');
-    }
-    document.getElementById('gps-status').textContent='No hydrants found nearby. Make sure the hydrant database is loaded.';
-    showToast('No hydrants found nearby','error');
-}
-
-function showMatches(hydrants){
-    var box=document.getElementById('matched-hydrants');
-    var container=document.getElementById('hydrant-matches');
-    box.style.display='block';
-
-    container.innerHTML=hydrants.map(function(h,i){
-        var colorDot='';
-        if(h.color){
-            var colors={Blue:'#3498db',Green:'#27ae60',Orange:'#e67e22',Red:'#e74c3c'};
-            colorDot='<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:'+(colors[h.color]||'#999')+';margin-right:4px;vertical-align:middle"></span>';
-        }
-        return '<div class="matched-item">'+
-            '<span class="loc">'+colorDot+'#'+(i+1)+' '+escH(h.location)+'</span>'+
-            '<span class="dist">'+Math.round(h.distance).toLocaleString()+' ft</span>'+
-            '<span>S:'+( h.static_psi||'—')+'</span>'+
-            '<span>R:'+(h.residual_psi||'—')+'</span>'+
-            '<span class="flow">'+(h.flow_gpm||'—')+' GPM</span>'+
-            '<button type="button" onclick="addToTable('+JSON.stringify(h).replace(/"/g,'&quot;')+')">+ Add</button>'+
+        var flowVal = h.f ? Math.round(parseFloat(h.f)) : '—';
+        return '<div class="matched-item">' +
+            '<span class="loc">' + colorDot + '#' + (i+1) + ' ' + escH(h.loc) + '</span>' +
+            '<span class="dist">' + Math.round(h.distance).toLocaleString() + ' ft</span>' +
+            '<span>S:' + (h.s || '—') + '</span>' +
+            '<span>R:' + (h.r || '—') + '</span>' +
+            '<span class="flow">' + flowVal + ' GPM</span>' +
+            '<button type="button" onclick=\'addToTable(' + JSON.stringify(h).replace(/'/g,"\\'") + ')\'>+ Add</button>' +
             '</div>';
     }).join('');
 }
 
-function escH(s){if(!s)return'';var d=document.createElement('div');d.textContent=s;return d.innerHTML}
+function escH(s) { if (!s) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
-// ===== HYDRANT TABLE =====
-var hydCount=3;
+/* ========================================================
+   HYDRANT TABLE
+   ======================================================== */
+var hydCount = 3;
 
-function addHydRow(){
+function addHydRow() {
     hydCount++;
-    var tb=document.getElementById('hydTbody');
-    var tr=document.createElement('tr');
-    tr.innerHTML='<td>'+hydCount+'</td>'+
-        '<td><input name="hyd_loc_'+hydCount+'" placeholder="Location"></td>'+
-        '<td><input name="hyd_static_'+hydCount+'" type="number" oninput="autoCalcRow('+hydCount+')"></td>'+
-        '<td><input name="hyd_res_'+hydCount+'" type="number" oninput="autoCalcRow('+hydCount+')"></td>'+
-        '<td><input name="hyd_pitot_'+hydCount+'" type="number" oninput="autoCalcRow('+hydCount+')"></td>'+
-        '<td><input name="hyd_flow_'+hydCount+'" type="number" id="hyd_flow_'+hydCount+'" readonly style="background:#f0f4f8;font-weight:700"></td>'+
-        '<td><input name="hyd_aff_'+hydCount+'" type="number" id="hyd_aff_'+hydCount+'" readonly style="background:#f0f4f8;font-weight:700"></td>'+
-        '<td><input name="hyd_dist_'+hydCount+'" placeholder="ft"></td>';
+    var tb = document.getElementById('hydTbody');
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td>' + hydCount + '</td>' +
+        '<td><input name="hyd_loc_' + hydCount + '" placeholder="Location"></td>' +
+        '<td><input name="hyd_static_' + hydCount + '" type="number" oninput="autoCalcRow(' + hydCount + ')"></td>' +
+        '<td><input name="hyd_res_' + hydCount + '" type="number" oninput="autoCalcRow(' + hydCount + ')"></td>' +
+        '<td><input name="hyd_pitot_' + hydCount + '" type="number" oninput="autoCalcRow(' + hydCount + ')"></td>' +
+        '<td><input name="hyd_flow_' + hydCount + '" type="number" id="hyd_flow_' + hydCount + '" readonly style="background:#f0f4f8;font-weight:700"></td>' +
+        '<td><input name="hyd_aff_' + hydCount + '" type="number" id="hyd_aff_' + hydCount + '" readonly style="background:#f0f4f8;font-weight:700"></td>' +
+        '<td><input name="hyd_dist_' + hydCount + '" placeholder="ft"></td>';
     tb.appendChild(tr);
 }
 
-function addToTable(h){
+function addToTable(h) {
     hydCount++;
-    var tb=document.getElementById('hydTbody');
-    var tr=document.createElement('tr');
-    tr.innerHTML='<td>'+hydCount+'</td>'+
-        '<td><input name="hyd_loc_'+hydCount+'" value="'+escH(h.location)+'"></td>'+
-        '<td><input name="hyd_static_'+hydCount+'" type="number" value="'+(h.static_psi||'')+'" oninput="autoCalcRow('+hydCount+')"></td>'+
-        '<td><input name="hyd_res_'+hydCount+'" type="number" value="'+(h.residual_psi||'')+'" oninput="autoCalcRow('+hydCount+')"></td>'+
-        '<td><input name="hyd_pitot_'+hydCount+'" type="number" value="'+(h.pitot_psi||'')+'" oninput="autoCalcRow('+hydCount+')"></td>'+
-        '<td><input name="hyd_flow_'+hydCount+'" type="number" id="hyd_flow_'+hydCount+'" value="'+(h.flow_gpm||'')+'" readonly style="background:#f0f4f8;font-weight:700"></td>'+
-        '<td><input name="hyd_aff_'+hydCount+'" type="number" id="hyd_aff_'+hydCount+'" readonly style="background:#f0f4f8;font-weight:700"></td>'+
-        '<td><input name="hyd_dist_'+hydCount+'" value="'+(h.distance?Math.round(h.distance)+' ft':'')+'"></td>';
+    var tb = document.getElementById('hydTbody');
+    var tr = document.createElement('tr');
+    var flowRound = h.f ? Math.round(parseFloat(h.f)) : '';
+    tr.innerHTML = '<td>' + hydCount + '</td>' +
+        '<td><input name="hyd_loc_' + hydCount + '" value="' + escH(h.loc) + '"></td>' +
+        '<td><input name="hyd_static_' + hydCount + '" type="number" value="' + (h.s||'') + '" oninput="autoCalcRow(' + hydCount + ')"></td>' +
+        '<td><input name="hyd_res_' + hydCount + '" type="number" value="' + (h.r||'') + '" oninput="autoCalcRow(' + hydCount + ')"></td>' +
+        '<td><input name="hyd_pitot_' + hydCount + '" type="number" value="' + (h.p||'') + '" oninput="autoCalcRow(' + hydCount + ')"></td>' +
+        '<td><input name="hyd_flow_' + hydCount + '" type="number" id="hyd_flow_' + hydCount + '" value="' + flowRound + '" readonly style="background:#f0f4f8;font-weight:700"></td>' +
+        '<td><input name="hyd_aff_' + hydCount + '" type="number" id="hyd_aff_' + hydCount + '" readonly style="background:#f0f4f8;font-weight:700"></td>' +
+        '<td><input name="hyd_dist_' + hydCount + '" value="' + (h.distance ? Math.round(h.distance).toLocaleString() + ' ft' : '') + '"></td>';
     tb.appendChild(tr);
     autoCalcRow(hydCount);
     saveFormData(form);
     showToast('Hydrant added to table','success');
 }
 
-// Auto-calculate Q and AFF for each hydrant row
-function autoCalcRow(n){
-    var s=parseFloat(document.querySelector('[name="hyd_static_'+n+'"]')?.value);
-    var r=parseFloat(document.querySelector('[name="hyd_res_'+n+'"]')?.value);
-    var p=parseFloat(document.querySelector('[name="hyd_pitot_'+n+'"]')?.value);
-    var flowEl=document.getElementById('hyd_flow_'+n);
-    var affEl=document.getElementById('hyd_aff_'+n);
-    if(!flowEl)return;
+function autoCalcRow(n) {
+    var s = parseFloat(document.querySelector('[name="hyd_static_' + n + '"]')?.value);
+    var r = parseFloat(document.querySelector('[name="hyd_res_' + n + '"]')?.value);
+    var p = parseFloat(document.querySelector('[name="hyd_pitot_' + n + '"]')?.value);
+    var flowEl = document.getElementById('hyd_flow_' + n);
+    var affEl = document.getElementById('hyd_aff_' + n);
+    if (!flowEl) return;
 
-    if(p&&p>0){
-        // Q = 29.83 × 0.8 × 2.5² × √p (default coefficient and diameter)
-        var Q=29.83*0.8*2.5*2.5*Math.sqrt(p);
-        flowEl.value=Math.round(Q);
+    if (p && p > 0) {
+        var Q = 29.83 * 0.8 * 2.5 * 2.5 * Math.sqrt(p);
+        flowEl.value = Math.round(Q);
     }
-    if(s&&r&&s>20&&s>r){
-        var Q2=parseFloat(flowEl.value)||0;
-        if(Q2>0){
-            var aff=Q2*Math.pow((s-20)/(s-r),0.54);
-            if(affEl)affEl.value=Math.round(aff);
+    if (s && r && s > 20 && s > r) {
+        var Q2 = parseFloat(flowEl.value) || 0;
+        if (Q2 > 0) {
+            var aff = Q2 * Math.pow((s - 20) / (s - r), 0.54);
+            if (affEl) affEl.value = Math.round(aff);
         }
     }
-    saveFormData(form);
+    if (typeof saveFormData === 'function') saveFormData(form);
 }
 
-// Run auto-calc on existing rows on load
-for(var i=1;i<=3;i++){autoCalcRow(i)}
+/* ========================================================
+   INIT
+   ======================================================== */
+var form = document.getElementById('theForm');
+if (form) { loadFormData(form); autoSave(form); }
+
+// Restore NFF inputs from hidden fields
+(function() {
+    var data = JSON.parse(localStorage.getItem('preFirePlan') || '{}');
+    if (data.nff_const_class) document.getElementById('nff_const_class').value = data.nff_const_class;
+    if (data.nff_area) document.getElementById('nff_area').value = data.nff_area;
+    else if (data.total_sq_ft) document.getElementById('nff_area').value = data.total_sq_ft; // Auto-load from pg4
+    if (data.nff_occ_class) document.getElementById('nff_occ_class').value = data.nff_occ_class;
+    if (data.nff_x) document.getElementById('nff_x').value = data.nff_x;
+    if (data.nff_p) document.getElementById('nff_p').value = data.nff_p;
+    if (data.nff_shingles === '1') document.getElementById('nff_shingles').checked = true;
+
+    // Load GPS from page 1
+    if (data.latitude && data.longitude) {
+        document.getElementById('biz_gps').value = data.latitude + ', ' + data.longitude;
+    }
+
+    // Recalculate
+    calcNFF();
+})();
+
+// Auto-calc existing hydrant rows
+for (var i = 1; i <= 3; i++) { autoCalcRow(i); }
 </script>
 </body>
 </html>
