@@ -4,7 +4,41 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Pre-Fire Plan: Occupancy</title>
 <link rel="stylesheet" href="styles-preplan.css">
-
+<style>
+.occ-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;margin:8px 0 16px}
+.occ-btn{position:relative;background:#f0f0f0;border:2px solid #ddd;border-radius:8px;padding:10px 12px;cursor:pointer;transition:all .2s;text-align:left}
+.occ-btn:hover{border-color:#c0392b;background:#fff}
+.occ-btn.selected{border-color:#c0392b;background:#fdf2f0;box-shadow:0 0 0 1px #c0392b}
+.occ-btn .occ-name{font-weight:700;font-size:13px;color:#333;display:block}
+.occ-btn .occ-sub{font-size:10px;color:#888;margin-top:2px;display:block}
+.occ-btn .occ-factor{position:absolute;top:6px;right:8px;font-size:9px;color:#999;background:#eee;padding:1px 5px;border-radius:3px}
+.occ-btn.selected .occ-factor{background:#c0392b;color:#fff}
+.occ-btn.mixed-btn{background:#e8f4fd;border-color:#3498db}
+.occ-btn.mixed-btn.selected{background:#d4edfc;border-color:#2980b9;box-shadow:0 0 0 1px #2980b9}
+.occ-btn.mixed-btn .occ-name{color:#2980b9}
+.calc-box{background:#f8f9fa;border:2px solid #e0e0e0;border-radius:10px;padding:16px;margin:16px 0}
+.calc-box.has-data{border-color:#27ae60;background:#f0faf4}
+.calc-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.calc-header h4{font-size:14px;color:#333;margin:0}
+.calc-header .calc-badge{font-size:10px;background:#27ae60;color:#fff;padding:2px 8px;border-radius:4px;font-weight:600}
+.calc-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:13px;color:#555;border-bottom:1px solid #eee}
+.calc-row:last-child{border-bottom:none}
+.calc-row .calc-label{color:#888}
+.calc-row .calc-val{font-weight:700;color:#333}
+.calc-row.calc-total{border-top:2px solid #333;padding-top:10px;margin-top:4px}
+.calc-row.calc-total .calc-label{font-weight:700;color:#333;font-size:14px}
+.calc-row.calc-total .calc-val{font-size:18px;color:#c0392b}
+.calc-note{font-size:11px;color:#999;margin-top:8px;font-style:italic}
+.calc-missing{color:#e67e22;font-size:12px;padding:8px 0}
+.selected-list{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.selected-tag{display:inline-flex;align-items:center;gap:4px;background:#c0392b;color:#fff;padding:4px 10px;border-radius:4px;font-size:11px;font-weight:600}
+.selected-tag .tag-x{cursor:pointer;opacity:0.7;font-size:14px}
+.selected-tag .tag-x:hover{opacity:1}
+.override-row{display:flex;align-items:center;gap:8px;margin-top:10px}
+.override-row label{font-size:12px;color:#666;white-space:nowrap}
+.override-row input[type=checkbox]{accent-color:#c0392b}
+.override-row input[type=number]{width:100px;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:13px}
+</style>
 </head>
 <body>
 <div class="page-wrapper">
@@ -24,34 +58,60 @@
             <div class="progress-bar" style="width: 25%"></div>
         </div>
 
-
         <h3 class="section-title">3. Occupancy & Life Safety</h3>
         <form id="theForm">
-                    <div class="form-field"><label for="occupancy_types">Occupancy Type(s):</label><textarea id="occupancy_types" name="occupancy_types" rows="2" placeholder="Mercantile, Assembly, Business..."></textarea></div>
-                    <div class="form-field"><label for="hazard_contents">Hazardous Contents / High-Value Areas:</label><textarea id="hazard_contents" name="hazard_contents" rows="2" placeholder="Chemical storage in rear, high-value server room..."></textarea></div>
-        <div class="form-field">
-            <label class="inline-label">High Fire Load Areas?</label>
-            <div class="apparatus-buttons">
-                <label class="apparatus-btn"><input type="radio" name="high_fire_load" value="Yes"><span>Yes</span></label>
-                <label class="apparatus-btn"><input type="radio" name="high_fire_load" value="No"><span>No</span></label>
-            </div>
-        </div>
-                    <div class="form-field"><label for="high_fire_load_locs">Fire Load Description:</label><textarea id="high_fire_load_locs" name="high_fire_load_locs" rows="2" placeholder="Storage warehouse area, paper goods aisle..."></textarea></div>
-                    <div class="form-field"><label for="life_safety_concerns">Life Safety Concerns:</label><textarea id="life_safety_concerns" name="life_safety_concerns" rows="2" placeholder="Elderly care, daycare, mobility impaired occupants..."></textarea></div>
-        <div class="form-field">
-            <label class="inline-label">Evacuation Plan Posted?</label>
-            <div class="apparatus-buttons">
-                <label class="apparatus-btn"><input type="radio" name="evac_plan" value="Yes"><span>Yes</span></label>
-                <label class="apparatus-btn"><input type="radio" name="evac_plan" value="No"><span>No</span></label>
-            </div>
-        </div>
-            <div class="form-row">
-                        <div class="form-field"><label for="occupant_load_day">Occupant Load (Day):</label><input type="number" id="occupant_load_day" name="occupant_load_day" placeholder="250"></div>
-                        <div class="form-field"><label for="occupant_load_night">Occupant Load (Night):</label><input type="number" id="occupant_load_night" name="occupant_load_night" placeholder="25"></div>
-            </div>
-                    <div class="form-field"><label for="assembly_point_locs">Assembly Point Locations:</label><textarea id="assembly_point_locs" name="assembly_point_locs" rows="2" placeholder="Parking lot northeast corner, across the street at park..."></textarea></div>
-        </form>
 
+            <!-- Occupancy Type Selection -->
+            <div class="form-field">
+                <label class="inline-label">Occupancy Classification: <span style="font-weight:400;font-size:11px;color:#888">(NFPA 101 — select all that apply)</span></label>
+                <div class="occ-grid" id="occGrid"></div>
+                <div class="selected-list" id="selectedList"></div>
+                <!-- Hidden field to store selected types for autoSave -->
+                <input type="hidden" id="occupancy_types" name="occupancy_types">
+            </div>
+
+            <!-- Auto-Calculated Occupant Load -->
+            <div class="calc-box" id="calcBox">
+                <div class="calc-header">
+                    <h4>📊 Calculated Occupant Load</h4>
+                    <span class="calc-badge" id="calcBadge" style="display:none">NFPA 101 Table 7.3.1.2</span>
+                </div>
+                <div id="calcBody">
+                    <div class="calc-missing">Select an occupancy type above to auto-calculate occupant load.</div>
+                </div>
+                <div class="override-row">
+                    <input type="checkbox" id="overrideCheck" onchange="toggleOverride()">
+                    <label for="overrideCheck">Override with known occupant load</label>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-field"><label for="occupant_load_day">Occupant Load (Day):</label><input type="number" id="occupant_load_day" name="occupant_load_day" placeholder="Auto-calculated"></div>
+                <div class="form-field"><label for="occupant_load_night">Occupant Load (Night):</label><input type="number" id="occupant_load_night" name="occupant_load_night" placeholder="25"></div>
+            </div>
+
+            <div class="form-field"><label for="hazard_contents">Hazardous Contents / High-Value Areas:</label><textarea id="hazard_contents" name="hazard_contents" rows="2" placeholder="Chemical storage in rear, high-value server room..."></textarea></div>
+
+            <div class="form-field">
+                <label class="inline-label">High Fire Load Areas?</label>
+                <div class="apparatus-buttons">
+                    <label class="apparatus-btn"><input type="radio" name="high_fire_load" value="Yes"><span>Yes</span></label>
+                    <label class="apparatus-btn"><input type="radio" name="high_fire_load" value="No"><span>No</span></label>
+                </div>
+            </div>
+            <div class="form-field"><label for="high_fire_load_locs">Fire Load Description:</label><textarea id="high_fire_load_locs" name="high_fire_load_locs" rows="2" placeholder="Storage warehouse area, paper goods aisle..."></textarea></div>
+            <div class="form-field"><label for="life_safety_concerns">Life Safety Concerns:</label><textarea id="life_safety_concerns" name="life_safety_concerns" rows="2" placeholder="Elderly care, daycare, mobility impaired occupants..."></textarea></div>
+
+            <div class="form-field">
+                <label class="inline-label">Evacuation Plan Posted?</label>
+                <div class="apparatus-buttons">
+                    <label class="apparatus-btn"><input type="radio" name="evac_plan" value="Yes"><span>Yes</span></label>
+                    <label class="apparatus-btn"><input type="radio" name="evac_plan" value="No"><span>No</span></label>
+                </div>
+            </div>
+
+            <div class="form-field"><label for="assembly_point_locs">Assembly Point Locations:</label><textarea id="assembly_point_locs" name="assembly_point_locs" rows="2" placeholder="Parking lot northeast corner, across the street at park..."></textarea></div>
+        </form>
 
         <div class="nav-buttons">
             <button type="button" class="btn-secondary" onclick="navigate('page2-operating.html',document.getElementById('theForm'))">← Previous</button>
@@ -66,9 +126,294 @@
 <div class="toast-container" id="toast-container"></div>
 <script src="preplan-common.js"></script>
 <script>
-var form=document.getElementById('theForm');
-if(form){loadFormData(form);autoSave(form);}
+/* ========================================================
+   NFPA 101 (2024) Occupancy Classifications
+   Occupant Load Factors from Table 7.3.1.2
+   ======================================================== */
+var OCC_TYPES = [
+    { id:'assembly_concentrated', name:'Assembly', sub:'Concentrated (restaurants, bars, worship)', factor:15, unit:'net', nightFactor:0.05 },
+    { id:'assembly_standing',     name:'Assembly', sub:'Standing / Arenas / Stadiums',              factor:7,  unit:'net', nightFactor:0.02 },
+    { id:'assembly_unconcentrated', name:'Assembly', sub:'Less Concentrated (conference, dining)',   factor:15, unit:'net', nightFactor:0.05 },
+    { id:'educational',           name:'Educational', sub:'Schools, universities',                  factor:20, unit:'net', nightFactor:0.05 },
+    { id:'daycare',               name:'Day Care', sub:'Child / Adult day care',                    factor:35, unit:'net', nightFactor:0.0  },
+    { id:'healthcare',            name:'Health Care', sub:'Hospitals, nursing homes (inpatient)',    factor:240,unit:'gross', nightFactor:0.8 },
+    { id:'ambulatory_hc',         name:'Ambulatory HC', sub:'Outpatient clinics, surgery centers',  factor:100,unit:'gross', nightFactor:0.05 },
+    { id:'detention',             name:'Detention', sub:'Jails, prisons, correctional',             factor:120,unit:'gross', nightFactor:1.0 },
+    { id:'residential_hotel',     name:'Hotel / Dorm', sub:'Hotels, motels, dormitories',           factor:200,unit:'gross', nightFactor:0.9 },
+    { id:'residential_apt',       name:'Apartment', sub:'Multi-family residential',                 factor:200,unit:'gross', nightFactor:0.9 },
+    { id:'residential_1_2',       name:'1 & 2 Family', sub:'Single family, duplex',                 factor:300,unit:'gross', nightFactor:0.9 },
+    { id:'board_care',            name:'Board & Care', sub:'Assisted living, group homes',          factor:200,unit:'gross', nightFactor:0.9 },
+    { id:'mercantile',            name:'Mercantile', sub:'Retail stores, markets, malls',           factor:30, unit:'gross', nightFactor:0.02 },
+    { id:'business',              name:'Business', sub:'Offices, banks, government',                factor:100,unit:'gross', nightFactor:0.05 },
+    { id:'industrial',            name:'Industrial', sub:'Factories, workshops, plants',            factor:100,unit:'gross', nightFactor:0.15 },
+    { id:'storage',               name:'Storage', sub:'Warehouses, parking garages',                factor:300,unit:'gross', nightFactor:0.02 }
+];
 
+var selected = [];
+var overrideMode = false;
+
+// Build the grid
+function buildGrid() {
+    var grid = document.getElementById('occGrid');
+    var html = '';
+
+    // Mixed-use button first
+    html += '<div class="occ-btn mixed-btn" data-id="mixed" onclick="toggleMixed(this)">';
+    html += '<span class="occ-name">⚡ Mixed Use</span>';
+    html += '<span class="occ-sub">Multiple occupancy types</span>';
+    html += '</div>';
+
+    OCC_TYPES.forEach(function(o) {
+        html += '<div class="occ-btn" data-id="' + o.id + '" onclick="toggleOcc(this,\'' + o.id + '\')">';
+        html += '<span class="occ-name">' + o.name + '</span>';
+        html += '<span class="occ-sub">' + o.sub + '</span>';
+        html += '<span class="occ-factor">' + o.factor + ' sf/' + (o.unit === 'net' ? 'net' : 'gross') + '</span>';
+        html += '</div>';
+    });
+    grid.innerHTML = html;
+}
+
+function toggleOcc(el, id) {
+    var idx = selected.indexOf(id);
+    if (idx >= 0) {
+        selected.splice(idx, 1);
+        el.classList.remove('selected');
+    } else {
+        // If not in mixed mode, clear previous selection
+        if (!isMixed()) {
+            selected = [];
+            document.querySelectorAll('.occ-btn').forEach(function(b) { b.classList.remove('selected'); });
+        }
+        selected.push(id);
+        el.classList.add('selected');
+    }
+    updateState();
+}
+
+function toggleMixed(el) {
+    el.classList.toggle('selected');
+    if (!isMixed()) {
+        // Turned off mixed — keep only first selection
+        if (selected.length > 1) {
+            var first = selected[0];
+            selected = [first];
+            document.querySelectorAll('.occ-btn:not(.mixed-btn)').forEach(function(b) {
+                b.classList.toggle('selected', b.dataset.id === first);
+            });
+        }
+    }
+    updateState();
+}
+
+function isMixed() {
+    var mb = document.querySelector('.mixed-btn');
+    return mb && mb.classList.contains('selected');
+}
+
+function removeTag(id) {
+    selected = selected.filter(function(s) { return s !== id; });
+    var btn = document.querySelector('.occ-btn[data-id="' + id + '"]');
+    if (btn) btn.classList.remove('selected');
+    if (selected.length <= 1) {
+        var mb = document.querySelector('.mixed-btn');
+        if (mb) mb.classList.remove('selected');
+    }
+    updateState();
+}
+
+function updateState() {
+    // Update hidden field
+    var names = selected.map(function(id) {
+        var o = OCC_TYPES.find(function(t) { return t.id === id; });
+        return o ? o.name + ' (' + o.sub.split(',')[0].trim() + ')' : id;
+    });
+    document.getElementById('occupancy_types').value = names.join('; ');
+    document.getElementById('occupancy_types').dispatchEvent(new Event('input', { bubbles: true }));
+
+    // Update selected tags
+    var list = document.getElementById('selectedList');
+    if (selected.length === 0) {
+        list.innerHTML = '';
+    } else {
+        list.innerHTML = selected.map(function(id) {
+            var o = OCC_TYPES.find(function(t) { return t.id === id; });
+            var label = o ? o.name : id;
+            return '<span class="selected-tag">' + label + ' <span class="tag-x" onclick="removeTag(\'' + id + '\')">&times;</span></span>';
+        }).join('');
+    }
+
+    calcOccupantLoad();
+}
+
+/* ========================================================
+   AUTO-CALCULATE OCCUPANT LOAD
+   ======================================================== */
+function getSqFt() {
+    try {
+        var data = JSON.parse(localStorage.getItem('preFirePlan') || '{}');
+        var val = parseFloat((data.total_sq_ft || '').toString().replace(/,/g, ''));
+        return isNaN(val) ? 0 : val;
+    } catch(e) { return 0; }
+}
+
+function getStories() {
+    try {
+        var data = JSON.parse(localStorage.getItem('preFirePlan') || '{}');
+        var val = parseInt(data.num_stories || '1');
+        return isNaN(val) || val < 1 ? 1 : val;
+    } catch(e) { return 1; }
+}
+
+function calcOccupantLoad() {
+    var body = document.getElementById('calcBody');
+    var badge = document.getElementById('calcBadge');
+    var box = document.getElementById('calcBox');
+
+    if (selected.length === 0) {
+        body.innerHTML = '<div class="calc-missing">Select an occupancy type above to auto-calculate occupant load.</div>';
+        badge.style.display = 'none';
+        box.classList.remove('has-data');
+        return;
+    }
+
+    var sqft = getSqFt();
+
+    if (sqft <= 0) {
+        body.innerHTML = '<div class="calc-missing">⚠️ Enter Total Square Footage on <strong>Page 4 (Construction)</strong> to auto-calculate occupant load.</div>';
+        badge.style.display = 'none';
+        box.classList.remove('has-data');
+        return;
+    }
+
+    var stories = getStories();
+    badge.style.display = 'inline';
+    box.classList.add('has-data');
+
+    var html = '';
+    html += '<div class="calc-row"><span class="calc-label">Building Area</span><span class="calc-val">' + sqft.toLocaleString() + ' sq ft</span></div>';
+    if (stories > 1) {
+        html += '<div class="calc-row"><span class="calc-label">Stories</span><span class="calc-val">' + stories + '</span></div>';
+    }
+
+    var totalDay = 0;
+    var totalNight = 0;
+
+    if (selected.length === 1) {
+        // Single occupancy — full area
+        var o = OCC_TYPES.find(function(t) { return t.id === selected[0]; });
+        if (o) {
+            var load = Math.ceil(sqft / o.factor);
+            totalDay = load;
+            totalNight = Math.ceil(load * o.nightFactor);
+            html += '<div class="calc-row"><span class="calc-label">' + o.name + ' — ' + o.factor + ' sq ft/' + o.unit + ' per person</span><span class="calc-val">' + load.toLocaleString() + '</span></div>';
+        }
+    } else {
+        // Mixed occupancy — split evenly across selected types
+        var perType = sqft / selected.length;
+        html += '<div class="calc-row"><span class="calc-label" style="font-style:italic">Mixed use — area split evenly (' + Math.round(perType).toLocaleString() + ' sq ft each)</span><span class="calc-val"></span></div>';
+
+        selected.forEach(function(id) {
+            var o = OCC_TYPES.find(function(t) { return t.id === id; });
+            if (o) {
+                var load = Math.ceil(perType / o.factor);
+                totalDay += load;
+                totalNight += Math.ceil(load * o.nightFactor);
+                html += '<div class="calc-row"><span class="calc-label">&nbsp;&nbsp;' + o.name + ' @ ' + o.factor + ' sf/' + o.unit + '</span><span class="calc-val">' + load.toLocaleString() + '</span></div>';
+            }
+        });
+    }
+
+    html += '<div class="calc-row calc-total"><span class="calc-label">Day Occupant Load</span><span class="calc-val">' + totalDay.toLocaleString() + '</span></div>';
+    html += '<div class="calc-row calc-total"><span class="calc-label">Night Occupant Load (est.)</span><span class="calc-val">' + totalNight.toLocaleString() + '</span></div>';
+    html += '<div class="calc-note">Based on NFPA 101 Table 7.3.1.2 occupant load factors. Night estimate based on typical occupancy patterns. Override below if actual counts are known.</div>';
+
+    body.innerHTML = html;
+
+    // Auto-fill the occupant load fields (unless user has overridden)
+    if (!overrideMode) {
+        document.getElementById('occupant_load_day').value = totalDay;
+        document.getElementById('occupant_load_night').value = totalNight;
+        document.getElementById('occupant_load_day').dispatchEvent(new Event('input', { bubbles: true }));
+        document.getElementById('occupant_load_night').dispatchEvent(new Event('input', { bubbles: true }));
+    }
+}
+
+function toggleOverride() {
+    overrideMode = document.getElementById('overrideCheck').checked;
+    var dayEl = document.getElementById('occupant_load_day');
+    var nightEl = document.getElementById('occupant_load_night');
+    if (overrideMode) {
+        dayEl.placeholder = 'Enter actual count';
+        nightEl.placeholder = 'Enter actual count';
+        dayEl.style.borderColor = '#e67e22';
+        nightEl.style.borderColor = '#e67e22';
+    } else {
+        dayEl.placeholder = 'Auto-calculated';
+        nightEl.placeholder = '25';
+        dayEl.style.borderColor = '';
+        nightEl.style.borderColor = '';
+        calcOccupantLoad();
+    }
+}
+
+/* ========================================================
+   INIT — restore from saved data
+   ======================================================== */
+// 1. Build the occupancy grid first
+buildGrid();
+
+// 2. Load saved form data (populates hidden occupancy_types field)
+var form = document.getElementById('theForm');
+if (form) { loadFormData(form); autoSave(form); }
+
+// 3. Restore selected occupancy types from the saved hidden field
+(function restoreOccTypes() {
+    var saved = document.getElementById('occupancy_types').value || '';
+    if (!saved) { updateState(); return; }
+
+    var parts = saved.split(';').map(function(s) { return s.trim(); }).filter(Boolean);
+    parts.forEach(function(part) {
+        // Try exact sub-match first, then name-only match
+        var matched = OCC_TYPES.find(function(o) {
+            var full = o.name + ' (' + o.sub.split(',')[0].trim() + ')';
+            return part === full;
+        }) || OCC_TYPES.find(function(o) {
+            return part.indexOf(o.name) === 0 || part.toLowerCase().indexOf(o.name.toLowerCase()) >= 0;
+        });
+        if (matched && selected.indexOf(matched.id) < 0) {
+            selected.push(matched.id);
+            var btn = document.querySelector('.occ-btn[data-id="' + matched.id + '"]');
+            if (btn) btn.classList.add('selected');
+        }
+    });
+
+    if (selected.length > 1) {
+        var mb = document.querySelector('.mixed-btn');
+        if (mb) mb.classList.add('selected');
+    }
+
+    // Detect if user previously overrode the calculated value
+    var savedDay = document.getElementById('occupant_load_day').value;
+    if (savedDay && selected.length > 0) {
+        var sqft = getSqFt();
+        if (sqft > 0) {
+            var expectedDay = 0;
+            var area = selected.length > 1 ? sqft / selected.length : sqft;
+            selected.forEach(function(id) {
+                var o = OCC_TYPES.find(function(t) { return t.id === id; });
+                if (o) expectedDay += Math.ceil(area / o.factor);
+            });
+            if (parseInt(savedDay) !== expectedDay) {
+                overrideMode = true;
+                document.getElementById('overrideCheck').checked = true;
+                document.getElementById('occupant_load_day').style.borderColor = '#e67e22';
+                document.getElementById('occupant_load_night').style.borderColor = '#e67e22';
+            }
+        }
+    }
+
+    updateState();
+})();
 </script>
 </body>
 </html>
