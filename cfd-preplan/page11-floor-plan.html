@@ -126,6 +126,11 @@
             <select id="wallThickness" title="Wall Thickness"><option value="3">Thin</option><option value="6" selected>Normal</option><option value="10">Thick</option></select>
             <select id="unitSelect" title="Units"><option value="ft">Feet</option><option value="in">Inches</option></select>
             <select id="scaleSelect" title="Scale"><option value="8">1/4"=1'</option><option value="12" selected>1"=1'</option><option value="16">3/4"=1'</option></select>
+            <div class="toolbar-sep"></div>
+            <button class="tool-btn" id="zoomOutBtn" title="Zoom Out (Ctrl -)">➖</button>
+            <span id="zoomLevel" style="font-size:11px;min-width:38px;text-align:center;font-weight:600;color:#1e3a5f">100%</span>
+            <button class="tool-btn" id="zoomInBtn" title="Zoom In (Ctrl +)">➕</button>
+            <button class="tool-btn" id="zoomResetBtn" title="Reset Zoom" style="font-size:10px">⊙ Fit</button>
         </div>
         <div class="symbol-bar">
             <div class="symbol-dropdown"><button class="symbol-dropdown-btn">🔥 Fire ▼</button><div class="symbol-dropdown-content">
@@ -145,6 +150,8 @@
                 <button class="symbol-item" data-symbol="door-d">Double Door</button>
                 <button class="symbol-item" data-symbol="door-roll">Rollup/Overhead</button>
                 <button class="symbol-item" data-symbol="door-slide">Sliding Door</button>
+                <button class="symbol-item" data-symbol="door-pocket">Pocket Door</button>
+                <button class="symbol-item" data-symbol="door-bifold">Bifold/Accordion</button>
                 <button class="symbol-item" data-symbol="door-revolve">Revolving Door</button>
                 <div class="symbol-header">WINDOWS</div>
                 <button class="symbol-item" data-symbol="win-3">Window 3'</button>
@@ -272,6 +279,7 @@
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
             <button type="button" class="btn-secondary" id="newImageBtn">📷 New Image</button>
             <button type="button" class="btn-secondary" id="exportPng">💾 Export PNG</button>
+            <button type="button" class="btn-secondary" id="addKeyBtn">🔑 Add Key to Plan</button>
         </div>
         <div class="legend"><h4>Common Symbols</h4><div class="legend-items">
             <span>🔴 FACP — Alarm Panel</span><span>🔴 FDC — Fire Dept Conn</span>
@@ -362,12 +370,92 @@ function switchToSelect() {
    ======================================================== */
 function box(w,h,lbl,fill,tf){tf=tf||'white';var c=getColor(),il=fill===c;return new fabric.Group([new fabric.Rect({width:w,height:h,fill:il?'transparent':fill,stroke:il?fill:'#333',strokeWidth:il?2:1,rx:2,ry:2,originX:'center',originY:'center'}),new fabric.Text(lbl,{fontSize:Math.min(11,w/Math.max(lbl.length,1)*1.3),fill:il?fill:tf,originX:'center',originY:'center',fontFamily:'Arial',fontWeight:'bold'})],{originX:'center',originY:'center'})}
 function circ(r,lbl,fill,tf){tf=tf||'white';return new fabric.Group([new fabric.Circle({radius:r,fill:fill,stroke:'#333',strokeWidth:1,originX:'center',originY:'center'}),new fabric.Text(lbl,{fontSize:r*0.75,fill:tf,originX:'center',originY:'center',fontFamily:'Arial',fontWeight:'bold'})],{originX:'center',originY:'center'})}
-function makeDoor(w,dir){var th=getWall(),p=[];p.push(new fabric.Rect({left:-w/2-2,top:-th/2-2,width:w+4,height:th+4,fill:'white',stroke:'white',strokeWidth:0}));var sw=dir==='L'?-1:1;p.push(new fabric.Line([sw*-w/2,0,sw*-w/2,-w],{stroke:getColor(),strokeWidth:3}));p.push(new fabric.Circle({left:dir==='L'?-w/2-w:-w/2,top:-w,radius:w,startAngle:dir==='L'?0:Math.PI/2,endAngle:dir==='L'?Math.PI/2:Math.PI,fill:'transparent',stroke:'#333',strokeWidth:1,strokeDashArray:[4,3]}));return new fabric.Group(p,{originX:'center',originY:'center',isOpening:true})}
-function makeDblDoor(w){var hw=w/2,th=getWall(),p=[];p.push(new fabric.Rect({left:-w/2-2,top:-th/2-2,width:w+4,height:th+4,fill:'white'}));p.push(new fabric.Line([-hw,0,-hw,-hw],{stroke:getColor(),strokeWidth:3}));p.push(new fabric.Circle({left:-hw-hw,top:-hw,radius:hw,startAngle:0,endAngle:Math.PI/2,fill:'transparent',stroke:'#333',strokeWidth:1,strokeDashArray:[4,3]}));p.push(new fabric.Line([hw,0,hw,-hw],{stroke:getColor(),strokeWidth:3}));p.push(new fabric.Circle({left:0,top:-hw,radius:hw,startAngle:Math.PI/2,endAngle:Math.PI,fill:'transparent',stroke:'#333',strokeWidth:1,strokeDashArray:[4,3]}));return new fabric.Group(p,{originX:'center',originY:'center',isOpening:true})}
-function makeRollup(w){var th=getWall(),p=[];p.push(new fabric.Rect({left:-w/2-2,top:-th/2-2,width:w+4,height:th+4,fill:'white'}));p.push(new fabric.Rect({left:-w/2,top:-4,width:w,height:8,fill:'transparent',stroke:'#333',strokeWidth:2}));for(var i=0;i<4;i++)p.push(new fabric.Line([-w/2+w*i/4,-4,-w/2+w*i/4,4],{stroke:'#333',strokeWidth:1}));return new fabric.Group(p,{originX:'center',originY:'center',isOpening:true})}
-function makeSlider(w){var th=getWall(),p=[];p.push(new fabric.Rect({left:-w/2-2,top:-th/2-2,width:w+4,height:th+4,fill:'white'}));p.push(new fabric.Line([-w/2,-2,w/4,-2],{stroke:getColor(),strokeWidth:3}));p.push(new fabric.Line([-w/4,2,w/2,2],{stroke:getColor(),strokeWidth:3}));return new fabric.Group(p,{originX:'center',originY:'center',isOpening:true})}
-function makeRevolving(w){var p=[];p.push(new fabric.Circle({radius:w/2,fill:'transparent',stroke:'#333',strokeWidth:1.5,originX:'center',originY:'center'}));p.push(new fabric.Line([0,-w/2,0,w/2],{stroke:getColor(),strokeWidth:2,originX:'center',originY:'center'}));p.push(new fabric.Line([-w/2,0,w/2,0],{stroke:getColor(),strokeWidth:2,originX:'center',originY:'center'}));return new fabric.Group(p,{originX:'center',originY:'center'})}
-function makeWindow(w){var th=getWall(),p=[];p.push(new fabric.Rect({left:-w/2-1,top:-th/2-1,width:w+2,height:th+2,fill:'white'}));p.push(new fabric.Line([-w/2,-th/4,w/2,-th/4],{stroke:'#0ea5e9',strokeWidth:2}));p.push(new fabric.Line([-w/2,th/4,w/2,th/4],{stroke:'#0ea5e9',strokeWidth:2}));return new fabric.Group(p,{originX:'center',originY:'center',isOpening:true})}
+function makeDoor(w,dir){
+    var th=getWall(),c=getColor(),p=[];
+    // Wall gap: white rect that clears through any wall
+    p.push(new fabric.Rect({left:-w/2-4,top:-th/2-4,width:w+8,height:th+8,fill:'white',stroke:'white',strokeWidth:2}));
+    var hx=dir==='L'?-w/2:w/2;
+    // Filled wedge (pie slice)
+    var pts=[],steps=24;
+    if(dir==='L'){
+        pts.push({x:-w/2,y:0});pts.push({x:-w/2,y:-w});
+        for(var i=0;i<=steps;i++){var a=-Math.PI/2+i*(Math.PI/2)/steps;pts.push({x:-w/2+w*Math.cos(a),y:w*Math.sin(a)})}
+    }else{
+        pts.push({x:w/2,y:0});pts.push({x:w/2,y:-w});
+        for(var i=0;i<=steps;i++){var a=-Math.PI+i*(Math.PI/2)/steps;pts.push({x:w/2+w*Math.cos(a),y:w*Math.sin(a)})}
+    }
+    p.push(new fabric.Polygon(pts,{fill:'rgba(0,0,0,0.08)',stroke:'transparent',strokeWidth:0}));
+    // Door panel line
+    p.push(new fabric.Line([hx,0,hx,-w],{stroke:c,strokeWidth:2.5,strokeLineCap:'round'}));
+    // Solid arc
+    if(dir==='L'){
+        p.push(new fabric.Circle({left:-w/2-w,top:-w,radius:w,startAngle:0,endAngle:Math.PI/2,fill:'transparent',stroke:c,strokeWidth:1.5}));
+    }else{
+        p.push(new fabric.Circle({left:-w/2,top:-w,radius:w,startAngle:Math.PI/2,endAngle:Math.PI,fill:'transparent',stroke:c,strokeWidth:1.5}));
+    }
+    return new fabric.Group(p,{originX:'center',originY:'center',isOpening:true});
+}
+function makeDblDoor(w){
+    var hw=w/2,th=getWall(),c=getColor(),p=[];
+    p.push(new fabric.Rect({left:-w/2-4,top:-th/2-4,width:w+8,height:th+8,fill:'white',stroke:'white',strokeWidth:2}));
+    var ptsL=[],ptsR=[],steps=24;
+    ptsL.push({x:-hw,y:0});ptsL.push({x:-hw,y:-hw});
+    for(var i=0;i<=steps;i++){var a=-Math.PI/2+i*(Math.PI/2)/steps;ptsL.push({x:-hw+hw*Math.cos(a),y:hw*Math.sin(a)})}
+    p.push(new fabric.Polygon(ptsL,{fill:'rgba(0,0,0,0.08)',stroke:'transparent',strokeWidth:0}));
+    ptsR.push({x:hw,y:0});ptsR.push({x:hw,y:-hw});
+    for(var i=0;i<=steps;i++){var a=-Math.PI+i*(Math.PI/2)/steps;ptsR.push({x:hw+hw*Math.cos(a),y:hw*Math.sin(a)})}
+    p.push(new fabric.Polygon(ptsR,{fill:'rgba(0,0,0,0.08)',stroke:'transparent',strokeWidth:0}));
+    p.push(new fabric.Line([-hw,0,-hw,-hw],{stroke:c,strokeWidth:2.5,strokeLineCap:'round'}));
+    p.push(new fabric.Circle({left:-hw-hw,top:-hw,radius:hw,startAngle:0,endAngle:Math.PI/2,fill:'transparent',stroke:c,strokeWidth:1.5}));
+    p.push(new fabric.Line([hw,0,hw,-hw],{stroke:c,strokeWidth:2.5,strokeLineCap:'round'}));
+    p.push(new fabric.Circle({left:0,top:-hw,radius:hw,startAngle:Math.PI/2,endAngle:Math.PI,fill:'transparent',stroke:c,strokeWidth:1.5}));
+    return new fabric.Group(p,{originX:'center',originY:'center',isOpening:true});
+}
+function makeRollup(w){
+    var th=getWall(),c=getColor(),p=[];
+    p.push(new fabric.Rect({left:-w/2-4,top:-th/2-4,width:w+8,height:th+8,fill:'white',stroke:'white',strokeWidth:2}));
+    var h=10;
+    p.push(new fabric.Rect({left:-w/2,top:-h/2,width:w,height:h,fill:'transparent',stroke:c,strokeWidth:1.5}));
+    var sections=6;
+    for(var i=1;i<sections;i++) p.push(new fabric.Line([-w/2+w*i/sections,-h/2,-w/2+w*i/sections,h/2],{stroke:c,strokeWidth:0.75}));
+    return new fabric.Group(p,{originX:'center',originY:'center',isOpening:true});
+}
+function makeSlider(w){
+    var th=getWall(),c=getColor(),p=[];
+    p.push(new fabric.Rect({left:-w/2-4,top:-th/2-4,width:w+8,height:th+8,fill:'white',stroke:'white',strokeWidth:2}));
+    p.push(new fabric.Line([-w/2,-2,w/6,-2],{stroke:c,strokeWidth:3,strokeLineCap:'round'}));
+    p.push(new fabric.Line([-w/6,2,w/2,2],{stroke:c,strokeWidth:3,strokeLineCap:'round'}));
+    p.push(new fabric.Triangle({left:w/6+4,top:-2,width:5,height:4,fill:c,angle:90,originX:'center',originY:'center'}));
+    p.push(new fabric.Triangle({left:-w/6-4,top:2,width:5,height:4,fill:c,angle:270,originX:'center',originY:'center'}));
+    return new fabric.Group(p,{originX:'center',originY:'center',isOpening:true});
+}
+function makePocket(w){
+    var th=getWall(),c=getColor(),p=[];
+    p.push(new fabric.Rect({left:-w/2-4,top:-th/2-4,width:w+8,height:th+8,fill:'white',stroke:'white',strokeWidth:2}));
+    p.push(new fabric.Line([-w/2,0,w/6,0],{stroke:c,strokeWidth:3,strokeLineCap:'round'}));
+    p.push(new fabric.Rect({left:w/6+2,top:-th/2,width:w/3,height:th,fill:'transparent',stroke:'#999',strokeWidth:0.75,strokeDashArray:[4,3]}));
+    p.push(new fabric.Triangle({left:w/6+w/6+2,top:0,width:5,height:4,fill:c,angle:90,originX:'center',originY:'center'}));
+    return new fabric.Group(p,{originX:'center',originY:'center',isOpening:true});
+}
+function makeBifold(w){
+    var th=getWall(),c=getColor(),p=[];
+    p.push(new fabric.Rect({left:-w/2-4,top:-th/2-4,width:w+8,height:th+8,fill:'white',stroke:'white',strokeWidth:2}));
+    var panels=4,pw=w/panels,depth=w*0.25;
+    for(var i=0;i<panels;i++){
+        var x1=-w/2+i*pw,y1=(i%2===0)?-depth/2:depth/2;
+        var x2=-w/2+(i+1)*pw,y2=(i%2===0)?depth/2:-depth/2;
+        p.push(new fabric.Line([x1,y1,x2,y2],{stroke:c,strokeWidth:2.5,strokeLineCap:'round'}));
+    }
+    return new fabric.Group(p,{originX:'center',originY:'center',isOpening:true});
+}
+function makeRevolving(w){
+    var c=getColor(),p=[];
+    p.push(new fabric.Circle({radius:w/2,fill:'transparent',stroke:c,strokeWidth:1.5,originX:'center',originY:'center'}));
+    p.push(new fabric.Line([0,-w/2,0,w/2],{stroke:c,strokeWidth:2,originX:'center',originY:'center'}));
+    p.push(new fabric.Line([-w/2,0,w/2,0],{stroke:c,strokeWidth:2,originX:'center',originY:'center'}));
+    return new fabric.Group(p,{originX:'center',originY:'center'});
+}
+function makeWindow(w){var th=getWall(),p=[];p.push(new fabric.Rect({left:-w/2-4,top:-th/2-4,width:w+8,height:th+8,fill:'white',stroke:'white',strokeWidth:2}));p.push(new fabric.Line([-w/2,-th/4,w/2,-th/4],{stroke:'#0ea5e9',strokeWidth:2}));p.push(new fabric.Line([-w/2,th/4,w/2,th/4],{stroke:'#0ea5e9',strokeWidth:2}));return new fabric.Group(p,{originX:'center',originY:'center',isOpening:true})}
 function makeStairs(w,h){var p=[new fabric.Rect({width:w,height:h,fill:'transparent',stroke:'#333',strokeWidth:1,originX:'center',originY:'center'})];for(var i=1;i<6;i++)p.push(new fabric.Line([-w/2,-h/2+h*i/6,w/2,-h/2+h*i/6],{stroke:'#333',strokeWidth:1}));return new fabric.Group(p,{originX:'center',originY:'center'})}
 function makeStove(s){var p=[new fabric.Rect({width:s,height:s,fill:'#ddd',stroke:'#333',strokeWidth:1,rx:2,ry:2,originX:'center',originY:'center'})];var off=s*0.22;[[-off,-off],[off,-off],[-off,off],[off,off]].forEach(function(xy){p.push(new fabric.Circle({left:xy[0],top:xy[1],radius:s*0.12,fill:'transparent',stroke:'#555',strokeWidth:1,originX:'center',originY:'center'}))});return new fabric.Group(p,{originX:'center',originY:'center'})}
 function makeSink(w,h){return new fabric.Group([new fabric.Rect({width:w,height:h,fill:'#e0f2fe',stroke:'#333',strokeWidth:1,rx:4,ry:4,originX:'center',originY:'center'}),new fabric.Ellipse({rx:w*0.3,ry:h*0.28,fill:'transparent',stroke:'#0ea5e9',strokeWidth:1,originX:'center',originY:'center'})],{originX:'center',originY:'center'})}
@@ -438,7 +526,7 @@ function placeBox() {
 
 function getSymbol(type){var c=getColor(),s=getScale();var m={
 'facp':function(){return box(40,30,'FACP','#dc2626')},'annunciator':function(){return box(32,24,'ANN','#dc2626')},'fdc':function(){return circ(14,'FDC','#dc2626')},'sprinkler':function(){return circ(11,'SR','#2563eb')},'standpipe':function(){return box(20,28,'SP','#2563eb')},'extinguisher':function(){return circ(9,'FE','#dc2626')},'hydrant':function(){return circ(11,'H','#dc2626')},'pull':function(){return box(14,18,'PS','#dc2626')},'smoke':function(){return circ(8,'SD','#666')},
-'door-l':function(){return makeDoor(3*s,'L')},'door-r':function(){return makeDoor(3*s,'R')},'door-d':function(){return makeDblDoor(5*s)},'door-roll':function(){return makeRollup(8*s)},'door-slide':function(){return makeSlider(6*s)},'door-revolve':function(){return makeRevolving(3*s)},'win-3':function(){return makeWindow(3*s)},'win-4':function(){return makeWindow(4*s)},'win-6':function(){return makeWindow(6*s)},'exit':function(){return box(32,14,'EXIT','#22c55e')},
+'door-l':function(){return makeDoor(3*s,'L')},'door-r':function(){return makeDoor(3*s,'R')},'door-d':function(){return makeDblDoor(5*s)},'door-roll':function(){return makeRollup(8*s)},'door-slide':function(){return makeSlider(6*s)},'door-pocket':function(){return makePocket(4*s)},'door-bifold':function(){return makeBifold(6*s)},'door-revolve':function(){return makeRevolving(3*s)},'win-3':function(){return makeWindow(3*s)},'win-4':function(){return makeWindow(4*s)},'win-6':function(){return makeWindow(6*s)},'exit':function(){return box(32,14,'EXIT','#22c55e')},
 'stairs':function(){return makeStairs(4*s,7*s)},'elevator':function(){return box(4*s,4*s,'ELEV','#666')},'roof':function(){return box(28,28,'ROOF','#f97316')},'knox':function(){return box(18,14,'KNOX','#f97316')},
 'elec':function(){return box(24,36,'ELEC','#f97316')},'elec-off':function(){return circ(11,'E','#f97316')},'gas-off':function(){return circ(11,'G','#eab308','#000')},'water-off':function(){return circ(11,'W','#2563eb')},'hvac':function(){return box(45,45,'HVAC','#666')},'gen':function(){return box(55,38,'GEN','#f97316')},
 'bed':function(){return box(5*s,6*s,'BED',c)},'sofa':function(){return box(7*s,2.5*s,'SOFA',c)},'desk':function(){return box(5*s,2.5*s,'DESK',c)},'table':function(){return box(4*s,3*s,'TABLE',c)},'chair':function(){return box(2*s,2*s,'',c)},'bookshelf':function(){return box(6*s,1.5*s,'SHELF',c)},'cubicle':function(){return box(4*s,4*s,'CUB',c)},
@@ -529,10 +617,26 @@ function addWallSegment(from, to) {
     var line = new fabric.Line([from.x, from.y, to.x, to.y], {
         stroke: getColor(),
         strokeWidth: getWall(),
+        strokeLineCap: 'round',
         selectable: true,
         isWall: true
     });
     canvas.add(line);
+
+    // Joint dot at connection point (fills corner gaps)
+    var th = getWall();
+    canvas.add(new fabric.Circle({
+        left: from.x, top: from.y, radius: th/2,
+        fill: getColor(), stroke: 'transparent',
+        originX: 'center', originY: 'center',
+        selectable: false, evented: false, isWall: true
+    }));
+    canvas.add(new fabric.Circle({
+        left: to.x, top: to.y, radius: th/2,
+        fill: getColor(), stroke: 'transparent',
+        originX: 'center', originY: 'center',
+        selectable: false, evented: false, isWall: true
+    }));
 
     // Dimension label
     var dx = to.x - from.x, dy = to.y - from.y;
@@ -551,8 +655,21 @@ function addWallSegment(from, to) {
 /* ========================================================
    EVENT SETUP
    ======================================================== */
+// Ensure doors/windows (openings) always render above walls so white gap shows
+// Legend key stays on top of everything
+function bringOpeningsToFront() {
+    if (!canvas) return;
+    canvas.getObjects().forEach(function(obj) {
+        if (obj.isOpening) canvas.bringToFront(obj);
+    });
+    canvas.getObjects().forEach(function(obj) {
+        if (obj.isLegendKey) canvas.bringToFront(obj);
+    });
+    canvas.renderAll();
+}
+
 function setupEvents() {
-    canvas.on('object:modified', function() { saveHistory(); saveData(); });
+    canvas.on('object:modified', function() { bringOpeningsToFront(); saveHistory(); saveData(); });
 
     canvas.on('mouse:down', function(o) {
         if (!o.pointer) return;
@@ -621,7 +738,84 @@ function setupEvents() {
         }
     });
 
-    canvas.on('path:created', function() { saveHistory(); saveData(); });
+    canvas.on('path:created', function() { saveHistory(); saveData(); switchToSelect(); });
+
+    // Mouse wheel zoom
+    canvas.on('mouse:wheel', function(opt) {
+        var delta = opt.e.deltaY;
+        var zoom = canvas.getZoom();
+        zoom *= 0.999 ** delta;
+        if (zoom > 10) zoom = 10;
+        if (zoom < 0.1) zoom = 0.1;
+        canvas.zoomToPoint({ x: opt.e.offsetX, y: opt.e.offsetY }, zoom);
+        opt.e.preventDefault();
+        opt.e.stopPropagation();
+        updateZoomLabel();
+    });
+
+    // Alt+drag or middle-mouse to pan
+    var _isPanning = false, _lastPanX = 0, _lastPanY = 0;
+    canvas.on('mouse:down', function(opt) {
+        if (opt.e.altKey || opt.e.button === 1) {
+            _isPanning = true;
+            _lastPanX = opt.e.clientX;
+            _lastPanY = opt.e.clientY;
+            canvas.selection = false;
+            canvas.defaultCursor = 'grabbing';
+        }
+    });
+    canvas.on('mouse:move', function(opt) {
+        if (!_isPanning) return;
+        var vpt = canvas.viewportTransform;
+        vpt[4] += opt.e.clientX - _lastPanX;
+        vpt[5] += opt.e.clientY - _lastPanY;
+        _lastPanX = opt.e.clientX;
+        _lastPanY = opt.e.clientY;
+        canvas.requestRenderAll();
+    });
+    canvas.on('mouse:up', function() {
+        if (_isPanning) {
+            _isPanning = false;
+            canvas.defaultCursor = 'default';
+            if (currentTool === 'select') canvas.selection = true;
+        }
+    });
+
+    // Pinch-to-zoom (touch)
+    var _lastPinchDist = 0, _pinchCenter = null;
+    var upperEl = canvas.upperCanvasEl;
+    if (upperEl) {
+        upperEl.addEventListener('touchstart', function(e) {
+            if (e.touches.length === 2) {
+                e.preventDefault();
+                var dx = e.touches[0].clientX - e.touches[1].clientX;
+                var dy = e.touches[0].clientY - e.touches[1].clientY;
+                _lastPinchDist = Math.sqrt(dx * dx + dy * dy);
+                var rect = upperEl.getBoundingClientRect();
+                _pinchCenter = {
+                    x: (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left,
+                    y: (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top
+                };
+            }
+        }, { passive: false });
+        upperEl.addEventListener('touchmove', function(e) {
+            if (e.touches.length === 2 && _lastPinchDist > 0) {
+                e.preventDefault();
+                var dx = e.touches[0].clientX - e.touches[1].clientX;
+                var dy = e.touches[0].clientY - e.touches[1].clientY;
+                var dist = Math.sqrt(dx * dx + dy * dy);
+                var zoom = canvas.getZoom() * (dist / _lastPinchDist);
+                if (zoom > 10) zoom = 10;
+                if (zoom < 0.1) zoom = 0.1;
+                canvas.zoomToPoint(_pinchCenter, zoom);
+                _lastPinchDist = dist;
+                updateZoomLabel();
+            }
+        }, { passive: false });
+        upperEl.addEventListener('touchend', function(e) {
+            if (e.touches.length < 2) { _lastPinchDist = 0; _pinchCenter = null; }
+        }, { passive: true });
+    }
 
     // Apple Pencil / stylus pressure support
     var upperCanvas = canvas.upperCanvasEl;
@@ -643,22 +837,24 @@ function finishWall() {
     if (wallPreviewLine) { canvas.remove(wallPreviewLine); wallPreviewLine = null; }
     isDrawingWall = false;
     wallPoints = [];
+    bringOpeningsToFront();
     saveHistory(); saveData();
     canvas.renderAll();
+    switchToSelect();
 }
 
 /* ========================================================
    HISTORY / SAVE / LOAD
    ======================================================== */
-function saveHistory(){historyIdx++;history=history.slice(0,historyIdx);history.push(JSON.stringify(canvas.toJSON(['isBg','isOpening','nfpaData','isWall'])));if(history.length>50){history.shift();historyIdx--}}
-function undo(){if(historyIdx<=0)return;historyIdx--;canvas.loadFromJSON(history[historyIdx],function(){canvas.renderAll()})}
-function redo(){if(historyIdx>=history.length-1)return;historyIdx++;canvas.loadFromJSON(history[historyIdx],function(){canvas.renderAll()})}
-function saveData(){if(!canvas)return;floorData[currentFloor]=JSON.stringify(canvas.toJSON(['isBg','isOpening','nfpaData','isWall']));var all={};for(var f in floorData)all[f]=floorData[f];try{var saved=JSON.parse(localStorage.getItem('preFirePlan')||'{}');saved.floor_plan_data=JSON.stringify(all);localStorage.setItem('preFirePlan',JSON.stringify(saved))}catch(e){}}
+function saveHistory(){historyIdx++;history=history.slice(0,historyIdx);history.push(JSON.stringify(canvas.toJSON(['isBg','isOpening','nfpaData','isWall','isLegendKey'])));if(history.length>50){history.shift();historyIdx--}}
+function undo(){if(historyIdx<=0)return;historyIdx--;canvas.loadFromJSON(history[historyIdx],function(){canvas.renderAll();bringOpeningsToFront()})}
+function redo(){if(historyIdx>=history.length-1)return;historyIdx++;canvas.loadFromJSON(history[historyIdx],function(){canvas.renderAll();bringOpeningsToFront()})}
+function saveData(){if(!canvas)return;floorData[currentFloor]=JSON.stringify(canvas.toJSON(['isBg','isOpening','nfpaData','isWall','isLegendKey']));var all={};for(var f in floorData)all[f]=floorData[f];try{var saved=JSON.parse(localStorage.getItem('preFirePlan')||'{}');saved.floor_plan_data=JSON.stringify(all);localStorage.setItem('preFirePlan',JSON.stringify(saved))}catch(e){}}
 function loadSavedData(){try{var saved=JSON.parse(localStorage.getItem('preFirePlan')||'{}');if(saved.floor_plan_data){var all=JSON.parse(saved.floor_plan_data);for(var f in all)floorData[f]=all[f];floorCount=Math.max(1,Math.max.apply(null,Object.keys(floorData).map(Number)));renderFloorTabs();if(floorData[1]){document.getElementById('uploadSection').classList.add('hidden');document.getElementById('annotSection').classList.remove('hidden');canvas=new fabric.Canvas('floor-canvas',{preserveObjectStacking:true,backgroundColor:'transparent',allowTouchScrolling:false,enablePointerEvents:true});
 fabric.Object.prototype.set({cornerSize:16,cornerColor:'#1e3a5f',cornerStrokeColor:'#fff',cornerStyle:'circle',transparentCorners:false,borderColor:'#1e3a5f',borderScaleFactor:2,padding:8,rotatingPointOffset:30});
-setupEvents();canvas.loadFromJSON(floorData[1],function(){canvas.renderAll();saveHistory()})}}}catch(e){console.error(e)}}
+setupEvents();canvas.loadFromJSON(floorData[1],function(){canvas.renderAll();bringOpeningsToFront();saveHistory()})}}}catch(e){console.error(e)}}
 function renderFloorTabs(){var tabs=document.getElementById('floorTabs'),html='';for(var i=1;i<=floorCount;i++)html+='<button class="floor-tab'+(i===currentFloor?' active':'')+'" data-floor="'+i+'">Floor '+i+'</button>';html+='<button class="add-floor-btn" id="addFloorBtn">+ Add Floor</button>';tabs.innerHTML=html;tabs.querySelectorAll('.floor-tab').forEach(function(b){b.onclick=function(){switchFloor(parseInt(b.dataset.floor))}});document.getElementById('addFloorBtn').onclick=addFloor}
-function switchFloor(f){if(canvas)floorData[currentFloor]=JSON.stringify(canvas.toJSON(['isBg','isOpening','nfpaData','isWall']));currentFloor=f;renderFloorTabs();if(floorData[f]){canvas.loadFromJSON(floorData[f],function(){canvas.renderAll()})}else{canvas.clear();canvas.backgroundColor='transparent';canvas.renderAll()}saveHistory()}
+function switchFloor(f){if(canvas)floorData[currentFloor]=JSON.stringify(canvas.toJSON(['isBg','isOpening','nfpaData','isWall','isLegendKey']));currentFloor=f;renderFloorTabs();if(floorData[f]){canvas.loadFromJSON(floorData[f],function(){canvas.renderAll();bringOpeningsToFront()})}else{canvas.clear();canvas.backgroundColor='transparent';canvas.renderAll()}saveHistory()}
 function addFloor(){floorCount++;switchFloor(floorCount);toast('Floor '+floorCount+' added')}
 
 /* ========================================================
@@ -704,8 +900,10 @@ document.querySelectorAll('.symbol-item').forEach(function(b) {
             top: canvas.height/2 + Math.random()*40 - 20
         });
         canvas.add(obj).setActiveObject(obj).renderAll();
+        // Bring doors/windows above walls so the gap shows
+        bringOpeningsToFront();
         saveHistory(); saveData();
-        switchToSelect(); // Auto-return to select
+        switchToSelect();
     };
 });
 
@@ -730,12 +928,39 @@ document.getElementById('clearBtn').onclick = function() {
 document.addEventListener('keydown', function(e) {
     if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo(); }
     if ((e.ctrlKey || e.metaKey) && e.key === 'y') { e.preventDefault(); redo(); }
+    if ((e.ctrlKey || e.metaKey) && (e.key === '=' || e.key === '+')) { e.preventDefault(); zoomCanvas(1.2); }
+    if ((e.ctrlKey || e.metaKey) && e.key === '-') { e.preventDefault(); zoomCanvas(0.8); }
+    if ((e.ctrlKey || e.metaKey) && e.key === '0') { e.preventDefault(); resetZoom(); }
     if (e.key === 'Escape') { if (isDrawingWall) finishWall(); switchToSelect(); }
     if (e.key === 'Delete' || e.key === 'Backspace') {
         if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
         document.getElementById('deleteBtn').click();
     }
 });
+
+/* ========================================================
+   ZOOM CONTROLS
+   ======================================================== */
+function updateZoomLabel() {
+    var el = document.getElementById('zoomLevel');
+    if (el && canvas) el.textContent = Math.round(canvas.getZoom() * 100) + '%';
+}
+function zoomCanvas(factor) {
+    if (!canvas) return;
+    var zoom = canvas.getZoom() * factor;
+    if (zoom > 10) zoom = 10;
+    if (zoom < 0.1) zoom = 0.1;
+    canvas.zoomToPoint({ x: canvas.width / 2, y: canvas.height / 2 }, zoom);
+    updateZoomLabel();
+}
+function resetZoom() {
+    if (!canvas) return;
+    canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+    updateZoomLabel();
+}
+document.getElementById('zoomInBtn').onclick = function() { zoomCanvas(1.2); };
+document.getElementById('zoomOutBtn').onclick = function() { zoomCanvas(0.8); };
+document.getElementById('zoomResetBtn').onclick = resetZoom;
 
 /* ========================================================
    UPLOAD / IMPORT
@@ -783,6 +1008,160 @@ document.getElementById('exportPng').onclick = function() {
     a.download = 'floor-plan-' + currentFloor + '.png';
     a.href = canvas.toDataURL({format:'png', quality:1});
     a.click(); toast('PNG exported');
+};
+
+/* ========================================================
+   SYMBOL KEY / LEGEND
+   ======================================================== */
+var SYMBOL_KEY = {
+    // Fire Protection
+    'FACP':'Fire Alarm Control Panel','ANN':'Annunciator Panel','FDC':'Fire Dept Connection',
+    'SR':'Sprinkler Riser','SP':'Standpipe','FE':'Fire Extinguisher','H':'Hydrant',
+    'PS':'Pull Station','SD':'Smoke Detector',
+    // Utilities
+    'ELEC':'Electrical Panel','E':'Electrical Shutoff','G':'Gas Shutoff','W':'Water Shutoff',
+    'HVAC':'HVAC System','GEN':'Generator','KNOX':'Knox Box',
+    // Furniture
+    'BED':'Bed','SOFA':'Sofa/Couch','DESK':'Desk','TABLE':'Table','SHELF':'Bookshelf','CUB':'Cubicle',
+    // Kitchen
+    'REF':'Refrigerator','DW':'Dishwasher',
+    // Bathroom
+    'WC':'Restroom/Toilet','TUB':'Bathtub','SHW':'Shower',
+    // Retail/Commercial
+    'RACK':'Clothes Rack','DISPLAY':'Display Case','AISLE':'Shelf Aisle','CHECKOUT':'Checkout Counter',
+    'REG':'Cash Register','CARTS':'Cart Corral','FREEZER':'Walk-in Freezer','COOLER':'Walk-in Cooler',
+    'STORAGE':'Storage Room',
+    // Access
+    'RAMP':'ADA Ramp','AUTO':'Auto Door Opener','LTD':'Limited Access','NO':'No Access','OVHD':'Overhead Obstruction',
+    // Building
+    'ELEV':'Elevator','ROOF':'Roof Access','EXIT':'Exit','OFFICE':'Office','BREAK':'Break Room',
+    'SERVER':'Server Room','MECH':'Mechanical Room','POOL':'Swimming Pool',
+    // Assembly
+    'PEW':'Pew/Bench','ALTAR':'Altar','PULPIT':'Pulpit','BAPT':'Baptistry','CHOIR':'Choir Area',
+    'ORGAN':'Organ','SEATS':'Seating Row','STAGE':'Stage','BLEACH':'Bleachers',
+    'FOOD':'Concession Stand','TICKET':'Ticket Booth',
+    // Hazmat
+    'HAZ':'Hazmat Storage','FUEL':'Fuel Tank','LP':'Propane Tank',
+    // Industrial
+    'LIFT':'Vehicle Lift','BENCH':'Tool/Work Bench','COMP':'Compressor','WELD':'Welder',
+    'PAINT':'Paint Booth','PIT':'Oil/Service Pit','CONVEYOR':'Conveyor','FORK':'Forklift Area',
+    'CRANE':'Crane','MACH':'Machine','PALLET':'Pallet Storage','DOCK':'Loading Dock',
+    // Site
+    'DUMP':'Dumpster','B':'Bollard'
+};
+
+document.getElementById('addKeyBtn').onclick = function() {
+    if (!canvas) return;
+
+    // Remove existing key if present
+    canvas.getObjects().forEach(function(obj) {
+        if (obj.isLegendKey) canvas.remove(obj);
+    });
+
+    // Scan canvas for text labels that match our key
+    var found = {};
+    canvas.getObjects().forEach(function(obj) {
+        if (obj.isLegendKey || obj.isBg) return;
+        // Check group objects (most symbols are groups)
+        if (obj._objects) {
+            obj._objects.forEach(function(child) {
+                if (child.type === 'text' || child.type === 'i-text') {
+                    var t = (child.text || '').trim().replace('♿ ','').replace('♿','').replace('⚡','');
+                    if (t && SYMBOL_KEY[t]) {
+                        found[t] = { label: SYMBOL_KEY[t], fill: child.fill || '#333' };
+                    }
+                }
+            });
+        }
+    });
+
+    var keys = Object.keys(found);
+    if (keys.length === 0) {
+        toast('No symbols found on canvas');
+        return;
+    }
+
+    // Sort alphabetically by full name
+    keys.sort(function(a,b){ return found[a].label.localeCompare(found[b].label); });
+
+    // Build legend group
+    var lineH = 18, padX = 12, padY = 10;
+    var titleH = 22;
+    var legendH = titleH + padY + keys.length * lineH + padY;
+    var legendW = 200;
+    var parts = [];
+
+    // Background
+    parts.push(new fabric.Rect({
+        left: 0, top: 0, width: legendW, height: legendH,
+        fill: 'white', stroke: '#333', strokeWidth: 1.5, rx: 4, ry: 4
+    }));
+
+    // Title bar
+    parts.push(new fabric.Rect({
+        left: 0, top: 0, width: legendW, height: titleH,
+        fill: '#1e3a5f', stroke: 'transparent', rx: 4, ry: 4
+    }));
+    // Cover bottom corners of title
+    parts.push(new fabric.Rect({
+        left: 0, top: titleH - 6, width: legendW, height: 6,
+        fill: '#1e3a5f', stroke: 'transparent'
+    }));
+    parts.push(new fabric.Text('SYMBOL KEY', {
+        left: legendW / 2, top: titleH / 2,
+        fontSize: 12, fontWeight: 'bold', fill: 'white',
+        fontFamily: 'Arial', originX: 'center', originY: 'center'
+    }));
+
+    // Entries
+    keys.forEach(function(abbr, i) {
+        var y = titleH + padY + i * lineH;
+        var info = found[abbr];
+
+        // Colored dot
+        parts.push(new fabric.Circle({
+            left: padX, top: y + lineH / 2,
+            radius: 4, fill: info.fill, stroke: '#555', strokeWidth: 0.5,
+            originX: 'center', originY: 'center'
+        }));
+
+        // Abbreviation (bold)
+        parts.push(new fabric.Text(abbr, {
+            left: padX + 10, top: y + lineH / 2,
+            fontSize: 10, fontWeight: 'bold', fill: '#333',
+            fontFamily: 'Arial', originY: 'center'
+        }));
+
+        // Full name
+        parts.push(new fabric.Text('— ' + info.label, {
+            left: padX + 10 + abbr.length * 7 + 2, top: y + lineH / 2,
+            fontSize: 10, fill: '#666',
+            fontFamily: 'Arial', originY: 'center'
+        }));
+
+        // Separator line
+        if (i < keys.length - 1) {
+            parts.push(new fabric.Line([padX, y + lineH, legendW - padX, y + lineH], {
+                stroke: '#e8e8e8', strokeWidth: 0.5
+            }));
+        }
+    });
+
+    var group = new fabric.Group(parts, {
+        left: canvas.width - legendW - 15,
+        top: 15,
+        isLegendKey: true,
+        selectable: true
+    });
+
+    canvas.add(group).setActiveObject(group).renderAll();
+    bringOpeningsToFront();
+    // Keep legend on top of openings
+    canvas.bringToFront(group);
+    canvas.renderAll();
+    saveHistory(); saveData();
+    switchToSelect();
+    toast('Symbol key added — drag to reposition');
 };
 
 /* DivisionScan import */
