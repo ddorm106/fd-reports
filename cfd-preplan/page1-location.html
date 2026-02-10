@@ -42,6 +42,11 @@
             <div class="form-row">
                         <div class="form-field"><label for="latitude">Latitude:</label><input type="text" id="latitude" name="latitude" placeholder="32.8407"></div>
                         <div class="form-field"><label for="longitude">Longitude:</label><input type="text" id="longitude" name="longitude" placeholder="-83.6499"></div>
+                        <div class="form-field" style="flex:0 0 auto;align-self:flex-end;">
+                            <button type="button" id="gpsBtn" class="btn-secondary" onclick="getGPS()" style="white-space:nowrap;display:flex;align-items:center;gap:6px;padding:8px 14px;">
+                                <span id="gpsIcon">📍</span> <span id="gpsText">Get GPS</span>
+                            </button>
+                        </div>
             </div>
                     <div class="form-field"><label for="general_directions">General Directions to Site:</label><textarea id="general_directions" name="general_directions" rows="3" placeholder="Main entrance off Houston Rd, 2nd driveway past the light..."></textarea></div>
         </form>
@@ -63,6 +68,42 @@
 var form=document.getElementById('theForm');
 if(form){loadFormData(form);autoSave(form);}
 
+function getGPS(){
+    var btn=document.getElementById('gpsBtn');
+    var icon=document.getElementById('gpsIcon');
+    var txt=document.getElementById('gpsText');
+    if(!navigator.geolocation){
+        showToast('GPS not available on this device','error');
+        return;
+    }
+    btn.disabled=true;
+    icon.textContent='⏳';
+    txt.textContent='Locating...';
+    navigator.geolocation.getCurrentPosition(
+        function(pos){
+            document.getElementById('latitude').value=pos.coords.latitude.toFixed(6);
+            document.getElementById('longitude').value=pos.coords.longitude.toFixed(6);
+            // Trigger change events so autoSave picks them up
+            document.getElementById('latitude').dispatchEvent(new Event('input',{bubbles:true}));
+            document.getElementById('longitude').dispatchEvent(new Event('input',{bubbles:true}));
+            icon.textContent='✅';
+            txt.textContent='Got it!';
+            showToast('GPS coordinates captured','success');
+            setTimeout(function(){icon.textContent='📍';txt.textContent='Get GPS';btn.disabled=false;},2000);
+        },
+        function(err){
+            var msg='GPS failed';
+            if(err.code===1) msg='Location access denied — check browser permissions';
+            else if(err.code===2) msg='Position unavailable';
+            else if(err.code===3) msg='GPS timed out — try again';
+            icon.textContent='❌';
+            txt.textContent='Failed';
+            showToast(msg,'error');
+            setTimeout(function(){icon.textContent='📍';txt.textContent='Get GPS';btn.disabled=false;},2500);
+        },
+        {enableHighAccuracy:true, timeout:15000, maximumAge:0}
+    );
+}
 </script>
 </body>
 </html>
