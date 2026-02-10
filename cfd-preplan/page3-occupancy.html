@@ -95,11 +95,13 @@
             <div class="form-field">
                 <label class="inline-label">High Fire Load Areas?</label>
                 <div class="apparatus-buttons">
-                    <label class="apparatus-btn"><input type="radio" name="high_fire_load" value="Yes"><span>Yes</span></label>
-                    <label class="apparatus-btn"><input type="radio" name="high_fire_load" value="No"><span>No</span></label>
+                    <label class="apparatus-btn"><input type="radio" name="high_fire_load" value="Yes" onchange="document.getElementById('fireLoadDetails').style.display='block'"><span>Yes</span></label>
+                    <label class="apparatus-btn"><input type="radio" name="high_fire_load" value="No" onchange="document.getElementById('fireLoadDetails').style.display='none'"><span>No</span></label>
                 </div>
             </div>
-            <div class="form-field"><label for="high_fire_load_locs">Fire Load Description:</label><textarea id="high_fire_load_locs" name="high_fire_load_locs" rows="2" placeholder="Storage warehouse area, paper goods aisle..."></textarea></div>
+            <div id="fireLoadDetails" style="display:none">
+                <div class="form-field"><label for="high_fire_load_locs">Fire Load Description:</label><textarea id="high_fire_load_locs" name="high_fire_load_locs" rows="2" placeholder="Storage warehouse area, paper goods aisle..."></textarea></div>
+            </div>
             <div class="form-field"><label for="life_safety_concerns">Life Safety Concerns:</label><textarea id="life_safety_concerns" name="life_safety_concerns" rows="2" placeholder="Elderly care, daycare, mobility impaired occupants..."></textarea></div>
 
             <div class="form-field">
@@ -413,6 +415,14 @@ if (form) { loadFormData(form); autoSave(form); }
     }
 
     updateState();
+})();
+
+// Restore fire load toggle
+(function() {
+    var checked = document.querySelector('input[name="high_fire_load"]:checked');
+    if (checked && checked.value === 'Yes') {
+        document.getElementById('fireLoadDetails').style.display = 'block';
+    }
 })();
 </script>
 </body>
