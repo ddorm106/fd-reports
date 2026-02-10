@@ -76,7 +76,7 @@
                 <div class="header-text"><h1>Centerville Fire Department</h1><h2>Pre-Fire Plan Data Sheet</h2></div>
             </div>
         </header>
-        <div class="progress-indicator">Page 11 of 12: Floor Plan</div>
+        <div class="progress-indicator">Page 11 of 12: Floor Plan <span style="float:right;color:#888;font-size:10px">v1.2</span></div>
         <div class="progress-bar-container"><div class="progress-bar" style="width:91.66%"></div></div>
     <div class="preplan-header"><h3>Page 11: Floor Plan Drawing</h3></div>
     <div class="floor-tabs" id="floorTabs">
@@ -97,6 +97,7 @@
         </div>
         <div class="import-panel">
             <h4>📱 Import from DivisionScan</h4>
+            <p style="font-size:11px;color:#666;margin:0 0 8px">Imports LiDAR scans from fdtraining.org</p>
             <button onclick="importFromServer()">Load from Server</button>
             <button onclick="document.getElementById('dsFile').click()">Load JSON File</button>
             <input type="file" id="dsFile" accept=".json" style="display:none">
@@ -800,37 +801,34 @@ document.getElementById('dsFile').onchange = function() {
 };
 
 function importFromServer() {
-    var savedUrl = localStorage.getItem('dsServerUrl') || '';
-    var serverUrl = prompt('Enter DivisionScan server address:\n(e.g., http://192.168.1.100:3000)', savedUrl);
-    if (!serverUrl) return;
-    serverUrl = serverUrl.replace(/\/+$/, ''); // trim trailing slash
-    localStorage.setItem('dsServerUrl', serverUrl);
-    toast('Connecting to server...');
+    var serverUrl = 'https://fdtraining.org';
+    toast('Connecting to DivisionScan server...');
     fetch(serverUrl + '/api/divisionscan/plans').then(function(r){return r.json()}).then(function(d){
     if(!d.plans||!d.plans.length){toast('No scans found on server');return}
-    if(d.plans.length===1){loadScanById(d.plans[0].id);return}
+    if(d.plans.length===1){loadScanById(d.plans[0].id, serverUrl);return}
     var modal=document.createElement('div');modal.id='scanPickerModal';
     modal.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:2000;display:flex;justify-content:center;align-items:center';
     var bx='<div style="background:#fff;border-radius:12px;padding:24px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto">';
     bx+='<h3 style="margin:0 0 4px;color:#1e3a5f">Import from DivisionScan</h3>';
-    bx+='<p style="color:#888;font-size:12px;margin:0 0 16px">Select a scan to import</p>';
+    bx+='<p style="color:#888;font-size:12px;margin:0 0 16px">'+d.plans.length+' scans found — select one to import</p>';
     d.plans.forEach(function(p){
     var dt=p.scan_date?new Date(p.scan_date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'';
     var area=p.total_area?Math.round(p.total_area)+' ft²':'';
-    bx+='<div onclick="loadScanById(\''+p.id+'\');document.getElementById(\'scanPickerModal\').remove()" style="padding:12px;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:8px;cursor:pointer" onmouseover="this.style.borderColor=\'#1e3a5f\'" onmouseout="this.style.borderColor=\'#e2e8f0\'">';
+    var dept=p.department?' · '+p.department:'';
+    bx+='<div onclick="loadScanById(\''+p.id+'\',\''+serverUrl+'\');document.getElementById(\'scanPickerModal\').remove()" style="padding:12px;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:8px;cursor:pointer" onmouseover="this.style.borderColor=\'#1e3a5f\'" onmouseout="this.style.borderColor=\'#e2e8f0\'">';
     bx+='<div style="font-weight:600;color:#1e3a5f">'+escH(p.building_name||'Unnamed')+'</div>';
     if(p.building_address)bx+='<div style="font-size:12px;color:#666">'+escH(p.building_address)+'</div>';
-    bx+='<div style="font-size:11px;color:#999;margin-top:4px">Floor '+escH(p.floor||'1')+' · '+area+' · '+dt+'</div></div>';
+    bx+='<div style="font-size:11px;color:#999;margin-top:4px">Floor '+escH(p.floor||'1')+' · '+area+dept+' · '+dt+'</div></div>';
     });
     bx+='<div style="text-align:center;margin-top:12px"><button onclick="document.getElementById(\'scanPickerModal\').remove()" style="padding:8px 20px;border:1px solid #ccc;border-radius:6px;background:#fff;cursor:pointer">Cancel</button></div></div>';
     modal.innerHTML=bx;modal.onclick=function(e){if(e.target===modal)modal.remove()};
     document.body.appendChild(modal);
-    }).catch(function(){toast('Could not connect to server')});
+    }).catch(function(err){toast('Could not connect to server: ' + (err.message || 'Network error'))});
 }
 function escH(s){var d=document.createElement('div');d.textContent=s||'';return d.innerHTML}
-function loadScanById(id){
+function loadScanById(id, serverUrl){
 toast('Loading scan...');
-var serverUrl = localStorage.getItem('dsServerUrl') || '';
+if(!serverUrl) serverUrl = 'https://fdtraining.org';
 fetch(serverUrl + '/api/divisionscan/plan/'+id).then(function(r){return r.json()}).then(function(p){
 if(p.success&&p.scan&&p.scan.scan_json){renderDivisionScan(JSON.parse(p.scan.scan_json),p.markers||[],p.annotations||[])}
 else{toast('No scan data found')}
@@ -841,9 +839,10 @@ rooms.forEach(function(r){if(!r.name||!r.centerX)return;var tx=r.centerX*sc+ox,t
 walls.forEach(function(w){canvas.add(new fabric.Line([w.startX*sc+ox,w.startY*sc+oy,w.endX*sc+ox,w.endY*sc+oy],{stroke:'#333',strokeWidth:getWall(),selectable:true,isWall:true}))});
 doors.forEach(function(d){var x=(d.x||0)*sc+ox,y=(d.y||0)*sc+oy,obj=makeDoor((d.width||3)*sc,'L');obj.set({left:x,top:y});canvas.add(obj)});
 wins.forEach(function(w){var x=(w.x||0)*sc+ox,y=(w.y||0)*sc+oy,obj=makeWindow((w.width||3)*sc);obj.set({left:x,top:y});canvas.add(obj)});
-objs.forEach(function(o){var x=(o.x||0)*sc+ox,y=(o.y||0)*sc+oy,w=(o.width||3)*sc,h=(o.depth||3)*sc;var catColors={'toilet':'#4ECDC4','bathtub':'#4ECDC4','sink':'#4ECDC4','stove':'#FF6B6B','oven':'#FF6B6B','refrigerator':'#45B7D1','bed':'#DDA0DD','sofa':'#F4A460','table':'#D2B48C','chair':'#D2B48C','television':'#708090','washerDryer':'#87CEEB','dishwasher':'#45B7D1','storage':'#BDB76B','fireplace':'#CD853F','stairs':'#A9A9A9'};
+objs.forEach(function(o){var x=(o.x||0)*sc+ox,y=(o.y||0)*sc+oy,w=(o.widthFt||o.width||3)*sc,h=(o.depthFt||o.depth||3)*sc;var catColors={'toilet':'#4ECDC4','bathtub':'#4ECDC4','sink':'#4ECDC4','stove':'#FF6B6B','oven':'#FF6B6B','refrigerator':'#45B7D1','bed':'#DDA0DD','sofa':'#F4A460','table':'#D2B48C','chair':'#D2B48C','television':'#708090','washerDryer':'#87CEEB','dishwasher':'#45B7D1','storage':'#BDB76B','fireplace':'#CD853F','stairs':'#A9A9A9'};
 var col=catColors[o.category]||'#999';var lbl=o.label||o.category||'?';
-var grp=new fabric.Group([new fabric.Rect({width:w,height:h,fill:col+'33',stroke:col,strokeWidth:1,rx:2,ry:2}),new fabric.Text(lbl,{fontSize:Math.min(10,w*0.3),fill:col,fontFamily:'-apple-system,sans-serif',textAlign:'center',originX:'center',originY:'center'})],{left:x-w/2,top:y-h/2,selectable:true,angle:o.rotation?o.rotation*180/Math.PI:0});
+var ang=o.angle||o.rotation||0;
+var grp=new fabric.Group([new fabric.Rect({width:w,height:h,fill:col+'33',stroke:col,strokeWidth:1,rx:2,ry:2}),new fabric.Text(lbl,{fontSize:Math.min(10,w*0.3),fill:col,fontFamily:'-apple-system,sans-serif',textAlign:'center',originX:'center',originY:'center'})],{left:x-w/2,top:y-h/2,selectable:true,angle:ang?ang*180/Math.PI:0});
 canvas.add(grp)});
 if(markers&&markers.length){markers.forEach(function(m){var x=m.x*sc+ox,y=m.y*sc+oy;canvas.add(new fabric.Text('📍'+(m.marker_name||''),{left:x,top:y,fontSize:10,fill:'#c0392b',originX:'center',originY:'center',selectable:true}))})}
 if(annotations&&annotations.length){annotations.forEach(function(a){if(!a.points_json)return;try{var pts=JSON.parse(a.points_json);if(pts.length<2)return;var pathStr='M '+pts[0].x*sc+ox+' '+pts[0].y*sc+oy;for(var i=1;i<pts.length;i++)pathStr+=' L '+pts[i].x*sc+ox+' '+pts[i].y*sc+oy;canvas.add(new fabric.Path(pathStr,{fill:'',stroke:a.color_hex||'#FF0000',strokeWidth:a.line_width||2,selectable:true}))}catch(e){}})}
