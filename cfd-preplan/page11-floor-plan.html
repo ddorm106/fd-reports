@@ -800,7 +800,13 @@ document.getElementById('dsFile').onchange = function() {
 };
 
 function importFromServer() {
-    fetch('/api/divisionscan/plans').then(function(r){return r.json()}).then(function(d){
+    var savedUrl = localStorage.getItem('dsServerUrl') || '';
+    var serverUrl = prompt('Enter DivisionScan server address:\n(e.g., http://192.168.1.100:3000)', savedUrl);
+    if (!serverUrl) return;
+    serverUrl = serverUrl.replace(/\/+$/, ''); // trim trailing slash
+    localStorage.setItem('dsServerUrl', serverUrl);
+    toast('Connecting to server...');
+    fetch(serverUrl + '/api/divisionscan/plans').then(function(r){return r.json()}).then(function(d){
     if(!d.plans||!d.plans.length){toast('No scans found on server');return}
     if(d.plans.length===1){loadScanById(d.plans[0].id);return}
     var modal=document.createElement('div');modal.id='scanPickerModal';
@@ -824,7 +830,8 @@ function importFromServer() {
 function escH(s){var d=document.createElement('div');d.textContent=s||'';return d.innerHTML}
 function loadScanById(id){
 toast('Loading scan...');
-fetch('/api/divisionscan/plan/'+id).then(function(r){return r.json()}).then(function(p){
+var serverUrl = localStorage.getItem('dsServerUrl') || '';
+fetch(serverUrl + '/api/divisionscan/plan/'+id).then(function(r){return r.json()}).then(function(p){
 if(p.success&&p.scan&&p.scan.scan_json){renderDivisionScan(JSON.parse(p.scan.scan_json),p.markers||[],p.annotations||[])}
 else{toast('No scan data found')}
 }).catch(function(){toast('Failed to load scan')})
