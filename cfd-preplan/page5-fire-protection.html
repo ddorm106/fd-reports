@@ -4,7 +4,50 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Pre-Fire Plan: Fire Protection</title>
 <link rel="stylesheet" href="styles-preplan.css">
-
+<style>
+.fp-section{margin:12px 0 16px;padding:14px;background:#f8f9fa;border:1px solid #e0e0e0;border-radius:10px}
+.fp-section h4{font-size:14px;color:#333;margin:0 0 4px}
+.fp-section .fp-ref{font-size:10px;color:#999;margin-bottom:10px;font-style:italic}
+.fp-grid{display:flex;flex-wrap:wrap;gap:6px}
+.fp-btn{background:#f0f0f0;border:2px solid #ddd;border-radius:6px;padding:8px 12px;cursor:pointer;transition:all .15s;font-size:12px;font-weight:600;color:#444;text-align:center;line-height:1.3;user-select:none}
+.fp-btn:hover{border-color:#c0392b;background:#fff}
+.fp-btn.selected{border-color:#c0392b;background:#fdf2f0;color:#c0392b;box-shadow:0 0 0 1px #c0392b}
+.fp-btn .fp-detail{font-weight:400;font-size:10px;color:#888;display:block;margin-top:1px}
+.fp-btn.selected .fp-detail{color:#c0392b}
+.fp-btn.green{border-color:#27ae60}
+.fp-btn.green.selected{border-color:#27ae60;background:#f0faf4;color:#27ae60;box-shadow:0 0 0 1px #27ae60}
+.fp-btn.green.selected .fp-detail{color:#27ae60}
+.fp-btn.blue{border-color:#2980b9}
+.fp-btn.blue.selected{border-color:#2980b9;background:#eaf4fc;color:#2980b9;box-shadow:0 0 0 1px #2980b9}
+.fp-btn.blue.selected .fp-detail{color:#2980b9}
+.fp-btn.red{border-color:#c0392b}
+.fp-btn.red.selected{border-color:#c0392b;background:#fdf2f0;color:#c0392b;box-shadow:0 0 0 1px #c0392b}
+.fp-cov-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}
+.fp-cov-btn{background:#f0f0f0;border:2px solid #ddd;border-radius:8px;padding:12px 10px;cursor:pointer;transition:all .15s;text-align:center;user-select:none}
+.fp-cov-btn:hover{border-color:#c0392b;background:#fff}
+.fp-cov-btn.selected{border-color:#c0392b;background:#fdf2f0;box-shadow:0 0 0 1px #c0392b}
+.fp-cov-btn .cov-icon{font-size:24px;display:block}
+.fp-cov-btn .cov-label{font-weight:700;font-size:13px;color:#333;display:block;margin-top:4px}
+.fp-cov-btn .cov-desc{font-size:10px;color:#888;display:block;margin-top:2px}
+.fp-cov-btn.selected .cov-label{color:#c0392b}
+.fp-cov-btn.cov-none.selected{border-color:#999;background:#f5f5f5;box-shadow:0 0 0 1px #999}
+.fp-cov-btn.cov-none.selected .cov-label{color:#666}
+.fp-cov-btn.cov-full.selected{border-color:#27ae60;background:#f0faf4;box-shadow:0 0 0 1px #27ae60}
+.fp-cov-btn.cov-full.selected .cov-label{color:#27ae60}
+.fp-cov-btn.cov-partial.selected{border-color:#e67e22;background:#fef5ec;box-shadow:0 0 0 1px #e67e22}
+.fp-cov-btn.cov-partial.selected .cov-label{color:#e67e22}
+.sp-card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;margin:8px 0}
+.sp-card{background:#f0f0f0;border:2px solid #ddd;border-radius:8px;padding:12px;cursor:pointer;transition:all .15s;user-select:none}
+.sp-card:hover{border-color:#2980b9;background:#fff}
+.sp-card.selected{border-color:#2980b9;background:#eaf4fc;box-shadow:0 0 0 1px #2980b9}
+.sp-card .sp-type{font-weight:800;font-size:14px;color:#333;display:block}
+.sp-card .sp-name{font-size:12px;color:#555;display:block;margin-top:2px}
+.sp-card .sp-desc{font-size:10px;color:#888;display:block;margin-top:4px;line-height:1.3}
+.sp-card .sp-ibc{font-size:8px;color:#bbb;float:right}
+.sp-card.selected .sp-type{color:#2980b9}
+.conditional-section{display:none;margin-top:10px}
+.conditional-section.show{display:block}
+</style>
 </head>
 <body>
 <div class="page-wrapper">
@@ -24,68 +67,204 @@
             <div class="progress-bar" style="width: 41.66%"></div>
         </div>
 
-
         <h3 class="section-title">5. Fire Protection Services</h3>
         <form id="theForm">
+
+            <!-- ===== SPRINKLER SYSTEM ===== -->
             <div class="preplan-section">
                 <h3 class="section-title">Sprinkler System</h3>
-        <div class="form-field">
-            <label class="inline-label">Sprinklered?</label>
-            <div class="apparatus-buttons">
-                <label class="apparatus-btn"><input type="radio" name="sprinklered" value="Yes"><span>Yes</span></label>
-                <label class="apparatus-btn"><input type="radio" name="sprinklered" value="No"><span>No</span></label>
-                <label class="apparatus-btn"><input type="radio" name="sprinklered" value="Partial"><span>Partial</span></label>
-            </div>
-        </div>
-                <div class="form-row">
-                            <div class="form-field"><label for="sprinkler_type">Sprinkler Type:</label><input type="text" id="sprinkler_type" name="sprinkler_type" placeholder="Wet, Dry, Deluge, Pre-action"></div>
-                            <div class="form-field"><label for="fdc_loc">FDC Location:</label><input type="text" id="fdc_loc" name="fdc_loc" placeholder="Alpha side, near main entrance"></div>
-                </div>
-                        <div class="form-field"><label for="sprinkler_notes">Sprinkler Coverage Notes:</label><textarea id="sprinkler_notes" name="sprinkler_notes" rows="2" placeholder="Full coverage except loading dock area..."></textarea></div>
-            </div>
-            <div class="preplan-section">
-                <h3 class="section-title">Standpipe & Fire Pumps</h3>
-        <div class="form-field">
-            <label class="inline-label">Standpipe?</label>
-            <div class="apparatus-buttons">
-                <label class="apparatus-btn"><input type="radio" name="standpipe" value="Yes"><span>Yes</span></label>
-                <label class="apparatus-btn"><input type="radio" name="standpipe" value="No"><span>No</span></label>
-            </div>
-        </div>
-                        <div class="form-field"><label for="standpipe_loc">Standpipe Location/Type:</label><input type="text" id="standpipe_loc" name="standpipe_loc" placeholder="Class I in both stairwells"></div>
-        <div class="form-field">
-            <label class="inline-label">Fire Pump?</label>
-            <div class="apparatus-buttons">
-                <label class="apparatus-btn"><input type="radio" name="fire_pumps" value="Yes"><span>Yes</span></label>
-                <label class="apparatus-btn"><input type="radio" name="fire_pumps" value="No"><span>No</span></label>
-            </div>
-        </div>
-                        <div class="form-field"><label for="fire_pump_details">Fire Pump Details:</label><input type="text" id="fire_pump_details" name="fire_pump_details" placeholder="500 GPM electric, pump room Alpha side"></div>
-            </div>
-            <div class="preplan-section">
-                <h3 class="section-title">Fire Alarm</h3>
-        <div class="form-field">
-            <label class="inline-label">Fire Alarm System?</label>
-            <div class="apparatus-buttons">
-                <label class="apparatus-btn"><input type="radio" name="fire_alarm" value="Yes"><span>Yes</span></label>
-                <label class="apparatus-btn"><input type="radio" name="fire_alarm" value="No"><span>No</span></label>
-            </div>
-        </div>
-                <div class="form-row">
-                            <div class="form-field"><label for="panel_loc">FACP Location:</label><input type="text" id="panel_loc" name="panel_loc" placeholder="Main entrance lobby"></div>
-                            <div class="form-field"><label for="annunciator_loc">Annunciator Location:</label><input type="text" id="annunciator_loc" name="annunciator_loc" placeholder="Front entrance, right of door"></div>
-                </div>
-        <div class="form-field">
-            <label class="inline-label">Knox Box?</label>
-            <div class="apparatus-buttons">
-                <label class="apparatus-btn"><input type="radio" name="knox_box" value="Yes"><span>Yes</span></label>
-                <label class="apparatus-btn"><input type="radio" name="knox_box" value="No"><span>No</span></label>
-            </div>
-        </div>
-                        <div class="form-field"><label for="knox_box_loc">Knox Box Location:</label><input type="text" id="knox_box_loc" name="knox_box_loc" placeholder="Right of main entrance"></div>
-            </div>
-        </form>
 
+                <!-- Coverage -->
+                <div class="form-field">
+                    <label class="inline-label">Sprinkler Coverage:</label>
+                    <div class="fp-cov-grid" id="covGrid">
+                        <div class="fp-cov-btn cov-none" data-val="No" onclick="pickCov(this)">
+                            <span class="cov-icon">✖️</span>
+                            <span class="cov-label">None</span>
+                            <span class="cov-desc">No sprinkler system</span>
+                        </div>
+                        <div class="fp-cov-btn cov-partial" data-val="Partial" onclick="pickCov(this)">
+                            <span class="cov-icon">◐</span>
+                            <span class="cov-label">Partial</span>
+                            <span class="cov-desc">Some areas covered</span>
+                        </div>
+                        <div class="fp-cov-btn cov-full" data-val="Yes" onclick="pickCov(this)">
+                            <span class="cov-icon">✅</span>
+                            <span class="cov-label">Full</span>
+                            <span class="cov-desc">Entire building</span>
+                        </div>
+                    </div>
+                    <input type="hidden" id="sprinklered" name="sprinklered">
+                </div>
+
+                <!-- Sprinkler details (shown when Partial or Full) -->
+                <div class="conditional-section" id="sprinklerDetails">
+                    <div class="fp-section">
+                        <h4>Sprinkler System Type</h4>
+                        <div class="fp-ref">NFPA 13 / IBC §903.3 — Automatic Sprinkler Systems</div>
+                        <div class="fp-grid" id="sprinklerTypeGrid"></div>
+                        <input type="hidden" id="sprinkler_type" name="sprinkler_type">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-field"><label for="fdc_loc">FDC Location:</label><input type="text" id="fdc_loc" name="fdc_loc" placeholder="Alpha side, near main entrance"></div>
+                        <div class="form-field"><label for="fdc_size">FDC Size / Type:</label><input type="text" id="fdc_size" name="fdc_size" placeholder='2½" Siamese, 4" Storz'></div>
+                    </div>
+                    <div class="form-field"><label for="riser_loc">Riser Room Location:</label><input type="text" id="riser_loc" name="riser_loc" placeholder="Alpha side mechanical room, 1st floor"></div>
+                    <div class="form-field"><label for="sprinkler_notes">Sprinkler Coverage Notes:</label><textarea id="sprinkler_notes" name="sprinkler_notes" rows="2" placeholder="Full coverage except loading dock area, partial in warehouse wing..."></textarea></div>
+                </div>
+            </div>
+
+            <!-- ===== STANDPIPE ===== -->
+            <div class="preplan-section">
+                <h3 class="section-title">Standpipe System</h3>
+
+                <div class="form-field">
+                    <label class="inline-label">Standpipe Coverage:</label>
+                    <div class="fp-cov-grid" id="spCovGrid">
+                        <div class="fp-cov-btn cov-none" data-val="No" onclick="pickSpCov(this)">
+                            <span class="cov-icon">✖️</span>
+                            <span class="cov-label">None</span>
+                            <span class="cov-desc">No standpipe system</span>
+                        </div>
+                        <div class="fp-cov-btn cov-partial" data-val="Partial" onclick="pickSpCov(this)">
+                            <span class="cov-icon">◐</span>
+                            <span class="cov-label">Partial</span>
+                            <span class="cov-desc">Some areas / floors</span>
+                        </div>
+                        <div class="fp-cov-btn cov-full" data-val="Yes" onclick="pickSpCov(this)">
+                            <span class="cov-icon">✅</span>
+                            <span class="cov-label">Full</span>
+                            <span class="cov-desc">All floors / stairwells</span>
+                        </div>
+                    </div>
+                    <input type="hidden" id="standpipe" name="standpipe">
+                </div>
+
+                <div class="conditional-section" id="standpipeDetails">
+                    <div class="fp-section">
+                        <h4>Standpipe Class</h4>
+                        <div class="fp-ref">IBC §905.2-905.4, NFPA 14 — Standpipe & Hose Systems</div>
+                        <div class="sp-card-grid" id="standpipeGrid">
+                            <div class="sp-card" data-val="Class I" onclick="pickSP(this)">
+                                <span class="sp-ibc">§905.2</span>
+                                <span class="sp-type">Class I</span>
+                                <span class="sp-name">2½" Hose Connections</span>
+                                <span class="sp-desc">For FD use. 500 GPM, 100 PSI at most remote connection.</span>
+                            </div>
+                            <div class="sp-card" data-val="Class II" onclick="pickSP(this)">
+                                <span class="sp-ibc">§905.3</span>
+                                <span class="sp-type">Class II</span>
+                                <span class="sp-name">1½" Hose Stations</span>
+                                <span class="sp-desc">For occupant use. 100 GPM, pre-connected hose.</span>
+                            </div>
+                            <div class="sp-card" data-val="Class III" onclick="pickSP(this)">
+                                <span class="sp-ibc">§905.4</span>
+                                <span class="sp-type">Class III</span>
+                                <span class="sp-name">Combined</span>
+                                <span class="sp-desc">Both 2½" and 1½" connections. FD and occupant use.</span>
+                            </div>
+                        </div>
+                        <input type="hidden" id="standpipe_type" name="standpipe_type">
+                    </div>
+
+                    <div class="form-field"><label for="standpipe_loc">Standpipe Locations:</label><input type="text" id="standpipe_loc" name="standpipe_loc" placeholder="Both stairwells, each floor landing"></div>
+                </div>
+            </div>
+
+            <!-- ===== FIRE PUMP ===== -->
+            <div class="preplan-section">
+                <h3 class="section-title">Fire Pump</h3>
+
+                <div class="form-field">
+                    <label class="inline-label">Fire Pump?</label>
+                    <div class="apparatus-buttons">
+                        <label class="apparatus-btn"><input type="radio" name="fire_pumps" value="Yes" onchange="toggleSection('pumpDetails',true)"><span>Yes</span></label>
+                        <label class="apparatus-btn"><input type="radio" name="fire_pumps" value="No" onchange="toggleSection('pumpDetails',false)"><span>No</span></label>
+                    </div>
+                </div>
+
+                <div class="conditional-section" id="pumpDetails">
+                    <div class="fp-section">
+                        <h4>Pump Type</h4>
+                        <div class="fp-ref">NFPA 20 / IBC §913 — Fire Pump Installations</div>
+                        <div class="fp-grid" id="pumpTypeGrid"></div>
+                        <input type="hidden" id="pump_type" name="pump_type">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-field"><label for="pump_capacity">Pump Capacity (GPM):</label><input type="number" id="pump_capacity" name="pump_capacity" placeholder="500"></div>
+                        <div class="form-field"><label for="pump_location">Pump Room Location:</label><input type="text" id="pump_location" name="pump_location" placeholder="Alpha side, ground floor mechanical"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== FIRE ALARM ===== -->
+            <div class="preplan-section">
+                <h3 class="section-title">Fire Alarm System</h3>
+
+                <div class="form-field">
+                    <label class="inline-label">Fire Alarm System?</label>
+                    <div class="apparatus-buttons">
+                        <label class="apparatus-btn"><input type="radio" name="fire_alarm" value="Yes"><span>Yes</span></label>
+                        <label class="apparatus-btn"><input type="radio" name="fire_alarm" value="No"><span>No</span></label>
+                    </div>
+                </div>
+
+                <div id="alarmDetails">
+                    <div class="fp-section">
+                        <h4>Alarm System Type</h4>
+                        <div class="fp-ref">NFPA 72 / IBC §907 — Fire Alarm & Detection Systems</div>
+                        <div class="fp-grid" id="alarmTypeGrid"></div>
+                        <input type="hidden" id="fire_alarm_type" name="fire_alarm_type">
+                    </div>
+
+                    <div class="fp-section">
+                        <h4>Detection / Initiation Devices</h4>
+                        <div class="fp-ref">NFPA 72 Ch. 17 — Initiating Devices</div>
+                        <div class="fp-grid" id="detectionGrid"></div>
+                        <input type="hidden" id="detection_devices" name="detection_devices">
+                    </div>
+
+                    <div class="fp-section">
+                        <h4>Notification Appliances</h4>
+                        <div class="fp-ref">NFPA 72 Ch. 18 — Notification Appliances</div>
+                        <div class="fp-grid" id="notificationGrid"></div>
+                        <input type="hidden" id="notification_devices" name="notification_devices">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-field"><label for="panel_loc">FACP Location:</label><input type="text" id="panel_loc" name="panel_loc" placeholder="Main entrance lobby"></div>
+                        <div class="form-field"><label for="annunciator_loc">Annunciator Location:</label><input type="text" id="annunciator_loc" name="annunciator_loc" placeholder="Front entrance, right of door"></div>
+                    </div>
+                    <div class="form-field"><label for="monitoring_company">Monitoring Company:</label><input type="text" id="monitoring_company" name="monitoring_company" placeholder="ADT, SimpliSafe, Central Station..."></div>
+                </div>
+            </div>
+
+            <!-- ===== KNOX BOX ===== -->
+            <div class="preplan-section">
+                <h3 class="section-title">Knox Box / Key Access</h3>
+
+                <div class="form-field">
+                    <label class="inline-label">Knox Box?</label>
+                    <div class="apparatus-buttons">
+                        <label class="apparatus-btn"><input type="radio" name="knox_box" value="Yes" onchange="toggleSection('knoxDetails',true)"><span>Yes</span></label>
+                        <label class="apparatus-btn"><input type="radio" name="knox_box" value="No" onchange="toggleSection('knoxDetails',false)"><span>No</span></label>
+                    </div>
+                </div>
+
+                <div class="conditional-section" id="knoxDetails">
+                    <div class="form-field"><label for="knox_box_loc">Knox Box Location:</label><input type="text" id="knox_box_loc" name="knox_box_loc" placeholder="Right of main entrance, Alpha side"></div>
+                    <div class="form-field"><label for="knox_box_contents">Contents:</label><input type="text" id="knox_box_contents" name="knox_box_contents" placeholder="Building keys, elevator keys, alarm codes"></div>
+                </div>
+            </div>
+
+            <!-- ===== NOTES ===== -->
+            <div class="preplan-section">
+                <h3 class="section-title">Fire Protection Notes</h3>
+                <div class="form-field"><label for="fire_protection_notes">Additional details or observations:</label><textarea id="fire_protection_notes" name="fire_protection_notes" rows="3" placeholder="Additional fire protection details, deficiencies noted, testing dates..."></textarea></div>
+            </div>
+
+        </form>
 
         <div class="nav-buttons">
             <button type="button" class="btn-secondary" onclick="navigate('page4-construction.html',document.getElementById('theForm'))">← Previous</button>
@@ -100,9 +279,234 @@
 <div class="toast-container" id="toast-container"></div>
 <script src="preplan-common.js"></script>
 <script>
-var form=document.getElementById('theForm');
-if(form){loadFormData(form);autoSave(form);}
+/* ========================================================
+   BUTTON DATA
+   ======================================================== */
+var SPRINKLER_TYPES = [
+    { val:'Wet Pipe', detail:'Water-filled, fastest response' },
+    { val:'Dry Pipe', detail:'Air-pressurized, cold areas' },
+    { val:'Pre-Action', detail:'Dual activation required' },
+    { val:'Deluge', detail:'Open heads, high hazard' },
+    { val:'ESFR', detail:'Early Suppression, Fast Response' },
+    { val:'In-Rack', detail:'Warehouse rack storage' },
+    { val:'Residential (NFPA 13R)', detail:'Multi-family dwelling' },
+    { val:'Residential (NFPA 13D)', detail:'1 & 2 family dwelling' },
+    { val:'Foam-Water', detail:'Flammable liquid areas' },
+    { val:'Combined Standpipe', detail:'Integrated system' }
+];
 
+var PUMP_TYPES = [
+    { val:'Electric Motor', detail:'Most common, requires power' },
+    { val:'Diesel Engine', detail:'Independent power source' },
+    { val:'Electric + Diesel', detail:'Redundant drivers' },
+    { val:'Jockey Pump', detail:'Pressure maintenance only' },
+    { val:'Horizontal Split-Case', detail:'High volume' },
+    { val:'Vertical Turbine', detail:'Below-grade water source' },
+    { val:'In-Line Pump', detail:'Compact, booster' }
+];
+
+var ALARM_TYPES = [
+    { val:'Addressable', detail:'Individual device ID' },
+    { val:'Conventional', detail:'Zone-based detection' },
+    { val:'Analog Addressable', detail:'Sensitivity adjustable' },
+    { val:'Voice Evacuation', detail:'PA + alarm combo' },
+    { val:'Mass Notification', detail:'MNS / WECS integrated' },
+    { val:'Local Only', detail:'No central monitoring' },
+    { val:'Proprietary', detail:'On-site monitoring center' },
+    { val:'Central Station', detail:'UL listed monitoring' }
+];
+
+var DETECTION_DEVICES = [
+    { val:'Smoke Detectors', detail:'Photoelectric / ionization' },
+    { val:'Heat Detectors', detail:'Fixed temp / rate-of-rise' },
+    { val:'Duct Detectors', detail:'HVAC duct-mounted' },
+    { val:'Beam Detectors', detail:'Large open areas' },
+    { val:'Pull Stations', detail:'Manual initiation' },
+    { val:'Waterflow Switch', detail:'Sprinkler flow alarm' },
+    { val:'Tamper Switch', detail:'Valve supervision' },
+    { val:'CO Detectors', detail:'Carbon monoxide' },
+    { val:'Air Sampling', detail:'VESDA / aspirating' },
+    { val:'Flame Detectors', detail:'UV/IR detection' },
+    { val:'Gas Detection', detail:'Combustible gas' }
+];
+
+var NOTIFICATION_DEVICES = [
+    { val:'Horns', detail:'Audible alert' },
+    { val:'Strobes', detail:'Visual alert' },
+    { val:'Horn/Strobes', detail:'Combined AV' },
+    { val:'Speakers', detail:'Voice evacuation' },
+    { val:'Bells', detail:'Mechanical audible' },
+    { val:'Chimes', detail:'Low-alert tone' }
+];
+
+/* ========================================================
+   GRID BUILDERS
+   ======================================================== */
+function buildFPGrid(gridId, items, hiddenId, multi) {
+    var grid = document.getElementById(gridId);
+    var html = '';
+    items.forEach(function(m) {
+        html += '<div class="fp-btn" data-val="' + m.val + '" onclick="pickFP(this,\'' + hiddenId + '\',' + (multi?'true':'false') + ')">';
+        html += m.val;
+        if (m.detail) html += '<span class="fp-detail">' + m.detail + '</span>';
+        html += '</div>';
+    });
+    grid.innerHTML = html;
+}
+
+function pickFP(el, hiddenId, multi) {
+    var grid = el.parentElement;
+    if (multi) {
+        el.classList.toggle('selected');
+    } else {
+        grid.querySelectorAll('.fp-btn').forEach(function(b) { b.classList.remove('selected'); });
+        el.classList.add('selected');
+    }
+    var vals = [];
+    grid.querySelectorAll('.fp-btn.selected').forEach(function(b) { vals.push(b.dataset.val); });
+    var hidden = document.getElementById(hiddenId);
+    hidden.value = vals.join(', ');
+    hidden.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+/* ========================================================
+   COVERAGE PICKER
+   ======================================================== */
+function pickCov(el) {
+    document.querySelectorAll('.fp-cov-btn').forEach(function(b) { b.classList.remove('selected'); });
+    el.classList.add('selected');
+    var val = el.dataset.val;
+    document.getElementById('sprinklered').value = val;
+    document.getElementById('sprinklered').dispatchEvent(new Event('input', { bubbles: true }));
+
+    var details = document.getElementById('sprinklerDetails');
+    if (val === 'Yes' || val === 'Partial') {
+        details.classList.add('show');
+    } else {
+        details.classList.remove('show');
+    }
+}
+
+/* ========================================================
+   STANDPIPE COVERAGE PICKER
+   ======================================================== */
+function pickSpCov(el) {
+    document.querySelectorAll('#spCovGrid .fp-cov-btn').forEach(function(b) { b.classList.remove('selected'); });
+    el.classList.add('selected');
+    var val = el.dataset.val;
+    document.getElementById('standpipe').value = val;
+    document.getElementById('standpipe').dispatchEvent(new Event('input', { bubbles: true }));
+
+    var details = document.getElementById('standpipeDetails');
+    if (val === 'Yes' || val === 'Partial') {
+        details.classList.add('show');
+    } else {
+        details.classList.remove('show');
+    }
+}
+
+/* ========================================================
+   STANDPIPE CARD PICKER
+   ======================================================== */
+function pickSP(el) {
+    document.querySelectorAll('.sp-card').forEach(function(c) { c.classList.remove('selected'); });
+    el.classList.add('selected');
+    var hidden = document.getElementById('standpipe_type');
+    hidden.value = el.dataset.val;
+    hidden.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+/* ========================================================
+   CONDITIONAL SECTION TOGGLE
+   ======================================================== */
+function toggleSection(id, show) {
+    var el = document.getElementById(id);
+    if (el) el.classList.toggle('show', show);
+}
+
+/* ========================================================
+   RESTORE HELPERS
+   ======================================================== */
+function restoreFPGrid(gridId, hiddenId) {
+    var val = document.getElementById(hiddenId).value || '';
+    if (!val) return;
+    var vals = val.split(',').map(function(v) { return v.trim(); });
+    var grid = document.getElementById(gridId);
+    grid.querySelectorAll('.fp-btn').forEach(function(btn) {
+        if (vals.indexOf(btn.dataset.val) >= 0) btn.classList.add('selected');
+    });
+}
+
+/* ========================================================
+   INIT
+   ======================================================== */
+// Build grids
+buildFPGrid('sprinklerTypeGrid', SPRINKLER_TYPES, 'sprinkler_type', false);
+buildFPGrid('pumpTypeGrid', PUMP_TYPES, 'pump_type', false);
+buildFPGrid('alarmTypeGrid', ALARM_TYPES, 'fire_alarm_type', true);
+buildFPGrid('detectionGrid', DETECTION_DEVICES, 'detection_devices', true);
+buildFPGrid('notificationGrid', NOTIFICATION_DEVICES, 'notification_devices', true);
+
+// Load saved form data
+var form = document.getElementById('theForm');
+if (form) { loadFormData(form); autoSave(form); }
+
+// Restore button selections
+restoreFPGrid('sprinklerTypeGrid', 'sprinkler_type');
+restoreFPGrid('pumpTypeGrid', 'pump_type');
+restoreFPGrid('alarmTypeGrid', 'fire_alarm_type');
+restoreFPGrid('detectionGrid', 'detection_devices');
+restoreFPGrid('notificationGrid', 'notification_devices');
+
+// Restore coverage buttons
+(function() {
+    var val = document.getElementById('sprinklered').value;
+    if (val) {
+        document.querySelectorAll('.fp-cov-btn').forEach(function(b) {
+            if (b.dataset.val === val) b.classList.add('selected');
+        });
+        if (val === 'Yes' || val === 'Partial') {
+            document.getElementById('sprinklerDetails').classList.add('show');
+        }
+    }
+})();
+
+// Restore standpipe coverage buttons
+(function() {
+    var val = document.getElementById('standpipe').value;
+    if (val) {
+        document.querySelectorAll('#spCovGrid .fp-cov-btn').forEach(function(b) {
+            if (b.dataset.val === val) b.classList.add('selected');
+        });
+        if (val === 'Yes' || val === 'Partial') {
+            document.getElementById('standpipeDetails').classList.add('show');
+        }
+    }
+})();
+
+// Restore standpipe card
+(function() {
+    var val = document.getElementById('standpipe_type').value;
+    if (val) {
+        document.querySelectorAll('.sp-card').forEach(function(c) {
+            if (c.dataset.val === val) c.classList.add('selected');
+        });
+    }
+})();
+
+// Restore conditional sections from radio buttons
+(function() {
+    var pairs = [
+        ['fire_pumps', 'pumpDetails'],
+        ['knox_box', 'knoxDetails']
+    ];
+    pairs.forEach(function(p) {
+        var checked = document.querySelector('input[name="' + p[0] + '"]:checked');
+        if (checked && checked.value === 'Yes') {
+            document.getElementById(p[1]).classList.add('show');
+        }
+    });
+})();
 </script>
 </body>
 </html>
