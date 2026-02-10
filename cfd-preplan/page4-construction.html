@@ -4,7 +4,38 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Pre-Fire Plan: Construction</title>
 <link rel="stylesheet" href="styles-preplan.css">
-
+<style>
+.mat-section{margin:16px 0 20px;padding:14px;background:#f8f9fa;border:1px solid #e0e0e0;border-radius:10px}
+.mat-section h4{font-size:14px;color:#333;margin:0 0 4px}
+.mat-section .mat-ref{font-size:10px;color:#999;margin-bottom:10px;font-style:italic}
+.mat-grid{display:flex;flex-wrap:wrap;gap:6px}
+.mat-btn{background:#f0f0f0;border:2px solid #ddd;border-radius:6px;padding:7px 12px;cursor:pointer;transition:all .15s;font-size:12px;font-weight:600;color:#444;text-align:center;line-height:1.3;user-select:none}
+.mat-btn:hover{border-color:#c0392b;background:#fff}
+.mat-btn.selected{border-color:#c0392b;background:#fdf2f0;color:#c0392b;box-shadow:0 0 0 1px #c0392b}
+.mat-btn .mat-detail{font-weight:400;font-size:10px;color:#888;display:block;margin-top:1px}
+.mat-btn.selected .mat-detail{color:#c0392b}
+.mat-btn.warn{border-color:#e67e22}
+.mat-btn.warn.selected{border-color:#e67e22;background:#fef5ec;color:#e67e22;box-shadow:0 0 0 1px #e67e22}
+.mat-btn.danger{border-color:#c0392b}
+.mat-btn.danger.selected{border-color:#c0392b;background:#fdf2f0;color:#c0392b;box-shadow:0 0 0 1px #c0392b}
+.mat-other-wrap{display:flex;gap:6px;align-items:center;margin-top:8px}
+.mat-other-wrap input{flex:1;padding:6px 10px;border:1px solid #ddd;border-radius:6px;font-size:12px}
+.mat-other-wrap .mat-other-label{font-size:11px;color:#888;white-space:nowrap}
+.const-card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin:8px 0}
+.const-card{position:relative;background:#f0f0f0;border:2px solid #ddd;border-radius:10px;padding:14px 10px;cursor:pointer;transition:all .2s;text-align:center}
+.const-card:hover{border-color:#c0392b;background:#fff}
+.const-card.selected{border-color:#c0392b;background:#fdf2f0;box-shadow:0 0 0 1px #c0392b}
+.const-card .cc-type{font-weight:800;font-size:15px;color:#333;display:block}
+.const-card .cc-name{font-size:11px;color:#666;display:block;margin-top:2px}
+.const-card .cc-desc{font-size:9px;color:#999;display:block;margin-top:4px;line-height:1.3}
+.const-card.selected .cc-type{color:#c0392b}
+.const-card .cc-ibc{position:absolute;top:4px;right:6px;font-size:8px;color:#bbb}
+.auto-calc-row{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#f0faf4;border:1px solid #27ae60;border-radius:6px;margin-top:8px;font-size:12px;color:#27ae60}
+.auto-calc-row .acr-label{color:#888}
+.auto-calc-row .acr-val{font-weight:700}
+.truss-warning{display:none;padding:8px 12px;background:#fef5ec;border:1px solid #e67e22;border-radius:6px;margin-top:8px;font-size:12px;color:#e67e22;align-items:center;gap:6px}
+.truss-warning.show{display:flex}
+</style>
 </head>
 <body>
 <div class="page-wrapper">
@@ -24,44 +55,165 @@
             <div class="progress-bar" style="width: 33.33%"></div>
         </div>
 
-
         <h3 class="section-title">4. Construction Details</h3>
         <form id="theForm">
+
+            <!-- ===== Construction Type (IBC Chapter 6) ===== -->
             <div class="preplan-section">
-                <h3 class="section-title">Construction Type</h3>
-                <div class="construction-cards">
-                    <label class="construction-card"><input type="radio" name="construction_type" value="Type I - Fire Resistive"><span class="card-label">Type I<br>Fire Resistive</span></label>
-                    <label class="construction-card"><input type="radio" name="construction_type" value="Type II - Non-Combustible"><span class="card-label">Type II<br>Non-Combustible</span></label>
-                    <label class="construction-card"><input type="radio" name="construction_type" value="Type III - Ordinary"><span class="card-label">Type III<br>Ordinary</span></label>
-                    <label class="construction-card"><input type="radio" name="construction_type" value="Type IV - Heavy Timber"><span class="card-label">Type IV<br>Heavy Timber</span></label>
-                    <label class="construction-card"><input type="radio" name="construction_type" value="Type V - Wood Frame"><span class="card-label">Type V<br>Wood Frame</span></label>
+                <h3 class="section-title">Construction Type <span style="font-weight:400;font-size:11px;color:#888">(IBC Chapter 6)</span></h3>
+                <div class="const-card-grid" id="constTypeGrid">
+                    <label class="const-card" data-val="Type I - Fire Resistive">
+                        <input type="radio" name="construction_type" value="Type I - Fire Resistive" style="display:none">
+                        <span class="cc-ibc">§602.2</span>
+                        <span class="cc-type">Type I</span>
+                        <span class="cc-name">Fire Resistive</span>
+                        <span class="cc-desc">Noncombustible, 2-3 hr rated structural</span>
+                    </label>
+                    <label class="const-card" data-val="Type II - Non-Combustible">
+                        <input type="radio" name="construction_type" value="Type II - Non-Combustible" style="display:none">
+                        <span class="cc-ibc">§602.3</span>
+                        <span class="cc-type">Type II</span>
+                        <span class="cc-name">Non-Combustible</span>
+                        <span class="cc-desc">Noncombustible, 0-1 hr rated</span>
+                    </label>
+                    <label class="const-card" data-val="Type III - Ordinary">
+                        <input type="radio" name="construction_type" value="Type III - Ordinary" style="display:none">
+                        <span class="cc-ibc">§602.4</span>
+                        <span class="cc-type">Type III</span>
+                        <span class="cc-name">Ordinary</span>
+                        <span class="cc-desc">Noncombustible ext. walls, combustible interior</span>
+                    </label>
+                    <label class="const-card" data-val="Type IV - Heavy Timber">
+                        <input type="radio" name="construction_type" value="Type IV - Heavy Timber" style="display:none">
+                        <span class="cc-ibc">§602.5</span>
+                        <span class="cc-type">Type IV</span>
+                        <span class="cc-name">Heavy Timber</span>
+                        <span class="cc-desc">Mass timber / large dimensional lumber</span>
+                    </label>
+                    <label class="const-card" data-val="Type V - Wood Frame">
+                        <input type="radio" name="construction_type" value="Type V - Wood Frame" style="display:none">
+                        <span class="cc-ibc">§602.6</span>
+                        <span class="cc-type">Type V</span>
+                        <span class="cc-name">Wood Frame</span>
+                        <span class="cc-desc">Combustible structural elements</span>
+                    </label>
                 </div>
             </div>
+
+            <!-- ===== Dimensions ===== -->
             <div class="preplan-section">
                 <h3 class="section-title">Dimensions</h3>
                 <div class="form-row">
-                    <div class="form-field"><label>Length (ft):</label><input type="number" name="length" placeholder="200"></div>
-                    <div class="form-field"><label>Width (ft):</label><input type="number" name="width" placeholder="150"></div>
+                    <div class="form-field"><label>Length (ft):</label><input type="number" id="length" name="length" placeholder="200" oninput="autoCalcSqFt()"></div>
+                    <div class="form-field"><label>Width (ft):</label><input type="number" id="width" name="width" placeholder="150" oninput="autoCalcSqFt()"></div>
                 </div>
                 <div class="form-row">
                     <div class="form-field"><label>Height (ft):</label><input type="number" name="height" placeholder="30"></div>
-                    <div class="form-field"><label>Total Sq Ft:</label><input type="number" name="total_sq_ft" placeholder="30000"></div>
+                    <div class="form-field"><label>Total Sq Ft:</label><input type="number" id="total_sq_ft" name="total_sq_ft" placeholder="30000"></div>
+                </div>
+                <div id="sqftCalcRow" class="auto-calc-row" style="display:none">
+                    <span class="acr-label">Auto-calculated:</span>
+                    <span class="acr-val" id="sqftCalcVal"></span>
+                    <span style="color:#888;font-size:10px">(L × W)</span>
                 </div>
                 <div class="form-row">
                     <div class="form-field"><label>Number of Stories:</label><input type="number" name="num_stories" placeholder="2"></div>
-                    <div class="form-field"><label class="inline-label">Basement?</label><div class="apparatus-buttons"><label class="apparatus-btn"><input type="radio" name="basement" value="Yes"><span>Yes</span></label><label class="apparatus-btn"><input type="radio" name="basement" value="No"><span>No</span></label></div></div>
+                    <div class="form-field">
+                        <label class="inline-label">Basement?</label>
+                        <div class="apparatus-buttons">
+                            <label class="apparatus-btn"><input type="radio" name="basement" value="Yes"><span>Yes</span></label>
+                            <label class="apparatus-btn"><input type="radio" name="basement" value="No"><span>No</span></label>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="preplan-section">
-                <h3 class="section-title">Construction Materials</h3>
-                <div class="form-field"><label>Roof Construction:</label><input type="text" name="roof_construction" placeholder="Steel bar joist with metal deck, built-up roof"></div>
-                <div class="form-field"><label class="inline-label">Roof Trusses?</label><div class="apparatus-buttons"><label class="apparatus-btn"><input type="radio" name="roof_trusses" value="Yes"><span>Yes</span></label><label class="apparatus-btn"><input type="radio" name="roof_trusses" value="No"><span>No</span></label><label class="apparatus-btn"><input type="radio" name="roof_trusses" value="Unknown"><span>Unknown</span></label></div></div>
-                <div class="form-field"><label>Truss Type:</label><input type="text" name="truss_type" placeholder="Lightweight wood, steel bar joist, bowstring..."></div>
-                <div class="form-field"><label>Floor Construction:</label><input type="text" name="floor_construction" placeholder="Concrete slab on grade"></div>
-                <div class="form-field"><label>Wall Construction:</label><input type="text" name="wall_construction" placeholder="CMU block, steel frame with metal panels"></div>
-            </div>
-        </form>
 
+            <!-- ===== Roof Construction (IBC §1507-1510) ===== -->
+            <div class="preplan-section">
+                <h3 class="section-title">Roof Construction</h3>
+
+                <div class="mat-section">
+                    <h4>Roof Covering</h4>
+                    <div class="mat-ref">IBC §1507 — Roof Covering Materials</div>
+                    <div class="mat-grid" id="roofCoveringGrid"></div>
+                    <input type="hidden" id="roof_covering" name="roof_covering">
+                </div>
+
+                <div class="mat-section">
+                    <h4>Roof Deck / Substrate</h4>
+                    <div class="mat-ref">IBC §2304, §2209 — Structural Deck Systems</div>
+                    <div class="mat-grid" id="deckGrid"></div>
+                    <input type="hidden" id="deck_material" name="deck_material">
+                </div>
+
+                <div class="mat-section">
+                    <h4>Roof Structure</h4>
+                    <div class="mat-ref">IBC §2303, §2205 — Structural Framing</div>
+                    <div class="mat-grid" id="roofStructGrid"></div>
+                    <input type="hidden" id="roof_construction" name="roof_construction">
+                </div>
+
+                <div class="form-field" style="margin-top:12px">
+                    <label class="inline-label">Roof Trusses?</label>
+                    <div class="apparatus-buttons">
+                        <label class="apparatus-btn"><input type="radio" name="roof_trusses" value="Yes" onchange="checkTruss()"><span>Yes</span></label>
+                        <label class="apparatus-btn"><input type="radio" name="roof_trusses" value="No" onchange="checkTruss()"><span>No</span></label>
+                        <label class="apparatus-btn"><input type="radio" name="roof_trusses" value="Unknown" onchange="checkTruss()"><span>Unknown</span></label>
+                    </div>
+                </div>
+
+                <div class="mat-section" id="trussTypeSection" style="display:none">
+                    <h4>Truss Type</h4>
+                    <div class="mat-ref">IBC §2303.4 — Trusses</div>
+                    <div class="mat-grid" id="trussTypeGrid"></div>
+                    <input type="hidden" id="truss_type" name="truss_type">
+                </div>
+
+                <div class="truss-warning" id="trussWarning">
+                    ⚠️ <strong>Lightweight trusses:</strong> Potential for early collapse under fire conditions (NIOSH Alert 2005-132)
+                </div>
+            </div>
+
+            <!-- ===== Floor Construction ===== -->
+            <div class="preplan-section">
+                <h3 class="section-title">Floor Construction</h3>
+
+                <div class="mat-section">
+                    <h4>Floor System</h4>
+                    <div class="mat-ref">IBC §2304, §1907 — Floor Systems</div>
+                    <div class="mat-grid" id="floorGrid"></div>
+                    <input type="hidden" id="floor_construction" name="floor_construction">
+                </div>
+
+                <div class="form-field" style="margin-top:8px">
+                    <label class="inline-label">Floor Trusses?</label>
+                    <div class="apparatus-buttons">
+                        <label class="apparatus-btn"><input type="radio" name="floor_trusses" value="Yes"><span>Yes</span></label>
+                        <label class="apparatus-btn"><input type="radio" name="floor_trusses" value="No"><span>No</span></label>
+                        <label class="apparatus-btn"><input type="radio" name="floor_trusses" value="Unknown"><span>Unknown</span></label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== Wall Construction ===== -->
+            <div class="preplan-section">
+                <h3 class="section-title">Exterior Wall Construction</h3>
+
+                <div class="mat-section">
+                    <h4>Wall System</h4>
+                    <div class="mat-ref">IBC §1402-1405, §2109 — Exterior Wall Construction</div>
+                    <div class="mat-grid" id="wallGrid"></div>
+                    <input type="hidden" id="wall_construction" name="wall_construction">
+                </div>
+            </div>
+
+            <!-- ===== Construction Notes ===== -->
+            <div class="preplan-section">
+                <h3 class="section-title">Construction Notes</h3>
+                <div class="form-field"><label for="construction_notes">Additional details, "Other" descriptions, or observations:</label><textarea id="construction_notes" name="construction_notes" rows="4" placeholder="Describe any 'Other' selections, mixed construction methods, renovations, additions, or other relevant construction details..."></textarea></div>
+            </div>
+
+        </form>
 
         <div class="nav-buttons">
             <button type="button" class="btn-secondary" onclick="navigate('page3-occupancy.html',document.getElementById('theForm'))">← Previous</button>
@@ -76,9 +228,234 @@
 <div class="toast-container" id="toast-container"></div>
 <script src="preplan-common.js"></script>
 <script>
-var form=document.getElementById('theForm');
-if(form){loadFormData(form);autoSave(form);}
+/* ========================================================
+   MATERIAL OPTION DATA (IBC references)
+   ======================================================== */
+var MATERIALS = {
+    roofCovering: [
+        { val:'Built-Up Roof (BUR)', detail:'Asphalt/tar layers' },
+        { val:'Single-Ply Membrane', detail:'TPO, EPDM, PVC' },
+        { val:'Metal Standing Seam', detail:'Steel or aluminum' },
+        { val:'Metal Panel', detail:'Corrugated / ribbed' },
+        { val:'Asphalt Shingles', detail:'Fiberglass mat' },
+        { val:'Clay/Concrete Tile', detail:'Class A rated' },
+        { val:'Slate', detail:'Natural stone' },
+        { val:'Wood Shingles', detail:'Cedar / redwood', cls:'warn' },
+        { val:'Synthetic', detail:'Rubber, polymer' },
+        { val:'Spray Foam', detail:'SPF with coating' },
+        { val:'Green Roof', detail:'Vegetative system' },
+        { val:'Solar Panels', detail:'PV array on roof' }
+    ],
+    deck: [
+        { val:'Metal Deck', detail:'Steel corrugated' },
+        { val:'Plywood', detail:'Structural sheathing' },
+        { val:'OSB', detail:'Oriented strand board' },
+        { val:'Concrete', detail:'Cast-in-place / precast' },
+        { val:'Cementitious Panel', detail:'Fiber cement' },
+        { val:'Wood Plank', detail:'Dimensional lumber', cls:'warn' },
+        { val:'Composite', detail:'Steel-concrete' }
+    ],
+    roofStruct: [
+        { val:'Steel Bar Joist', detail:'Open web steel' },
+        { val:'Steel Beam/Girder', detail:'Wide flange / I-beam' },
+        { val:'Wood Rafter', detail:'Dimensional lumber' },
+        { val:'Wood Truss', detail:'Lightweight engineered', cls:'danger' },
+        { val:'Wood I-Joist', detail:'Engineered lumber', cls:'warn' },
+        { val:'Glulam Beam', detail:'Laminated timber' },
+        { val:'Concrete Beam', detail:'Reinforced / PT' },
+        { val:'Steel Truss', detail:'Tubular / angle' },
+        { val:'Bowstring Truss', detail:'Arched top chord', cls:'danger' },
+        { val:'Pre-Engineered Metal', detail:'Metal building system' }
+    ],
+    trussType: [
+        { val:'Lightweight Wood', detail:'Gusset plate', cls:'danger' },
+        { val:'Steel Bar Joist', detail:'Open web steel' },
+        { val:'Bowstring', detail:'Arched, collapse risk', cls:'danger' },
+        { val:'Parallel Chord', detail:'Flat top & bottom' },
+        { val:'Scissor Truss', detail:'Vaulted ceiling' },
+        { val:'Warren Truss', detail:'Diagonal web members' },
+        { val:'Pratt Truss', detail:'Vertical web members' },
+        { val:'Wood I-Joist', detail:'Engineered lumber', cls:'warn' }
+    ],
+    floor: [
+        { val:'Concrete Slab on Grade', detail:'Ground-level pour' },
+        { val:'Concrete Slab (Elevated)', detail:'Suspended/reinforced' },
+        { val:'Precast Concrete Plank', detail:'Hollow core' },
+        { val:'Steel w/ Concrete', detail:'Metal deck + topping' },
+        { val:'Wood Joist', detail:'Dimensional lumber' },
+        { val:'Wood Truss', detail:'Engineered floor truss', cls:'warn' },
+        { val:'Wood I-Joist', detail:'Engineered lumber', cls:'warn' },
+        { val:'Post-Tensioned', detail:'PT concrete slab' },
+        { val:'Steel Beam', detail:'Wide flange framing' }
+    ],
+    wall: [
+        { val:'CMU Block', detail:'Concrete masonry unit' },
+        { val:'Brick Veneer', detail:'Brick over frame' },
+        { val:'Solid Brick / Masonry', detail:'Load-bearing' },
+        { val:'Tilt-Up Concrete', detail:'Precast panels' },
+        { val:'Cast-in-Place Concrete', detail:'Poured walls' },
+        { val:'Steel Frame + Metal Panel', detail:'Metal building' },
+        { val:'Steel Frame + EIFS', detail:'Ext. insulation finish' },
+        { val:'Steel Stud + Siding', detail:'Light gauge framing' },
+        { val:'Wood Frame + Siding', detail:'Vinyl, Hardie, lap' },
+        { val:'Wood Frame + Brick', detail:'Combustible behind' },
+        { val:'Curtain Wall', detail:'Glass & aluminum' },
+        { val:'SIP Panel', detail:'Structural insulated', cls:'warn' },
+        { val:'ICF', detail:'Insulated concrete form' },
+        { val:'Stone / Stucco', detail:'Traditional masonry' }
+    ]
+};
 
+/* ========================================================
+   BUILD MATERIAL BUTTON GRIDS
+   ======================================================== */
+function buildMatGrid(gridId, items, hiddenId, multi) {
+    var grid = document.getElementById(gridId);
+    var html = '';
+    items.forEach(function(m) {
+        var cls = 'mat-btn' + (m.cls ? ' ' + m.cls : '');
+        html += '<div class="' + cls + '" data-val="' + m.val + '" onclick="pickMat(this,\'' + hiddenId + '\',' + (multi ? 'true' : 'false') + ')">';
+        html += m.val;
+        if (m.detail) html += '<span class="mat-detail">' + m.detail + '</span>';
+        html += '</div>';
+    });
+    // "Other" option
+    html += '<div class="mat-btn" data-val="Other" onclick="pickMat(this,\'' + hiddenId + '\',' + (multi ? 'true' : 'false') + ')">Other<span class="mat-detail">Specify below</span></div>';
+    grid.innerHTML = html;
+}
+
+function pickMat(el, hiddenId, multi) {
+    var grid = el.parentElement;
+    if (multi) {
+        el.classList.toggle('selected');
+    } else {
+        grid.querySelectorAll('.mat-btn').forEach(function(b) { b.classList.remove('selected'); });
+        el.classList.add('selected');
+    }
+    // Collect selected values
+    var vals = [];
+    grid.querySelectorAll('.mat-btn.selected').forEach(function(b) { vals.push(b.dataset.val); });
+    var hidden = document.getElementById(hiddenId);
+    hidden.value = vals.join(', ');
+    hidden.dispatchEvent(new Event('input', { bubbles: true }));
+
+    // Show truss warning for dangerous types
+    checkTrussWarning();
+}
+
+/* ========================================================
+   CONSTRUCTION TYPE CARD SELECTION
+   ======================================================== */
+document.querySelectorAll('.const-card').forEach(function(card) {
+    card.addEventListener('click', function() {
+        document.querySelectorAll('.const-card').forEach(function(c) { c.classList.remove('selected'); });
+        card.classList.add('selected');
+    });
+});
+
+/* ========================================================
+   AUTO-CALC SQUARE FOOTAGE
+   ======================================================== */
+function autoCalcSqFt() {
+    var l = parseFloat(document.getElementById('length').value) || 0;
+    var w = parseFloat(document.getElementById('width').value) || 0;
+    var row = document.getElementById('sqftCalcRow');
+    var sqftField = document.getElementById('total_sq_ft');
+    if (l > 0 && w > 0) {
+        var calc = Math.round(l * w);
+        document.getElementById('sqftCalcVal').textContent = calc.toLocaleString() + ' sq ft';
+        row.style.display = 'flex';
+        // Only auto-fill if the field is empty or matches previous auto-calc
+        if (!sqftField.value || sqftField.dataset.autoCalc === 'true') {
+            sqftField.value = calc;
+            sqftField.dataset.autoCalc = 'true';
+            sqftField.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+    } else {
+        row.style.display = 'none';
+    }
+}
+
+// If user manually edits sq ft, stop auto-calc overriding
+document.getElementById('total_sq_ft').addEventListener('focus', function() {
+    this.dataset.autoCalc = 'false';
+});
+
+/* ========================================================
+   TRUSS VISIBILITY & WARNING
+   ======================================================== */
+function checkTruss() {
+    var val = document.querySelector('input[name="roof_trusses"]:checked');
+    var section = document.getElementById('trussTypeSection');
+    if (val && val.value === 'Yes') {
+        section.style.display = 'block';
+    } else {
+        section.style.display = 'none';
+    }
+    checkTrussWarning();
+}
+
+function checkTrussWarning() {
+    var warn = document.getElementById('trussWarning');
+    var dangerTypes = ['Lightweight Wood', 'Bowstring', 'Wood Truss', 'Wood I-Joist'];
+    var show = false;
+
+    // Check roof structure selection
+    var roofVal = document.getElementById('roof_construction').value || '';
+    dangerTypes.forEach(function(d) { if (roofVal.indexOf(d) >= 0) show = true; });
+
+    // Check truss type selection
+    var trussVal = document.getElementById('truss_type').value || '';
+    dangerTypes.forEach(function(d) { if (trussVal.indexOf(d) >= 0) show = true; });
+
+    warn.classList.toggle('show', show);
+}
+
+/* ========================================================
+   INIT
+   ======================================================== */
+// Build all grids
+buildMatGrid('roofCoveringGrid', MATERIALS.roofCovering, 'roof_covering', false);
+buildMatGrid('deckGrid', MATERIALS.deck, 'deck_material', false);
+buildMatGrid('roofStructGrid', MATERIALS.roofStruct, 'roof_construction', false);
+buildMatGrid('trussTypeGrid', MATERIALS.trussType, 'truss_type', false);
+buildMatGrid('floorGrid', MATERIALS.floor, 'floor_construction', false);
+buildMatGrid('wallGrid', MATERIALS.wall, 'wall_construction', false);
+
+// Load saved data
+var form = document.getElementById('theForm');
+if (form) { loadFormData(form); autoSave(form); }
+
+// Restore button selections from saved hidden field values
+function restoreMatSelections(gridId, hiddenId) {
+    var val = document.getElementById(hiddenId).value || '';
+    if (!val) return;
+    var vals = val.split(',').map(function(v) { return v.trim(); });
+    var grid = document.getElementById(gridId);
+    grid.querySelectorAll('.mat-btn').forEach(function(btn) {
+        if (vals.indexOf(btn.dataset.val) >= 0) btn.classList.add('selected');
+    });
+}
+
+restoreMatSelections('roofCoveringGrid', 'roof_covering');
+restoreMatSelections('deckGrid', 'deck_material');
+restoreMatSelections('roofStructGrid', 'roof_construction');
+restoreMatSelections('trussTypeGrid', 'truss_type');
+restoreMatSelections('floorGrid', 'floor_construction');
+restoreMatSelections('wallGrid', 'wall_construction');
+
+// Restore construction type card
+document.querySelectorAll('.const-card').forEach(function(card) {
+    var radio = card.querySelector('input[type=radio]');
+    if (radio && radio.checked) card.classList.add('selected');
+});
+
+// Restore truss section visibility
+checkTruss();
+checkTrussWarning();
+
+// Restore auto-calc
+autoCalcSqFt();
 </script>
 </body>
 </html>
