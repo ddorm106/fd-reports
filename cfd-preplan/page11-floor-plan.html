@@ -356,13 +356,283 @@ document.getElementById('bgFile').onchange=function(){if(this.files[0]){var read
 function startBlank(){document.getElementById('uploadSection').classList.add('hidden');document.getElementById('annotSection').classList.remove('hidden');initCanvas(null)}
 document.getElementById('newImageBtn').onclick=function(){var fi=document.getElementById('bgFile');fi.value='';fi.onchange=function(){if(this.files[0]){var reader=new FileReader();reader.onload=function(e){var bg=canvas.getObjects().find(function(o){return o.isBg});if(bg)canvas.remove(bg);fabric.Image.fromURL(e.target.result,function(img){img.scaleToWidth(canvas.width);img.set({selectable:false,evented:false,isBg:true});canvas.add(img);canvas.sendToBack(img);canvas.renderAll();saveHistory();saveData()})};reader.readAsDataURL(this.files[0])}};fi.click()};
 document.getElementById('exportPng').onclick=function(){var a=document.createElement('a');a.download='floor-plan-'+currentFloor+'.png';a.href=canvas.toDataURL({format:'png',quality:1});a.click();toast('PNG exported')};
-document.getElementById('dsFile').onchange=function(){if(this.files[0]){var reader=new FileReader();reader.onload=function(e){try{renderDivisionScan(JSON.parse(e.target.result))}catch(err){toast('Invalid JSON file')}};reader.readAsText(this.files[0])}};
-function importFromServer(){fetch('/api/divisionscan/plans').then(function(r){return r.json()}).then(function(d){if(!d.plans||!d.plans.length){toast('No scans found');return}var plan=d.plans[0];fetch('/api/divisionscan/plan/'+plan.scan_id).then(function(r){return r.json()}).then(function(p){if(p.plan&&p.plan.scan_json)renderDivisionScan(JSON.parse(p.plan.scan_json));else toast('No scan data')})}).catch(function(){toast('Could not connect')})}
-function renderDivisionScan(data){document.getElementById('uploadSection').classList.add('hidden');document.getElementById('annotSection').classList.remove('hidden');initCanvas(null);var walls=data.walls||[],doors=data.doors||[],wins=data.windows||[];var minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;walls.forEach(function(w){minX=Math.min(minX,w.startX,w.endX);minY=Math.min(minY,w.startY,w.endY);maxX=Math.max(maxX,w.startX,w.endX);maxY=Math.max(maxY,w.startY,w.endY)});if(!walls.length){minX=0;minY=0;maxX=100;maxY=100}var bw=maxX-minX||1,bh=maxY-minY||1,sc=Math.min((canvas.width-80)/bw,(canvas.height-80)/bh),ox=40-minX*sc,oy=40-minY*sc;walls.forEach(function(w){canvas.add(new fabric.Line([w.startX*sc+ox,w.startY*sc+oy,w.endX*sc+ox,w.endY*sc+oy],{stroke:'#333',strokeWidth:getWall(),selectable:true}))});doors.forEach(function(d){var x=(d.x||0)*sc+ox,y=(d.y||0)*sc+oy,obj=makeDoor((d.width||3)*sc,'L');obj.set({left:x,top:y});canvas.add(obj)});wins.forEach(function(w){var x=(w.x||0)*sc+ox,y=(w.y||0)*sc+oy,obj=makeWindow((w.width||3)*sc);obj.set({left:x,top:y});canvas.add(obj)});canvas.renderAll();saveHistory();saveData();toast('DivisionScan imported!')}
+document.getElementById('dsFile').onchange=function(){if(this.files[0]){var reader=new FileReader();reader.onload=function(e){try{var d=JSON.parse(e.target.result);if(d.scan)renderDivisionScan(d.scan,[],[]);else renderDivisionScan(d,[],[])}catch(err){toast('Invalid JSON file')}};reader.readAsText(this.files[0])}};
+function importFromServer(){
+fetch('/api/divisionscan/plans').then(function(r){return r.json()}).then(function(d){
+if(!d.plans||!d.plans.length){toast('No scans found on server');return}
+if(d.plans.length===1){loadScanById(d.plans[0].id);return}
+// Show picker modal for multiple plans
+var modal=document.createElement('div');modal.id='scanPickerModal';
+modal.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:2000;display:flex;justify-content:center;align-items:center';
+var box='<div style="background:#fff;border-radius:12px;padding:24px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto">';
+box+='<h3 style="margin:0 0 4px;color:#1e3a5f">Import from DivisionScan</h3>';
+box+='<p style="color:#888;font-size:12px;margin:0 0 16px">Select a scan to import into the floor plan</p>';
+d.plans.forEach(function(p){
+var dt=p.scan_date?new Date(p.scan_date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'';
+var area=p.total_area?Math.round(p.total_area)+' ft²':'';
+box+='<div onclick="loadScanById(\''+p.id+'\');document.getElementById(\'scanPickerModal\').remove()" style="padding:12px;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:8px;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor=\'#1e3a5f\';this.style.background=\'#f0f9ff\'" onmouseout="this.style.borderColor=\'#e2e8f0\';this.style.background=\'#fff\'">';
+box+='<div style="font-weight:600;color:#1e3a5f">'+escH(p.building_name||'Unnamed')+'</div>';
+if(p.building_address)box+='<div style="font-size:12px;color:#666">'+escH(p.building_address)+'</div>';
+box+='<div style="font-size:11px;color:#999;margin-top:4px">Floor '+escH(p.floor||'1')+' · '+area+' · '+dt+' · '+escH(p.department||'CFD')+'</div>';
+box+='</div>';
+});
+box+='<div style="text-align:center;margin-top:12px"><button onclick="document.getElementById(\'scanPickerModal\').remove()" style="padding:8px 20px;border:1px solid #ccc;border-radius:6px;background:#fff;cursor:pointer;font-size:13px">Cancel</button></div>';
+box+='</div>';
+modal.innerHTML=box;modal.onclick=function(e){if(e.target===modal)modal.remove()};
+document.body.appendChild(modal);
+}).catch(function(e){toast('Could not connect to server')})
+}
+function escH(s){var d=document.createElement('div');d.textContent=s||'';return d.innerHTML}
+function loadScanById(id){
+toast('Loading scan...');
+fetch('/api/divisionscan/plan/'+id).then(function(r){return r.json()}).then(function(p){
+if(p.success&&p.scan&&p.scan.scan_json){renderDivisionScan(JSON.parse(p.scan.scan_json),p.markers||[],p.annotations||[])}
+else{toast('No scan data found')}
+}).catch(function(){toast('Failed to load scan')})
+}
+function renderDivisionScan(data,markers,annotations){document.getElementById('uploadSection').classList.add('hidden');document.getElementById('annotSection').classList.remove('hidden');initCanvas(null);var walls=data.walls||[],doors=data.doors||[],wins=data.windows||[],objs=data.objects||[],rooms=data.rooms||[];var minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;walls.forEach(function(w){minX=Math.min(minX,w.startX,w.endX);minY=Math.min(minY,w.startY,w.endY);maxX=Math.max(maxX,w.startX,w.endX);maxY=Math.max(maxY,w.startY,w.endY)});if(!walls.length){minX=0;minY=0;maxX=100;maxY=100}var bw=maxX-minX||1,bh=maxY-minY||1,sc=Math.min((canvas.width-80)/bw,(canvas.height-80)/bh),ox=40-minX*sc,oy=40-minY*sc;
+// Room labels
+rooms.forEach(function(r){if(!r.name||!r.centerX)return;var tx=r.centerX*sc+ox,ty=r.centerY*sc+oy;var t=new fabric.Text(r.name+(r.area>10?'\n'+Math.round(r.area)+' ft²':''),{left:tx,top:ty,fontSize:11,fill:'rgba(52,152,219,0.5)',fontFamily:'-apple-system,sans-serif',textAlign:'center',originX:'center',originY:'center',selectable:true});canvas.add(t)});
+// Walls
+walls.forEach(function(w){canvas.add(new fabric.Line([w.startX*sc+ox,w.startY*sc+oy,w.endX*sc+ox,w.endY*sc+oy],{stroke:'#333',strokeWidth:getWall(),selectable:true}))});
+// Doors
+doors.forEach(function(d){var x=(d.x||0)*sc+ox,y=(d.y||0)*sc+oy,obj=makeDoor((d.width||3)*sc,'L');obj.set({left:x,top:y});canvas.add(obj)});
+// Windows
+wins.forEach(function(w){var x=(w.x||0)*sc+ox,y=(w.y||0)*sc+oy,obj=makeWindow((w.width||3)*sc);obj.set({left:x,top:y});canvas.add(obj)});
+// Furniture/Objects
+objs.forEach(function(o){var x=(o.x||0)*sc+ox,y=(o.y||0)*sc+oy,w=(o.width||3)*sc,h=(o.depth||3)*sc;var catColors={'toilet':'#4ECDC4','bathtub':'#4ECDC4','sink':'#4ECDC4','stove':'#FF6B6B','oven':'#FF6B6B','refrigerator':'#45B7D1','bed':'#DDA0DD','sofa':'#F4A460','table':'#D2B48C','chair':'#D2B48C','television':'#708090','washerDryer':'#87CEEB','dishwasher':'#45B7D1','storage':'#BDB76B','fireplace':'#CD853F','stairs':'#A9A9A9'};
+var col=catColors[o.category]||'#999';var lbl=o.label||o.category||'?';
+var rect=new fabric.Rect({width:w,height:h,fill:col+'33',stroke:col,strokeWidth:1,rx:2,ry:2});
+var txt=new fabric.Text(lbl,{fontSize:Math.min(10,w*0.3),fill:col,fontFamily:'-apple-system,sans-serif',textAlign:'center',originX:'center',originY:'center'});
+var grp=new fabric.Group([rect,txt],{left:x-w/2,top:y-h/2,selectable:true,angle:o.rotation?o.rotation*180/Math.PI:0});
+canvas.add(grp)});
+// Markers from server
+if(markers&&markers.length){markers.forEach(function(m){var x=m.x*sc+ox,y=m.y*sc+oy;var icon=m.marker_name||m.marker_type_id||'⚠️';var t=new fabric.Text('📍'+icon,{left:x,top:y,fontSize:10,fill:'#c0392b',fontFamily:'-apple-system,sans-serif',originX:'center',originY:'center',selectable:true});canvas.add(t)})}
+// Annotations from server
+if(annotations&&annotations.length){annotations.forEach(function(a){if(!a.points_json)return;try{var pts=JSON.parse(a.points_json);if(pts.length<2)return;var pathStr='M '+pts[0].x*sc+ox+' '+pts[0].y*sc+oy;for(var i=1;i<pts.length;i++)pathStr+=' L '+pts[i].x*sc+ox+' '+pts[i].y*sc+oy;var p=new fabric.Path(pathStr,{fill:'',stroke:a.color_hex||'#FF0000',strokeWidth:a.line_width||2,selectable:true});canvas.add(p)}catch(e){}})}
+canvas.renderAll();saveHistory();saveData();toast('DivisionScan imported!')}
 function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.style.display='block';clearTimeout(window._tt);window._tt=setTimeout(function(){t.style.display='none'},2500)}
 document.getElementById('prev-btn').onclick=function(){saveData();window.location.href='page10-site-plan.html'};
 document.getElementById('next-btn').onclick=function(){saveData();toast('Saved');setTimeout(function(){window.location.href='page12-submit.html'},500)};
 window.addEventListener('load',loadSavedData);
+</script>
+
+<!-- Pre-Plan Save/Resume Toolbar -->
+<style>
+.pp-toolbar{position:fixed;bottom:0;left:0;right:0;background:#1a1a1e;border-top:2px solid #c0392b;padding:8px 12px;display:flex;align-items:center;justify-content:center;gap:8px;z-index:9999;flex-wrap:wrap}
+.pp-toolbar .pp-btn{padding:8px 14px;border-radius:6px;border:none;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all .15s;white-space:nowrap}
+.pp-btn-save{background:#27ae60;color:#fff}.pp-btn-save:hover{background:#2ecc71}
+.pp-btn-file{background:#2980b9;color:#fff}.pp-btn-file:hover{background:#3498db}
+.pp-btn-load{background:#8e44ad;color:#fff}.pp-btn-load:hover{background:#9b59b6}
+.pp-btn-link{background:#e67e22;color:#fff}.pp-btn-link:hover{background:#f39c12}
+.pp-modal-bg{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:10000;display:none;justify-content:center;align-items:center}
+.pp-modal-bg.show{display:flex}
+.pp-modal{background:#24242a;border-radius:12px;padding:24px;max-width:420px;width:90%;color:#fff;border:1px solid #444;position:relative}
+.pp-modal h3{color:#e67e22;margin-bottom:12px;font-size:16px}
+.pp-modal p{color:#aaa;font-size:13px;margin-bottom:12px;line-height:1.5}
+.pp-modal .pp-code{background:#1a1a1e;border:2px solid #e67e22;border-radius:8px;padding:14px;text-align:center;font-size:28px;letter-spacing:6px;font-weight:700;color:#e67e22;font-family:monospace;margin:12px 0;user-select:all}
+.pp-modal .pp-link{background:#1a1a1e;border:1px solid #555;border-radius:6px;padding:10px;font-size:12px;color:#3498db;word-break:break-all;margin:8px 0;cursor:pointer;user-select:all}
+.pp-modal .pp-link:hover{background:#2a2a30}
+.pp-modal-actions{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.pp-modal .pp-close{position:absolute;top:10px;right:14px;background:none;border:none;color:#888;font-size:20px;cursor:pointer}
+.pp-modal .pp-close:hover{color:#fff}
+.pp-modal input[type=text]{background:#1a1a1e;border:1px solid #555;border-radius:6px;padding:10px;color:#fff;font-size:14px;width:100%;margin:8px 0}
+.pp-modal input[type=file]{display:none}
+.pp-toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);padding:8px 20px;border-radius:6px;font-size:12px;font-weight:600;z-index:10001;display:none;box-shadow:0 2px 12px rgba(0,0,0,0.4)}
+.pp-toast.success{background:#27ae60;color:#fff}.pp-toast.error{background:#c0392b;color:#fff}
+.pp-saved-indicator{color:#27ae60;font-size:11px;display:none;align-items:center;gap:4px}
+@media(max-width:480px){.pp-toolbar{gap:4px;padding:6px 8px}.pp-toolbar .pp-btn{padding:6px 10px;font-size:11px}}
+</style>
+
+<div class="pp-toolbar" id="ppToolbar">
+  <span class="pp-saved-indicator" id="ppSaved">✓ Auto-saved</span>
+  <button class="pp-btn pp-btn-save" onclick="ppSaveCloud()" title="Save to cloud & get a link">☁️ Save to Cloud</button>
+  <button class="pp-btn pp-btn-file" onclick="ppExportFile()" title="Download progress as a file">📥 Export File</button>
+  <button class="pp-btn pp-btn-load" onclick="ppShowLoadModal()" title="Load from file or resume link">📂 Load / Resume</button>
+</div>
+
+<div class="pp-modal-bg" id="ppModalBg" onclick="if(event.target===this)ppCloseModal()">
+  <div class="pp-modal" id="ppModal"></div>
+</div>
+<div class="pp-toast" id="ppToast"></div>
+
+<script>
+(function(){
+  // Auto-resume from URL parameter
+  const params = new URLSearchParams(window.location.search);
+  const resumeCode = params.get('resume');
+  if (resumeCode) {
+    fetch('/api/load-draft?code=' + resumeCode.toUpperCase())
+      .then(r => r.json())
+      .then(d => {
+        if (d.success && d.data) {
+          localStorage.setItem('preFirePlan', JSON.stringify(d.data));
+          ppToast('Progress loaded from cloud!', 'success');
+          // Clean URL
+          const clean = window.location.pathname;
+          history.replaceState(null, '', clean);
+          // Reload to pick up the data
+          setTimeout(() => location.reload(), 800);
+        }
+      })
+      .catch(() => {});
+  }
+
+  // Show auto-save indicator when localStorage changes
+  const origSave = localStorage.setItem.bind(localStorage);
+  const savedEl = document.getElementById('ppSaved');
+  
+  // Periodic check for data
+  let lastData = localStorage.getItem('preFirePlan');
+  setInterval(() => {
+    const cur = localStorage.getItem('preFirePlan');
+    if (cur !== lastData) {
+      lastData = cur;
+      savedEl.style.display = 'flex';
+      clearTimeout(window._ppSavedTimeout);
+      window._ppSavedTimeout = setTimeout(() => { savedEl.style.display = 'none'; }, 2000);
+    }
+  }, 1000);
+})();
+
+function ppGetData() {
+  try { return JSON.parse(localStorage.getItem('preFirePlan') || '{}'); } catch(e) { return {}; }
+}
+
+function ppSaveCloud() {
+  const data = ppGetData();
+  if (!data || Object.keys(data).length === 0) { ppToast('No pre-plan data to save', 'error'); return; }
+  
+  // Check if we already have a code saved
+  const existingCode = localStorage.getItem('ppCloudCode') || undefined;
+  
+  const modal = document.getElementById('ppModal');
+  modal.innerHTML = '<button class="pp-close" onclick="ppCloseModal()">&times;</button><h3>☁️ Saving to Cloud...</h3><p>Please wait...</p>';
+  document.getElementById('ppModalBg').classList.add('show');
+
+  fetch('/api/save-draft', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ data, code: existingCode })
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.success) {
+      localStorage.setItem('ppCloudCode', d.code);
+      const link = window.location.origin + '/index.html?resume=' + d.code;
+      modal.innerHTML = '<button class="pp-close" onclick="ppCloseModal()">&times;</button>' +
+        '<h3>✅ Saved to Cloud!</h3>' +
+        '<p>Use the code or link below to resume on any device. This save expires in 7 days.</p>' +
+        '<div class="pp-code">' + d.code + '</div>' +
+        '<div class="pp-link" onclick="ppCopyLink(this)" title="Click to copy">' + link + '</div>' +
+        '<div class="pp-modal-actions">' +
+          '<button class="pp-btn pp-btn-link" onclick="ppCopyLink(document.querySelector('.pp-link'))">📋 Copy Link</button>' +
+          '<button class="pp-btn pp-btn-save" onclick="ppCloseModal()">Done</button>' +
+        '</div>';
+    } else {
+      modal.innerHTML = '<button class="pp-close" onclick="ppCloseModal()">&times;</button><h3>❌ Save Failed</h3><p>' + (d.error || 'Unknown error') + '</p>';
+    }
+  })
+  .catch(err => {
+    modal.innerHTML = '<button class="pp-close" onclick="ppCloseModal()">&times;</button><h3>❌ Save Failed</h3><p>' + err.message + '</p>';
+  });
+}
+
+function ppCopyLink(el) {
+  const text = el?.textContent || '';
+  navigator.clipboard.writeText(text).then(() => ppToast('Copied to clipboard!', 'success')).catch(() => {
+    // Fallback
+    const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+    ppToast('Copied!', 'success');
+  });
+}
+
+function ppExportFile() {
+  const data = ppGetData();
+  if (!data || Object.keys(data).length === 0) { ppToast('No pre-plan data to export', 'error'); return; }
+  
+  const name = data.business_name || 'preplan';
+  const safeName = name.replace(/[^a-zA-Z0-9]/g, '-').replace(/-+/g, '-').substring(0, 30);
+  const exportObj = {
+    _type: 'centerville-preplan-draft',
+    _exported: new Date().toISOString(),
+    _business: data.business_name || '',
+    data: data
+  };
+  const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = safeName + '-draft-' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  ppToast('Draft exported!', 'success');
+}
+
+function ppShowLoadModal() {
+  const modal = document.getElementById('ppModal');
+  modal.innerHTML = '<button class="pp-close" onclick="ppCloseModal()">&times;</button>' +
+    '<h3>📂 Load / Resume Pre-Plan</h3>' +
+    '<p><strong>Option 1:</strong> Enter a resume code</p>' +
+    '<input type="text" id="ppResumeCode" placeholder="Enter 6-character code" maxlength="6" style="text-transform:uppercase;text-align:center;letter-spacing:4px;font-size:18px">' +
+    '<button class="pp-btn pp-btn-link" onclick="ppLoadFromCode()" style="width:100%;justify-content:center;margin-bottom:16px">Load from Code</button>' +
+    '<p><strong>Option 2:</strong> Load from exported file</p>' +
+    '<button class="pp-btn pp-btn-file" onclick="document.getElementById('ppFileInput').click()" style="width:100%;justify-content:center">📁 Choose File</button>' +
+    '<input type="file" id="ppFileInput" accept=".json" onchange="ppLoadFromFile(this)">';
+  document.getElementById('ppModalBg').classList.add('show');
+  setTimeout(() => document.getElementById('ppResumeCode')?.focus(), 100);
+}
+
+function ppLoadFromCode() {
+  const code = document.getElementById('ppResumeCode')?.value?.trim().toUpperCase();
+  if (!code || code.length < 4) { ppToast('Enter a valid code', 'error'); return; }
+
+  fetch('/api/load-draft?code=' + code)
+    .then(r => r.json())
+    .then(d => {
+      if (d.success && d.data) {
+        localStorage.setItem('preFirePlan', JSON.stringify(d.data));
+        localStorage.setItem('ppCloudCode', code);
+        ppToast('Pre-plan loaded! Refreshing...', 'success');
+        ppCloseModal();
+        setTimeout(() => location.reload(), 800);
+      } else {
+        ppToast(d.error || 'Code not found or expired', 'error');
+      }
+    })
+    .catch(err => ppToast('Load failed: ' + err.message, 'error'));
+}
+
+function ppLoadFromFile(input) {
+  const file = input.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const obj = JSON.parse(e.target.result);
+      const data = obj.data || obj;
+      if (typeof data !== 'object') throw new Error('Invalid file');
+      localStorage.setItem('preFirePlan', JSON.stringify(data));
+      ppToast('Pre-plan loaded from file! Refreshing...', 'success');
+      ppCloseModal();
+      setTimeout(() => location.reload(), 800);
+    } catch(err) {
+      ppToast('Invalid file format', 'error');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function ppCloseModal() {
+  document.getElementById('ppModalBg').classList.remove('show');
+}
+
+function ppToast(msg, type) {
+  const t = document.getElementById('ppToast');
+  t.textContent = msg;
+  t.className = 'pp-toast ' + (type || 'success');
+  t.style.display = 'block';
+  clearTimeout(window._ppTT);
+  window._ppTT = setTimeout(() => { t.style.display = 'none'; }, 3000);
+}
 </script>
 </body>
 </html>
