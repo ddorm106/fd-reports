@@ -4,7 +4,21 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Pre-Fire Plan: Utilities</title>
 <link rel="stylesheet" href="styles-preplan.css">
-
+<style>
+.util-card{padding:16px;background:#f8f9fa;border:1px solid #e0e0e0;border-radius:10px;margin-bottom:14px}
+.util-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.util-header .util-icon{font-size:28px;width:40px;text-align:center}
+.util-header h4{font-size:15px;color:#333;margin:0}
+.util-header .util-ref{font-size:10px;color:#999;font-style:italic}
+.shutoff-box{background:#fff3e0;border:1px solid #e67e22;border-radius:8px;padding:10px 12px;margin-top:8px}
+.shutoff-box label{font-size:12px;font-weight:700;color:#e67e22;display:flex;align-items:center;gap:4px;margin-bottom:4px}
+.shutoff-box input{width:100%;padding:6px 10px;border:1px solid #e67e22;border-radius:6px;font-size:12px;background:#fff}
+.shutoff-box input::placeholder{color:#ccc}
+.solar-warn{display:none;padding:10px 12px;background:#fdf2f0;border:1px solid #c0392b;border-radius:6px;margin-top:8px;font-size:12px;color:#c0392b;line-height:1.4}
+.solar-warn.show{display:block}
+.conditional-section{display:none;margin-top:8px}
+.conditional-section.show{display:block}
+</style>
 </head>
 <body>
 <div class="page-wrapper">
@@ -24,60 +38,198 @@
             <div class="progress-bar" style="width: 50%"></div>
         </div>
 
-
-        <h3 class="section-title">6. Utilities</h3>
+        <h3 class="section-title">6. Utilities & Shutoff Locations</h3>
         <form id="theForm">
+
+            <!-- ===== NATURAL GAS ===== -->
+            <div class="util-card">
+                <div class="util-header">
+                    <span class="util-icon">🔥</span>
+                    <div>
+                        <h4>Natural Gas</h4>
+                        <span class="util-ref">NFPA 54 — National Fuel Gas Code</span>
+                    </div>
+                </div>
+                <div class="form-field">
+                    <label class="inline-label">Natural Gas?</label>
+                    <div class="apparatus-buttons">
+                        <label class="apparatus-btn"><input type="radio" name="natural_gas" value="Yes" onchange="toggleUtil('gasDetails',true)"><span>Yes</span></label>
+                        <label class="apparatus-btn"><input type="radio" name="natural_gas" value="No" onchange="toggleUtil('gasDetails',false)"><span>No</span></label>
+                    </div>
+                </div>
+                <div class="conditional-section" id="gasDetails">
+                    <div class="form-field"><label for="natural_gas_meter">Gas Meter Location:</label><input type="text" id="natural_gas_meter" name="natural_gas_meter" placeholder="Delta side, rear of building"></div>
+                    <div class="shutoff-box">
+                        <label>🔴 Gas Shutoff Location:</label>
+                        <input type="text" id="natural_gas_loc" name="natural_gas_loc" placeholder="Valve at meter, Delta side near rear corner">
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== LP GAS ===== -->
+            <div class="util-card">
+                <div class="util-header">
+                    <span class="util-icon">⛽</span>
+                    <div>
+                        <h4>LP Gas (Propane)</h4>
+                        <span class="util-ref">NFPA 58 — LP-Gas Code</span>
+                    </div>
+                </div>
+                <div class="form-field">
+                    <label class="inline-label">LP Gas?</label>
+                    <div class="apparatus-buttons">
+                        <label class="apparatus-btn"><input type="radio" name="lp_gas" value="Yes" onchange="toggleUtil('lpDetails',true)"><span>Yes</span></label>
+                        <label class="apparatus-btn"><input type="radio" name="lp_gas" value="No" onchange="toggleUtil('lpDetails',false)"><span>No</span></label>
+                    </div>
+                </div>
+                <div class="conditional-section" id="lpDetails">
+                    <div class="form-row">
+                        <div class="form-field"><label for="lp_tank_size">Tank Size:</label><input type="text" id="lp_tank_size" name="lp_tank_size" placeholder="500 gal, 1000 gal, 20 lb cylinder"></div>
+                        <div class="form-field"><label for="lp_tank_loc">Tank Location:</label><input type="text" id="lp_tank_loc" name="lp_tank_loc" placeholder="Charlie side, 25 ft from building"></div>
+                    </div>
+                    <div class="shutoff-box">
+                        <label>🔴 LP Shutoff Location:</label>
+                        <input type="text" id="lp_gas_loc" name="lp_gas_loc" placeholder="Valve on tank, Charlie side">
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== ELECTRICAL ===== -->
+            <div class="util-card">
+                <div class="util-header">
+                    <span class="util-icon">⚡</span>
+                    <div>
+                        <h4>Electrical Service</h4>
+                        <span class="util-ref">NFPA 70 (NEC) — National Electrical Code</span>
+                    </div>
+                </div>
+                <div class="form-field">
+                    <label class="inline-label">Electrical Service?</label>
+                    <div class="apparatus-buttons">
+                        <label class="apparatus-btn"><input type="radio" name="electric" value="Yes" onchange="toggleUtil('elecDetails',true)"><span>Yes</span></label>
+                        <label class="apparatus-btn"><input type="radio" name="electric" value="No" onchange="toggleUtil('elecDetails',false)"><span>No</span></label>
+                    </div>
+                </div>
+                <div class="conditional-section" id="elecDetails">
+                    <div class="form-row">
+                        <div class="form-field"><label for="electric_service_size">Service Size:</label><input type="text" id="electric_service_size" name="electric_service_size" placeholder="200A, 400A, 800A, etc."></div>
+                        <div class="form-field"><label for="electric_voltage">Voltage:</label><input type="text" id="electric_voltage" name="electric_voltage" placeholder="120/240V, 277/480V, etc."></div>
+                    </div>
+                    <div class="form-field"><label for="electric_panel_loc">Main Panel Location:</label><input type="text" id="electric_panel_loc" name="electric_panel_loc" placeholder="Electrical room, Alpha side 1st floor"></div>
+                    <div class="shutoff-box">
+                        <label>🔴 Main Disconnect / Shutoff Location:</label>
+                        <input type="text" id="electric_loc" name="electric_loc" placeholder="Main breaker in electrical room, Alpha side">
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== EMERGENCY POWER ===== -->
+            <div class="util-card">
+                <div class="util-header">
+                    <span class="util-icon">🔋</span>
+                    <div>
+                        <h4>Emergency / Backup Power</h4>
+                        <span class="util-ref">NFPA 110 — Emergency & Standby Power Systems</span>
+                    </div>
+                </div>
+                <div class="form-field">
+                    <label class="inline-label">Emergency / Backup Power?</label>
+                    <div class="apparatus-buttons">
+                        <label class="apparatus-btn"><input type="radio" name="emergency_power" value="Yes" onchange="toggleUtil('genDetails',true)"><span>Yes</span></label>
+                        <label class="apparatus-btn"><input type="radio" name="emergency_power" value="No" onchange="toggleUtil('genDetails',false)"><span>No</span></label>
+                    </div>
+                </div>
+                <div class="conditional-section" id="genDetails">
+                    <div class="form-row">
+                        <div class="form-field"><label for="generator_type">Generator Type:</label><input type="text" id="generator_type" name="generator_type" placeholder="Diesel, natural gas, bi-fuel"></div>
+                        <div class="form-field"><label for="generator_size">Generator Size (kW):</label><input type="text" id="generator_size" name="generator_size" placeholder="100 kW, 250 kW, etc."></div>
+                    </div>
+                    <div class="form-field"><label for="generator_fuel">Fuel Source / Tank:</label><input type="text" id="generator_fuel" name="generator_fuel" placeholder="500 gal diesel belly tank, natural gas line"></div>
+                    <div class="form-field"><label for="transfer_switch_loc">Transfer Switch Location:</label><input type="text" id="transfer_switch_loc" name="transfer_switch_loc" placeholder="Electrical room, next to main panel"></div>
+                    <div class="shutoff-box">
+                        <label>🔴 Generator Shutoff Location:</label>
+                        <input type="text" id="emergency_power_loc" name="emergency_power_loc" placeholder="Emergency stop on generator pad, Bravo side">
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== SOLAR PANELS ===== -->
+            <div class="util-card">
+                <div class="util-header">
+                    <span class="util-icon">☀️</span>
+                    <div>
+                        <h4>Solar Panels (PV System)</h4>
+                        <span class="util-ref">NFPA 70 Art. 690, IFC §605.11 — Solar PV Systems</span>
+                    </div>
+                </div>
+                <div class="form-field">
+                    <label class="inline-label">Solar Panels?</label>
+                    <div class="apparatus-buttons">
+                        <label class="apparatus-btn"><input type="radio" name="solar_power" value="Yes" onchange="toggleUtil('solarDetails',true);showSolarWarn()"><span>Yes</span></label>
+                        <label class="apparatus-btn"><input type="radio" name="solar_power" value="No" onchange="toggleUtil('solarDetails',false);hideSolarWarn()"><span>No</span></label>
+                    </div>
+                </div>
+                <div class="solar-warn" id="solarWarn">
+                    ⚠️ <strong>Firefighter Safety:</strong> Solar PV systems remain energized whenever exposed to light. DC conductors cannot be de-energized by the main disconnect. Rapid shutdown required per NEC 690.12. Coordinate with utility before roof operations.
+                </div>
+                <div class="conditional-section" id="solarDetails">
+                    <div class="form-row">
+                        <div class="form-field"><label for="solar_system_size">System Size (kW):</label><input type="text" id="solar_system_size" name="solar_system_size" placeholder="10 kW, 50 kW, etc."></div>
+                        <div class="form-field"><label for="solar_panel_loc">Panel Location:</label><input type="text" id="solar_panel_loc" name="solar_panel_loc" placeholder="Roof-mounted, south-facing"></div>
+                    </div>
+                    <div class="form-field"><label for="solar_inverter_loc">Inverter Location:</label><input type="text" id="solar_inverter_loc" name="solar_inverter_loc" placeholder="Mechanical room, Alpha side"></div>
+                    <div class="shutoff-box">
+                        <label>🔴 Solar Disconnect / Rapid Shutdown Location:</label>
+                        <input type="text" id="solar_power_loc" name="solar_power_loc" placeholder="Rapid shutdown at meter, DC disconnect on roof">
+                    </div>
+
+                    <!-- Solar Battery Storage -->
+                    <div style="margin-top:14px;padding-top:14px;border-top:1px solid #ddd">
+                        <div class="form-field">
+                            <label class="inline-label">Battery Energy Storage (BESS)?</label>
+                            <div class="apparatus-buttons">
+                                <label class="apparatus-btn"><input type="radio" name="solar_battery" value="Yes" onchange="toggleUtil('batteryDetails',true)"><span>Yes</span></label>
+                                <label class="apparatus-btn"><input type="radio" name="solar_battery" value="No" onchange="toggleUtil('batteryDetails',false)"><span>No</span></label>
+                            </div>
+                        </div>
+                        <div class="conditional-section" id="batteryDetails">
+                            <div class="solar-warn show" style="margin-top:0;margin-bottom:8px">
+                                ⚠️ <strong>BESS Hazard:</strong> Lithium-ion batteries pose thermal runaway risk. Cannot be extinguished with water alone. Toxic off-gassing (HF, CO, HCN). Maintain safe distance, ventilate, and reference NFPA 855 for response guidance.
+                            </div>
+                            <div class="form-row">
+                                <div class="form-field"><label for="battery_type">Battery Type:</label><input type="text" id="battery_type" name="battery_type" placeholder="Lithium-ion, LFP, Tesla Powerwall"></div>
+                                <div class="form-field"><label for="battery_capacity">Capacity (kWh):</label><input type="text" id="battery_capacity" name="battery_capacity" placeholder="13.5 kWh, 50 kWh, etc."></div>
+                            </div>
+                            <div class="form-field"><label for="battery_loc">Battery Location:</label><input type="text" id="battery_loc" name="battery_loc" placeholder="Garage wall, exterior Alpha side, mechanical room"></div>
+                            <div class="shutoff-box">
+                                <label>🔴 Battery Disconnect Location:</label>
+                                <input type="text" id="battery_shutoff_loc" name="battery_shutoff_loc" placeholder="Disconnect switch on battery unit / adjacent wall">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== WATER ===== -->
+            <div class="util-card">
+                <div class="util-header">
+                    <span class="util-icon">💧</span>
+                    <div>
+                        <h4>Water Service</h4>
+                    </div>
+                </div>
+                <div class="shutoff-box">
+                    <label>🔴 Water Shutoff Location:</label>
+                    <input type="text" id="water_shutoff_loc" name="water_shutoff_loc" placeholder="Alpha side, near meter pit at street">
+                </div>
+            </div>
+
+            <!-- ===== NOTES ===== -->
             <div class="preplan-section">
-        <div class="form-field">
-            <label class="inline-label">Natural Gas?</label>
-            <div class="apparatus-buttons">
-                <label class="apparatus-btn"><input type="radio" name="natural_gas" value="Yes"><span>Yes</span></label>
-                <label class="apparatus-btn"><input type="radio" name="natural_gas" value="No"><span>No</span></label>
+                <h3 class="section-title">Utility Notes</h3>
+                <div class="form-field"><label for="utility_notes">Additional details, special hazards, or observations:</label><textarea id="utility_notes" name="utility_notes" rows="3" placeholder="Underground fuel tanks, high-voltage lines, transformer locations, special utility considerations..."></textarea></div>
             </div>
-        </div>
-                        <div class="form-field"><label for="natural_gas_loc">Gas Meter/Shutoff Location:</label><input type="text" id="natural_gas_loc" name="natural_gas_loc" placeholder="Delta side, rear of building"></div>
-            </div>
-            <div class="preplan-section">
-        <div class="form-field">
-            <label class="inline-label">LP Gas?</label>
-            <div class="apparatus-buttons">
-                <label class="apparatus-btn"><input type="radio" name="lp_gas" value="Yes"><span>Yes</span></label>
-                <label class="apparatus-btn"><input type="radio" name="lp_gas" value="No"><span>No</span></label>
-            </div>
-        </div>
-                        <div class="form-field"><label for="lp_gas_loc">LP Tank Location:</label><input type="text" id="lp_gas_loc" name="lp_gas_loc" placeholder="500 gal tank, Charlie side"></div>
-            </div>
-            <div class="preplan-section">
-        <div class="form-field">
-            <label class="inline-label">Electrical Service?</label>
-            <div class="apparatus-buttons">
-                <label class="apparatus-btn"><input type="radio" name="electric" value="Yes"><span>Yes</span></label>
-                <label class="apparatus-btn"><input type="radio" name="electric" value="No"><span>No</span></label>
-            </div>
-        </div>
-                        <div class="form-field"><label for="electric_loc">Main Panel/Disconnect Location:</label><input type="text" id="electric_loc" name="electric_loc" placeholder="Electrical room, Alpha side"></div>
-            </div>
-            <div class="preplan-section">
-        <div class="form-field">
-            <label class="inline-label">Emergency/Backup Power?</label>
-            <div class="apparatus-buttons">
-                <label class="apparatus-btn"><input type="radio" name="emergency_power" value="Yes"><span>Yes</span></label>
-                <label class="apparatus-btn"><input type="radio" name="emergency_power" value="No"><span>No</span></label>
-            </div>
-        </div>
-                        <div class="form-field"><label for="emergency_power_loc">Generator Location:</label><input type="text" id="emergency_power_loc" name="emergency_power_loc" placeholder="Generator pad, Bravo side"></div>
-            </div>
-            <div class="preplan-section">
-        <div class="form-field">
-            <label class="inline-label">Solar Panels?</label>
-            <div class="apparatus-buttons">
-                <label class="apparatus-btn"><input type="radio" name="solar_power" value="Yes"><span>Yes</span></label>
-                <label class="apparatus-btn"><input type="radio" name="solar_power" value="No"><span>No</span></label>
-            </div>
-        </div>
-                        <div class="form-field"><label for="solar_power_loc">Solar Panel Location/Notes:</label><input type="text" id="solar_power_loc" name="solar_power_loc" placeholder="Roof-mounted array, inverter in mech room"></div>
-            </div>
-                    <div class="form-field"><label for="water_shutoff_loc">Water Shutoff Location:</label><input type="text" id="water_shutoff_loc" name="water_shutoff_loc" placeholder="Alpha side, near meter pit"></div>
+
         </form>
 
         <div class="nav-buttons">
@@ -93,9 +245,38 @@
 <div class="toast-container" id="toast-container"></div>
 <script src="preplan-common.js"></script>
 <script>
-var form=document.getElementById('theForm');
-if(form){loadFormData(form);autoSave(form);}
+function toggleUtil(id, show) {
+    var el = document.getElementById(id);
+    if (el) el.classList.toggle('show', show);
+}
 
+function showSolarWarn() { document.getElementById('solarWarn').classList.add('show'); }
+function hideSolarWarn() { document.getElementById('solarWarn').classList.remove('show'); }
+
+// Load saved data
+var form = document.getElementById('theForm');
+if (form) { loadFormData(form); autoSave(form); }
+
+// Restore conditional sections
+(function() {
+    var pairs = [
+        ['natural_gas', 'gasDetails'],
+        ['lp_gas', 'lpDetails'],
+        ['electric', 'elecDetails'],
+        ['emergency_power', 'genDetails'],
+        ['solar_power', 'solarDetails'],
+        ['solar_battery', 'batteryDetails']
+    ];
+    pairs.forEach(function(p) {
+        var checked = document.querySelector('input[name="' + p[0] + '"]:checked');
+        if (checked && checked.value === 'Yes') {
+            document.getElementById(p[1]).classList.add('show');
+        }
+    });
+    // Solar warning
+    var solar = document.querySelector('input[name="solar_power"]:checked');
+    if (solar && solar.value === 'Yes') showSolarWarn();
+})();
 </script>
 </body>
 </html>
