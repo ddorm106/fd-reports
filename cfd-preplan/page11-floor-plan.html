@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <title>Pre-Fire Plan: Floor Plan</title>
 <link rel="stylesheet" href="styles-preplan.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
@@ -13,7 +13,7 @@
 .upload-area{border:2px dashed #cbd5e1;border-radius:12px;padding:40px;text-align:center;cursor:pointer;margin-bottom:20px;transition:all .2s}
 .upload-area:hover{border-color:#1e3a5f;background:#f8fafc}
 .hidden{display:none!important}
-.canvas-wrapper{border:2px solid #cbd5e1;border-radius:12px;overflow:hidden;margin-bottom:12px;position:relative}
+.canvas-wrapper{border:2px solid #cbd5e1;border-radius:12px;overflow:hidden;margin-bottom:12px;position:relative;touch-action:none}
 .canvas-wrapper .lower-canvas{
     background-image:
         linear-gradient(to right,#e0e7ef 1px,transparent 1px),
@@ -22,9 +22,11 @@
         linear-gradient(to bottom,#c7d2e0 1px,transparent 1px);
     background-size:10px 10px,10px 10px,50px 50px,50px 50px;
     background-color:#fff;
+    touch-action:none;
 }
+.canvas-wrapper canvas{touch-action:none}
 .toolbar{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;align-items:center}
-.tool-btn{padding:6px 10px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;cursor:pointer;font-size:12px;font-weight:600;transition:all .15s}
+.tool-btn{padding:6px 10px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;cursor:pointer;font-size:12px;font-weight:600;transition:all .15s;touch-action:manipulation}
 .tool-btn:hover{background:#e2e8f0}.tool-btn.active{background:#1e3a5f;color:white;border-color:#1e3a5f}
 .toolbar-sep{width:1px;height:24px;background:#cbd5e1;margin:0 2px}
 .toolbar select,.toolbar input[type=color]{padding:4px;border:1px solid #cbd5e1;border-radius:4px;font-size:11px}
@@ -48,10 +50,20 @@
 .nfpa-form label{display:block;margin:8px 0 4px;font-size:13px;font-weight:600}
 .nfpa-form input,.nfpa-form select{width:100%;padding:6px;border:1px solid #ccc;border-radius:4px}
 .nfpa-form .nfpa-actions{display:flex;gap:8px;margin-top:16px}
+.box-modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;display:none;justify-content:center;align-items:center}
+.box-modal.show{display:flex}
+.box-form{background:#fff;border-radius:12px;padding:24px;max-width:320px;width:90%}
+.box-form h3{margin:0 0 12px}
+.box-form label{display:block;margin:8px 0 4px;font-size:13px;font-weight:600}
+.box-form input{width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;font-size:14px}
+.box-form .box-actions{display:flex;gap:8px;margin-top:16px}
 .import-panel{background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px;margin-bottom:12px}
 .import-panel h4{margin:0 0 8px;color:#0369a1;font-size:13px}
 .import-panel button{padding:6px 12px;border:1px solid #0ea5e9;background:#fff;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;margin-right:6px}
 .import-panel button:hover{background:#e0f2fe}
+.back-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;background:#e2e8f0;border:1px solid #cbd5e1;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;margin-bottom:10px;color:#555;transition:all .15s}
+.back-btn:hover{background:#cbd5e1;color:#333}
+.wall-preview{pointer-events:none;position:absolute;top:0;left:0;z-index:50}
 #toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:1000;display:none;background:#22c55e;color:#fff}
 </style>
 </head>
@@ -71,6 +83,8 @@
         <button class="floor-tab active" data-floor="1">Floor 1</button>
         <button class="add-floor-btn" id="addFloorBtn">+ Add Floor</button>
     </div>
+
+    <!-- UPLOAD / START SECTION -->
     <div id="uploadSection">
         <div class="upload-area" id="uploadArea">
             <p style="font-size:32px;margin-bottom:8px">📷</p>
@@ -88,11 +102,17 @@
             <input type="file" id="dsFile" accept=".json" style="display:none">
         </div>
     </div>
+
+    <!-- ANNOTATION / DRAWING SECTION -->
     <div id="annotSection" class="hidden">
+        <!-- BACK BUTTON -->
+        <button class="back-btn" onclick="goBackToUpload()">← Back to Upload / Import</button>
+
         <div class="toolbar">
-            <button class="tool-btn active" data-tool="select" title="Select">🔍 Select</button>
+            <button class="tool-btn active" data-tool="select" title="Select & Move">🔍 Select</button>
             <button class="tool-btn" data-tool="draw" title="Free Draw">✏️ Draw</button>
-            <button class="tool-btn" data-tool="line" title="Line/Wall">📏 Wall</button>
+            <button class="tool-btn" data-tool="wall" title="Draw Wall (pen)">📏 Wall</button>
+            <button class="tool-btn" data-tool="box" title="Add Room/Box">⬜ Box</button>
             <button class="tool-btn" data-tool="text" title="Add Text">Aa Text</button>
             <div class="toolbar-sep"></div>
             <button class="tool-btn" id="undoBtn" title="Undo">↩️</button>
@@ -269,6 +289,8 @@
 </div>
 </div>
 <footer><img src="images/city-logo.png" alt="City" class="city-logo"><p>© 2026 City of Centerville Fire Department</p></footer>
+
+<!-- NFPA MODAL -->
 <div class="nfpa-modal" id="nfpaModal"><div class="nfpa-form">
     <h3>NFPA 704 Diamond</h3>
     <label>Health (Blue, 0-4)</label><input type="number" id="nfpaH" min="0" max="4" value="0">
@@ -277,15 +299,68 @@
     <label>Special</label><input type="text" id="nfpaS" placeholder="W, OX, etc." maxlength="3">
     <div class="nfpa-actions"><button type="button" class="btn-primary" onclick="placeNFPA()">Place</button><button type="button" class="btn-secondary" onclick="document.getElementById('nfpaModal').classList.remove('show')">Cancel</button></div>
 </div></div>
+
+<!-- BOX/ROOM MODAL -->
+<div class="box-modal" id="boxModal"><div class="box-form">
+    <h3>⬜ Add Room / Box</h3>
+    <label>Width (feet)</label><input type="number" id="boxW" min="1" value="10" step="1">
+    <label>Height / Depth (feet)</label><input type="number" id="boxH" min="1" value="10" step="1">
+    <label>Label (optional)</label><input type="text" id="boxLabel" placeholder="e.g., Office, Storage">
+    <div class="box-actions">
+        <button type="button" class="btn-primary" onclick="placeBox()">Place</button>
+        <button type="button" class="btn-secondary" onclick="document.getElementById('boxModal').classList.remove('show')">Cancel</button>
+    </div>
+</div></div>
+
 <div id="toast"></div>
 <script>
-let canvas,currentTool='select',currentFloor=1,floorCount=1,floorData={},history=[],historyIdx=-1,lineStartPoint=null;
-const colorPicker=document.getElementById('colorPicker'),wallThickness=document.getElementById('wallThickness'),unitSelect=document.getElementById('unitSelect'),scaleSelect=document.getElementById('scaleSelect');
-function getColor(){return colorPicker.value}function getWall(){return parseInt(wallThickness.value)}function getScale(){return parseInt(scaleSelect.value)}function getUnit(){return unitSelect.value}
+/* ========================================================
+   STATE
+   ======================================================== */
+let canvas, currentTool='select', currentFloor=1, floorCount=1, floorData={},
+    history=[], historyIdx=-1, wallPoints=[], wallPreviewLine=null, isDrawingWall=false;
+const colorPicker=document.getElementById('colorPicker'),
+      wallThickness=document.getElementById('wallThickness'),
+      unitSelect=document.getElementById('unitSelect'),
+      scaleSelect=document.getElementById('scaleSelect');
+function getColor(){return colorPicker.value}
+function getWall(){return parseInt(wallThickness.value)}
+function getScale(){return parseInt(scaleSelect.value)}
+function getUnit(){return unitSelect.value}
 
+/* ========================================================
+   BACK TO UPLOAD
+   ======================================================== */
+function goBackToUpload() {
+    if (canvas && canvas.getObjects().length > 1) {
+        if (!confirm('Go back? Your drawing will be preserved.')) return;
+    }
+    document.getElementById('annotSection').classList.add('hidden');
+    document.getElementById('uploadSection').classList.remove('hidden');
+}
+
+/* ========================================================
+   SWITCH TO SELECT TOOL
+   ======================================================== */
+function switchToSelect() {
+    currentTool = 'select';
+    wallPoints = [];
+    isDrawingWall = false;
+    if (canvas) {
+        canvas.isDrawingMode = false;
+        canvas.selection = true;
+        canvas.defaultCursor = 'default';
+    }
+    document.querySelectorAll('.tool-btn[data-tool]').forEach(function(b) {
+        b.classList.toggle('active', b.dataset.tool === 'select');
+    });
+}
+
+/* ========================================================
+   SYMBOL FACTORIES (same as before)
+   ======================================================== */
 function box(w,h,lbl,fill,tf){tf=tf||'white';var c=getColor(),il=fill===c;return new fabric.Group([new fabric.Rect({width:w,height:h,fill:il?'transparent':fill,stroke:il?fill:'#333',strokeWidth:il?2:1,rx:2,ry:2,originX:'center',originY:'center'}),new fabric.Text(lbl,{fontSize:Math.min(11,w/Math.max(lbl.length,1)*1.3),fill:il?fill:tf,originX:'center',originY:'center',fontFamily:'Arial',fontWeight:'bold'})],{originX:'center',originY:'center'})}
 function circ(r,lbl,fill,tf){tf=tf||'white';return new fabric.Group([new fabric.Circle({radius:r,fill:fill,stroke:'#333',strokeWidth:1,originX:'center',originY:'center'}),new fabric.Text(lbl,{fontSize:r*0.75,fill:tf,originX:'center',originY:'center',fontFamily:'Arial',fontWeight:'bold'})],{originX:'center',originY:'center'})}
-
 function makeDoor(w,dir){var th=getWall(),p=[];p.push(new fabric.Rect({left:-w/2-2,top:-th/2-2,width:w+4,height:th+4,fill:'white',stroke:'white',strokeWidth:0}));var sw=dir==='L'?-1:1;p.push(new fabric.Line([sw*-w/2,0,sw*-w/2,-w],{stroke:getColor(),strokeWidth:3}));p.push(new fabric.Circle({left:dir==='L'?-w/2-w:-w/2,top:-w,radius:w,startAngle:dir==='L'?0:Math.PI/2,endAngle:dir==='L'?Math.PI/2:Math.PI,fill:'transparent',stroke:'#333',strokeWidth:1,strokeDashArray:[4,3]}));return new fabric.Group(p,{originX:'center',originY:'center',isOpening:true})}
 function makeDblDoor(w){var hw=w/2,th=getWall(),p=[];p.push(new fabric.Rect({left:-w/2-2,top:-th/2-2,width:w+4,height:th+4,fill:'white'}));p.push(new fabric.Line([-hw,0,-hw,-hw],{stroke:getColor(),strokeWidth:3}));p.push(new fabric.Circle({left:-hw-hw,top:-hw,radius:hw,startAngle:0,endAngle:Math.PI/2,fill:'transparent',stroke:'#333',strokeWidth:1,strokeDashArray:[4,3]}));p.push(new fabric.Line([hw,0,hw,-hw],{stroke:getColor(),strokeWidth:3}));p.push(new fabric.Circle({left:0,top:-hw,radius:hw,startAngle:Math.PI/2,endAngle:Math.PI,fill:'transparent',stroke:'#333',strokeWidth:1,strokeDashArray:[4,3]}));return new fabric.Group(p,{originX:'center',originY:'center',isOpening:true})}
 function makeRollup(w){var th=getWall(),p=[];p.push(new fabric.Rect({left:-w/2-2,top:-th/2-2,width:w+4,height:th+4,fill:'white'}));p.push(new fabric.Rect({left:-w/2,top:-4,width:w,height:8,fill:'transparent',stroke:'#333',strokeWidth:2}));for(var i=0;i<4;i++)p.push(new fabric.Line([-w/2+w*i/4,-4,-w/2+w*i/4,4],{stroke:'#333',strokeWidth:1}));return new fabric.Group(p,{originX:'center',originY:'center',isOpening:true})}
@@ -295,7 +370,8 @@ function makeWindow(w){var th=getWall(),p=[];p.push(new fabric.Rect({left:-w/2-1
 function makeStairs(w,h){var p=[new fabric.Rect({width:w,height:h,fill:'transparent',stroke:'#333',strokeWidth:1,originX:'center',originY:'center'})];for(var i=1;i<6;i++)p.push(new fabric.Line([-w/2,-h/2+h*i/6,w/2,-h/2+h*i/6],{stroke:'#333',strokeWidth:1}));return new fabric.Group(p,{originX:'center',originY:'center'})}
 function makeStove(s){var p=[new fabric.Rect({width:s,height:s,fill:'#ddd',stroke:'#333',strokeWidth:1,rx:2,ry:2,originX:'center',originY:'center'})];var off=s*0.22;[[-off,-off],[off,-off],[-off,off],[off,off]].forEach(function(xy){p.push(new fabric.Circle({left:xy[0],top:xy[1],radius:s*0.12,fill:'transparent',stroke:'#555',strokeWidth:1,originX:'center',originY:'center'}))});return new fabric.Group(p,{originX:'center',originY:'center'})}
 function makeSink(w,h){return new fabric.Group([new fabric.Rect({width:w,height:h,fill:'#e0f2fe',stroke:'#333',strokeWidth:1,rx:4,ry:4,originX:'center',originY:'center'}),new fabric.Ellipse({rx:w*0.3,ry:h*0.28,fill:'transparent',stroke:'#0ea5e9',strokeWidth:1,originX:'center',originY:'center'})],{originX:'center',originY:'center'})}
-
+function makeCompassRose(){var sz=50,p=[];p.push(new fabric.Triangle({width:14,height:sz/2,fill:'#dc2626',left:0,top:-sz/2,angle:0,originX:'center',originY:'bottom'}));p.push(new fabric.Triangle({width:14,height:sz/2,fill:'#666',left:0,top:sz/2,angle:180,originX:'center',originY:'bottom'}));p.push(new fabric.Triangle({width:14,height:sz/2,fill:'#666',left:sz/2,top:0,angle:90,originX:'center',originY:'bottom'}));p.push(new fabric.Triangle({width:14,height:sz/2,fill:'#666',left:-sz/2,top:0,angle:270,originX:'center',originY:'bottom'}));['N','S','E','W'].forEach(function(d,i){var pos=[{x:0,y:-sz/2-8},{x:0,y:sz/2+8},{x:sz/2+8,y:0},{x:-sz/2-8,y:0}][i];p.push(new fabric.Text(d,{left:pos.x,top:pos.y,fontSize:10,fontWeight:'bold',fill:d==='N'?'#dc2626':'#333',originX:'center',originY:'center'}))});p.push(new fabric.Circle({radius:4,fill:'#333',originX:'center',originY:'center'}));return new fabric.Group(p,{originX:'center',originY:'center'})}
+function makeNorthArrow(){return new fabric.Group([new fabric.Triangle({width:20,height:40,fill:'#dc2626',originX:'center',originY:'center'}),new fabric.Text('N',{top:-28,fontSize:12,fontWeight:'bold',fill:'#dc2626',originX:'center',originY:'center'})],{originX:'center',originY:'center'})}
 function placeNFPA(){var h=parseInt(document.getElementById('nfpaH').value)||0,f=parseInt(document.getElementById('nfpaF').value)||0,r=parseInt(document.getElementById('nfpaR').value)||0,s=document.getElementById('nfpaS').value||'';var sz=40,hs=sz/2,p=[];
 p.push(new fabric.Polygon([{x:-hs,y:0},{x:0,y:-hs},{x:0,y:hs}],{fill:'#2563eb',stroke:'#000',strokeWidth:1}));
 p.push(new fabric.Polygon([{x:0,y:-hs},{x:hs,y:0},{x:0,y:0}],{fill:'#dc2626',stroke:'#000',strokeWidth:1}));
@@ -307,10 +383,57 @@ p.push(new fabric.Text(String(f),{left:0,top:-hs/2+2,fontSize:14,fontWeight:'bol
 p.push(new fabric.Text(String(r),{left:hs/2,top:-2,fontSize:14,fontWeight:'bold',fill:'#000',originX:'center',originY:'center'}));
 if(s)p.push(new fabric.Text(s,{left:0,top:hs/2-2,fontSize:10,fontWeight:'bold',fill:'#000',originX:'center',originY:'center'}));
 var g=new fabric.Group(p,{left:canvas.width/2,top:canvas.height/2,originX:'center',originY:'center',nfpaData:{h:h,f:f,r:r,s:s}});
-canvas.add(g).setActiveObject(g).renderAll();document.getElementById('nfpaModal').classList.remove('show');saveHistory();saveData()}
+canvas.add(g).setActiveObject(g).renderAll();document.getElementById('nfpaModal').classList.remove('show');saveHistory();saveData();switchToSelect()}
 
-function makeCompassRose(){var sz=50,p=[];p.push(new fabric.Triangle({width:14,height:sz/2,fill:'#dc2626',left:0,top:-sz/2,angle:0,originX:'center',originY:'bottom'}));p.push(new fabric.Triangle({width:14,height:sz/2,fill:'#666',left:0,top:sz/2,angle:180,originX:'center',originY:'bottom'}));p.push(new fabric.Triangle({width:14,height:sz/2,fill:'#666',left:sz/2,top:0,angle:90,originX:'center',originY:'bottom'}));p.push(new fabric.Triangle({width:14,height:sz/2,fill:'#666',left:-sz/2,top:0,angle:270,originX:'center',originY:'bottom'}));['N','S','E','W'].forEach(function(d,i){var pos=[{x:0,y:-sz/2-8},{x:0,y:sz/2+8},{x:sz/2+8,y:0},{x:-sz/2-8,y:0}][i];p.push(new fabric.Text(d,{left:pos.x,top:pos.y,fontSize:10,fontWeight:'bold',fill:d==='N'?'#dc2626':'#333',originX:'center',originY:'center'}))});p.push(new fabric.Circle({radius:4,fill:'#333',originX:'center',originY:'center'}));return new fabric.Group(p,{originX:'center',originY:'center'})}
-function makeNorthArrow(){return new fabric.Group([new fabric.Triangle({width:20,height:40,fill:'#dc2626',originX:'center',originY:'center'}),new fabric.Text('N',{top:-28,fontSize:12,fontWeight:'bold',fill:'#dc2626',originX:'center',originY:'center'})],{originX:'center',originY:'center'})}
+/* ========================================================
+   BOX / ROOM TOOL
+   ======================================================== */
+function placeBox() {
+    var w = parseFloat(document.getElementById('boxW').value) || 10;
+    var h = parseFloat(document.getElementById('boxH').value) || 10;
+    var lbl = document.getElementById('boxLabel').value || '';
+    var sc = getScale();
+    var pw = w * sc, ph = h * sc;
+
+    var parts = [];
+    // Walls as individual lines for the box
+    parts.push(new fabric.Rect({
+        width: pw, height: ph,
+        fill: 'transparent', stroke: getColor(), strokeWidth: getWall(),
+        originX: 'center', originY: 'center'
+    }));
+
+    // Dimension labels
+    var unit = getUnit();
+    var wLabel = unit === 'ft' ? w + "'" : (w * 12) + '"';
+    var hLabel = unit === 'ft' ? h + "'" : (h * 12) + '"';
+    parts.push(new fabric.Text(wLabel, {
+        top: -ph/2 - 12, fontSize: 10, fill: '#555',
+        backgroundColor: 'rgba(255,255,255,0.8)',
+        originX: 'center', originY: 'center'
+    }));
+    parts.push(new fabric.Text(hLabel, {
+        left: pw/2 + 14, fontSize: 10, fill: '#555',
+        backgroundColor: 'rgba(255,255,255,0.8)',
+        originX: 'center', originY: 'center', angle: 90
+    }));
+
+    if (lbl) {
+        parts.push(new fabric.Text(lbl, {
+            fontSize: Math.min(14, pw * 0.15), fill: '#555',
+            originX: 'center', originY: 'center',
+            fontFamily: 'Arial', fontWeight: 'bold'
+        }));
+    }
+
+    var grp = new fabric.Group(parts, {
+        left: canvas.width/2, top: canvas.height/2,
+        originX: 'center', originY: 'center'
+    });
+    canvas.add(grp).setActiveObject(grp).renderAll();
+    document.getElementById('boxModal').classList.remove('show');
+    saveHistory(); saveData(); switchToSelect();
+}
 
 function getSymbol(type){var c=getColor(),s=getScale();var m={
 'facp':function(){return box(40,30,'FACP','#dc2626')},'annunciator':function(){return box(32,24,'ANN','#dc2626')},'fdc':function(){return circ(14,'FDC','#dc2626')},'sprinkler':function(){return circ(11,'SR','#2563eb')},'standpipe':function(){return box(20,28,'SP','#2563eb')},'extinguisher':function(){return circ(9,'FE','#dc2626')},'hydrant':function(){return circ(11,'H','#dc2626')},'pull':function(){return box(14,18,'PS','#dc2626')},'smoke':function(){return circ(8,'SD','#666')},
@@ -330,57 +453,373 @@ function getSymbol(type){var c=getColor(),s=getScale();var m={
 'dumpster':function(){return box(4*s,3*s,'DUMP','#666')},'restroom':function(){return box(3*s,3*s,'WC',c)},'office':function(){return box(5*s,4*s,'OFFICE',c)},'breakroom':function(){return box(5*s,4*s,'BREAK',c)},'server-room':function(){return box(4*s,4*s,'SERVER',c)},'mech-room':function(){return box(5*s,4*s,'MECH',c)},'pool':function(){return box(8*s,5*s,'POOL','#bfdbfe','#000')}
 };if(type==='nfpa704'){document.getElementById('nfpaModal').classList.add('show');return null}return m[type]?m[type]():box(30,30,type.toUpperCase().slice(0,4),c)}
 
-function initCanvas(bgUrl){canvas=new fabric.Canvas('floor-canvas',{preserveObjectStacking:true,backgroundColor:'transparent'});if(bgUrl){fabric.Image.fromURL(bgUrl,function(img){img.scaleToWidth(canvas.width);img.set({selectable:false,evented:false,isBg:true});canvas.add(img);canvas.sendToBack(img);canvas.renderAll()})}setupEvents();saveHistory()}
-function setupEvents(){canvas.on('object:modified',function(){saveHistory();saveData()});canvas.on('mouse:down',function(o){if(currentTool==='line'&&o.pointer){if(!lineStartPoint){lineStartPoint={x:o.pointer.x,y:o.pointer.y}}else{var line=new fabric.Line([lineStartPoint.x,lineStartPoint.y,o.pointer.x,o.pointer.y],{stroke:getColor(),strokeWidth:getWall(),selectable:true});canvas.add(line);var dx=o.pointer.x-lineStartPoint.x,dy=o.pointer.y-lineStartPoint.y,len=Math.sqrt(dx*dx+dy*dy)/getScale(),unit=getUnit(),dim=unit==='ft'?len.toFixed(1)+"'":(len*12).toFixed(0)+'"',mid={x:(lineStartPoint.x+o.pointer.x)/2,y:(lineStartPoint.y+o.pointer.y)/2};canvas.add(new fabric.Text(dim,{left:mid.x,top:mid.y-12,fontSize:10,fill:'#555',backgroundColor:'rgba(255,255,255,0.8)',originX:'center'}));lineStartPoint=null;saveHistory();saveData()}}if(currentTool==='text'&&o.pointer){var txt=prompt('Enter text:');if(txt){canvas.add(new fabric.IText(txt,{left:o.pointer.x,top:o.pointer.y,fontSize:14,fill:getColor(),fontFamily:'Arial'}));saveHistory();saveData()}}});canvas.on('path:created',function(){saveHistory();saveData()})}
+/* ========================================================
+   CANVAS INIT WITH IMPROVED CONTROLS
+   ======================================================== */
+function initCanvas(bgUrl) {
+    canvas = new fabric.Canvas('floor-canvas', {
+        preserveObjectStacking: true,
+        backgroundColor: 'transparent',
+        allowTouchScrolling: false,
+        enablePointerEvents: true
+    });
 
-function saveHistory(){historyIdx++;history=history.slice(0,historyIdx);history.push(JSON.stringify(canvas.toJSON(['isBg','isOpening','nfpaData'])));if(history.length>50){history.shift();historyIdx--}}
+    // BETTER SELECTION CONTROLS
+    fabric.Object.prototype.set({
+        cornerSize: 16,           // Bigger handles for touch
+        cornerColor: '#1e3a5f',
+        cornerStrokeColor: '#fff',
+        cornerStyle: 'circle',
+        transparentCorners: false,
+        borderColor: '#1e3a5f',
+        borderScaleFactor: 2,
+        padding: 8,
+        rotatingPointOffset: 30   // Rotation handle further out
+    });
+
+    if (bgUrl) {
+        fabric.Image.fromURL(bgUrl, function(img) {
+            img.scaleToWidth(canvas.width);
+            img.set({selectable:false, evented:false, isBg:true});
+            canvas.add(img); canvas.sendToBack(img); canvas.renderAll();
+        });
+    }
+    setupEvents();
+    saveHistory();
+}
+
+/* ========================================================
+   WALL DRAWING (pen-draw continuous line)
+   ======================================================== */
+var SNAP_DIST = 10; // px snap to existing wall endpoints
+
+function findSnapPoint(x, y) {
+    var best = null, bestDist = SNAP_DIST;
+    canvas.getObjects('line').forEach(function(ln) {
+        [[ln.x1+ln.left, ln.y1+ln.top],[ln.x2+ln.left, ln.y2+ln.top]].forEach(function(pt) {
+            // For lines stored with absolute coords
+            var pts = [
+                {x: ln.get('x1'), y: ln.get('y1')},
+                {x: ln.get('x2'), y: ln.get('y2')}
+            ];
+        });
+        // Use path coords
+        var coords = ln.calcLinePoints();
+        var mx = ln.left + (ln.width/2 || 0);
+        var my = ln.top + (ln.height/2 || 0);
+        // Start and end points
+        [
+            {x: coords.x1 + mx, y: coords.y1 + my},
+            {x: coords.x2 + mx, y: coords.y2 + my}
+        ].forEach(function(pt) {
+            var d = Math.sqrt((pt.x-x)*(pt.x-x) + (pt.y-y)*(pt.y-y));
+            if (d < bestDist) { bestDist = d; best = pt; }
+        });
+    });
+    // Also snap to recent wallPoints
+    wallPoints.forEach(function(pt) {
+        var d = Math.sqrt((pt.x-x)*(pt.x-x) + (pt.y-y)*(pt.y-y));
+        if (d < bestDist) { bestDist = d; best = pt; }
+    });
+    return best;
+}
+
+function addWallSegment(from, to) {
+    var line = new fabric.Line([from.x, from.y, to.x, to.y], {
+        stroke: getColor(),
+        strokeWidth: getWall(),
+        selectable: true,
+        isWall: true
+    });
+    canvas.add(line);
+
+    // Dimension label
+    var dx = to.x - from.x, dy = to.y - from.y;
+    var len = Math.sqrt(dx*dx + dy*dy) / getScale();
+    var unit = getUnit();
+    var dim = unit === 'ft' ? len.toFixed(1) + "'" : (len*12).toFixed(0) + '"';
+    var mid = {x: (from.x + to.x)/2, y: (from.y + to.y)/2};
+    canvas.add(new fabric.Text(dim, {
+        left: mid.x, top: mid.y - 12,
+        fontSize: 10, fill: '#555',
+        backgroundColor: 'rgba(255,255,255,0.8)',
+        originX: 'center', selectable: true
+    }));
+}
+
+/* ========================================================
+   EVENT SETUP
+   ======================================================== */
+function setupEvents() {
+    canvas.on('object:modified', function() { saveHistory(); saveData(); });
+
+    canvas.on('mouse:down', function(o) {
+        if (!o.pointer) return;
+        var px = o.pointer.x, py = o.pointer.y;
+
+        if (currentTool === 'wall') {
+            // Snap to nearby endpoints
+            var snap = findSnapPoint(px, py);
+            if (snap) { px = snap.x; py = snap.y; }
+
+            if (!isDrawingWall) {
+                // Start wall
+                isDrawingWall = true;
+                wallPoints = [{x: px, y: py}];
+            } else {
+                // Continue wall - add segment
+                var last = wallPoints[wallPoints.length - 1];
+                // Constrain to H/V if close to axis
+                var dx = Math.abs(px - last.x), dy = Math.abs(py - last.y);
+                if (dx < 15 && dy > 15) px = last.x; // snap vertical
+                if (dy < 15 && dx > 15) py = last.y; // snap horizontal
+
+                snap = findSnapPoint(px, py);
+                if (snap) { px = snap.x; py = snap.y; }
+
+                addWallSegment(last, {x: px, y: py});
+                wallPoints.push({x: px, y: py});
+            }
+        }
+
+        if (currentTool === 'text' && o.pointer) {
+            var txt = prompt('Enter text:');
+            if (txt) {
+                canvas.add(new fabric.IText(txt, {
+                    left: o.pointer.x, top: o.pointer.y,
+                    fontSize: 14, fill: getColor(), fontFamily: 'Arial'
+                }));
+                saveHistory(); saveData(); switchToSelect();
+            }
+        }
+    });
+
+    canvas.on('mouse:move', function(o) {
+        // Wall preview line
+        if (currentTool === 'wall' && isDrawingWall && wallPoints.length > 0 && o.pointer) {
+            if (wallPreviewLine) canvas.remove(wallPreviewLine);
+            var last = wallPoints[wallPoints.length - 1];
+            var px = o.pointer.x, py = o.pointer.y;
+            var dx = Math.abs(px - last.x), dy = Math.abs(py - last.y);
+            if (dx < 15 && dy > 15) px = last.x;
+            if (dy < 15 && dx > 15) py = last.y;
+            wallPreviewLine = new fabric.Line([last.x, last.y, px, py], {
+                stroke: getColor(), strokeWidth: getWall(),
+                strokeDashArray: [6, 4], selectable: false, evented: false,
+                opacity: 0.5
+            });
+            canvas.add(wallPreviewLine);
+            canvas.renderAll();
+        }
+    });
+
+    // Double-tap/click to finish wall
+    canvas.on('mouse:dblclick', function() {
+        if (currentTool === 'wall' && isDrawingWall) {
+            finishWall();
+        }
+    });
+
+    canvas.on('path:created', function() { saveHistory(); saveData(); });
+
+    // Apple Pencil / stylus pressure support
+    var upperCanvas = canvas.upperCanvasEl;
+    if (upperCanvas) {
+        upperCanvas.addEventListener('pointerdown', function(e) {
+            if (e.pointerType === 'pen' && canvas.isDrawingMode && canvas.freeDrawingBrush) {
+                canvas.freeDrawingBrush.width = Math.max(1, (e.pressure || 0.5) * 6);
+            }
+        }, {passive: true});
+        upperCanvas.addEventListener('pointermove', function(e) {
+            if (e.pointerType === 'pen' && canvas.isDrawingMode && canvas.freeDrawingBrush) {
+                canvas.freeDrawingBrush.width = Math.max(1, (e.pressure || 0.5) * 6);
+            }
+        }, {passive: true});
+    }
+}
+
+function finishWall() {
+    if (wallPreviewLine) { canvas.remove(wallPreviewLine); wallPreviewLine = null; }
+    isDrawingWall = false;
+    wallPoints = [];
+    saveHistory(); saveData();
+    canvas.renderAll();
+}
+
+/* ========================================================
+   HISTORY / SAVE / LOAD
+   ======================================================== */
+function saveHistory(){historyIdx++;history=history.slice(0,historyIdx);history.push(JSON.stringify(canvas.toJSON(['isBg','isOpening','nfpaData','isWall'])));if(history.length>50){history.shift();historyIdx--}}
 function undo(){if(historyIdx<=0)return;historyIdx--;canvas.loadFromJSON(history[historyIdx],function(){canvas.renderAll()})}
 function redo(){if(historyIdx>=history.length-1)return;historyIdx++;canvas.loadFromJSON(history[historyIdx],function(){canvas.renderAll()})}
-
-function saveData(){if(!canvas)return;floorData[currentFloor]=JSON.stringify(canvas.toJSON(['isBg','isOpening','nfpaData']));var all={};for(var f in floorData)all[f]=floorData[f];try{var saved=JSON.parse(localStorage.getItem('preFirePlan')||'{}');saved.floor_plan_data=JSON.stringify(all);localStorage.setItem('preFirePlan',JSON.stringify(saved))}catch(e){}}
-function loadSavedData(){try{var saved=JSON.parse(localStorage.getItem('preFirePlan')||'{}');if(saved.floor_plan_data){var all=JSON.parse(saved.floor_plan_data);for(var f in all)floorData[f]=all[f];floorCount=Math.max(1,Math.max.apply(null,Object.keys(floorData).map(Number)));renderFloorTabs();if(floorData[1]){document.getElementById('uploadSection').classList.add('hidden');document.getElementById('annotSection').classList.remove('hidden');canvas=new fabric.Canvas('floor-canvas',{preserveObjectStacking:true,backgroundColor:'transparent'});setupEvents();canvas.loadFromJSON(floorData[1],function(){canvas.renderAll();saveHistory()})}}}catch(e){console.error(e)}}
-
+function saveData(){if(!canvas)return;floorData[currentFloor]=JSON.stringify(canvas.toJSON(['isBg','isOpening','nfpaData','isWall']));var all={};for(var f in floorData)all[f]=floorData[f];try{var saved=JSON.parse(localStorage.getItem('preFirePlan')||'{}');saved.floor_plan_data=JSON.stringify(all);localStorage.setItem('preFirePlan',JSON.stringify(saved))}catch(e){}}
+function loadSavedData(){try{var saved=JSON.parse(localStorage.getItem('preFirePlan')||'{}');if(saved.floor_plan_data){var all=JSON.parse(saved.floor_plan_data);for(var f in all)floorData[f]=all[f];floorCount=Math.max(1,Math.max.apply(null,Object.keys(floorData).map(Number)));renderFloorTabs();if(floorData[1]){document.getElementById('uploadSection').classList.add('hidden');document.getElementById('annotSection').classList.remove('hidden');canvas=new fabric.Canvas('floor-canvas',{preserveObjectStacking:true,backgroundColor:'transparent',allowTouchScrolling:false,enablePointerEvents:true});
+fabric.Object.prototype.set({cornerSize:16,cornerColor:'#1e3a5f',cornerStrokeColor:'#fff',cornerStyle:'circle',transparentCorners:false,borderColor:'#1e3a5f',borderScaleFactor:2,padding:8,rotatingPointOffset:30});
+setupEvents();canvas.loadFromJSON(floorData[1],function(){canvas.renderAll();saveHistory()})}}}catch(e){console.error(e)}}
 function renderFloorTabs(){var tabs=document.getElementById('floorTabs'),html='';for(var i=1;i<=floorCount;i++)html+='<button class="floor-tab'+(i===currentFloor?' active':'')+'" data-floor="'+i+'">Floor '+i+'</button>';html+='<button class="add-floor-btn" id="addFloorBtn">+ Add Floor</button>';tabs.innerHTML=html;tabs.querySelectorAll('.floor-tab').forEach(function(b){b.onclick=function(){switchFloor(parseInt(b.dataset.floor))}});document.getElementById('addFloorBtn').onclick=addFloor}
-function switchFloor(f){if(canvas)floorData[currentFloor]=JSON.stringify(canvas.toJSON(['isBg','isOpening','nfpaData']));currentFloor=f;renderFloorTabs();if(floorData[f]){canvas.loadFromJSON(floorData[f],function(){canvas.renderAll()})}else{canvas.clear();canvas.backgroundColor='transparent';canvas.renderAll()}saveHistory()}
+function switchFloor(f){if(canvas)floorData[currentFloor]=JSON.stringify(canvas.toJSON(['isBg','isOpening','nfpaData','isWall']));currentFloor=f;renderFloorTabs();if(floorData[f]){canvas.loadFromJSON(floorData[f],function(){canvas.renderAll()})}else{canvas.clear();canvas.backgroundColor='transparent';canvas.renderAll()}saveHistory()}
 function addFloor(){floorCount++;switchFloor(floorCount);toast('Floor '+floorCount+' added')}
 
-document.querySelectorAll('.tool-btn[data-tool]').forEach(function(b){b.onclick=function(){document.querySelectorAll('.tool-btn[data-tool]').forEach(function(x){x.classList.remove('active')});b.classList.add('active');currentTool=b.dataset.tool;lineStartPoint=null;canvas.isDrawingMode=currentTool==='draw';if(canvas.isDrawingMode){canvas.freeDrawingBrush.color=getColor();canvas.freeDrawingBrush.width=2}canvas.selection=currentTool==='select'}});
-colorPicker.onchange=function(){if(canvas&&canvas.isDrawingMode)canvas.freeDrawingBrush.color=getColor()};
-document.querySelectorAll('.symbol-item').forEach(function(b){b.onclick=function(e){e.stopPropagation();var type=b.dataset.symbol,obj=getSymbol(type);if(!obj)return;obj.set({left:canvas.width/2+Math.random()*40-20,top:canvas.height/2+Math.random()*40-20});canvas.add(obj).setActiveObject(obj).renderAll();saveHistory();saveData()}});
-document.getElementById('undoBtn').onclick=undo;document.getElementById('redoBtn').onclick=redo;
-document.getElementById('deleteBtn').onclick=function(){var sel=canvas.getActiveObjects();if(sel.length){sel.forEach(function(o){if(!o.isBg)canvas.remove(o)});canvas.discardActiveObject();canvas.renderAll();saveHistory();saveData()}};
-document.getElementById('clearBtn').onclick=function(){if(!confirm('Clear all objects?'))return;var bg=canvas.getObjects().find(function(o){return o.isBg});canvas.clear();canvas.backgroundColor='transparent';if(bg)canvas.add(bg);canvas.renderAll();saveHistory();saveData()};
-document.addEventListener('keydown',function(e){if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();undo()}if((e.ctrlKey||e.metaKey)&&e.key==='y'){e.preventDefault();redo()}if(e.key==='Delete'||e.key==='Backspace'){if(document.activeElement.tagName==='INPUT'||document.activeElement.tagName==='TEXTAREA')return;document.getElementById('deleteBtn').click()}});
-document.getElementById('uploadArea').onclick=function(){document.getElementById('bgFile').click()};
-document.getElementById('bgFile').onchange=function(){if(this.files[0]){var reader=new FileReader();reader.onload=function(e){document.getElementById('uploadSection').classList.add('hidden');document.getElementById('annotSection').classList.remove('hidden');initCanvas(e.target.result)};reader.readAsDataURL(this.files[0])}};
-function startBlank(){document.getElementById('uploadSection').classList.add('hidden');document.getElementById('annotSection').classList.remove('hidden');initCanvas(null)}
-document.getElementById('newImageBtn').onclick=function(){var fi=document.getElementById('bgFile');fi.value='';fi.onchange=function(){if(this.files[0]){var reader=new FileReader();reader.onload=function(e){var bg=canvas.getObjects().find(function(o){return o.isBg});if(bg)canvas.remove(bg);fabric.Image.fromURL(e.target.result,function(img){img.scaleToWidth(canvas.width);img.set({selectable:false,evented:false,isBg:true});canvas.add(img);canvas.sendToBack(img);canvas.renderAll();saveHistory();saveData()})};reader.readAsDataURL(this.files[0])}};fi.click()};
-document.getElementById('exportPng').onclick=function(){var a=document.createElement('a');a.download='floor-plan-'+currentFloor+'.png';a.href=canvas.toDataURL({format:'png',quality:1});a.click();toast('PNG exported')};
-document.getElementById('dsFile').onchange=function(){if(this.files[0]){var reader=new FileReader();reader.onload=function(e){try{var d=JSON.parse(e.target.result);if(d.scan)renderDivisionScan(d.scan,[],[]);else renderDivisionScan(d,[],[])}catch(err){toast('Invalid JSON file')}};reader.readAsText(this.files[0])}};
-function importFromServer(){
-fetch('/api/divisionscan/plans').then(function(r){return r.json()}).then(function(d){
-if(!d.plans||!d.plans.length){toast('No scans found on server');return}
-if(d.plans.length===1){loadScanById(d.plans[0].id);return}
-// Show picker modal for multiple plans
-var modal=document.createElement('div');modal.id='scanPickerModal';
-modal.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:2000;display:flex;justify-content:center;align-items:center';
-var box='<div style="background:#fff;border-radius:12px;padding:24px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto">';
-box+='<h3 style="margin:0 0 4px;color:#1e3a5f">Import from DivisionScan</h3>';
-box+='<p style="color:#888;font-size:12px;margin:0 0 16px">Select a scan to import into the floor plan</p>';
-d.plans.forEach(function(p){
-var dt=p.scan_date?new Date(p.scan_date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'';
-var area=p.total_area?Math.round(p.total_area)+' ft²':'';
-box+='<div onclick="loadScanById(\''+p.id+'\');document.getElementById(\'scanPickerModal\').remove()" style="padding:12px;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:8px;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor=\'#1e3a5f\';this.style.background=\'#f0f9ff\'" onmouseout="this.style.borderColor=\'#e2e8f0\';this.style.background=\'#fff\'">';
-box+='<div style="font-weight:600;color:#1e3a5f">'+escH(p.building_name||'Unnamed')+'</div>';
-if(p.building_address)box+='<div style="font-size:12px;color:#666">'+escH(p.building_address)+'</div>';
-box+='<div style="font-size:11px;color:#999;margin-top:4px">Floor '+escH(p.floor||'1')+' · '+area+' · '+dt+' · '+escH(p.department||'CFD')+'</div>';
-box+='</div>';
+/* ========================================================
+   TOOL BUTTONS (with auto-return to select)
+   ======================================================== */
+document.querySelectorAll('.tool-btn[data-tool]').forEach(function(b) {
+    b.onclick = function() {
+        // Finish any in-progress wall
+        if (isDrawingWall) finishWall();
+
+        document.querySelectorAll('.tool-btn[data-tool]').forEach(function(x) { x.classList.remove('active'); });
+        b.classList.add('active');
+        currentTool = b.dataset.tool;
+        wallPoints = [];
+        isDrawingWall = false;
+
+        if (currentTool === 'box') {
+            document.getElementById('boxModal').classList.add('show');
+            return;
+        }
+
+        canvas.isDrawingMode = currentTool === 'draw';
+        if (canvas.isDrawingMode) {
+            canvas.freeDrawingBrush.color = getColor();
+            canvas.freeDrawingBrush.width = 2;
+        }
+        canvas.selection = currentTool === 'select';
+        canvas.defaultCursor = currentTool === 'wall' ? 'crosshair' :
+                               currentTool === 'text' ? 'text' : 'default';
+    };
 });
-box+='<div style="text-align:center;margin-top:12px"><button onclick="document.getElementById(\'scanPickerModal\').remove()" style="padding:8px 20px;border:1px solid #ccc;border-radius:6px;background:#fff;cursor:pointer;font-size:13px">Cancel</button></div>';
-box+='</div>';
-modal.innerHTML=box;modal.onclick=function(e){if(e.target===modal)modal.remove()};
-document.body.appendChild(modal);
-}).catch(function(e){toast('Could not connect to server')})
+
+colorPicker.onchange = function() { if (canvas && canvas.isDrawingMode) canvas.freeDrawingBrush.color = getColor(); };
+
+// SYMBOL PLACEMENT (auto-return to select after placing)
+document.querySelectorAll('.symbol-item').forEach(function(b) {
+    b.onclick = function(e) {
+        e.stopPropagation();
+        var type = b.dataset.symbol, obj = getSymbol(type);
+        if (!obj) return;
+        obj.set({
+            left: canvas.width/2 + Math.random()*40 - 20,
+            top: canvas.height/2 + Math.random()*40 - 20
+        });
+        canvas.add(obj).setActiveObject(obj).renderAll();
+        saveHistory(); saveData();
+        switchToSelect(); // Auto-return to select
+    };
+});
+
+document.getElementById('undoBtn').onclick = undo;
+document.getElementById('redoBtn').onclick = redo;
+document.getElementById('deleteBtn').onclick = function() {
+    var sel = canvas.getActiveObjects();
+    if (sel.length) {
+        sel.forEach(function(o) { if (!o.isBg) canvas.remove(o); });
+        canvas.discardActiveObject(); canvas.renderAll();
+        saveHistory(); saveData();
+    }
+};
+document.getElementById('clearBtn').onclick = function() {
+    if (!confirm('Clear all objects?')) return;
+    var bg = canvas.getObjects().find(function(o) { return o.isBg; });
+    canvas.clear(); canvas.backgroundColor = 'transparent';
+    if (bg) canvas.add(bg);
+    canvas.renderAll(); saveHistory(); saveData();
+};
+
+document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo(); }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'y') { e.preventDefault(); redo(); }
+    if (e.key === 'Escape') { if (isDrawingWall) finishWall(); switchToSelect(); }
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
+        document.getElementById('deleteBtn').click();
+    }
+});
+
+/* ========================================================
+   UPLOAD / IMPORT
+   ======================================================== */
+document.getElementById('uploadArea').onclick = function() { document.getElementById('bgFile').click(); };
+document.getElementById('bgFile').onchange = function() {
+    if (this.files[0]) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('uploadSection').classList.add('hidden');
+            document.getElementById('annotSection').classList.remove('hidden');
+            initCanvas(e.target.result);
+        };
+        reader.readAsDataURL(this.files[0]);
+    }
+};
+function startBlank() {
+    document.getElementById('uploadSection').classList.add('hidden');
+    document.getElementById('annotSection').classList.remove('hidden');
+    initCanvas(null);
+}
+document.getElementById('newImageBtn').onclick = function() {
+    var fi = document.createElement('input');
+    fi.type = 'file'; fi.accept = 'image/*';
+    fi.onchange = function() {
+        if (this.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                var bg = canvas.getObjects().find(function(o) { return o.isBg; });
+                if (bg) canvas.remove(bg);
+                fabric.Image.fromURL(e.target.result, function(img) {
+                    img.scaleToWidth(canvas.width);
+                    img.set({selectable:false, evented:false, isBg:true});
+                    canvas.add(img); canvas.sendToBack(img);
+                    canvas.renderAll(); saveHistory(); saveData();
+                });
+            };
+            reader.readAsDataURL(this.files[0]);
+        }
+    };
+    fi.click();
+};
+document.getElementById('exportPng').onclick = function() {
+    var a = document.createElement('a');
+    a.download = 'floor-plan-' + currentFloor + '.png';
+    a.href = canvas.toDataURL({format:'png', quality:1});
+    a.click(); toast('PNG exported');
+};
+
+/* DivisionScan import */
+document.getElementById('dsFile').onchange = function() {
+    if (this.files[0]) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                var d = JSON.parse(e.target.result);
+                if (d.scan) renderDivisionScan(d.scan, [], []);
+                else renderDivisionScan(d, [], []);
+            } catch(err) { toast('Invalid JSON file'); }
+        };
+        reader.readAsText(this.files[0]);
+    }
+};
+
+function importFromServer() {
+    fetch('/api/divisionscan/plans').then(function(r){return r.json()}).then(function(d){
+    if(!d.plans||!d.plans.length){toast('No scans found on server');return}
+    if(d.plans.length===1){loadScanById(d.plans[0].id);return}
+    var modal=document.createElement('div');modal.id='scanPickerModal';
+    modal.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:2000;display:flex;justify-content:center;align-items:center';
+    var bx='<div style="background:#fff;border-radius:12px;padding:24px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto">';
+    bx+='<h3 style="margin:0 0 4px;color:#1e3a5f">Import from DivisionScan</h3>';
+    bx+='<p style="color:#888;font-size:12px;margin:0 0 16px">Select a scan to import</p>';
+    d.plans.forEach(function(p){
+    var dt=p.scan_date?new Date(p.scan_date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'';
+    var area=p.total_area?Math.round(p.total_area)+' ft²':'';
+    bx+='<div onclick="loadScanById(\''+p.id+'\');document.getElementById(\'scanPickerModal\').remove()" style="padding:12px;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:8px;cursor:pointer" onmouseover="this.style.borderColor=\'#1e3a5f\'" onmouseout="this.style.borderColor=\'#e2e8f0\'">';
+    bx+='<div style="font-weight:600;color:#1e3a5f">'+escH(p.building_name||'Unnamed')+'</div>';
+    if(p.building_address)bx+='<div style="font-size:12px;color:#666">'+escH(p.building_address)+'</div>';
+    bx+='<div style="font-size:11px;color:#999;margin-top:4px">Floor '+escH(p.floor||'1')+' · '+area+' · '+dt+'</div></div>';
+    });
+    bx+='<div style="text-align:center;margin-top:12px"><button onclick="document.getElementById(\'scanPickerModal\').remove()" style="padding:8px 20px;border:1px solid #ccc;border-radius:6px;background:#fff;cursor:pointer">Cancel</button></div></div>';
+    modal.innerHTML=bx;modal.onclick=function(e){if(e.target===modal)modal.remove()};
+    document.body.appendChild(modal);
+    }).catch(function(){toast('Could not connect to server')});
 }
 function escH(s){var d=document.createElement('div');d.textContent=s||'';return d.innerHTML}
 function loadScanById(id){
@@ -391,30 +830,22 @@ else{toast('No scan data found')}
 }).catch(function(){toast('Failed to load scan')})
 }
 function renderDivisionScan(data,markers,annotations){document.getElementById('uploadSection').classList.add('hidden');document.getElementById('annotSection').classList.remove('hidden');initCanvas(null);var walls=data.walls||[],doors=data.doors||[],wins=data.windows||[],objs=data.objects||[],rooms=data.rooms||[];var minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;walls.forEach(function(w){minX=Math.min(minX,w.startX,w.endX);minY=Math.min(minY,w.startY,w.endY);maxX=Math.max(maxX,w.startX,w.endX);maxY=Math.max(maxY,w.startY,w.endY)});if(!walls.length){minX=0;minY=0;maxX=100;maxY=100}var bw=maxX-minX||1,bh=maxY-minY||1,sc=Math.min((canvas.width-80)/bw,(canvas.height-80)/bh),ox=40-minX*sc,oy=40-minY*sc;
-// Room labels
-rooms.forEach(function(r){if(!r.name||!r.centerX)return;var tx=r.centerX*sc+ox,ty=r.centerY*sc+oy;var t=new fabric.Text(r.name+(r.area>10?'\n'+Math.round(r.area)+' ft²':''),{left:tx,top:ty,fontSize:11,fill:'rgba(52,152,219,0.5)',fontFamily:'-apple-system,sans-serif',textAlign:'center',originX:'center',originY:'center',selectable:true});canvas.add(t)});
-// Walls
-walls.forEach(function(w){canvas.add(new fabric.Line([w.startX*sc+ox,w.startY*sc+oy,w.endX*sc+ox,w.endY*sc+oy],{stroke:'#333',strokeWidth:getWall(),selectable:true}))});
-// Doors
+rooms.forEach(function(r){if(!r.name||!r.centerX)return;var tx=r.centerX*sc+ox,ty=r.centerY*sc+oy;canvas.add(new fabric.Text(r.name+(r.area>10?'\n'+Math.round(r.area)+' ft²':''),{left:tx,top:ty,fontSize:11,fill:'rgba(52,152,219,0.5)',fontFamily:'-apple-system,sans-serif',textAlign:'center',originX:'center',originY:'center',selectable:true}))});
+walls.forEach(function(w){canvas.add(new fabric.Line([w.startX*sc+ox,w.startY*sc+oy,w.endX*sc+ox,w.endY*sc+oy],{stroke:'#333',strokeWidth:getWall(),selectable:true,isWall:true}))});
 doors.forEach(function(d){var x=(d.x||0)*sc+ox,y=(d.y||0)*sc+oy,obj=makeDoor((d.width||3)*sc,'L');obj.set({left:x,top:y});canvas.add(obj)});
-// Windows
 wins.forEach(function(w){var x=(w.x||0)*sc+ox,y=(w.y||0)*sc+oy,obj=makeWindow((w.width||3)*sc);obj.set({left:x,top:y});canvas.add(obj)});
-// Furniture/Objects
 objs.forEach(function(o){var x=(o.x||0)*sc+ox,y=(o.y||0)*sc+oy,w=(o.width||3)*sc,h=(o.depth||3)*sc;var catColors={'toilet':'#4ECDC4','bathtub':'#4ECDC4','sink':'#4ECDC4','stove':'#FF6B6B','oven':'#FF6B6B','refrigerator':'#45B7D1','bed':'#DDA0DD','sofa':'#F4A460','table':'#D2B48C','chair':'#D2B48C','television':'#708090','washerDryer':'#87CEEB','dishwasher':'#45B7D1','storage':'#BDB76B','fireplace':'#CD853F','stairs':'#A9A9A9'};
 var col=catColors[o.category]||'#999';var lbl=o.label||o.category||'?';
-var rect=new fabric.Rect({width:w,height:h,fill:col+'33',stroke:col,strokeWidth:1,rx:2,ry:2});
-var txt=new fabric.Text(lbl,{fontSize:Math.min(10,w*0.3),fill:col,fontFamily:'-apple-system,sans-serif',textAlign:'center',originX:'center',originY:'center'});
-var grp=new fabric.Group([rect,txt],{left:x-w/2,top:y-h/2,selectable:true,angle:o.rotation?o.rotation*180/Math.PI:0});
+var grp=new fabric.Group([new fabric.Rect({width:w,height:h,fill:col+'33',stroke:col,strokeWidth:1,rx:2,ry:2}),new fabric.Text(lbl,{fontSize:Math.min(10,w*0.3),fill:col,fontFamily:'-apple-system,sans-serif',textAlign:'center',originX:'center',originY:'center'})],{left:x-w/2,top:y-h/2,selectable:true,angle:o.rotation?o.rotation*180/Math.PI:0});
 canvas.add(grp)});
-// Markers from server
-if(markers&&markers.length){markers.forEach(function(m){var x=m.x*sc+ox,y=m.y*sc+oy;var icon=m.marker_name||m.marker_type_id||'⚠️';var t=new fabric.Text('📍'+icon,{left:x,top:y,fontSize:10,fill:'#c0392b',fontFamily:'-apple-system,sans-serif',originX:'center',originY:'center',selectable:true});canvas.add(t)})}
-// Annotations from server
-if(annotations&&annotations.length){annotations.forEach(function(a){if(!a.points_json)return;try{var pts=JSON.parse(a.points_json);if(pts.length<2)return;var pathStr='M '+pts[0].x*sc+ox+' '+pts[0].y*sc+oy;for(var i=1;i<pts.length;i++)pathStr+=' L '+pts[i].x*sc+ox+' '+pts[i].y*sc+oy;var p=new fabric.Path(pathStr,{fill:'',stroke:a.color_hex||'#FF0000',strokeWidth:a.line_width||2,selectable:true});canvas.add(p)}catch(e){}})}
+if(markers&&markers.length){markers.forEach(function(m){var x=m.x*sc+ox,y=m.y*sc+oy;canvas.add(new fabric.Text('📍'+(m.marker_name||''),{left:x,top:y,fontSize:10,fill:'#c0392b',originX:'center',originY:'center',selectable:true}))})}
+if(annotations&&annotations.length){annotations.forEach(function(a){if(!a.points_json)return;try{var pts=JSON.parse(a.points_json);if(pts.length<2)return;var pathStr='M '+pts[0].x*sc+ox+' '+pts[0].y*sc+oy;for(var i=1;i<pts.length;i++)pathStr+=' L '+pts[i].x*sc+ox+' '+pts[i].y*sc+oy;canvas.add(new fabric.Path(pathStr,{fill:'',stroke:a.color_hex||'#FF0000',strokeWidth:a.line_width||2,selectable:true}))}catch(e){}})}
 canvas.renderAll();saveHistory();saveData();toast('DivisionScan imported!')}
+
 function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.style.display='block';clearTimeout(window._tt);window._tt=setTimeout(function(){t.style.display='none'},2500)}
 document.getElementById('prev-btn').onclick=function(){saveData();window.location.href='page10-site-plan.html'};
 document.getElementById('next-btn').onclick=function(){saveData();toast('Saved');setTimeout(function(){window.location.href='page12-submit.html'},500)};
-window.addEventListener('load',loadSavedData);
+window.addEventListener('load', loadSavedData);
 </script>
 
 <!-- Pre-Plan Save/Resume Toolbar -->
@@ -432,10 +863,8 @@ window.addEventListener('load',loadSavedData);
 .pp-modal p{color:#aaa;font-size:13px;margin-bottom:12px;line-height:1.5}
 .pp-modal .pp-code{background:#1a1a1e;border:2px solid #e67e22;border-radius:8px;padding:14px;text-align:center;font-size:28px;letter-spacing:6px;font-weight:700;color:#e67e22;font-family:monospace;margin:12px 0;user-select:all}
 .pp-modal .pp-link{background:#1a1a1e;border:1px solid #555;border-radius:6px;padding:10px;font-size:12px;color:#3498db;word-break:break-all;margin:8px 0;cursor:pointer;user-select:all}
-.pp-modal .pp-link:hover{background:#2a2a30}
 .pp-modal-actions{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
 .pp-modal .pp-close{position:absolute;top:10px;right:14px;background:none;border:none;color:#888;font-size:20px;cursor:pointer}
-.pp-modal .pp-close:hover{color:#fff}
 .pp-modal input[type=text]{background:#1a1a1e;border:1px solid #555;border-radius:6px;padding:10px;color:#fff;font-size:14px;width:100%;margin:8px 0}
 .pp-modal input[type=file]{display:none}
 .pp-toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);padding:8px 20px;border-radius:6px;font-size:12px;font-weight:600;z-index:10001;display:none;box-shadow:0 2px 12px rgba(0,0,0,0.4)}
@@ -443,196 +872,33 @@ window.addEventListener('load',loadSavedData);
 .pp-saved-indicator{color:#27ae60;font-size:11px;display:none;align-items:center;gap:4px}
 @media(max-width:480px){.pp-toolbar{gap:4px;padding:6px 8px}.pp-toolbar .pp-btn{padding:6px 10px;font-size:11px}}
 </style>
-
 <div class="pp-toolbar" id="ppToolbar">
   <span class="pp-saved-indicator" id="ppSaved">✓ Auto-saved</span>
-  <button class="pp-btn pp-btn-save" onclick="ppSaveCloud()" title="Save to cloud & get a link">☁️ Save to Cloud</button>
-  <button class="pp-btn pp-btn-file" onclick="ppExportFile()" title="Download progress as a file">📥 Export File</button>
-  <button class="pp-btn pp-btn-load" onclick="ppShowLoadModal()" title="Load from file or resume link">📂 Load / Resume</button>
+  <button class="pp-btn pp-btn-save" onclick="ppSaveCloud()" title="Save to cloud">☁️ Save to Cloud</button>
+  <button class="pp-btn pp-btn-file" onclick="ppExportFile()" title="Download file">📥 Export File</button>
+  <button class="pp-btn pp-btn-load" onclick="ppShowLoadModal()" title="Load / Resume">📂 Load / Resume</button>
 </div>
-
 <div class="pp-modal-bg" id="ppModalBg" onclick="if(event.target===this)ppCloseModal()">
   <div class="pp-modal" id="ppModal"></div>
 </div>
 <div class="pp-toast" id="ppToast"></div>
-
 <script>
 (function(){
-  // Auto-resume from URL parameter
-  const params = new URLSearchParams(window.location.search);
-  const resumeCode = params.get('resume');
-  if (resumeCode) {
-    fetch('/api/load-draft?code=' + resumeCode.toUpperCase())
-      .then(r => r.json())
-      .then(d => {
-        if (d.success && d.data) {
-          localStorage.setItem('preFirePlan', JSON.stringify(d.data));
-          ppToast('Progress loaded from cloud!', 'success');
-          // Clean URL
-          const clean = window.location.pathname;
-          history.replaceState(null, '', clean);
-          // Reload to pick up the data
-          setTimeout(() => location.reload(), 800);
-        }
-      })
-      .catch(() => {});
-  }
-
-  // Show auto-save indicator when localStorage changes
-  const origSave = localStorage.setItem.bind(localStorage);
-  const savedEl = document.getElementById('ppSaved');
-  
-  // Periodic check for data
-  let lastData = localStorage.getItem('preFirePlan');
-  setInterval(() => {
-    const cur = localStorage.getItem('preFirePlan');
-    if (cur !== lastData) {
-      lastData = cur;
-      savedEl.style.display = 'flex';
-      clearTimeout(window._ppSavedTimeout);
-      window._ppSavedTimeout = setTimeout(() => { savedEl.style.display = 'none'; }, 2000);
-    }
-  }, 1000);
+  var params=new URLSearchParams(window.location.search);
+  var resumeCode=params.get('resume');
+  if(resumeCode){fetch('/api/load-draft?code='+resumeCode.toUpperCase()).then(function(r){return r.json()}).then(function(d){if(d.success&&d.data){localStorage.setItem('preFirePlan',JSON.stringify(d.data));ppToast('Progress loaded!','success');history.replaceState(null,'',window.location.pathname);setTimeout(function(){location.reload()},800)}}).catch(function(){})}
+  var lastData=localStorage.getItem('preFirePlan');
+  setInterval(function(){var cur=localStorage.getItem('preFirePlan');if(cur!==lastData){lastData=cur;var el=document.getElementById('ppSaved');el.style.display='flex';clearTimeout(window._ppST);window._ppST=setTimeout(function(){el.style.display='none'},2000)}},1000);
 })();
-
-function ppGetData() {
-  try { return JSON.parse(localStorage.getItem('preFirePlan') || '{}'); } catch(e) { return {}; }
-}
-
-function ppSaveCloud() {
-  const data = ppGetData();
-  if (!data || Object.keys(data).length === 0) { ppToast('No pre-plan data to save', 'error'); return; }
-  
-  // Check if we already have a code saved
-  const existingCode = localStorage.getItem('ppCloudCode') || undefined;
-  
-  const modal = document.getElementById('ppModal');
-  modal.innerHTML = '<button class="pp-close" onclick="ppCloseModal()">&times;</button><h3>☁️ Saving to Cloud...</h3><p>Please wait...</p>';
-  document.getElementById('ppModalBg').classList.add('show');
-
-  fetch('/api/save-draft', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ data, code: existingCode })
-  })
-  .then(r => r.json())
-  .then(d => {
-    if (d.success) {
-      localStorage.setItem('ppCloudCode', d.code);
-      const link = window.location.origin + '/index.html?resume=' + d.code;
-      modal.innerHTML = '<button class="pp-close" onclick="ppCloseModal()">&times;</button>' +
-        '<h3>✅ Saved to Cloud!</h3>' +
-        '<p>Use the code or link below to resume on any device. This save expires in 7 days.</p>' +
-        '<div class="pp-code">' + d.code + '</div>' +
-        '<div class="pp-link" onclick="ppCopyLink(this)" title="Click to copy">' + link + '</div>' +
-        '<div class="pp-modal-actions">' +
-          '<button class="pp-btn pp-btn-link" onclick="ppCopyLink(document.querySelector('.pp-link'))">📋 Copy Link</button>' +
-          '<button class="pp-btn pp-btn-save" onclick="ppCloseModal()">Done</button>' +
-        '</div>';
-    } else {
-      modal.innerHTML = '<button class="pp-close" onclick="ppCloseModal()">&times;</button><h3>❌ Save Failed</h3><p>' + (d.error || 'Unknown error') + '</p>';
-    }
-  })
-  .catch(err => {
-    modal.innerHTML = '<button class="pp-close" onclick="ppCloseModal()">&times;</button><h3>❌ Save Failed</h3><p>' + err.message + '</p>';
-  });
-}
-
-function ppCopyLink(el) {
-  const text = el?.textContent || '';
-  navigator.clipboard.writeText(text).then(() => ppToast('Copied to clipboard!', 'success')).catch(() => {
-    // Fallback
-    const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
-    ppToast('Copied!', 'success');
-  });
-}
-
-function ppExportFile() {
-  const data = ppGetData();
-  if (!data || Object.keys(data).length === 0) { ppToast('No pre-plan data to export', 'error'); return; }
-  
-  const name = data.business_name || 'preplan';
-  const safeName = name.replace(/[^a-zA-Z0-9]/g, '-').replace(/-+/g, '-').substring(0, 30);
-  const exportObj = {
-    _type: 'centerville-preplan-draft',
-    _exported: new Date().toISOString(),
-    _business: data.business_name || '',
-    data: data
-  };
-  const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = safeName + '-draft-' + new Date().toISOString().slice(0,10) + '.json';
-  a.click();
-  ppToast('Draft exported!', 'success');
-}
-
-function ppShowLoadModal() {
-  const modal = document.getElementById('ppModal');
-  modal.innerHTML = '<button class="pp-close" onclick="ppCloseModal()">&times;</button>' +
-    '<h3>📂 Load / Resume Pre-Plan</h3>' +
-    '<p><strong>Option 1:</strong> Enter a resume code</p>' +
-    '<input type="text" id="ppResumeCode" placeholder="Enter 6-character code" maxlength="6" style="text-transform:uppercase;text-align:center;letter-spacing:4px;font-size:18px">' +
-    '<button class="pp-btn pp-btn-link" onclick="ppLoadFromCode()" style="width:100%;justify-content:center;margin-bottom:16px">Load from Code</button>' +
-    '<p><strong>Option 2:</strong> Load from exported file</p>' +
-    '<button class="pp-btn pp-btn-file" onclick="document.getElementById('ppFileInput').click()" style="width:100%;justify-content:center">📁 Choose File</button>' +
-    '<input type="file" id="ppFileInput" accept=".json" onchange="ppLoadFromFile(this)">';
-  document.getElementById('ppModalBg').classList.add('show');
-  setTimeout(() => document.getElementById('ppResumeCode')?.focus(), 100);
-}
-
-function ppLoadFromCode() {
-  const code = document.getElementById('ppResumeCode')?.value?.trim().toUpperCase();
-  if (!code || code.length < 4) { ppToast('Enter a valid code', 'error'); return; }
-
-  fetch('/api/load-draft?code=' + code)
-    .then(r => r.json())
-    .then(d => {
-      if (d.success && d.data) {
-        localStorage.setItem('preFirePlan', JSON.stringify(d.data));
-        localStorage.setItem('ppCloudCode', code);
-        ppToast('Pre-plan loaded! Refreshing...', 'success');
-        ppCloseModal();
-        setTimeout(() => location.reload(), 800);
-      } else {
-        ppToast(d.error || 'Code not found or expired', 'error');
-      }
-    })
-    .catch(err => ppToast('Load failed: ' + err.message, 'error'));
-}
-
-function ppLoadFromFile(input) {
-  const file = input.files?.[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    try {
-      const obj = JSON.parse(e.target.result);
-      const data = obj.data || obj;
-      if (typeof data !== 'object') throw new Error('Invalid file');
-      localStorage.setItem('preFirePlan', JSON.stringify(data));
-      ppToast('Pre-plan loaded from file! Refreshing...', 'success');
-      ppCloseModal();
-      setTimeout(() => location.reload(), 800);
-    } catch(err) {
-      ppToast('Invalid file format', 'error');
-    }
-  };
-  reader.readAsText(file);
-}
-
-function ppCloseModal() {
-  document.getElementById('ppModalBg').classList.remove('show');
-}
-
-function ppToast(msg, type) {
-  const t = document.getElementById('ppToast');
-  t.textContent = msg;
-  t.className = 'pp-toast ' + (type || 'success');
-  t.style.display = 'block';
-  clearTimeout(window._ppTT);
-  window._ppTT = setTimeout(() => { t.style.display = 'none'; }, 3000);
-}
+function ppGetData(){try{return JSON.parse(localStorage.getItem('preFirePlan')||'{}')}catch(e){return{}}}
+function ppSaveCloud(){var data=ppGetData();if(!data||Object.keys(data).length===0){ppToast('No data to save','error');return}var existing=localStorage.getItem('ppCloudCode')||undefined;var modal=document.getElementById('ppModal');modal.innerHTML='<button class="pp-close" onclick="ppCloseModal()">&times;</button><h3>☁️ Saving...</h3><p>Please wait...</p>';document.getElementById('ppModalBg').classList.add('show');fetch('/api/save-draft',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:data,code:existing})}).then(function(r){return r.json()}).then(function(d){if(d.success){localStorage.setItem('ppCloudCode',d.code);var link=window.location.origin+'/index.html?resume='+d.code;modal.innerHTML='<button class="pp-close" onclick="ppCloseModal()">&times;</button><h3>✅ Saved!</h3><p>Resume code (7 days):</p><div class="pp-code">'+d.code+'</div><div class="pp-link" onclick="ppCopyLink(this)">'+link+'</div><div class="pp-modal-actions"><button class="pp-btn pp-btn-link" onclick="ppCopyLink(document.querySelector(\'.pp-link\'))">📋 Copy Link</button><button class="pp-btn pp-btn-save" onclick="ppCloseModal()">Done</button></div>'}else{modal.innerHTML='<button class="pp-close" onclick="ppCloseModal()">&times;</button><h3>❌ Failed</h3><p>'+(d.error||'Unknown error')+'</p>'}}).catch(function(err){modal.innerHTML='<button class="pp-close" onclick="ppCloseModal()">&times;</button><h3>❌ Failed</h3><p>'+err.message+'</p>'})}
+function ppCopyLink(el){var text=el&&el.textContent||'';navigator.clipboard.writeText(text).then(function(){ppToast('Copied!','success')}).catch(function(){var ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();ppToast('Copied!','success')})}
+function ppExportFile(){var data=ppGetData();if(!data||Object.keys(data).length===0){ppToast('No data','error');return}var name=(data.business_name||'preplan').replace(/[^a-zA-Z0-9]/g,'-').substring(0,30);var blob=new Blob([JSON.stringify({_type:'centerville-preplan-draft',_exported:new Date().toISOString(),data:data},null,2)],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name+'-draft-'+new Date().toISOString().slice(0,10)+'.json';a.click();ppToast('Exported!','success')}
+function ppShowLoadModal(){var modal=document.getElementById('ppModal');modal.innerHTML='<button class="pp-close" onclick="ppCloseModal()">&times;</button><h3>📂 Load / Resume</h3><p><strong>Option 1:</strong> Enter resume code</p><input type="text" id="ppResumeCode" placeholder="6-char code" maxlength="6" style="text-transform:uppercase;text-align:center;letter-spacing:4px;font-size:18px"><button class="pp-btn pp-btn-link" onclick="ppLoadFromCode()" style="width:100%;justify-content:center;margin-bottom:16px">Load from Code</button><p><strong>Option 2:</strong> Load from file</p><button class="pp-btn pp-btn-file" onclick="document.getElementById(\'ppFileInput\').click()" style="width:100%;justify-content:center">📁 Choose File</button><input type="file" id="ppFileInput" accept=".json" onchange="ppLoadFromFile(this)">';document.getElementById('ppModalBg').classList.add('show');setTimeout(function(){var el=document.getElementById('ppResumeCode');if(el)el.focus()},100)}
+function ppLoadFromCode(){var code=(document.getElementById('ppResumeCode')||{}).value;if(!code)code='';code=code.trim().toUpperCase();if(code.length<4){ppToast('Enter a valid code','error');return}fetch('/api/load-draft?code='+code).then(function(r){return r.json()}).then(function(d){if(d.success&&d.data){localStorage.setItem('preFirePlan',JSON.stringify(d.data));localStorage.setItem('ppCloudCode',code);ppToast('Loaded! Refreshing...','success');ppCloseModal();setTimeout(function(){location.reload()},800)}else{ppToast(d.error||'Not found','error')}}).catch(function(err){ppToast('Failed: '+err.message,'error')})}
+function ppLoadFromFile(input){var file=input&&input.files&&input.files[0];if(!file)return;var reader=new FileReader();reader.onload=function(e){try{var obj=JSON.parse(e.target.result);var data=obj.data||obj;if(typeof data!=='object')throw new Error('Invalid');localStorage.setItem('preFirePlan',JSON.stringify(data));ppToast('Loaded! Refreshing...','success');ppCloseModal();setTimeout(function(){location.reload()},800)}catch(err){ppToast('Invalid file','error')}};reader.readAsText(file)}
+function ppCloseModal(){document.getElementById('ppModalBg').classList.remove('show')}
+function ppToast(msg,type){var t=document.getElementById('ppToast');t.textContent=msg;t.className='pp-toast '+(type||'success');t.style.display='block';clearTimeout(window._ppTT);window._ppTT=setTimeout(function(){t.style.display='none'},3000)}
 </script>
 </body>
 </html>
