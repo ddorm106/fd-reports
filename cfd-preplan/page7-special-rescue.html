@@ -4,7 +4,30 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Pre-Fire Plan: Special Rescue</title>
 <link rel="stylesheet" href="styles-preplan.css">
-
+<style>
+.nfpa-wrap{display:flex;align-items:center;gap:30px;flex-wrap:wrap;justify-content:center;padding:10px 0}
+.nfpa-diamond{position:relative;width:200px;height:200px;flex-shrink:0}
+.nfpa-diamond svg{width:200px;height:200px;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.15))}
+.diamond-inputs{display:grid;grid-template-columns:1fr 1fr;gap:12px;min-width:220px}
+.diamond-input{text-align:center;padding:10px;border-radius:8px;border:2px solid #eee;background:#f8f9fa}
+.diamond-input label{display:block;font-weight:700;font-size:12px;margin-bottom:4px}
+.diamond-input select,.diamond-input input{width:70px;text-align:center;font-size:18px;font-weight:700;border:1px solid #ddd;border-radius:6px;padding:4px}
+.diamond-input.health{border-color:#2563EB}.diamond-input.health label{color:#2563EB}
+.diamond-input.health select{color:#2563EB}
+.diamond-input.fire{border-color:#DC2626}.diamond-input.fire label{color:#DC2626}
+.diamond-input.fire select{color:#DC2626}
+.diamond-input.react{border-color:#D97706}.diamond-input.react label{color:#D97706}
+.diamond-input.react select{color:#D97706}
+.diamond-input.special{border-color:#333}.diamond-input.special label{color:#333;background:#f0f0f0;display:inline-block;padding:1px 6px;border-radius:3px}
+.diamond-input.special input{color:#333}
+.nfpa-legend{font-size:10px;color:#888;margin-top:8px;text-align:center;line-height:1.6}
+.nfpa-legend span{display:inline-block;margin:0 6px}
+.conditional-section{display:none}
+.conditional-section.show{display:block}
+.rescue-card{padding:16px;background:#f8f9fa;border:1px solid #e0e0e0;border-radius:10px;margin-bottom:14px}
+.rescue-card h4{font-size:14px;color:#333;margin:0 0 8px;display:flex;align-items:center;gap:8px}
+.rescue-card h4 .rc-icon{font-size:22px}
+</style>
 </head>
 <body>
 <div class="page-wrapper">
@@ -24,50 +47,141 @@
             <div class="progress-bar" style="width: 58.33%"></div>
         </div>
 
-
         <h3 class="section-title">7. Special Rescue Considerations</h3>
         <form id="theForm">
-            <div class="preplan-section">
-        <div class="form-field">
-            <label class="inline-label">Confined Space Hazards?</label>
-            <div class="apparatus-buttons">
-                <label class="apparatus-btn"><input type="radio" name="confined_space" value="Yes"><span>Yes</span></label>
-                <label class="apparatus-btn"><input type="radio" name="confined_space" value="No"><span>No</span></label>
-            </div>
-        </div>
-                        <div class="form-field"><label for="confined_space_locs">Confined Space Details:</label><textarea id="confined_space_locs" name="confined_space_locs" rows="2" placeholder="Underground storage tanks, utility vaults..."></textarea></div>
-        <div class="form-field">
-            <label class="inline-label">High Angle / Elevated Rescue?</label>
-            <div class="apparatus-buttons">
-                <label class="apparatus-btn"><input type="radio" name="high_angle" value="Yes"><span>Yes</span></label>
-                <label class="apparatus-btn"><input type="radio" name="high_angle" value="No"><span>No</span></label>
-            </div>
-        </div>
-                        <div class="form-field"><label for="high_angle_locs">High Angle Details:</label><textarea id="high_angle_locs" name="high_angle_locs" rows="2" placeholder="Multi-story atrium, communication tower..."></textarea></div>
-        <div class="form-field">
-            <label class="inline-label">Water Rescue Hazards?</label>
-            <div class="apparatus-buttons">
-                <label class="apparatus-btn"><input type="radio" name="water_rescue" value="Yes"><span>Yes</span></label>
-                <label class="apparatus-btn"><input type="radio" name="water_rescue" value="No"><span>No</span></label>
-            </div>
-        </div>
-                        <div class="form-field"><label for="water_rescue_locs">Water Rescue Details:</label><textarea id="water_rescue_locs" name="water_rescue_locs" rows="2" placeholder="Retention pond on site, nearby creek..."></textarea></div>
-                        <div class="form-field"><label for="other_rescue">Other Special Hazards/Rescue Concerns:</label><textarea id="other_rescue" name="other_rescue" rows="3" placeholder="Trench work, machinery entanglement, elevator..."></textarea></div>
-            </div>
-            <div class="preplan-section">
-                <h3 class="section-title">NFPA 704 Diamond</h3>
-                <div class="form-row">
-                            <div class="form-field"><label for="nfpa_health">Health (Blue, 0-4):</label><input type="number" id="nfpa_health" name="nfpa_health" placeholder="0"></div>
-                            <div class="form-field"><label for="nfpa_fire">Fire (Red, 0-4):</label><input type="number" id="nfpa_fire" name="nfpa_fire" placeholder="0"></div>
+
+            <!-- Confined Space -->
+            <div class="rescue-card">
+                <h4><span class="rc-icon">🕳️</span> Confined Space Hazards</h4>
+                <div class="form-field">
+                    <label class="inline-label">Confined Space Hazards?</label>
+                    <div class="apparatus-buttons">
+                        <label class="apparatus-btn"><input type="radio" name="confined_space" value="Yes" onchange="toggleRescue('confinedDetails',true)"><span>Yes</span></label>
+                        <label class="apparatus-btn"><input type="radio" name="confined_space" value="No" onchange="toggleRescue('confinedDetails',false)"><span>No</span></label>
+                    </div>
                 </div>
-                <div class="form-row">
-                            <div class="form-field"><label for="nfpa_reactivity">Reactivity (Yellow, 0-4):</label><input type="number" id="nfpa_reactivity" name="nfpa_reactivity" placeholder="0"></div>
-                            <div class="form-field"><label for="nfpa_special">Special (White):</label><input type="text" id="nfpa_special" name="nfpa_special" placeholder="W, OX, etc."></div>
+                <div class="conditional-section" id="confinedDetails">
+                    <div class="form-field"><label for="confined_space_locs">Confined Space Details:</label><textarea id="confined_space_locs" name="confined_space_locs" rows="2" placeholder="Underground storage tanks, utility vaults, silos, manholes..."></textarea></div>
+                </div>
+            </div>
+
+            <!-- High Angle -->
+            <div class="rescue-card">
+                <h4><span class="rc-icon">🧗</span> High Angle / Elevated Rescue</h4>
+                <div class="form-field">
+                    <label class="inline-label">High Angle / Elevated Rescue?</label>
+                    <div class="apparatus-buttons">
+                        <label class="apparatus-btn"><input type="radio" name="high_angle" value="Yes" onchange="toggleRescue('highAngleDetails',true)"><span>Yes</span></label>
+                        <label class="apparatus-btn"><input type="radio" name="high_angle" value="No" onchange="toggleRescue('highAngleDetails',false)"><span>No</span></label>
+                    </div>
+                </div>
+                <div class="conditional-section" id="highAngleDetails">
+                    <div class="form-field"><label for="high_angle_locs">High Angle Details:</label><textarea id="high_angle_locs" name="high_angle_locs" rows="2" placeholder="Multi-story atrium, communication tower, elevated walkways..."></textarea></div>
+                </div>
+            </div>
+
+            <!-- Water Rescue -->
+            <div class="rescue-card">
+                <h4><span class="rc-icon">🌊</span> Water Rescue Hazards</h4>
+                <div class="form-field">
+                    <label class="inline-label">Water Rescue Hazards?</label>
+                    <div class="apparatus-buttons">
+                        <label class="apparatus-btn"><input type="radio" name="water_rescue" value="Yes" onchange="toggleRescue('waterDetails',true)"><span>Yes</span></label>
+                        <label class="apparatus-btn"><input type="radio" name="water_rescue" value="No" onchange="toggleRescue('waterDetails',false)"><span>No</span></label>
+                    </div>
+                </div>
+                <div class="conditional-section" id="waterDetails">
+                    <div class="form-field"><label for="water_rescue_locs">Water Rescue Details:</label><textarea id="water_rescue_locs" name="water_rescue_locs" rows="2" placeholder="Retention pond on site, nearby creek, swimming pool..."></textarea></div>
+                </div>
+            </div>
+
+            <!-- Other -->
+            <div class="rescue-card">
+                <h4><span class="rc-icon">⚠️</span> Other Special Hazards</h4>
+                <div class="form-field"><label for="other_rescue">Other Special Hazards / Rescue Concerns:</label><textarea id="other_rescue" name="other_rescue" rows="3" placeholder="Trench work, machinery entanglement, elevator rescue, collapse potential..."></textarea></div>
+            </div>
+
+            <!-- NFPA 704 Diamond -->
+            <div class="preplan-section">
+                <h3 class="section-title">NFPA 704 Hazard Diamond</h3>
+                <div class="nfpa-wrap">
+                    <div class="nfpa-diamond">
+                        <svg viewBox="0 0 100 100">
+                            <!-- Outer diamond border -->
+                            <polygon points="50,2 98,50 50,98 2,50" fill="none" stroke="#333" stroke-width="1.5"/>
+                            <!-- Fire (top - red) -->
+                            <polygon points="50,2 74,26 50,50 26,26" fill="#DC2626"/>
+                            <!-- Health (left - blue) -->
+                            <polygon points="2,50 26,26 50,50 26,74" fill="#2563EB"/>
+                            <!-- Reactivity (right - yellow) -->
+                            <polygon points="98,50 74,26 50,50 74,74" fill="#EAB308"/>
+                            <!-- Special (bottom - white) -->
+                            <polygon points="50,98 74,74 50,50 26,74" fill="#fff" stroke="#333" stroke-width="0.5"/>
+                            <!-- Divider lines -->
+                            <line x1="50" y1="2" x2="50" y2="98" stroke="#333" stroke-width="0.5" opacity="0.3"/>
+                            <line x1="2" y1="50" x2="98" y2="50" stroke="#333" stroke-width="0.5" opacity="0.3"/>
+                            <!-- Numbers -->
+                            <text x="50" y="30" text-anchor="middle" dominant-baseline="middle" fill="white" font-weight="bold" font-size="16" id="svgFire">0</text>
+                            <text x="24" y="52" text-anchor="middle" dominant-baseline="middle" fill="white" font-weight="bold" font-size="16" id="svgHealth">0</text>
+                            <text x="76" y="52" text-anchor="middle" dominant-baseline="middle" fill="#333" font-weight="bold" font-size="16" id="svgReact">0</text>
+                            <text x="50" y="76" text-anchor="middle" dominant-baseline="middle" fill="#333" font-weight="bold" font-size="13" id="svgSpecial">—</text>
+                        </svg>
+                    </div>
+                    <div class="diamond-inputs">
+                        <div class="diamond-input fire">
+                            <label>🔴 Fire (Red)</label>
+                            <select id="nfpa_fire" name="nfpa_fire" onchange="updateDiamond()">
+                                <option value="0">0</option>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                            </select>
+                            <div style="font-size:9px;color:#999;margin-top:2px">Flammability</div>
+                        </div>
+                        <div class="diamond-input health">
+                            <label>🔵 Health (Blue)</label>
+                            <select id="nfpa_health" name="nfpa_health" onchange="updateDiamond()">
+                                <option value="0">0</option>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                            </select>
+                            <div style="font-size:9px;color:#999;margin-top:2px">Health Hazard</div>
+                        </div>
+                        <div class="diamond-input react">
+                            <label>🟡 Reactivity (Yellow)</label>
+                            <select id="nfpa_reactivity" name="nfpa_reactivity" onchange="updateDiamond()">
+                                <option value="0">0</option>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                            </select>
+                            <div style="font-size:9px;color:#999;margin-top:2px">Instability</div>
+                        </div>
+                        <div class="diamond-input special">
+                            <label>⬜ Special (White)</label>
+                            <input type="text" id="nfpa_special" name="nfpa_special" placeholder="—" maxlength="4" oninput="updateDiamond()">
+                            <div style="font-size:9px;color:#999;margin-top:2px">W, OX, SA, etc.</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="nfpa-legend">
+                    <span><strong>0</strong> = Minimal</span>
+                    <span><strong>1</strong> = Slight</span>
+                    <span><strong>2</strong> = Moderate</span>
+                    <span><strong>3</strong> = Serious</span>
+                    <span><strong>4</strong> = Severe</span>
+                    <span>|</span>
+                    <span><strong>W</strong> = Water Reactive</span>
+                    <span><strong>OX</strong> = Oxidizer</span>
+                    <span><strong>SA</strong> = Simple Asphyxiant</span>
                 </div>
             </div>
 
         </form>
-
 
         <div class="nav-buttons">
             <button type="button" class="btn-secondary" onclick="navigate('page6-utilities.html',document.getElementById('theForm'))">← Previous</button>
@@ -82,9 +196,45 @@
 <div class="toast-container" id="toast-container"></div>
 <script src="preplan-common.js"></script>
 <script>
-var form=document.getElementById('theForm');
-if(form){loadFormData(form);autoSave(form);}
+function toggleRescue(id, show) {
+    var el = document.getElementById(id);
+    if (el) el.classList.toggle('show', show);
+}
 
+function updateDiamond() {
+    var fire = document.getElementById('nfpa_fire').value || '0';
+    var health = document.getElementById('nfpa_health').value || '0';
+    var react = document.getElementById('nfpa_reactivity').value || '0';
+    var special = document.getElementById('nfpa_special').value || '—';
+    if (!special.trim()) special = '—';
+
+    document.getElementById('svgFire').textContent = fire;
+    document.getElementById('svgHealth').textContent = health;
+    document.getElementById('svgReact').textContent = react;
+    document.getElementById('svgSpecial').textContent = special;
+}
+
+// Load saved data
+var form = document.getElementById('theForm');
+if (form) { loadFormData(form); autoSave(form); }
+
+// Restore conditional sections
+(function() {
+    var pairs = [
+        ['confined_space', 'confinedDetails'],
+        ['high_angle', 'highAngleDetails'],
+        ['water_rescue', 'waterDetails']
+    ];
+    pairs.forEach(function(p) {
+        var checked = document.querySelector('input[name="' + p[0] + '"]:checked');
+        if (checked && checked.value === 'Yes') {
+            document.getElementById(p[1]).classList.add('show');
+        }
+    });
+})();
+
+// Restore diamond from saved values
+updateDiamond();
 </script>
 </body>
 </html>
