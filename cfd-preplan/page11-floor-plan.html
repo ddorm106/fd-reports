@@ -113,6 +113,7 @@
             <button class="tool-btn active" data-tool="select" title="Select & Move">🔍 Select</button>
             <button class="tool-btn" data-tool="draw" title="Free Draw">✏️ Draw</button>
             <button class="tool-btn" data-tool="wall" title="Draw Wall (pen)">📏 Wall</button>
+            <button class="tool-btn" data-tool="measure" title="Measure Distance">📐 Measure</button>
             <button class="tool-btn" data-tool="box" title="Add Room/Box">⬜ Box</button>
             <button class="tool-btn" data-tool="text" title="Add Text">Aa Text</button>
             <div class="toolbar-sep"></div>
@@ -177,10 +178,17 @@
                 <button class="symbol-item" data-symbol="bed">Bed</button>
                 <button class="symbol-item" data-symbol="sofa">Sofa</button>
                 <button class="symbol-item" data-symbol="desk">Desk</button>
+                <button class="symbol-item" data-symbol="l-desk">L-Shaped Desk</button>
                 <button class="symbol-item" data-symbol="table">Table</button>
+                <button class="symbol-item" data-symbol="round-table">Round Table</button>
+                <button class="symbol-item" data-symbol="conf-table">Conference Table</button>
                 <button class="symbol-item" data-symbol="chair">Chair</button>
+                <button class="symbol-item" data-symbol="rolling-chair">Rolling/Office Chair</button>
                 <button class="symbol-item" data-symbol="bookshelf">Bookshelf</button>
                 <button class="symbol-item" data-symbol="cubicle">Cubicle</button>
+                <button class="symbol-item" data-symbol="file-cab">File Cabinet (Tall)</button>
+                <button class="symbol-item" data-symbol="file-lateral">Lateral File Cabinet</button>
+                <button class="symbol-item" data-symbol="tv">TV / Monitor</button>
                 <div class="symbol-header">KITCHEN</div>
                 <button class="symbol-item" data-symbol="fridge">Refrigerator</button>
                 <button class="symbol-item" data-symbol="stove">Stove/Range</button>
@@ -355,6 +363,11 @@ function switchToSelect() {
     currentTool = 'select';
     wallPoints = [];
     isDrawingWall = false;
+    // Clean up measure previews
+    if (canvas && window._measurePreview) { canvas.remove(window._measurePreview); window._measurePreview = null; }
+    if (canvas && window._measureLabel) { canvas.remove(window._measureLabel); window._measureLabel = null; }
+    if (canvas && window._measureDot) { canvas.remove(window._measureDot); window._measureDot = null; }
+    window._measureStart = null;
     if (canvas) {
         canvas.isDrawingMode = false;
         canvas.selection = true;
@@ -368,8 +381,38 @@ function switchToSelect() {
 /* ========================================================
    SYMBOL FACTORIES (same as before)
    ======================================================== */
+/* ========================================================
+   VISUAL SYMBOL FACTORIES — Architectural Top-Down Views
+   ======================================================== */
 function box(w,h,lbl,fill,tf){tf=tf||'white';var c=getColor(),il=fill===c;return new fabric.Group([new fabric.Rect({width:w,height:h,fill:il?'transparent':fill,stroke:il?fill:'#333',strokeWidth:il?2:1,rx:2,ry:2,originX:'center',originY:'center'}),new fabric.Text(lbl,{fontSize:Math.min(11,w/Math.max(lbl.length,1)*1.3),fill:il?fill:tf,originX:'center',originY:'center',fontFamily:'Arial',fontWeight:'bold'})],{originX:'center',originY:'center'})}
 function circ(r,lbl,fill,tf){tf=tf||'white';return new fabric.Group([new fabric.Circle({radius:r,fill:fill,stroke:'#333',strokeWidth:1,originX:'center',originY:'center'}),new fabric.Text(lbl,{fontSize:r*0.75,fill:tf,originX:'center',originY:'center',fontFamily:'Arial',fontWeight:'bold'})],{originX:'center',originY:'center'})}
+function makeChair(s){var p=[];p.push(new fabric.Circle({radius:s*0.45,fill:'#f5f0e8',stroke:'#666',strokeWidth:1.5,originX:'center',originY:'center'}));p.push(new fabric.Circle({left:0,top:-s*0.15,radius:s*0.5,fill:'transparent',stroke:'#666',strokeWidth:2.5,startAngle:Math.PI*0.8,endAngle:Math.PI*1.2,originX:'center',originY:'center'}));return new fabric.Group(p,{originX:'center',originY:'center'})}
+function makeRollingChair(s){var p=[];p.push(new fabric.Circle({radius:s*0.52,fill:'transparent',stroke:'#999',strokeWidth:0.75,strokeDashArray:[3,3],originX:'center',originY:'center'}));for(var i=0;i<5;i++){var a=Math.PI*2*i/5-Math.PI/2;p.push(new fabric.Circle({left:s*0.48*Math.cos(a),top:s*0.48*Math.sin(a),radius:2,fill:'#888',stroke:'#555',strokeWidth:0.5,originX:'center',originY:'center'}))}p.push(new fabric.Circle({radius:s*0.35,fill:'#e8e0d4',stroke:'#666',strokeWidth:1.5,originX:'center',originY:'center'}));p.push(new fabric.Circle({left:0,top:-s*0.1,radius:s*0.4,fill:'transparent',stroke:'#555',strokeWidth:2.5,startAngle:Math.PI*0.75,endAngle:Math.PI*1.25,originX:'center',originY:'center'}));return new fabric.Group(p,{originX:'center',originY:'center'})}
+function makeBed(w,h){var p=[];p.push(new fabric.Rect({width:w,height:h,fill:'#f0ebe3',stroke:'#888',strokeWidth:1.5,rx:3,ry:3,originX:'center',originY:'center'}));var pw=w*0.35,ph=h*0.12;p.push(new fabric.Rect({left:-w*0.16,top:-h/2+ph+4,width:pw,height:ph,fill:'white',stroke:'#aaa',strokeWidth:1,rx:4,ry:4,originX:'center',originY:'center'}));p.push(new fabric.Rect({left:w*0.16,top:-h/2+ph+4,width:pw,height:ph,fill:'white',stroke:'#aaa',strokeWidth:1,rx:4,ry:4,originX:'center',originY:'center'}));p.push(new fabric.Rect({left:0,top:-h/2-2,width:w+4,height:4,fill:'#8B7355',stroke:'#6B5335',strokeWidth:1,rx:1,ry:1,originX:'center',originY:'center'}));p.push(new fabric.Line([-w/2+4,-h*0.1,w/2-4,-h*0.1],{stroke:'#ccc',strokeWidth:0.75}));return new fabric.Group(p,{originX:'center',originY:'center'})}
+function makeSofa(w,h){var p=[];p.push(new fabric.Rect({width:w,height:h,fill:'#ddd6c8',stroke:'#888',strokeWidth:1.5,rx:4,ry:4,originX:'center',originY:'center'}));p.push(new fabric.Rect({left:0,top:-h/2+h*0.18,width:w-4,height:h*0.25,fill:'#c8bfaf',stroke:'#999',strokeWidth:0.75,rx:3,ry:3,originX:'center',originY:'center'}));p.push(new fabric.Rect({left:-w/2+h*0.2,top:0,width:h*0.35,height:h-2,fill:'#c8bfaf',stroke:'#999',strokeWidth:0.75,rx:3,ry:3,originX:'center',originY:'center'}));p.push(new fabric.Rect({left:w/2-h*0.2,top:0,width:h*0.35,height:h-2,fill:'#c8bfaf',stroke:'#999',strokeWidth:0.75,rx:3,ry:3,originX:'center',originY:'center'}));var cw=(w-h*0.7)/3;for(var i=1;i<3;i++){p.push(new fabric.Line([-w/2+h*0.35+cw*i,h*0.05,-w/2+h*0.35+cw*i,h/2-3],{stroke:'#b0a898',strokeWidth:0.75}))}return new fabric.Group(p,{originX:'center',originY:'center'})}
+function makeDesk(w,h){var p=[];p.push(new fabric.Rect({width:w,height:h,fill:'#e8dfd0',stroke:'#888',strokeWidth:1.5,rx:2,ry:2,originX:'center',originY:'center'}));var dw=w*0.4,dh=h*0.7;p.push(new fabric.Rect({left:w/2-dw/2-3,top:h*0.05,width:dw,height:dh,fill:'transparent',stroke:'#aaa',strokeWidth:1,rx:1,ry:1,originX:'center',originY:'center'}));for(var i=1;i<3;i++){var dy=h*0.05-dh/2+dh*i/3;p.push(new fabric.Line([w/2-dw-3,dy,w/2-3,dy],{stroke:'#bbb',strokeWidth:0.75}))}for(var i=0;i<3;i++){var dy=h*0.05-dh/2+dh*i/3+dh/6;p.push(new fabric.Line([w/4,dy,w/4+5,dy],{stroke:'#999',strokeWidth:1.5,strokeLineCap:'round'}))}return new fabric.Group(p,{originX:'center',originY:'center'})}
+function makeLDesk(s){var w=6*s,h=4*s,leg=2.2*s;var p=[];p.push(new fabric.Rect({left:0,top:-h/2+leg/2,width:w,height:leg,fill:'#e8dfd0',stroke:'#888',strokeWidth:1.5,rx:2,ry:2,originX:'center',originY:'center'}));p.push(new fabric.Rect({left:w/2-leg/2,top:0,width:leg,height:h,fill:'#e8dfd0',stroke:'#888',strokeWidth:1.5,rx:2,ry:2,originX:'center',originY:'center'}));return new fabric.Group(p,{originX:'center',originY:'center'})}
+function makeConfTable(w,h){var p=[];p.push(new fabric.Rect({width:w,height:h,fill:'#ddd6c8',stroke:'#888',strokeWidth:1.5,rx:h/2,ry:h/2,originX:'center',originY:'center'}));p.push(new fabric.Line([-w/3,0,w/3,0],{stroke:'#c0b8a8',strokeWidth:0.75}));return new fabric.Group(p,{originX:'center',originY:'center'})}
+function makeFileCabinet(w,h){var p=[];p.push(new fabric.Rect({width:w,height:h,fill:'#d0d0d0',stroke:'#888',strokeWidth:1.5,rx:1,ry:1,originX:'center',originY:'center'}));var rows=h>w*1.5?4:2;for(var i=0;i<rows;i++){var dy=-h/2+h*i/rows+h/(rows*2);p.push(new fabric.Rect({left:0,top:dy,width:w-4,height:h/rows-3,fill:'transparent',stroke:'#aaa',strokeWidth:0.75,rx:1,ry:1,originX:'center',originY:'center'}));p.push(new fabric.Line([-3,dy,3,dy],{stroke:'#888',strokeWidth:2,strokeLineCap:'round'}))}return new fabric.Group(p,{originX:'center',originY:'center'})}
+function makeBookshelf(w,h){var p=[];p.push(new fabric.Rect({width:w,height:h,fill:'#d4c4a8',stroke:'#888',strokeWidth:1.5,originX:'center',originY:'center'}));for(var i=1;i<4;i++){p.push(new fabric.Line([-w/2+2,-h/2+h*i/4,w/2-2,-h/2+h*i/4],{stroke:'#a89878',strokeWidth:1}))}for(var i=0;i<6;i++){var x=-w/2+4+i*(w-8)/6;p.push(new fabric.Line([x,-h/2+2,x,h/2-2],{stroke:'#c0b090',strokeWidth:0.5}))}return new fabric.Group(p,{originX:'center',originY:'center'})}
+function makeTV(w){var p=[];p.push(new fabric.Rect({width:w,height:4,fill:'#333',stroke:'#111',strokeWidth:1,rx:1,ry:1,originX:'center',originY:'center'}));p.push(new fabric.Line([-w/2+2,2,w/2-2,2],{stroke:'#0ea5e9',strokeWidth:0.75}));p.push(new fabric.Text('TV',{top:-8,fontSize:8,fill:'#555',fontFamily:'Arial',fontWeight:'bold',originX:'center',originY:'center'}));return new fabric.Group(p,{originX:'center',originY:'center'})}
+function makeRoundTable(r){var p=[];p.push(new fabric.Circle({radius:r,fill:'#e8dfd0',stroke:'#888',strokeWidth:1.5,originX:'center',originY:'center'}));return new fabric.Group(p,{originX:'center',originY:'center'})}
+function makeCubicle(s){var p=[];p.push(new fabric.Line([-s/2,-s/2,s/2,-s/2],{stroke:'#777',strokeWidth:4}));p.push(new fabric.Line([-s/2,-s/2,-s/2,s/2],{stroke:'#777',strokeWidth:4}));p.push(new fabric.Line([s/2,-s/2,s/2,s/2],{stroke:'#777',strokeWidth:4}));p.push(new fabric.Rect({left:0,top:-s*0.15,width:s*0.7,height:s*0.35,fill:'#e8dfd0',stroke:'#aaa',strokeWidth:1,rx:1,ry:1,originX:'center',originY:'center'}));return new fabric.Group(p,{originX:'center',originY:'center'})}
+function makeFridge(w,h){var p=[];p.push(new fabric.Rect({width:w,height:h,fill:'#eee',stroke:'#888',strokeWidth:1.5,rx:2,ry:2,originX:'center',originY:'center'}));p.push(new fabric.Line([0,-h/2+3,0,h/2-3],{stroke:'#bbb',strokeWidth:1}));p.push(new fabric.Line([3,-h*0.15,3,h*0.15],{stroke:'#999',strokeWidth:2,strokeLineCap:'round'}));p.push(new fabric.Line([-3,-h*0.15,-3,h*0.15],{stroke:'#999',strokeWidth:2,strokeLineCap:'round'}));return new fabric.Group(p,{originX:'center',originY:'center'})}
+function makeDishwasher(s){var p=[];p.push(new fabric.Rect({width:s,height:s,fill:'#e8e8e8',stroke:'#888',strokeWidth:1.5,rx:2,ry:2,originX:'center',originY:'center'}));p.push(new fabric.Rect({top:-s/2+s*0.12,width:s-4,height:s*0.15,fill:'#d0d0d0',stroke:'#aaa',strokeWidth:0.75,rx:1,ry:1,originX:'center',originY:'center'}));p.push(new fabric.Line([-s*0.2,-s*0.15,s*0.2,-s*0.15],{stroke:'#999',strokeWidth:2,strokeLineCap:'round'}));p.push(new fabric.Text('DW',{top:s*0.12,fontSize:7,fill:'#888',fontFamily:'Arial',fontWeight:'bold',originX:'center',originY:'center'}));return new fabric.Group(p,{originX:'center',originY:'center'})}
+function makeToilet(s){var p=[];p.push(new fabric.Rect({left:0,top:-s*0.55,width:s*0.7,height:s*0.35,fill:'white',stroke:'#888',strokeWidth:1.5,rx:3,ry:3,originX:'center',originY:'center'}));p.push(new fabric.Ellipse({rx:s*0.4,ry:s*0.45,top:s*0.1,fill:'white',stroke:'#888',strokeWidth:1.5,originX:'center',originY:'center'}));p.push(new fabric.Ellipse({rx:s*0.25,ry:s*0.3,top:s*0.12,fill:'transparent',stroke:'#bbb',strokeWidth:0.75,originX:'center',originY:'center'}));return new fabric.Group(p,{originX:'center',originY:'center'})}
+function makeBathtub(w,h){var p=[];p.push(new fabric.Rect({width:w,height:h,fill:'#f0f8ff',stroke:'#888',strokeWidth:2,rx:h*0.4,ry:h*0.4,originX:'center',originY:'center'}));p.push(new fabric.Rect({width:w-8,height:h-8,fill:'#e0f0ff',stroke:'#aac8e8',strokeWidth:1,rx:h*0.35,ry:h*0.35,originX:'center',originY:'center'}));p.push(new fabric.Circle({left:0,top:h/2-14,radius:3,fill:'#999',originX:'center',originY:'center'}));p.push(new fabric.Circle({left:0,top:-h/2+10,radius:4,fill:'#ccc',stroke:'#999',strokeWidth:0.75,originX:'center',originY:'center'}));return new fabric.Group(p,{originX:'center',originY:'center'})}
+function makeShower(s){var p=[];p.push(new fabric.Rect({width:s,height:s,fill:'#e8f4fd',stroke:'#888',strokeWidth:1.5,rx:2,ry:2,originX:'center',originY:'center'}));p.push(new fabric.Circle({left:-s/2+8,top:-s/2+8,radius:5,fill:'#ddd',stroke:'#999',strokeWidth:1,originX:'center',originY:'center'}));for(var i=0;i<3;i++)for(var j=0;j<3;j++){p.push(new fabric.Circle({left:-s*0.2+i*s*0.2,top:-s*0.2+j*s*0.2,radius:1,fill:'#a0d0f0',originX:'center',originY:'center'}))}p.push(new fabric.Circle({radius:3,fill:'#999',originX:'center',originY:'center'}));return new fabric.Group(p,{originX:'center',originY:'center'})}
+function makeHydrant(){var p=[];p.push(new fabric.Circle({radius:10,fill:'#dc2626',stroke:'#991b1b',strokeWidth:1.5,originX:'center',originY:'center'}));p.push(new fabric.Circle({left:0,top:-11,radius:4,fill:'#ef4444',stroke:'#991b1b',strokeWidth:1,originX:'center',originY:'center'}));p.push(new fabric.Circle({left:-10,top:5,radius:4,fill:'#ef4444',stroke:'#991b1b',strokeWidth:1,originX:'center',originY:'center'}));p.push(new fabric.Circle({left:10,top:5,radius:4,fill:'#ef4444',stroke:'#991b1b',strokeWidth:1,originX:'center',originY:'center'}));p.push(new fabric.Circle({radius:4,fill:'#fca5a5',stroke:'#991b1b',strokeWidth:0.75,originX:'center',originY:'center'}));p.push(new fabric.Text('H',{fontSize:7,fill:'white',fontWeight:'bold',fontFamily:'Arial',originX:'center',originY:'center'}));return new fabric.Group(p,{originX:'center',originY:'center'})}
+function makeFACP(){var p=[];p.push(new fabric.Rect({width:40,height:30,fill:'#dc2626',stroke:'#991b1b',strokeWidth:1.5,rx:3,ry:3,originX:'center',originY:'center'}));p.push(new fabric.Circle({left:-10,top:-6,radius:2.5,fill:'#fca5a5',stroke:'#fff',strokeWidth:0.5,originX:'center',originY:'center'}));p.push(new fabric.Circle({left:0,top:-6,radius:2.5,fill:'#86efac',stroke:'#fff',strokeWidth:0.5,originX:'center',originY:'center'}));p.push(new fabric.Circle({left:10,top:-6,radius:2.5,fill:'#fde047',stroke:'#fff',strokeWidth:0.5,originX:'center',originY:'center'}));p.push(new fabric.Text('FACP',{top:4,fontSize:9,fill:'white',fontWeight:'bold',fontFamily:'Arial',originX:'center',originY:'center'}));return new fabric.Group(p,{originX:'center',originY:'center'})}
+function makeExtinguisher(){var p=[];p.push(new fabric.Rect({width:10,height:18,fill:'#dc2626',stroke:'#991b1b',strokeWidth:1.5,rx:4,ry:4,originX:'center',originY:'center'}));p.push(new fabric.Rect({width:6,height:4,top:-11,fill:'#888',stroke:'#666',strokeWidth:0.75,rx:1,ry:1,originX:'center',originY:'center'}));p.push(new fabric.Circle({left:6,top:-4,radius:2,fill:'#333',originX:'center',originY:'center'}));p.push(new fabric.Text('FE',{fontSize:6,fill:'white',fontWeight:'bold',fontFamily:'Arial',originX:'center',originY:'center'}));return new fabric.Group(p,{originX:'center',originY:'center'})}
+function makePullStation(){var p=[];p.push(new fabric.Rect({width:14,height:18,fill:'#dc2626',stroke:'#991b1b',strokeWidth:1.5,rx:2,ry:2,originX:'center',originY:'center'}));p.push(new fabric.Rect({width:8,height:5,top:2,fill:'#fff',stroke:'#dc2626',strokeWidth:0.75,rx:1,ry:1,originX:'center',originY:'center'}));p.push(new fabric.Text('PS',{top:-5,fontSize:6,fill:'white',fontWeight:'bold',fontFamily:'Arial',originX:'center',originY:'center'}));return new fabric.Group(p,{originX:'center',originY:'center'})}
+function makeSmokeDetector(){var p=[];p.push(new fabric.Circle({radius:9,fill:'white',stroke:'#888',strokeWidth:1.5,originX:'center',originY:'center'}));p.push(new fabric.Circle({radius:4,fill:'transparent',stroke:'#bbb',strokeWidth:0.75,originX:'center',originY:'center'}));p.push(new fabric.Circle({radius:1.5,fill:'#dc2626',originX:'center',originY:'center'}));p.push(new fabric.Text('SD',{top:14,fontSize:7,fill:'#888',fontWeight:'bold',fontFamily:'Arial',originX:'center',originY:'center'}));return new fabric.Group(p,{originX:'center',originY:'center'})}
+function makeSprinkler(){var p=[];p.push(new fabric.Circle({radius:8,fill:'#dbeafe',stroke:'#2563eb',strokeWidth:1.5,originX:'center',originY:'center'}));p.push(new fabric.Line([0,-5,0,5],{stroke:'#2563eb',strokeWidth:1}));p.push(new fabric.Line([-5,0,5,0],{stroke:'#2563eb',strokeWidth:1}));p.push(new fabric.Circle({radius:2,fill:'#2563eb',originX:'center',originY:'center'}));return new fabric.Group(p,{originX:'center',originY:'center'})}
+function makeKnox(){var p=[];p.push(new fabric.Rect({width:18,height:14,fill:'#f97316',stroke:'#c2410c',strokeWidth:1.5,rx:2,ry:2,originX:'center',originY:'center'}));p.push(new fabric.Circle({top:-1,radius:2.5,fill:'#333',originX:'center',originY:'center'}));p.push(new fabric.Rect({top:2,width:2,height:4,fill:'#333',originX:'center',originY:'center'}));return new fabric.Group(p,{originX:'center',originY:'center'})}
+function makeRegister(s){var p=[];p.push(new fabric.Rect({width:s,height:s,fill:'#d0d0d0',stroke:'#888',strokeWidth:1.5,rx:2,ry:2,originX:'center',originY:'center'}));p.push(new fabric.Rect({top:-s*0.15,width:s*0.7,height:s*0.3,fill:'#333',stroke:'#555',strokeWidth:0.75,rx:1,ry:1,originX:'center',originY:'center'}));p.push(new fabric.Rect({top:s*0.2,width:s*0.8,height:s*0.25,fill:'#bbb',stroke:'#999',strokeWidth:0.75,originX:'center',originY:'center'}));p.push(new fabric.Text('REG',{top:s*0.2,fontSize:6,fill:'#666',fontWeight:'bold',fontFamily:'Arial',originX:'center',originY:'center'}));return new fabric.Group(p,{originX:'center',originY:'center'})}
+function makeDumpster(w,h){var p=[];p.push(new fabric.Rect({width:w,height:h,fill:'#888',stroke:'#555',strokeWidth:2,rx:2,ry:2,originX:'center',originY:'center'}));p.push(new fabric.Line([-w/2+3,-h*0.2,w/2-3,-h*0.2],{stroke:'#666',strokeWidth:1.5}));p.push(new fabric.Text('DUMP',{top:h*0.1,fontSize:8,fill:'white',fontWeight:'bold',fontFamily:'Arial',originX:'center',originY:'center'}));return new fabric.Group(p,{originX:'center',originY:'center'})}
+function makeElevator(s){var p=[];p.push(new fabric.Rect({width:s,height:s,fill:'#f0f0f0',stroke:'#888',strokeWidth:1.5,rx:2,ry:2,originX:'center',originY:'center'}));p.push(new fabric.Line([0,-s/2+3,0,s/2-3],{stroke:'#aaa',strokeWidth:1}));p.push(new fabric.Line([-s/2+3,-s/2+3,s/2-3,s/2-3],{stroke:'#bbb',strokeWidth:0.75}));p.push(new fabric.Line([s/2-3,-s/2+3,-s/2+3,s/2-3],{stroke:'#bbb',strokeWidth:0.75}));p.push(new fabric.Text('ELEV',{fontSize:8,fill:'#666',fontWeight:'bold',fontFamily:'Arial',originX:'center',originY:'center'}));return new fabric.Group(p,{originX:'center',originY:'center'})}
 function makeDoor(w,dir){
     var th=getWall(),c=getColor(),p=[];
     // Wall gap: white rect that clears through any wall
@@ -456,9 +499,9 @@ function makeRevolving(w){
     return new fabric.Group(p,{originX:'center',originY:'center'});
 }
 function makeWindow(w){var th=getWall(),p=[];p.push(new fabric.Rect({left:-w/2-4,top:-th/2-4,width:w+8,height:th+8,fill:'white',stroke:'white',strokeWidth:2}));p.push(new fabric.Line([-w/2,-th/4,w/2,-th/4],{stroke:'#0ea5e9',strokeWidth:2}));p.push(new fabric.Line([-w/2,th/4,w/2,th/4],{stroke:'#0ea5e9',strokeWidth:2}));return new fabric.Group(p,{originX:'center',originY:'center',isOpening:true})}
-function makeStairs(w,h){var p=[new fabric.Rect({width:w,height:h,fill:'transparent',stroke:'#333',strokeWidth:1,originX:'center',originY:'center'})];for(var i=1;i<6;i++)p.push(new fabric.Line([-w/2,-h/2+h*i/6,w/2,-h/2+h*i/6],{stroke:'#333',strokeWidth:1}));return new fabric.Group(p,{originX:'center',originY:'center'})}
-function makeStove(s){var p=[new fabric.Rect({width:s,height:s,fill:'#ddd',stroke:'#333',strokeWidth:1,rx:2,ry:2,originX:'center',originY:'center'})];var off=s*0.22;[[-off,-off],[off,-off],[-off,off],[off,off]].forEach(function(xy){p.push(new fabric.Circle({left:xy[0],top:xy[1],radius:s*0.12,fill:'transparent',stroke:'#555',strokeWidth:1,originX:'center',originY:'center'}))});return new fabric.Group(p,{originX:'center',originY:'center'})}
-function makeSink(w,h){return new fabric.Group([new fabric.Rect({width:w,height:h,fill:'#e0f2fe',stroke:'#333',strokeWidth:1,rx:4,ry:4,originX:'center',originY:'center'}),new fabric.Ellipse({rx:w*0.3,ry:h*0.28,fill:'transparent',stroke:'#0ea5e9',strokeWidth:1,originX:'center',originY:'center'})],{originX:'center',originY:'center'})}
+function makeStairs(w,h){var p=[];p.push(new fabric.Rect({width:w,height:h,fill:'#f5f5f5',stroke:'#888',strokeWidth:1.5,originX:'center',originY:'center'}));var steps=7;for(var i=1;i<steps;i++){p.push(new fabric.Line([-w/2+2,-h/2+h*i/steps,w/2-2,-h/2+h*i/steps],{stroke:'#999',strokeWidth:1}))}p.push(new fabric.Triangle({top:h*0.15,width:8,height:10,fill:'#888',originX:'center',originY:'center'}));return new fabric.Group(p,{originX:'center',originY:'center'})}
+function makeStove(s){var p=[];p.push(new fabric.Rect({width:s,height:s,fill:'#e8e8e8',stroke:'#888',strokeWidth:1.5,rx:2,ry:2,originX:'center',originY:'center'}));var off=s*0.22;[[-off,-off],[off,-off],[-off,off],[off,off]].forEach(function(xy){p.push(new fabric.Circle({left:xy[0],top:xy[1],radius:s*0.13,fill:'transparent',stroke:'#555',strokeWidth:1.5,originX:'center',originY:'center'}));p.push(new fabric.Circle({left:xy[0],top:xy[1],radius:s*0.04,fill:'#888',originX:'center',originY:'center'}))});return new fabric.Group(p,{originX:'center',originY:'center'})}
+function makeSink(w,h){var p=[];p.push(new fabric.Rect({width:w,height:h,fill:'#e0f2fe',stroke:'#888',strokeWidth:1.5,rx:4,ry:4,originX:'center',originY:'center'}));p.push(new fabric.Ellipse({rx:w*0.3,ry:h*0.3,fill:'#cce7f5',stroke:'#0ea5e9',strokeWidth:1,originX:'center',originY:'center'}));p.push(new fabric.Circle({radius:2,fill:'#888',originX:'center',originY:'center'}));p.push(new fabric.Circle({top:-h*0.3,radius:3,fill:'#ccc',stroke:'#999',strokeWidth:0.75,originX:'center',originY:'center'}));return new fabric.Group(p,{originX:'center',originY:'center'})}
 function makeCompassRose(){var sz=50,p=[];p.push(new fabric.Triangle({width:14,height:sz/2,fill:'#dc2626',left:0,top:-sz/2,angle:0,originX:'center',originY:'bottom'}));p.push(new fabric.Triangle({width:14,height:sz/2,fill:'#666',left:0,top:sz/2,angle:180,originX:'center',originY:'bottom'}));p.push(new fabric.Triangle({width:14,height:sz/2,fill:'#666',left:sz/2,top:0,angle:90,originX:'center',originY:'bottom'}));p.push(new fabric.Triangle({width:14,height:sz/2,fill:'#666',left:-sz/2,top:0,angle:270,originX:'center',originY:'bottom'}));['N','S','E','W'].forEach(function(d,i){var pos=[{x:0,y:-sz/2-8},{x:0,y:sz/2+8},{x:sz/2+8,y:0},{x:-sz/2-8,y:0}][i];p.push(new fabric.Text(d,{left:pos.x,top:pos.y,fontSize:10,fontWeight:'bold',fill:d==='N'?'#dc2626':'#333',originX:'center',originY:'center'}))});p.push(new fabric.Circle({radius:4,fill:'#333',originX:'center',originY:'center'}));return new fabric.Group(p,{originX:'center',originY:'center'})}
 function makeNorthArrow(){return new fabric.Group([new fabric.Triangle({width:20,height:40,fill:'#dc2626',originX:'center',originY:'center'}),new fabric.Text('N',{top:-28,fontSize:12,fontWeight:'bold',fill:'#dc2626',originX:'center',originY:'center'})],{originX:'center',originY:'center'})}
 function placeNFPA(){var h=parseInt(document.getElementById('nfpaH').value)||0,f=parseInt(document.getElementById('nfpaF').value)||0,r=parseInt(document.getElementById('nfpaR').value)||0,s=document.getElementById('nfpaS').value||'';var sz=40,hs=sz/2,p=[];
@@ -525,21 +568,36 @@ function placeBox() {
 }
 
 function getSymbol(type){var c=getColor(),s=getScale();var m={
-'facp':function(){return box(40,30,'FACP','#dc2626')},'annunciator':function(){return box(32,24,'ANN','#dc2626')},'fdc':function(){return circ(14,'FDC','#dc2626')},'sprinkler':function(){return circ(11,'SR','#2563eb')},'standpipe':function(){return box(20,28,'SP','#2563eb')},'extinguisher':function(){return circ(9,'FE','#dc2626')},'hydrant':function(){return circ(11,'H','#dc2626')},'pull':function(){return box(14,18,'PS','#dc2626')},'smoke':function(){return circ(8,'SD','#666')},
+// Fire Protection (visual)
+'facp':function(){return makeFACP()},'annunciator':function(){return box(32,24,'ANN','#dc2626')},'fdc':function(){return circ(14,'FDC','#dc2626')},'sprinkler':function(){return makeSprinkler()},'standpipe':function(){return box(20,28,'SP','#2563eb')},'extinguisher':function(){return makeExtinguisher()},'hydrant':function(){return makeHydrant()},'pull':function(){return makePullStation()},'smoke':function(){return makeSmokeDetector()},
+// Doors & Openings
 'door-l':function(){return makeDoor(3*s,'L')},'door-r':function(){return makeDoor(3*s,'R')},'door-d':function(){return makeDblDoor(5*s)},'door-roll':function(){return makeRollup(8*s)},'door-slide':function(){return makeSlider(6*s)},'door-pocket':function(){return makePocket(4*s)},'door-bifold':function(){return makeBifold(6*s)},'door-revolve':function(){return makeRevolving(3*s)},'win-3':function(){return makeWindow(3*s)},'win-4':function(){return makeWindow(4*s)},'win-6':function(){return makeWindow(6*s)},'exit':function(){return box(32,14,'EXIT','#22c55e')},
-'stairs':function(){return makeStairs(4*s,7*s)},'elevator':function(){return box(4*s,4*s,'ELEV','#666')},'roof':function(){return box(28,28,'ROOF','#f97316')},'knox':function(){return box(18,14,'KNOX','#f97316')},
+// Building
+'stairs':function(){return makeStairs(4*s,7*s)},'elevator':function(){return makeElevator(4*s)},'roof':function(){return box(28,28,'ROOF','#f97316')},'knox':function(){return makeKnox()},
+// Utilities
 'elec':function(){return box(24,36,'ELEC','#f97316')},'elec-off':function(){return circ(11,'E','#f97316')},'gas-off':function(){return circ(11,'G','#eab308','#000')},'water-off':function(){return circ(11,'W','#2563eb')},'hvac':function(){return box(45,45,'HVAC','#666')},'gen':function(){return box(55,38,'GEN','#f97316')},
-'bed':function(){return box(5*s,6*s,'BED',c)},'sofa':function(){return box(7*s,2.5*s,'SOFA',c)},'desk':function(){return box(5*s,2.5*s,'DESK',c)},'table':function(){return box(4*s,3*s,'TABLE',c)},'chair':function(){return box(2*s,2*s,'',c)},'bookshelf':function(){return box(6*s,1.5*s,'SHELF',c)},'cubicle':function(){return box(4*s,4*s,'CUB',c)},
-'fridge':function(){return box(2.5*s,2.5*s,'REF',c)},'stove':function(){return makeStove(2.5*s)},'sink':function(){return makeSink(2.5*s,1.8*s)},'dw':function(){return box(2*s,2*s,'DW',c)},
-'toilet':function(){return box(1.5*s,2*s,'WC',c)},'tub':function(){return box(5*s,2.5*s,'TUB','#bfdbfe','#000')},'shower':function(){return box(3*s,3*s,'SHW','#bfdbfe','#000')},'bath-sink':function(){return makeSink(2*s,1.5*s)},
-'clothes-rack':function(){return box(6*s,1.5*s,'RACK',c)},'display-case':function(){return box(5*s,2*s,'DISPLAY',c)},'shelf-aisle':function(){return box(8*s,2*s,'AISLE',c)},'checkout':function(){return box(6*s,2*s,'CHECKOUT',c)},'register':function(){return box(2*s,2*s,'REG',c)},'cart-corral':function(){return box(4*s,3*s,'CARTS',c)},'freezer':function(){return box(6*s,3*s,'FREEZER','#bfdbfe','#000')},'cooler':function(){return box(5*s,5*s,'COOLER','#bfdbfe','#000')},'storage':function(){return box(5*s,4*s,'STORAGE',c)},
+// Furniture (visual)
+'bed':function(){return makeBed(5*s,6*s)},'sofa':function(){return makeSofa(7*s,2.5*s)},'desk':function(){return makeDesk(5*s,2.5*s)},'l-desk':function(){return makeLDesk(s)},'table':function(){return makeDesk(4*s,2.5*s)},'round-table':function(){return makeRoundTable(2*s)},'conf-table':function(){return makeConfTable(10*s,3*s)},'chair':function(){return makeChair(1.5*s)},'rolling-chair':function(){return makeRollingChair(1.5*s)},'bookshelf':function(){return makeBookshelf(6*s,1.5*s)},'cubicle':function(){return makeCubicle(4*s)},'file-cab':function(){return makeFileCabinet(1.5*s,2.5*s)},'file-lateral':function(){return makeFileCabinet(3*s,1.5*s)},'tv':function(){return makeTV(4*s)},
+// Kitchen (visual)
+'fridge':function(){return makeFridge(2.5*s,2.5*s)},'stove':function(){return makeStove(2.5*s)},'sink':function(){return makeSink(2.5*s,1.8*s)},'dw':function(){return makeDishwasher(2*s)},
+// Bathroom (visual)
+'toilet':function(){return makeToilet(1.5*s)},'tub':function(){return makeBathtub(5*s,2.5*s)},'shower':function(){return makeShower(3*s)},'bath-sink':function(){return makeSink(2*s,1.5*s)},
+// Retail/Commercial
+'clothes-rack':function(){return box(6*s,1.5*s,'RACK',c)},'display-case':function(){return box(5*s,2*s,'DISPLAY',c)},'shelf-aisle':function(){return box(8*s,2*s,'AISLE',c)},'checkout':function(){return box(6*s,2*s,'CHECKOUT',c)},'register':function(){return makeRegister(2*s)},'cart-corral':function(){return box(4*s,3*s,'CARTS',c)},'freezer':function(){return box(6*s,3*s,'FREEZER','#bfdbfe','#000')},'cooler':function(){return box(5*s,5*s,'COOLER','#bfdbfe','#000')},'storage':function(){return box(5*s,4*s,'STORAGE',c)},
+// ADA
 'handicap':function(){return circ(14,'♿','#2563eb')},'ada-park':function(){return box(3*s,5*s,'♿ P','#2563eb')},'ada-ramp':function(){return box(5*s,2*s,'RAMP','#2563eb')},'ada-restroom':function(){return box(3*s,3*s,'♿WC','#2563eb')},'ada-elev':function(){return box(4*s,4*s,'♿EL','#2563eb')},'auto-door':function(){return box(3*s,2*s,'AUTO','#2563eb')},
+// Site
 'tree':function(){return circ(14,'🌲','#22c55e')},'shrub':function(){return circ(10,'🌿','#22c55e')},'powerline':function(){return box(6*s,1*s,'⚡POWER','#f97316')},'gas-line':function(){return box(6*s,1*s,'GAS LINE','#eab308','#000')},'water-line':function(){return box(6*s,1*s,'WATER','#2563eb')},'fence':function(){return box(6*s,0.8*s,'FENCE','#666')},'bollard':function(){return circ(6,'B','#f97316')},'limited':function(){return box(3*s,2*s,'LTD','#f97316')},'no-access':function(){return box(3*s,2*s,'NO','#dc2626')},'overhead':function(){return box(4*s,2*s,'OVHD','#f97316')},
+// Industrial
 'vehicle-lift':function(){return box(8*s,4*s,'LIFT',c)},'tool-bench':function(){return box(6*s,2*s,'BENCH',c)},'compressor':function(){return box(3*s,3*s,'COMP',c)},'welder':function(){return box(3*s,3*s,'WELD',c)},'paint-booth':function(){return box(6*s,6*s,'PAINT',c)},'oil-pit':function(){return box(8*s,3*s,'PIT',c)},'conveyor':function(){return box(10*s,2*s,'CONVEYOR',c)},'forklift':function(){return box(4*s,2*s,'FORK',c)},'crane':function(){return box(10*s,3*s,'CRANE',c)},'machine':function(){return box(4*s,4*s,'MACH',c)},'pallet':function(){return box(8*s,3*s,'PALLET',c)},'loading':function(){return box(8*s,4*s,'DOCK',c)},
+// Assembly
 'pew':function(){return box(8*s,1.5*s,'PEW',c)},'altar':function(){return box(6*s,3*s,'ALTAR',c)},'pulpit':function(){return box(3*s,3*s,'PULPIT',c)},'baptistry':function(){return circ(2*s,'BAPT','#bfdbfe','#000')},'choir':function(){return box(6*s,3*s,'CHOIR',c)},'organ':function(){return box(5*s,3*s,'ORGAN',c)},'seat-row':function(){return box(10*s,1.5*s,'SEATS',c)},'stage':function(){return box(10*s,5*s,'STAGE',c)},'bleachers':function(){return box(8*s,4*s,'BLEACH',c)},'concession':function(){return box(5*s,3*s,'FOOD',c)},'ticket':function(){return box(3*s,3*s,'TICKET',c)},
-'hazmat-store':function(){return box(4*s,4*s,'HAZ','#eab308','#000')},'fuel-tank':function(){return circ(2*s,'FUEL','#f97316')},'propane':function(){return circ(1.5*s,'LP','#f97316')},
+// Hazmat (visual)
+'hazmat-store':function(){return box(4*s,4*s,'HAZ','#eab308','#000')},'fuel-tank':function(){var p=[];p.push(new fabric.Circle({radius:2*s,fill:'#fed7aa',stroke:'#f97316',strokeWidth:2,originX:'center',originY:'center'}));p.push(new fabric.Text('FUEL',{fontSize:s,fill:'#c2410c',fontWeight:'bold',fontFamily:'Arial',originX:'center',originY:'center'}));return new fabric.Group(p,{originX:'center',originY:'center'})},'propane':function(){var p=[];p.push(new fabric.Rect({width:3*s,height:2*s,fill:'#e8e8e8',stroke:'#f97316',strokeWidth:2,rx:s,ry:s,originX:'center',originY:'center'}));p.push(new fabric.Text('LP',{fontSize:s*0.8,fill:'#c2410c',fontWeight:'bold',fontFamily:'Arial',originX:'center',originY:'center'}));return new fabric.Group(p,{originX:'center',originY:'center'})},
+// Orientation
 'compass-rose':function(){return makeCompassRose()},'north-arrow':function(){return makeNorthArrow()},'north-simple':function(){return new fabric.Text('N↑',{fontSize:24,fontWeight:'bold',fill:'#dc2626',originX:'center',originY:'center'})},
-'dumpster':function(){return box(4*s,3*s,'DUMP','#666')},'restroom':function(){return box(3*s,3*s,'WC',c)},'office':function(){return box(5*s,4*s,'OFFICE',c)},'breakroom':function(){return box(5*s,4*s,'BREAK',c)},'server-room':function(){return box(4*s,4*s,'SERVER',c)},'mech-room':function(){return box(5*s,4*s,'MECH',c)},'pool':function(){return box(8*s,5*s,'POOL','#bfdbfe','#000')}
+// General
+'dumpster':function(){return makeDumpster(4*s,3*s)},'restroom':function(){return box(3*s,3*s,'WC',c)},'office':function(){return box(5*s,4*s,'OFFICE',c)},'breakroom':function(){return box(5*s,4*s,'BREAK',c)},'server-room':function(){return box(4*s,4*s,'SERVER',c)},'mech-room':function(){return box(5*s,4*s,'MECH',c)},'pool':function(){return box(8*s,5*s,'POOL','#bfdbfe','#000')}
 };if(type==='nfpa704'){document.getElementById('nfpaModal').classList.add('show');return null}return m[type]?m[type]():box(30,30,type.toUpperCase().slice(0,4),c)}
 
 /* ========================================================
@@ -710,6 +768,33 @@ function setupEvents() {
                 saveHistory(); saveData(); switchToSelect();
             }
         }
+
+        if (currentTool === 'measure' && o.pointer) {
+            if (!window._measureStart) {
+                window._measureStart = {x: o.pointer.x, y: o.pointer.y};
+                // Place start marker
+                window._measureDot = new fabric.Circle({left:o.pointer.x,top:o.pointer.y,radius:3,fill:'#dc2626',originX:'center',originY:'center',selectable:false,evented:false});
+                canvas.add(window._measureDot);
+            } else {
+                var sx=window._measureStart.x,sy=window._measureStart.y,ex=o.pointer.x,ey=o.pointer.y;
+                var dx=ex-sx,dy=ey-sy,dist=Math.sqrt(dx*dx+dy*dy);
+                var scale=getScale(),unit=getUnit();
+                var len=dist/scale;
+                var dim=unit==='ft'?len.toFixed(1)+"'":((len*12).toFixed(0)+'"');
+                // Draw measurement line
+                var mid={x:(sx+ex)/2,y:(sy+ey)/2};
+                var ang=Math.atan2(dy,dx)*180/Math.PI;
+                canvas.add(new fabric.Line([sx,sy,ex,ey],{stroke:'#dc2626',strokeWidth:1.5,strokeDashArray:[6,4],selectable:true,evented:true}));
+                // End dots
+                canvas.add(new fabric.Circle({left:ex,top:ey,radius:3,fill:'#dc2626',originX:'center',originY:'center',selectable:false,evented:false}));
+                // Dimension label
+                canvas.add(new fabric.Text(dim,{left:mid.x,top:mid.y-12,fontSize:12,fill:'#dc2626',fontWeight:'bold',backgroundColor:'rgba(255,255,255,0.85)',originX:'center',selectable:true,fontFamily:'Arial'}));
+                if(window._measureDot){canvas.remove(window._measureDot)}
+                window._measureStart=null;window._measureDot=null;
+                canvas.renderAll();saveHistory();saveData();switchToSelect();
+                toast('Distance: '+dim);
+            }
+        }
     });
 
     canvas.on('mouse:move', function(o) {
@@ -727,6 +812,19 @@ function setupEvents() {
                 opacity: 0.5
             });
             canvas.add(wallPreviewLine);
+            canvas.renderAll();
+        }
+        // Measure preview line
+        if (currentTool === 'measure' && window._measureStart && o.pointer) {
+            if (window._measurePreview) canvas.remove(window._measurePreview);
+            if (window._measureLabel) canvas.remove(window._measureLabel);
+            var s=window._measureStart,ex=o.pointer.x,ey=o.pointer.y;
+            var dist=Math.sqrt((ex-s.x)*(ex-s.x)+(ey-s.y)*(ey-s.y));
+            var sc=getScale(),u=getUnit(),len=dist/sc;
+            var dim=u==='ft'?len.toFixed(1)+"'":((len*12).toFixed(0)+'"');
+            window._measurePreview = new fabric.Line([s.x,s.y,ex,ey],{stroke:'#dc2626',strokeWidth:1,strokeDashArray:[4,4],selectable:false,evented:false,opacity:0.6});
+            window._measureLabel = new fabric.Text(dim,{left:(s.x+ex)/2,top:(s.y+ey)/2-14,fontSize:11,fill:'#dc2626',fontWeight:'bold',backgroundColor:'rgba(255,255,255,0.8)',originX:'center',selectable:false,evented:false,fontFamily:'Arial'});
+            canvas.add(window._measurePreview);canvas.add(window._measureLabel);
             canvas.renderAll();
         }
     });
@@ -883,6 +981,7 @@ document.querySelectorAll('.tool-btn[data-tool]').forEach(function(b) {
         }
         canvas.selection = currentTool === 'select';
         canvas.defaultCursor = currentTool === 'wall' ? 'crosshair' :
+                               currentTool === 'measure' ? 'crosshair' :
                                currentTool === 'text' ? 'text' : 'default';
     };
 });
@@ -1023,6 +1122,7 @@ var SYMBOL_KEY = {
     'HVAC':'HVAC System','GEN':'Generator','KNOX':'Knox Box',
     // Furniture
     'BED':'Bed','SOFA':'Sofa/Couch','DESK':'Desk','TABLE':'Table','SHELF':'Bookshelf','CUB':'Cubicle',
+    'TV':'Television/Monitor','REG':'Cash Register','CONF':'Conference Table',
     // Kitchen
     'REF':'Refrigerator','DW':'Dishwasher',
     // Bathroom
