@@ -415,12 +415,12 @@ function checkTrussWarning() {
    INIT
    ======================================================== */
 // Build all grids
-buildMatGrid('roofCoveringGrid', MATERIALS.roofCovering, 'roof_covering', false);
-buildMatGrid('deckGrid', MATERIALS.deck, 'deck_material', false);
-buildMatGrid('roofStructGrid', MATERIALS.roofStruct, 'roof_construction', false);
-buildMatGrid('trussTypeGrid', MATERIALS.trussType, 'truss_type', false);
-buildMatGrid('floorGrid', MATERIALS.floor, 'floor_construction', false);
-buildMatGrid('wallGrid', MATERIALS.wall, 'wall_construction', false);
+buildMatGrid('roofCoveringGrid', MATERIALS.roofCovering, 'roof_covering', true);
+buildMatGrid('deckGrid', MATERIALS.deck, 'deck_material', true);
+buildMatGrid('roofStructGrid', MATERIALS.roofStruct, 'roof_construction', true);
+buildMatGrid('trussTypeGrid', MATERIALS.trussType, 'truss_type', true);
+buildMatGrid('floorGrid', MATERIALS.floor, 'floor_construction', true);
+buildMatGrid('wallGrid', MATERIALS.wall, 'wall_construction', true);
 
 // Load saved data
 var form = document.getElementById('theForm');
