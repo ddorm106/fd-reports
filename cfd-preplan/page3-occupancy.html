@@ -13,9 +13,8 @@
 .occ-btn .occ-sub{font-size:10px;color:#888;margin-top:2px;display:block}
 .occ-btn .occ-factor{position:absolute;top:6px;right:8px;font-size:9px;color:#999;background:#eee;padding:1px 5px;border-radius:3px}
 .occ-btn.selected .occ-factor{background:#c0392b;color:#fff}
-.occ-btn.mixed-btn{background:#e8f4fd;border-color:#3498db}
 .occ-btn.mixed-btn.selected{background:#d4edfc;border-color:#2980b9;box-shadow:0 0 0 1px #2980b9}
-.occ-btn.mixed-btn .occ-name{color:#2980b9}
+.occ-btn.mixed-btn.selected .occ-name{color:#2980b9}
 .calc-box{background:#f8f9fa;border:2px solid #e0e0e0;border-radius:10px;padding:16px;margin:16px 0}
 .calc-box.has-data{border-color:#27ae60;background:#f0faf4}
 .calc-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
@@ -162,7 +161,7 @@ function buildGrid() {
     // Mixed-use button first
     html += '<div class="occ-btn mixed-btn" data-id="mixed" onclick="toggleMixed(this)">';
     html += '<span class="occ-name">⚡ Mixed Use</span>';
-    html += '<span class="occ-sub">Multiple occupancy types</span>';
+    html += '<span class="occ-sub">Click to reduce to single type</span>';
     html += '</div>';
 
     OCC_TYPES.forEach(function(o) {
@@ -178,32 +177,31 @@ function buildGrid() {
 function toggleOcc(el, id) {
     var idx = selected.indexOf(id);
     if (idx >= 0) {
+        // Unclick — always allowed
         selected.splice(idx, 1);
         el.classList.remove('selected');
     } else {
-        // If not in mixed mode, clear previous selection
-        if (!isMixed()) {
-            selected = [];
-            document.querySelectorAll('.occ-btn').forEach(function(b) { b.classList.remove('selected'); });
-        }
+        // Add to selection (always multi-select)
         selected.push(id);
         el.classList.add('selected');
     }
+    // Auto-toggle mixed indicator
+    var mb = document.querySelector('.mixed-btn');
+    if (mb) mb.classList.toggle('selected', selected.length > 1);
     updateState();
 }
 
 function toggleMixed(el) {
-    el.classList.toggle('selected');
-    if (!isMixed()) {
-        // Turned off mixed — keep only first selection
-        if (selected.length > 1) {
-            var first = selected[0];
-            selected = [first];
-            document.querySelectorAll('.occ-btn:not(.mixed-btn)').forEach(function(b) {
-                b.classList.toggle('selected', b.dataset.id === first);
-            });
-        }
+    if (el.classList.contains('selected') && selected.length > 1) {
+        // Turning off mixed — keep only first selection
+        var first = selected[0];
+        selected = [first];
+        document.querySelectorAll('.occ-btn:not(.mixed-btn)').forEach(function(b) {
+            b.classList.toggle('selected', b.dataset.id === first);
+        });
+        el.classList.remove('selected');
     }
+    // Don't allow manually turning ON mixed — it auto-activates when 2+ selected
     updateState();
 }
 
@@ -216,10 +214,9 @@ function removeTag(id) {
     selected = selected.filter(function(s) { return s !== id; });
     var btn = document.querySelector('.occ-btn[data-id="' + id + '"]');
     if (btn) btn.classList.remove('selected');
-    if (selected.length <= 1) {
-        var mb = document.querySelector('.mixed-btn');
-        if (mb) mb.classList.remove('selected');
-    }
+    // Auto-toggle mixed indicator
+    var mb = document.querySelector('.mixed-btn');
+    if (mb) mb.classList.toggle('selected', selected.length > 1);
     updateState();
 }
 
@@ -392,6 +389,9 @@ if (form) { loadFormData(form); autoSave(form); }
     if (selected.length > 1) {
         var mb = document.querySelector('.mixed-btn');
         if (mb) mb.classList.add('selected');
+    } else {
+        var mb = document.querySelector('.mixed-btn');
+        if (mb) mb.classList.remove('selected');
     }
 
     // Detect if user previously overrode the calculated value
