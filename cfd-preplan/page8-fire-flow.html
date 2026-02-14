@@ -264,6 +264,8 @@ table.hyd-table td input[type=number]{width:80px}
             <input type="hidden" name="nff_p" id="h_nff_p">
             <input type="hidden" name="nff_shingles" id="h_nff_shingles">
             <input type="hidden" name="nff_result" id="h_nff_result">
+            <input type="hidden" name="nff_duration" id="h_nff_duration">
+            <input type="hidden" name="available_supply" id="h_available_supply">
         </form>
 
         <div class="nav-buttons">
@@ -370,6 +372,8 @@ function calcNFF() {
     // Save result
     document.getElementById('h_nff_result').value = nff;
     document.getElementById('h_nff_result').dispatchEvent(new Event('input', {bubbles:true}));
+    document.getElementById('h_nff_duration').value = dur + ' hours';
+    document.getElementById('h_nff_duration').dispatchEvent(new Event('input', {bubbles:true}));
 
     // Auto-collapse input sections
     setTimeout(function() {
@@ -578,6 +582,7 @@ function addToTable(h) {
         if (row) row.style.background = '#fde8e8';
     }
     checkTwoWayRows();
+    updateAvailableSupply();
     saveFormData(form);
     showToast('Hydrant #' + (h.id||'') + ' added to row ' + filledRow,'success');
 }
@@ -618,7 +623,25 @@ function autoCalcRow(n) {
             if (affEl) affEl.value = Math.round(aff);
         }
     }
+    updateAvailableSupply();
     if (typeof saveFormData === 'function') saveFormData(form);
+}
+
+function updateAvailableSupply() {
+    var maxAff = 0;
+    var rows = document.querySelectorAll('#hydTbody tr');
+    rows.forEach(function(row) {
+        var affInputs = row.querySelectorAll('input[name^="hyd_aff_"]');
+        affInputs.forEach(function(el) {
+            var v = parseFloat(el.value) || 0;
+            if (v > maxAff) maxAff = v;
+        });
+    });
+    var el = document.getElementById('h_available_supply');
+    if (el) {
+        el.value = maxAff > 0 ? Math.round(maxAff) + ' GPM' : '';
+        el.dispatchEvent(new Event('input', {bubbles:true}));
+    }
 }
 
 /* ========================================================
@@ -649,6 +672,7 @@ if (form) { loadFormData(form); autoSave(form); }
 
 // Auto-calc existing hydrant rows
 for (var i = 1; i <= 3; i++) { autoCalcRow(i); }
+updateAvailableSupply();
 </script>
 </body>
 </html>
