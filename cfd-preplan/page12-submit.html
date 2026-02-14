@@ -297,14 +297,37 @@ function generatePDF(){
 function printPlan(){generatePDF()}
 
 function submitPlan(){
-    // Save plan info first
     saveFormData(planForm);
     var data=getSavedData();
     if(!data.business_name){showToast('Please fill in the business name first','error');return}
-    fetch('/api/save-draft',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:data})})
+    var btn=document.querySelector('.btn-submit');
+    if(btn){btn.disabled=true;btn.textContent='⏳ Publishing...';}
+    fetch('/api/preplans/publish',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:data,published_by:''})})
     .then(function(r){return r.json()})
-    .then(function(d){if(d.code)showToast('Submitted! Code: '+d.code,'success');else showToast('Saved!','success')})
-    .catch(function(){showToast('Saved locally. Could not reach server.','info')});
+    .then(function(d){
+        if(btn){btn.disabled=false;btn.textContent='📤 Submit Pre-Plan';}
+        if(d.success){
+            showToast('Published to Pre-Plan Book!','success');
+            var overlay=document.createElement('div');
+            overlay.id='submitOverlay';
+            overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:9999';
+            var msg=document.createElement('div');
+            msg.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:12px;padding:28px;box-shadow:0 8px 30px rgba(0,0,0,0.3);z-index:10000;text-align:center;max-width:400px';
+            msg.innerHTML='<h3 style="margin:0 0 12px;color:#27ae60">✅ Pre-Plan Published!</h3>'+
+                '<p style="margin:0 0 16px;color:#555"><strong>'+esc(data.business_name)+'</strong> has been saved to the Pre-Plan Book.</p>'+
+                '<a href="/preplans" style="display:inline-block;padding:10px 24px;background:#2980b9;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;margin-bottom:8px">📖 View Pre-Plan Book</a>'+
+                '<br><button onclick="this.parentElement.remove();document.getElementById(\'submitOverlay\').remove()" style="margin-top:8px;padding:8px 20px;border:none;border-radius:6px;cursor:pointer;background:#eee">Close</button>';
+            overlay.onclick=function(){overlay.remove();msg.remove()};
+            document.body.appendChild(overlay);
+            document.body.appendChild(msg);
+        } else {
+            showToast('Error: '+(d.error||'Unknown error'),'error');
+        }
+    })
+    .catch(function(){
+        if(btn){btn.disabled=false;btn.textContent='📤 Submit Pre-Plan';}
+        showToast('Could not reach server. Data saved locally.','info');
+    });
 }
 
 function exportJSON(){
