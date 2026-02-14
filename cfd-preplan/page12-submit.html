@@ -258,12 +258,15 @@ function buildPDFDoc(data){
     var hasChem=false;
     for(var ci=1;ci<=10;ci++){if(data['chem_name_'+ci]){hasChem=true;break;}}
     if(hasChem){
-        sectionHeader('Chemicals');
+        sectionHeader('Hazardous Materials / Chemicals');
         for(var ci=1;ci<=10;ci++){
             if(!data['chem_name_'+ci])continue;
-            fieldRow('Chemical '+ci,data['chem_name_'+ci]);
-            fieldRow('  Quantity',data['chem_quantity_'+ci]);
-            fieldRow('  Location',data['chem_location_'+ci],{color:[230,126,34],bold:true});
+            fieldRow('Chemical '+ci,data['chem_name_'+ci],{bold:true});
+            if(data['chem_un_'+ci])fieldRow('  UN Number',data['chem_un_'+ci],{color:[192,57,43]});
+            if(data['chem_guide_'+ci])fieldRow('  ERG Guide #',data['chem_guide_'+ci],{color:[192,57,43],bold:true});
+            if(data['chem_class_'+ci])fieldRow('  Hazard Class',data['chem_class_'+ci]);
+            fieldRow('  Quantity',data['chem_qty_'+ci]);
+            fieldRow('  Location',data['chem_loc_'+ci],{color:[230,126,34],bold:true});
         }
         y+=3;
     }
