@@ -483,14 +483,50 @@ function addChemRow() {
 
 function removeChemRow(btn) {
     btn.closest('tr').remove();
+    // Clean up orphaned chem keys from localStorage for deleted rows
+    var data = getSavedData();
+    var activeNames = {};
+    document.querySelectorAll('#chemTbody input[name]').forEach(function(inp) {
+        activeNames[inp.name] = true;
+    });
+    Object.keys(data).forEach(function(key) {
+        if (key.match(/^chem_(name|un|guide|class|qty|loc)_\d+$/) && !activeNames[key]) {
+            delete data[key];
+        }
+    });
+    saveAllData(data);
     if (typeof saveFormData === 'function') saveFormData(document.getElementById('theForm'));
 }
 
 /* ========================================================
-   INIT
+   INIT — restore dynamic chem rows BEFORE loading form data
    ======================================================== */
 var form = document.getElementById('theForm');
-if (form) { loadFormData(form); autoSave(form); }
+if (form) {
+    // Detect how many chem rows were saved and recreate them first
+    var saved = getSavedData();
+    var maxRow = 1;
+    Object.keys(saved).forEach(function(key) {
+        var m = key.match(/^chem_\w+_(\d+)$/);
+        if (m) { var n = parseInt(m[1]); if (n > maxRow) maxRow = n; }
+    });
+    // Add rows 2..maxRow before loading (row 1 already exists in HTML)
+    for (var i = 2; i <= maxRow; i++) {
+        addChemRow();
+    }
+    // Now load data into all form elements (including the new rows)
+    loadFormData(form);
+    // Restore guide badges for any loaded chem entries
+    for (var r = 1; r <= maxRow; r++) {
+        var guideVal = saved['chem_guide_' + r];
+        var badge = document.getElementById('chem_guide_badge_' + r);
+        if (badge && guideVal && guideVal !== '—') {
+            badge.textContent = guideVal;
+            badge.classList.remove('empty');
+        }
+    }
+    autoSave(form);
+}
 loadSDSFromStorage();
 </script>
 </body>
