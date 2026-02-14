@@ -849,6 +849,8 @@ function setupEvents() {
         opt.e.preventDefault();
         opt.e.stopPropagation();
         updateZoomLabel();
+        clearTimeout(window._zoomSaveTimer);
+        window._zoomSaveTimer = setTimeout(saveData, 300);
     });
 
     // Alt+drag or middle-mouse to pan
@@ -876,6 +878,7 @@ function setupEvents() {
             _isPanning = false;
             canvas.defaultCursor = 'default';
             if (currentTool === 'select') canvas.selection = true;
+            saveData();
         }
     });
 
@@ -944,15 +947,15 @@ function finishWall() {
 /* ========================================================
    HISTORY / SAVE / LOAD
    ======================================================== */
-function saveHistory(){historyIdx++;history=history.slice(0,historyIdx);history.push(JSON.stringify(canvas.toJSON(['isBg','isOpening','nfpaData','isWall','isLegendKey'])));if(history.length>50){history.shift();historyIdx--}}
-function undo(){if(historyIdx<=0)return;historyIdx--;canvas.loadFromJSON(history[historyIdx],function(){canvas.renderAll();bringOpeningsToFront()})}
-function redo(){if(historyIdx>=history.length-1)return;historyIdx++;canvas.loadFromJSON(history[historyIdx],function(){canvas.renderAll();bringOpeningsToFront()})}
-function saveData(){if(!canvas)return;floorData[currentFloor]=JSON.stringify(canvas.toJSON(['isBg','isOpening','nfpaData','isWall','isLegendKey']));var all={};for(var f in floorData)all[f]=floorData[f];try{var saved=JSON.parse(localStorage.getItem('preFirePlan')||'{}');saved.floor_plan_data=JSON.stringify(all);localStorage.setItem('preFirePlan',JSON.stringify(saved))}catch(e){}}
+function saveHistory(){historyIdx++;history=history.slice(0,historyIdx);var j=canvas.toJSON(['isBg','isOpening','nfpaData','isWall','isLegendKey']);j.viewportTransform=canvas.viewportTransform.slice();history.push(JSON.stringify(j));if(history.length>50){history.shift();historyIdx--}}
+function undo(){if(historyIdx<=0)return;historyIdx--;var parsed;try{parsed=JSON.parse(history[historyIdx])}catch(e){parsed=null}var savedVpt=parsed&&parsed.viewportTransform||null;canvas.loadFromJSON(history[historyIdx],function(){if(savedVpt&&savedVpt.length===6)canvas.setViewportTransform(savedVpt);canvas.renderAll();bringOpeningsToFront();updateZoomLabel()})}
+function redo(){if(historyIdx>=history.length-1)return;historyIdx++;var parsed;try{parsed=JSON.parse(history[historyIdx])}catch(e){parsed=null}var savedVpt=parsed&&parsed.viewportTransform||null;canvas.loadFromJSON(history[historyIdx],function(){if(savedVpt&&savedVpt.length===6)canvas.setViewportTransform(savedVpt);canvas.renderAll();bringOpeningsToFront();updateZoomLabel()})}
+function saveData(){if(!canvas)return;var j=canvas.toJSON(['isBg','isOpening','nfpaData','isWall','isLegendKey']);j.viewportTransform=canvas.viewportTransform.slice();floorData[currentFloor]=JSON.stringify(j);var all={};for(var f in floorData)all[f]=floorData[f];try{var saved=JSON.parse(localStorage.getItem('preFirePlan')||'{}');saved.floor_plan_data=JSON.stringify(all);localStorage.setItem('preFirePlan',JSON.stringify(saved))}catch(e){}}
 function loadSavedData(){try{var saved=JSON.parse(localStorage.getItem('preFirePlan')||'{}');if(saved.floor_plan_data){var all=JSON.parse(saved.floor_plan_data);for(var f in all)floorData[f]=all[f];floorCount=Math.max(1,Math.max.apply(null,Object.keys(floorData).map(Number)));renderFloorTabs();if(floorData[1]){document.getElementById('uploadSection').classList.add('hidden');document.getElementById('annotSection').classList.remove('hidden');canvas=new fabric.Canvas('floor-canvas',{preserveObjectStacking:true,backgroundColor:'transparent',allowTouchScrolling:false,enablePointerEvents:true});
 fabric.Object.prototype.set({cornerSize:16,cornerColor:'#1e3a5f',cornerStrokeColor:'#fff',cornerStyle:'circle',transparentCorners:false,borderColor:'#1e3a5f',borderScaleFactor:2,padding:8,rotatingPointOffset:30});
-setupEvents();canvas.loadFromJSON(floorData[1],function(){canvas.renderAll();bringOpeningsToFront();saveHistory()})}}}catch(e){console.error(e)}}
+var parsed;try{parsed=JSON.parse(floorData[1])}catch(e){parsed=null}var savedVpt=parsed&&parsed.viewportTransform||null;setupEvents();canvas.loadFromJSON(floorData[1],function(){if(savedVpt&&savedVpt.length===6){canvas.setViewportTransform(savedVpt)}canvas.renderAll();bringOpeningsToFront();updateZoomLabel();saveHistory()})}}}catch(e){console.error(e)}}
 function renderFloorTabs(){var tabs=document.getElementById('floorTabs'),html='';for(var i=1;i<=floorCount;i++)html+='<button class="floor-tab'+(i===currentFloor?' active':'')+'" data-floor="'+i+'">Floor '+i+'</button>';html+='<button class="add-floor-btn" id="addFloorBtn">+ Add Floor</button>';tabs.innerHTML=html;tabs.querySelectorAll('.floor-tab').forEach(function(b){b.onclick=function(){switchFloor(parseInt(b.dataset.floor))}});document.getElementById('addFloorBtn').onclick=addFloor}
-function switchFloor(f){if(canvas)floorData[currentFloor]=JSON.stringify(canvas.toJSON(['isBg','isOpening','nfpaData','isWall','isLegendKey']));currentFloor=f;renderFloorTabs();if(floorData[f]){canvas.loadFromJSON(floorData[f],function(){canvas.renderAll();bringOpeningsToFront()})}else{canvas.clear();canvas.backgroundColor='transparent';canvas.renderAll()}saveHistory()}
+function switchFloor(f){if(canvas){var j=canvas.toJSON(['isBg','isOpening','nfpaData','isWall','isLegendKey']);j.viewportTransform=canvas.viewportTransform.slice();floorData[currentFloor]=JSON.stringify(j)}currentFloor=f;renderFloorTabs();if(floorData[f]){var parsed;try{parsed=JSON.parse(floorData[f])}catch(e){parsed=null}var savedVpt=parsed&&parsed.viewportTransform||null;canvas.loadFromJSON(floorData[f],function(){if(savedVpt&&savedVpt.length===6){canvas.setViewportTransform(savedVpt)}canvas.renderAll();bringOpeningsToFront();updateZoomLabel()})}else{canvas.clear();canvas.backgroundColor='transparent';canvas.setViewportTransform([1,0,0,1,0,0]);canvas.renderAll();updateZoomLabel()}saveHistory()}
 function addFloor(){floorCount++;switchFloor(floorCount);toast('Floor '+floorCount+' added')}
 
 /* ========================================================
@@ -1051,11 +1054,14 @@ function zoomCanvas(factor) {
     if (zoom < 0.1) zoom = 0.1;
     canvas.zoomToPoint({ x: canvas.width / 2, y: canvas.height / 2 }, zoom);
     updateZoomLabel();
+    clearTimeout(window._zoomSaveTimer);
+    window._zoomSaveTimer = setTimeout(saveData, 300);
 }
 function resetZoom() {
     if (!canvas) return;
     canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
     updateZoomLabel();
+    saveData();
 }
 document.getElementById('zoomInBtn').onclick = function() { zoomCanvas(1.2); };
 document.getElementById('zoomOutBtn').onclick = function() { zoomCanvas(0.8); };
