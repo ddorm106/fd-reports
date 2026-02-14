@@ -79,8 +79,7 @@
 
         <!-- ACTION BUTTONS -->
         <div class="action-buttons">
-            <button class="action-btn btn-pdf" onclick="generatePDF()">📄 Generate PDF Report</button>
-            <button class="action-btn btn-print" onclick="printPlan()">🖨️ Print</button>
+            <button class="action-btn btn-pdf" onclick="generatePDF()" id="pdfBtn">📄 Generate PDF Report</button>
             <button class="action-btn btn-submit" onclick="submitPlan()">📤 Submit Pre-Plan</button>
             <button class="action-btn btn-json" onclick="exportJSON()">💾 Export JSON</button>
             <a href="/preplan/import" class="action-btn btn-import" style="text-decoration:none">📥 Import from PDF</a>
@@ -98,6 +97,8 @@
 </footer>
 <div class="toast-container" id="toast-container"></div>
 <script src="preplan-common.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
 <script>
 // Load plan info form
 var planForm=document.getElementById('planInfoForm');
@@ -190,12 +191,8 @@ function render(){
 
 function esc(s){if(!s)return'';var d=document.createElement('div');d.textContent=s;return d.innerHTML}
 
-// ===== PDF GENERATION =====
-function generatePDF(){
-    var data=getSavedData();
-    if(!data.business_name){showToast('Fill in the business name first','error');return}
-
-    // Enrich computed fields for PDF
+// ===== PDF GENERATION (jsPDF) =====
+function enrichData(data){
     if(!data.nff_duration && data.nff_result){
         var nff=parseFloat(data.nff_result)||0;
         if(nff>0) data.nff_duration=(nff<=2500?2:(nff<=3500?3:4))+' hours';
@@ -208,123 +205,271 @@ function generatePDF(){
         for(var i=1;i<=20;i++){var a=parseFloat(data['hyd_aff_'+i])||0;if(a>maxAff)maxAff=a;}
         if(maxAff>0) data.available_supply=Math.round(maxAff)+' GPM';
     }
+    return data;
+}
 
-    var w=window.open('','_blank');
-    var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Pre-Fire Plan - '+esc(data.business_name)+'</title><style>';
-    html+='@page{size:letter;margin:0.5in}';
-    html+='*{margin:0;padding:0;box-sizing:border-box}';
-    html+='body{font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#000;line-height:1.4;-webkit-print-color-adjust:exact;print-color-adjust:exact}';
-    html+='.header{text-align:center;border-bottom:3px solid #1e3a5f;padding-bottom:8px;margin-bottom:12px}';
-    html+='.header h1{font-size:18px;color:#1e3a5f;letter-spacing:1px}';
-    html+='.header h2{font-size:12px;color:#666;margin-top:2px}';
-    html+='.header .biz{font-size:16px;font-weight:700;color:#c0392b;margin-top:4px}';
-    html+='.section{margin-bottom:10px;page-break-inside:avoid}';
-    html+='.section-title{background:#1e3a5f;color:#fff;padding:4px 8px;font-size:11px;font-weight:700;margin-bottom:0}';
-    html+='.section-grid{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid #ccc;border-top:none}';
-    html+='.field{padding:3px 6px;border-bottom:1px solid #eee;border-right:1px solid #eee}';
-    html+='.field-label{font-size:8px;color:#888;text-transform:uppercase;letter-spacing:0.3px}';
-    html+='.field-value{font-size:11px;font-weight:600;color:#1e3a5f}';
-    html+='.hydrant-table{width:100%;border-collapse:collapse;margin-top:4px;font-size:10px}';
-    html+='.hydrant-table th{background:#1e3a5f;color:#fff;padding:3px 4px;text-align:left;font-size:9px}';
-    html+='.hydrant-table td{padding:2px 4px;border-bottom:1px solid #ddd}';
-    html+='.plan-info{background:#fff7ed;border:1px solid #e67e22;padding:8px;margin-top:12px}';
-    html+='.plan-info-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}';
-    html+='.footer{text-align:center;font-size:8px;color:#999;border-top:1px solid #ccc;padding-top:6px;margin-top:16px}';
-    html+='.nfpa-diamond{display:inline-block;width:60px;height:60px;transform:rotate(45deg);margin:10px auto;position:relative}';
-    html+='.nfpa-diamond div{position:absolute;width:28px;height:28px;text-align:center;line-height:28px;font-weight:700;font-size:12px;color:#fff}';
-    html+='.nfpa-health{top:0;left:0;background:#3498db}.nfpa-fire{top:0;right:0;background:#e74c3c}';
-    html+='.nfpa-react{bottom:0;left:0;background:#f1c40f;color:#000}.nfpa-special{bottom:0;right:0;background:#fff;color:#000;border:1px solid #ccc}';
-    html+='@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}';
-    html+='</style></head><body>';
+function buildPDFDoc(data){
+    var jsPDF=window.jspdf.jsPDF;
+    var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'letter'});
+    var W=215.9,H=279.4,M=15,pw=W-2*M,y=M;
 
-    // Header
-    html+='<div class="header"><h1>CENTERVILLE FIRE DEPARTMENT</h1><h2>PRE-FIRE PLAN DATA SHEET</h2>';
-    html+='<div class="biz">'+esc(data.business_name||'')+'</div>';
-    html+='<div style="font-size:11px;color:#444">'+esc(data.address||'')+'</div></div>';
+    function checkPage(need){if(y+need>H-M){doc.addPage();y=M;return true}return false}
+    function sectionHeader(text){
+        checkPage(14);doc.setFillColor(30,58,95);doc.rect(M,y,pw,8,'F');
+        doc.setTextColor(255);doc.setFontSize(11);doc.setFont('helvetica','bold');
+        doc.text(text,M+3,y+5.5);doc.setTextColor(0);y+=10;
+    }
+    function fieldRow(label,value,opts){
+        if(!value)return;opts=opts||{};checkPage(7);
+        doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(100);
+        doc.text(label,M+2,y+4);doc.setTextColor(0);
+        if(opts.bold)doc.setFont('helvetica','bold');
+        if(opts.color)doc.setTextColor(opts.color[0],opts.color[1],opts.color[2]);
+        var lines=doc.splitTextToSize(String(value),pw-60);
+        doc.text(lines,M+55,y+4);doc.setFont('helvetica','normal');doc.setTextColor(0);
+        y+=Math.max(1,lines.length)*4.5+2;
+        doc.setDrawColor(220);doc.line(M+2,y,M+pw-2,y);y+=1;
+    }
+    function bigField(label,value,color){
+        if(!value)return;checkPage(10);
+        doc.setFontSize(9);doc.setTextColor(100);doc.text(label,M+2,y+4);
+        doc.setFontSize(16);doc.setFont('helvetica','bold');
+        doc.setTextColor(color?color[0]:192,color?color[1]:57,color?color[2]:43);
+        doc.text(String(value),M+55,y+5);doc.setFont('helvetica','normal');doc.setTextColor(0);y+=9;
+    }
 
-    // Sections
+    // ===== TITLE =====
+    doc.setFillColor(30,58,95);doc.rect(0,0,W,40,'F');
+    doc.setTextColor(255);doc.setFontSize(10);doc.text('CENTERVILLE FIRE DEPARTMENT',M,12);
+    doc.setFontSize(20);doc.setFont('helvetica','bold');doc.text('PRE-FIRE PLAN',M,22);
+    doc.setFontSize(14);doc.setFont('helvetica','normal');doc.text(data.business_name||'',M,31);
+    doc.setFontSize(10);if(data.address)doc.text(data.address,M,37);
+    if(data.pfp_number){doc.setFontSize(12);doc.setFont('helvetica','bold');doc.text(data.pfp_number,W-M,22,{align:'right'});}
+    doc.setTextColor(0);y=46;
+
+    // ===== SECTIONS =====
     sections.forEach(function(s){
-        html+='<div class="section"><div class="section-title">'+s.title+'</div><div class="section-grid">';
-        s.fields.forEach(function(f){
-            html+='<div class="field"><div class="field-label">'+f.l+'</div><div class="field-value">'+(esc(data[f.k])||'—')+'</div></div>';
-        });
-        html+='</div></div>';
+        sectionHeader(s.title);
+        s.fields.forEach(function(f){fieldRow(f.l,data[f.k]);});
+        y+=3;
     });
 
-    // Hydrant table
-    var hasHyd=false;
-    for(var i=1;i<=10;i++){if(data['hyd_loc_'+i]){hasHyd=true;break}}
-    if(hasHyd){
-        html+='<div class="section"><div class="section-title">Hydrant Data</div>';
-        html+='<table class="hydrant-table"><thead><tr><th>#</th><th>Location</th><th>Static</th><th>Residual</th><th>Flow GPM</th><th>AFF GPM</th><th>Distance</th></tr></thead><tbody>';
-        for(var i=1;i<=10;i++){
-            if(data['hyd_loc_'+i]){
-                html+='<tr><td>'+i+'</td><td>'+esc(data['hyd_loc_'+i])+'</td><td>'+(data['hyd_static_'+i]||'—')+'</td><td>'+(data['hyd_res_'+i]||'—')+'</td><td><strong>'+(data['hyd_flow_'+i]||'—')+'</strong></td><td>'+(data['hyd_aff_'+i]||'—')+'</td><td>'+(data['hyd_dist_'+i]||'—')+'</td></tr>';
-            }
+    // Chemicals
+    var hasChem=false;
+    for(var ci=1;ci<=10;ci++){if(data['chem_name_'+ci]){hasChem=true;break;}}
+    if(hasChem){
+        sectionHeader('Chemicals');
+        for(var ci=1;ci<=10;ci++){
+            if(!data['chem_name_'+ci])continue;
+            fieldRow('Chemical '+ci,data['chem_name_'+ci]);
+            fieldRow('  Quantity',data['chem_quantity_'+ci]);
+            fieldRow('  Location',data['chem_location_'+ci],{color:[230,126,34],bold:true});
         }
-        html+='</tbody></table></div>';
+        y+=3;
+    }
+
+    // Hydrants
+    var hasHyd=false;
+    for(var i=1;i<=10;i++){if(data['hyd_loc_'+i]){hasHyd=true;break;}}
+    if(hasHyd){
+        sectionHeader('Hydrant Data');
+        for(var i=1;i<=10;i++){
+            if(!data['hyd_loc_'+i])continue;
+            fieldRow('Hydrant '+i,data['hyd_loc_'+i]);
+            fieldRow('  Static PSI',data['hyd_static_'+i]);
+            fieldRow('  Residual PSI',data['hyd_res_'+i]);
+            fieldRow('  Flow GPM',data['hyd_flow_'+i],{bold:true,color:[52,152,219]});
+            fieldRow('  AFF GPM',data['hyd_aff_'+i],{bold:true,color:[39,174,96]});
+            fieldRow('  Distance',data['hyd_dist_'+i]);
+        }
+        y+=3;
     }
 
     // NFPA Diamond
     if(data.nfpa_health||data.nfpa_fire||data.nfpa_reactivity||data.nfpa_special){
-        html+='<div style="text-align:center;margin:12px 0"><div style="font-size:10px;font-weight:700;color:#1e3a5f;margin-bottom:4px">NFPA 704 DIAMOND</div>';
-        html+='<div class="nfpa-diamond"><div class="nfpa-health">'+(data.nfpa_health||'0')+'</div><div class="nfpa-fire">'+(data.nfpa_fire||'0')+'</div><div class="nfpa-react">'+(data.nfpa_reactivity||'0')+'</div><div class="nfpa-special">'+(data.nfpa_special||'')+'</div></div></div>';
+        checkPage(20);doc.setFontSize(8);doc.setTextColor(100);doc.text('NFPA 704 Diamond',M+2,y+3);y+=6;
+        var bx=M+20;
+        doc.setFillColor(52,152,219);doc.rect(bx,y,18,10,'F');
+        doc.setTextColor(255);doc.setFontSize(9);doc.setFont('helvetica','bold');
+        doc.text('H:'+(data.nfpa_health||'0'),bx+2,y+7);
+        doc.setFillColor(231,76,60);doc.rect(bx+22,y,18,10,'F');doc.text('F:'+(data.nfpa_fire||'0'),bx+24,y+7);
+        doc.setFillColor(241,196,15);doc.rect(bx+44,y,18,10,'F');doc.setTextColor(0);doc.text('I:'+(data.nfpa_reactivity||'0'),bx+46,y+7);
+        doc.setFillColor(240);doc.rect(bx+66,y,18,10,'F');doc.text('S:'+(data.nfpa_special||'-'),bx+68,y+7);
+        doc.setFont('helvetica','normal');doc.setTextColor(0);y+=14;
     }
 
-    // Plan info
-    html+='<div class="plan-info"><div style="font-weight:700;color:#e67e22;margin-bottom:6px">Plan Information</div>';
-    html+='<div class="plan-info-grid">';
-    html+='<div><span style="color:#888;font-size:9px">CONDUCTED BY</span><br><strong>'+(esc(data.pre_plan_conducted_by)||'—')+'</strong></div>';
-    html+='<div><span style="color:#888;font-size:9px">DATE</span><br><strong>'+(esc(data.plan_date)||'—')+'</strong></div>';
-    html+='<div><span style="color:#888;font-size:9px">REVIEWED BY</span><br><strong>'+(esc(data.plan_reviewed_by)||'—')+'</strong></div>';
-    html+='</div>';
+    // Plan Info
+    if(data.pre_plan_conducted_by||data.plan_date||data.plan_reviewed_by){
+        checkPage(20);
+        doc.setFillColor(255,247,237);doc.setDrawColor(230,126,34);
+        doc.roundedRect(M,y,pw,18,2,2,'FD');
+        doc.setFontSize(8);doc.setTextColor(230,126,34);doc.setFont('helvetica','bold');
+        doc.text('PLAN INFORMATION',M+4,y+5);doc.setFont('helvetica','normal');doc.setTextColor(0);
+        doc.setFontSize(9);
+        if(data.pre_plan_conducted_by)doc.text('Conducted by: '+data.pre_plan_conducted_by,M+4,y+11);
+        if(data.plan_date)doc.text('Date: '+data.plan_date,M+80,y+11);
+        if(data.plan_reviewed_by)doc.text('Reviewed by: '+data.plan_reviewed_by,M+4,y+16);
+        y+=22;
+    }
     if(data.additional_notes){
-        html+='<div style="margin-top:6px"><span style="color:#888;font-size:9px">NOTES</span><br>'+esc(data.additional_notes)+'</div>';
+        checkPage(12);doc.setFontSize(9);doc.setTextColor(60);
+        var nl=doc.splitTextToSize(data.additional_notes,pw-4);
+        doc.text(nl,M+2,y+4);y+=nl.length*4+4;doc.setTextColor(0);
     }
-    html+='</div>';
 
-    // Footer
-    html+='<div class="footer">Generated '+new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})+' | Centerville Fire Department Pre-Fire Plan System | fdtraining.org</div>';
+    // Footer on all pages
+    function addFooters(){
+        var pages=doc.internal.getNumberOfPages();
+        for(var i=1;i<=pages;i++){
+            doc.setPage(i);doc.setFontSize(7);doc.setTextColor(150);
+            doc.text('Centerville Fire Department Pre-Plan — '+(data.business_name||'')+' — Generated '+new Date().toLocaleDateString(),M,H-8);
+            doc.text('Page '+i+' of '+pages,W-M,H-8,{align:'right'});
+        }
+    }
 
-    html+='<script>setTimeout(function(){window.print()},500)<\/script>';
-    html+='</body></html>';
-
-    w.document.write(html);
-    w.document.close();
-    showToast('PDF report generated - use Print > Save as PDF','success');
+    return {doc:doc,addFooters:addFooters,M:M,pw:pw,W:W,H:H};
 }
 
-function printPlan(){generatePDF()}
+// Render fabric.js canvas JSON to PNG data URL
+function renderCanvasToImage(jsonStr,w,h){
+    return new Promise(function(resolve){
+        try{
+            var jsonData;
+            if(typeof jsonStr==='string'){try{jsonData=JSON.parse(jsonStr)}catch(e){resolve(null);return}}
+            else{jsonData=jsonStr}
+            var origW=jsonData.width||w;var origH=jsonData.height||h;
+            var el=document.createElement('canvas');el.width=origW;el.height=origH;
+            document.body.appendChild(el);
+            var fc=new fabric.StaticCanvas(el,{width:origW,height:origH,backgroundColor:'#ffffff'});
+            fc.loadFromJSON(jsonData,function(){
+                fc.renderAll();
+                setTimeout(function(){
+                    try{resolve(fc.toDataURL({format:'png',quality:1}))}
+                    catch(e){resolve(null)}
+                    finally{fc.dispose();if(el.parentNode)el.parentNode.removeChild(el)}
+                },300);
+            });
+        }catch(e){resolve(null)}
+    });
+}
+
+function addPlanPages(pdfObj,data){
+    var planRenders=[];
+    if(data.site_plan_data){
+        planRenders.push({label:'Site Plan',promise:renderCanvasToImage(data.site_plan_data,900,550)});
+    }
+    if(data.floor_plan_data){
+        var floorAll;
+        try{floorAll=typeof data.floor_plan_data==='string'?JSON.parse(data.floor_plan_data):data.floor_plan_data}catch(e){floorAll=null}
+        if(floorAll){
+            var fkeys=Object.keys(floorAll).sort(function(a,b){return Number(a)-Number(b)});
+            fkeys.forEach(function(fk){
+                planRenders.push({label:'Floor Plan'+(fkeys.length>1?' - Floor '+fk:''),promise:renderCanvasToImage(floorAll[fk],900,600)});
+            });
+        }
+    }
+    if(planRenders.length===0)return Promise.resolve();
+    return Promise.all(planRenders.map(function(p){return p.promise})).then(function(images){
+        var doc=pdfObj.doc,M=pdfObj.M,pw=pdfObj.pw;
+        for(var i=0;i<planRenders.length;i++){
+            doc.addPage();var y=M;
+            doc.setFillColor(30,58,95);doc.rect(M,y,pw,8,'F');
+            doc.setTextColor(255);doc.setFontSize(11);doc.setFont('helvetica','bold');
+            doc.text(planRenders[i].label,M+3,y+5.5);doc.setTextColor(0);y+=10;
+            if(images[i]){
+                var imgW=pw;var imgH=imgW*0.65;
+                doc.addImage(images[i],'PNG',M,y,imgW,imgH);
+            }else{
+                doc.setFontSize(10);doc.setTextColor(150);
+                doc.text(planRenders[i].label+' could not be rendered',M+2,y+5);
+            }
+        }
+    });
+}
+
+function generatePDF(){
+    var btn=document.getElementById('pdfBtn');
+    if(btn){btn.disabled=true;btn.textContent='⏳ Generating...';}
+    var data=enrichData(getSavedData());
+    if(!data.business_name){showToast('Fill in the business name first','error');if(btn){btn.disabled=false;btn.textContent='📄 Generate PDF Report';}return}
+
+    var pdfObj=buildPDFDoc(data);
+    addPlanPages(pdfObj,data).then(function(){
+        pdfObj.addFooters();
+        pdfObj.doc.save((data.business_name||'preplan').replace(/[^a-zA-Z0-9]/g,'-')+'-preplan.pdf');
+        showToast('PDF downloaded!','success');
+    }).catch(function(e){
+        console.error(e);pdfObj.addFooters();
+        pdfObj.doc.save((data.business_name||'preplan').replace(/[^a-zA-Z0-9]/g,'-')+'-preplan.pdf');
+    }).finally(function(){
+        if(btn){btn.disabled=false;btn.textContent='📄 Generate PDF Report';}
+    });
+}
 
 function submitPlan(){
     saveFormData(planForm);
     var data=getSavedData();
     if(!data.business_name){showToast('Please fill in the business name first','error');return}
     var btn=document.querySelector('.btn-submit');
-    if(btn){btn.disabled=true;btn.textContent='⏳ Publishing...';}
+    if(btn){btn.disabled=true;btn.textContent='⏳ Publishing & Emailing...';}
+
+    // Step 1: Publish to book
     fetch('/api/preplans/publish',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:data,published_by:''})})
     .then(function(r){return r.json()})
-    .then(function(d){
-        if(btn){btn.disabled=false;btn.textContent='📤 Submit Pre-Plan';}
-        if(d.success){
-            showToast('Published to Pre-Plan Book!','success');
-            var overlay=document.createElement('div');
-            overlay.id='submitOverlay';
+    .then(function(result){
+        if(!result.success){
+            showToast('Error publishing: '+(result.error||'Unknown'),'error');
+            if(btn){btn.disabled=false;btn.textContent='📤 Submit Pre-Plan';}
+            return;
+        }
+
+        showToast('Published to Pre-Plan Book! Generating email...','success');
+
+        // Step 2: Generate PDF and email it
+        var enriched=enrichData(JSON.parse(JSON.stringify(data)));
+        var pdfObj=buildPDFDoc(enriched);
+        addPlanPages(pdfObj,data).then(function(){
+            pdfObj.addFooters();
+            // Convert to base64
+            var pdfBase64=pdfObj.doc.output('datauristring').split(',')[1];
+            var filename=(data.business_name||'preplan').replace(/[^a-zA-Z0-9]/g,'-')+'-preplan.pdf';
+
+            // Step 3: Send email via worker
+            return fetch('/api/preplans/notify',{
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({
+                    business_name:data.business_name,
+                    address:data.address||'',
+                    conducted_by:data.pre_plan_conducted_by||'',
+                    plan_date:data.plan_date||'',
+                    pdf_base64:pdfBase64,
+                    pdf_filename:filename
+                })
+            });
+        }).then(function(r){return r.json()})
+        .then(function(emailResult){
+            if(btn){btn.disabled=false;btn.textContent='📤 Submit Pre-Plan';}
+            var overlay=document.createElement('div');overlay.id='submitOverlay';
             overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:9999';
             var msg=document.createElement('div');
-            msg.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:12px;padding:28px;box-shadow:0 8px 30px rgba(0,0,0,0.3);z-index:10000;text-align:center;max-width:400px';
+            msg.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:12px;padding:28px;box-shadow:0 8px 30px rgba(0,0,0,0.3);z-index:10000;text-align:center;max-width:420px';
+            var emailStatus=emailResult&&emailResult.success?
+                '<div style="color:#27ae60;font-size:13px;margin-bottom:12px">📧 PDF emailed to command staff</div>':
+                '<div style="color:#e67e22;font-size:12px;margin-bottom:12px">⚠️ Published but email failed — PDF can be downloaded from the book</div>';
             msg.innerHTML='<h3 style="margin:0 0 12px;color:#27ae60">✅ Pre-Plan Published!</h3>'+
-                '<p style="margin:0 0 16px;color:#555"><strong>'+esc(data.business_name)+'</strong> has been saved to the Pre-Plan Book.</p>'+
+                '<p style="margin:0 0 8px;color:#555"><strong>'+esc(data.business_name)+'</strong> has been saved to the Pre-Plan Book.</p>'+
+                emailStatus+
                 '<a href="/preplans" style="display:inline-block;padding:10px 24px;background:#2980b9;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;margin-bottom:8px">📖 View Pre-Plan Book</a>'+
                 '<br><button onclick="this.parentElement.remove();document.getElementById(\'submitOverlay\').remove()" style="margin-top:8px;padding:8px 20px;border:none;border-radius:6px;cursor:pointer;background:#eee">Close</button>';
             overlay.onclick=function(){overlay.remove();msg.remove()};
-            document.body.appendChild(overlay);
-            document.body.appendChild(msg);
-        } else {
-            showToast('Error: '+(d.error||'Unknown error'),'error');
-        }
-    })
-    .catch(function(){
+            document.body.appendChild(overlay);document.body.appendChild(msg);
+        }).catch(function(e){
+            console.error('Email error:',e);
+            if(btn){btn.disabled=false;btn.textContent='📤 Submit Pre-Plan';}
+            showToast('Published but email failed. PDF available in book.','info');
+        });
+    }).catch(function(){
         if(btn){btn.disabled=false;btn.textContent='📤 Submit Pre-Plan';}
         showToast('Could not reach server. Data saved locally.','info');
     });
