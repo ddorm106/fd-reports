@@ -460,7 +460,7 @@ function submitPlan(){
             msg.innerHTML='<h3 style="margin:0 0 12px;color:#27ae60">✅ Pre-Plan Published!</h3>'+
                 '<p style="margin:0 0 8px;color:#555"><strong>'+esc(data.business_name)+'</strong> has been saved to the Pre-Plan Book.</p>'+
                 emailStatus+
-                '<a href="/preplans" style="display:inline-block;padding:10px 24px;background:#2980b9;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;margin-bottom:8px">📖 View Pre-Plan Book</a>'+
+                '<a href="/book" style="display:inline-block;padding:10px 24px;background:#2980b9;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;margin-bottom:8px">📖 View Pre-Plan Book</a>'+
                 '<br><button onclick="this.parentElement.remove();document.getElementById(\'submitOverlay\').remove()" style="margin-top:8px;padding:8px 20px;border:none;border-radius:6px;cursor:pointer;background:#eee">Close</button>';
             overlay.onclick=function(){overlay.remove();msg.remove()};
             document.body.appendChild(overlay);document.body.appendChild(msg);
