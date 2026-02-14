@@ -133,6 +133,29 @@ var sections=[
 
 function render(){
     var data=getSavedData();
+
+    // Compute duration from NFF result if not already saved
+    if(!data.nff_duration && data.nff_result){
+        var nff=parseFloat(data.nff_result)||0;
+        if(nff>0){
+            var dur=nff<=2500?2:(nff<=3500?3:4);
+            data.nff_duration=dur+' hours';
+        }
+    }
+    // Format NFF with GPM if just a number
+    if(data.nff_result && !isNaN(data.nff_result)){
+        data.nff_result=parseFloat(data.nff_result).toLocaleString()+' GPM';
+    }
+    // Compute available supply (max AFF from hydrant rows) if not already saved
+    if(!data.available_supply){
+        var maxAff=0;
+        for(var i=1;i<=20;i++){
+            var a=parseFloat(data['hyd_aff_'+i])||0;
+            if(a>maxAff) maxAff=a;
+        }
+        if(maxAff>0) data.available_supply=Math.round(maxAff)+' GPM';
+    }
+
     var filled=0,total=0;
     var html='';
     sections.forEach(function(s){
@@ -171,6 +194,20 @@ function esc(s){if(!s)return'';var d=document.createElement('div');d.textContent
 function generatePDF(){
     var data=getSavedData();
     if(!data.business_name){showToast('Fill in the business name first','error');return}
+
+    // Enrich computed fields for PDF
+    if(!data.nff_duration && data.nff_result){
+        var nff=parseFloat(data.nff_result)||0;
+        if(nff>0) data.nff_duration=(nff<=2500?2:(nff<=3500?3:4))+' hours';
+    }
+    if(data.nff_result && !isNaN(data.nff_result)){
+        data.nff_result=parseFloat(data.nff_result).toLocaleString()+' GPM';
+    }
+    if(!data.available_supply){
+        var maxAff=0;
+        for(var i=1;i<=20;i++){var a=parseFloat(data['hyd_aff_'+i])||0;if(a>maxAff)maxAff=a;}
+        if(maxAff>0) data.available_supply=Math.round(maxAff)+' GPM';
+    }
 
     var w=window.open('','_blank');
     var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Pre-Fire Plan - '+esc(data.business_name)+'</title><style>';
