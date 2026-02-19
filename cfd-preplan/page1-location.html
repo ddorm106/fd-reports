@@ -68,6 +68,10 @@
 var form=document.getElementById('theForm');
 if(form){loadFormData(form);autoSave(form);}
 
+// Safari / iOS detection
+var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
 function getGPS(){
     var btn=document.getElementById('gpsBtn');
     var icon=document.getElementById('gpsIcon');
@@ -79,11 +83,29 @@ function getGPS(){
     btn.disabled=true;
     icon.textContent='⏳';
     txt.textContent='Locating...';
+
+    // Check permission status first if available
+    if(navigator.permissions && navigator.permissions.query){
+        navigator.permissions.query({name:'geolocation'}).then(function(result){
+            if(result.state === 'denied'){
+                handleDenied(btn, icon, txt);
+            } else {
+                doGeolocate(btn, icon, txt);
+            }
+        }).catch(function(){
+            // Safari doesn't support permissions.query for geolocation — just try it
+            doGeolocate(btn, icon, txt);
+        });
+    } else {
+        doGeolocate(btn, icon, txt);
+    }
+}
+
+function doGeolocate(btn, icon, txt){
     navigator.geolocation.getCurrentPosition(
         function(pos){
             document.getElementById('latitude').value=pos.coords.latitude.toFixed(6);
             document.getElementById('longitude').value=pos.coords.longitude.toFixed(6);
-            // Trigger change events so autoSave picks them up
             document.getElementById('latitude').dispatchEvent(new Event('input',{bubbles:true}));
             document.getElementById('longitude').dispatchEvent(new Event('input',{bubbles:true}));
             icon.textContent='✅';
@@ -92,17 +114,88 @@ function getGPS(){
             setTimeout(function(){icon.textContent='📍';txt.textContent='Get GPS';btn.disabled=false;},2000);
         },
         function(err){
-            var msg='GPS failed';
-            if(err.code===1) msg='Location access denied — check browser permissions';
-            else if(err.code===2) msg='Position unavailable';
-            else if(err.code===3) msg='GPS timed out — try again';
-            icon.textContent='❌';
-            txt.textContent='Failed';
-            showToast(msg,'error');
-            setTimeout(function(){icon.textContent='📍';txt.textContent='Get GPS';btn.disabled=false;},2500);
+            if(err.code===1){
+                handleDenied(btn, icon, txt);
+            } else {
+                var msg='GPS failed';
+                if(err.code===2) msg='Position unavailable — make sure Location Services are on';
+                else if(err.code===3) msg='GPS timed out — try again';
+                icon.textContent='❌';
+                txt.textContent='Failed';
+                showToast(msg,'error');
+                setTimeout(function(){icon.textContent='📍';txt.textContent='Get GPS';btn.disabled=false;},2500);
+            }
         },
         {enableHighAccuracy:true, timeout:15000, maximumAge:0}
     );
+}
+
+function handleDenied(btn, icon, txt){
+    icon.textContent='🔒';
+    txt.textContent='Blocked';
+    setTimeout(function(){icon.textContent='📍';txt.textContent='Get GPS';btn.disabled=false;},3000);
+    showLocationHelp();
+}
+
+function showLocationHelp(){
+    // Remove existing modal if any
+    var existing = document.getElementById('gps-help-modal');
+    if(existing) existing.remove();
+
+    var overlay = document.createElement('div');
+    overlay.id = 'gps-help-modal';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:99999;display:flex;justify-content:center;align-items:center;padding:20px;';
+
+    var instructions = '';
+    if(isIOS){
+        instructions = '<div style="margin-bottom:12px;font-weight:700;color:#e67e22;font-size:15px;">📱 iPhone / iPad — Safari</div>' +
+            '<ol style="margin:0 0 0 18px;padding:0;line-height:1.8;font-size:14px;">' +
+            '<li>Open the <b>Settings</b> app</li>' +
+            '<li>Scroll down and tap <b>Safari</b></li>' +
+            '<li>Scroll down to <b>Settings for Websites</b></li>' +
+            '<li>Tap <b>Location</b></li>' +
+            '<li>Find this website and set it to <b>Allow</b></li>' +
+            '<li>Come back here and tap <b>Get GPS</b> again</li>' +
+            '</ol>' +
+            '<div style="margin-top:12px;padding:10px;background:#1a1a1e;border-radius:6px;border:1px solid #444;font-size:12px;color:#aaa;">' +
+            '💡 Also make sure <b>Location Services</b> is turned on:<br>Settings → Privacy & Security → Location Services → <b>ON</b>, and Safari is set to <b>While Using</b>.' +
+            '</div>';
+    } else if(isSafari){
+        instructions = '<div style="margin-bottom:12px;font-weight:700;color:#e67e22;font-size:15px;">🖥️ Mac — Safari</div>' +
+            '<ol style="margin:0 0 0 18px;padding:0;line-height:1.8;font-size:14px;">' +
+            '<li>In Safari, click <b>Safari</b> menu → <b>Settings</b> (or Preferences)</li>' +
+            '<li>Click the <b>Websites</b> tab</li>' +
+            '<li>Select <b>Location</b> in the left sidebar</li>' +
+            '<li>Find this website in the list</li>' +
+            '<li>Change the dropdown to <b>Allow</b></li>' +
+            '<li>Come back here and tap <b>Get GPS</b> again</li>' +
+            '</ol>' +
+            '<div style="margin-top:12px;padding:10px;background:#1a1a1e;border-radius:6px;border:1px solid #444;font-size:12px;color:#aaa;">' +
+            '💡 Also check: System Settings → Privacy & Security → Location Services → make sure it\'s <b>ON</b> and Safari is checked.' +
+            '</div>';
+    } else {
+        instructions = '<div style="margin-bottom:12px;font-weight:700;color:#e67e22;font-size:15px;">🌐 Browser Location Access</div>' +
+            '<ol style="margin:0 0 0 18px;padding:0;line-height:1.8;font-size:14px;">' +
+            '<li>Click the <b>lock icon</b> (🔒) in the address bar</li>' +
+            '<li>Find <b>Location</b> and set it to <b>Allow</b></li>' +
+            '<li>Reload the page and tap <b>Get GPS</b> again</li>' +
+            '</ol>';
+    }
+
+    var modal = '<div style="background:#24242a;border-radius:12px;padding:24px;max-width:440px;width:100%;color:#fff;border:1px solid #444;position:relative;max-height:90vh;overflow-y:auto;">' +
+        '<button onclick="document.getElementById(\'gps-help-modal\').remove()" style="position:absolute;top:10px;right:14px;background:none;border:none;color:#888;font-size:22px;cursor:pointer;line-height:1;">✕</button>' +
+        '<h3 style="margin:0 0 14px 0;color:#e74c3c;font-size:17px;">📍 Location Access Blocked</h3>' +
+        '<p style="color:#ccc;font-size:13px;margin-bottom:16px;line-height:1.5;">Your browser has blocked location access for this site. Follow these steps to enable it:</p>' +
+        instructions +
+        '<div style="margin-top:16px;text-align:center;">' +
+        '<button onclick="document.getElementById(\'gps-help-modal\').remove();getGPS();" style="background:#e67e22;color:#fff;border:none;border-radius:8px;padding:10px 24px;font-size:14px;font-weight:600;cursor:pointer;margin-right:8px;">Try Again</button>' +
+        '<button onclick="document.getElementById(\'gps-help-modal\').remove()" style="background:#555;color:#ccc;border:none;border-radius:8px;padding:10px 24px;font-size:14px;font-weight:600;cursor:pointer;">Close</button>' +
+        '</div>' +
+        '</div>';
+
+    overlay.innerHTML = modal;
+    overlay.addEventListener('click', function(e){ if(e.target === overlay) overlay.remove(); });
+    document.body.appendChild(overlay);
 }
 </script>
 </body>
