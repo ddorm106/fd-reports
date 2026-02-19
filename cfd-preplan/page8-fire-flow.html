@@ -404,16 +404,75 @@ function haversine(lat1, lng1, lat2, lng2) {
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
+// Safari / iOS detection
+var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
 function getBizGPS() {
     if (!navigator.geolocation) { showToast('GPS not available','error'); return; }
     document.getElementById('gps-status').innerHTML = '<span class="loading-spinner"></span> Getting location...';
     navigator.geolocation.getCurrentPosition(function(pos) {
         document.getElementById('biz_gps').value = pos.coords.latitude.toFixed(6) + ', ' + pos.coords.longitude.toFixed(6);
         document.getElementById('gps-status').textContent = '✅ GPS acquired';
-    }, function() {
-        document.getElementById('gps-status').textContent = '❌ Location denied';
-        showToast('Location denied','error');
-    }, {enableHighAccuracy:true});
+    }, function(err) {
+        if(err && err.code === 1) {
+            document.getElementById('gps-status').textContent = '🔒 Location blocked';
+            showLocationHelp();
+        } else {
+            document.getElementById('gps-status').textContent = '❌ Location failed';
+            showToast('Location failed — try again','error');
+        }
+    }, {enableHighAccuracy:true, timeout:15000});
+}
+
+function showLocationHelp(){
+    var existing = document.getElementById('gps-help-modal');
+    if(existing) existing.remove();
+    var overlay = document.createElement('div');
+    overlay.id = 'gps-help-modal';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:99999;display:flex;justify-content:center;align-items:center;padding:20px;';
+    var instructions = '';
+    if(isIOS){
+        instructions = '<div style="margin-bottom:12px;font-weight:700;color:#e67e22;font-size:15px;">📱 iPhone / iPad — Safari</div>' +
+            '<ol style="margin:0 0 0 18px;padding:0;line-height:1.8;font-size:14px;">' +
+            '<li>Open the <b>Settings</b> app</li>' +
+            '<li>Scroll down and tap <b>Safari</b></li>' +
+            '<li>Scroll down to <b>Settings for Websites</b></li>' +
+            '<li>Tap <b>Location</b></li>' +
+            '<li>Find this website and set it to <b>Allow</b></li>' +
+            '<li>Come back here and tap <b>Get GPS</b> again</li>' +
+            '</ol>' +
+            '<div style="margin-top:12px;padding:10px;background:#1a1a1e;border-radius:6px;border:1px solid #444;font-size:12px;color:#aaa;">' +
+            '💡 Also make sure <b>Location Services</b> is turned on:<br>Settings → Privacy & Security → Location Services → <b>ON</b>, and Safari is set to <b>While Using</b>.' +
+            '</div>';
+    } else if(isSafari){
+        instructions = '<div style="margin-bottom:12px;font-weight:700;color:#e67e22;font-size:15px;">🖥️ Mac — Safari</div>' +
+            '<ol style="margin:0 0 0 18px;padding:0;line-height:1.8;font-size:14px;">' +
+            '<li>In Safari, click <b>Safari</b> menu → <b>Settings</b></li>' +
+            '<li>Click the <b>Websites</b> tab</li>' +
+            '<li>Select <b>Location</b> in the left sidebar</li>' +
+            '<li>Find this website and change to <b>Allow</b></li>' +
+            '<li>Come back here and tap <b>Get GPS</b> again</li>' +
+            '</ol>';
+    } else {
+        instructions = '<div style="margin-bottom:12px;font-weight:700;color:#e67e22;font-size:15px;">🌐 Browser Location Access</div>' +
+            '<ol style="margin:0 0 0 18px;padding:0;line-height:1.8;font-size:14px;">' +
+            '<li>Click the <b>lock icon</b> (🔒) in the address bar</li>' +
+            '<li>Find <b>Location</b> and set it to <b>Allow</b></li>' +
+            '<li>Reload the page and tap <b>Get GPS</b> again</li>' +
+            '</ol>';
+    }
+    overlay.innerHTML = '<div style="background:#24242a;border-radius:12px;padding:24px;max-width:440px;width:100%;color:#fff;border:1px solid #444;position:relative;max-height:90vh;overflow-y:auto;">' +
+        '<button onclick="document.getElementById(\'gps-help-modal\').remove()" style="position:absolute;top:10px;right:14px;background:none;border:none;color:#888;font-size:22px;cursor:pointer;line-height:1;">✕</button>' +
+        '<h3 style="margin:0 0 14px 0;color:#e74c3c;font-size:17px;">📍 Location Access Blocked</h3>' +
+        '<p style="color:#ccc;font-size:13px;margin-bottom:16px;line-height:1.5;">Your browser has blocked location access for this site. Follow these steps to enable it:</p>' +
+        instructions +
+        '<div style="margin-top:16px;text-align:center;">' +
+        '<button onclick="document.getElementById(\'gps-help-modal\').remove();getBizGPS();" style="background:#e67e22;color:#fff;border:none;border-radius:8px;padding:10px 24px;font-size:14px;font-weight:600;cursor:pointer;margin-right:8px;">Try Again</button>' +
+        '<button onclick="document.getElementById(\'gps-help-modal\').remove()" style="background:#555;color:#ccc;border:none;border-radius:8px;padding:10px 24px;font-size:14px;font-weight:600;cursor:pointer;">Close</button>' +
+        '</div></div>';
+    overlay.addEventListener('click', function(e){ if(e.target === overlay) overlay.remove(); });
+    document.body.appendChild(overlay);
 }
 
 function findNearestHydrants() {
