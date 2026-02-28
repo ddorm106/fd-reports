@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Training Ideas & Discussion — Centerville Fire Rescue | Vol. 01 March 2026</title>
+<meta name="description" content="Centerville Fire Rescue Training Magazine — Ventilation tactics, fire attack principles, and leadership standards for every shift.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Merriweather:ital,wght@0,400;0,700;1,400&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy: #1a2b6b;
+  --navy-deep: #0d1a45;
+  --red: #c8102e;
+  --red-dark: #a00d24;
+  --gold: #f5c518;
+  --gold-dim: #d4a810;
+  --white: #ffffff;
+  --cream: #faf8f4;
+  --ltgray: #f0eeea;
+  --midgray: #d5d3cf;
+  --darkgray: #444;
+  --text: #2a2a2a;
+  --text-light: #5a5a5a;
+  --font-display: 'Oswald', sans-serif;
+  --font-serif: 'Merriweather', serif;
+  --font-body: 'Source Sans 3', sans-serif;
+  --max-w: 900px;
+  --side-pad: clamp(1.25rem, 5vw, 3rem);
+}
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 70px;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--text);
+  background: var(--cream);
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ══════ PROGRESS BAR ══════ */
+.progress-bar {
+  position: fixed; top: 0; left: 0; height: 4px; z-index: 1000;
+  background: linear-gradient(90deg, var(--red), var(--gold));
+  width: 0%; transition: width 0.15s ease-out;
+}
+
+/* ══════ STICKY NAV ══════ */
+.site-nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 900;
+  background: var(--navy-deep);
+  border-bottom: 3px solid var(--gold);
+  transform: translateY(-100%);
+  transition: transform 0.35s ease;
+  backdrop-filter: blur(12px);
+}
+.site-nav.visible { transform: translateY(0); }
+.site-nav-inner {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 var(--side-pad);
+  height: 56px;
+}
+.nav-brand {
+  display: flex; align-items: center; gap: 10px;
+  text-decoration: none;
+}
+.nav-badge {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--red); border: 2px solid var(--gold);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; flex-shrink: 0;
+}
+.nav-title {
+  font-family: var(--font-display);
+  font-size: 14px; color: var(--white);
+  letter-spacing: 2px; text-transform: uppercase;
+  font-weight: 600;
+}
+.nav-links {
+  display: flex; gap: 0; list-style: none;
+}
+.nav-links a {
+  display: block; padding: 8px 14px;
+  font-family: var(--font-display);
+  font-size: 11px; color: rgba(255,255,255,0.6);
+  text-decoration: none; text-transform: uppercase;
+  letter-spacing: 1.5px; transition: color 0.2s;
+  white-space: nowrap;
+}
+.nav-links a:hover, .nav-links a.active {
+  color: var(--gold);
+}
+
+/* Mobile nav toggle */
+.nav-toggle {
+  display: none; background: none; border: none; cursor: pointer;
+  padding: 6px;
+}
+.nav-toggle span {
+  display: block; width: 22px; height: 2px;
+  background: var(--white); margin: 5px 0;
+  transition: 0.3s;
+}
+
+/* ══════ HERO COVER ══════ */
+.hero {
+  min-height: 100vh;
+  background: var(--navy);
+  position: relative; overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.hero-bg {
+  position: absolute; inset: 0;
+  background: linear-gradient(160deg, #0d1a45 0%, #1a2b6b 35%, #2a1a3a 60%, #c8102e 100%);
+  opacity: 0.9;
+}
+.hero-grain {
+  position: absolute; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  opacity: 0.5; pointer-events: none;
+}
+.hero-stripe-top {
+  height: 5px; background: var(--gold); position: relative; z-index: 2;
+}
+.hero-stripe-red {
+  height: 3px; background: var(--red); position: relative; z-index: 2;
+}
+
+.hero-header {
+  position: relative; z-index: 2;
+  padding: 1.5rem var(--side-pad) 1rem;
+  max-width: var(--max-w); margin: 0 auto; width: 100%;
+  display: flex; align-items: center; gap: 1rem;
+}
+.hero-badge {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: var(--red); border: 3px solid var(--gold);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; flex-shrink: 0;
+}
+.hero-dept {
+  flex: 1;
+}
+.hero-dept h1 {
+  font-family: var(--font-display);
+  font-size: clamp(22px, 4vw, 32px);
+  color: var(--white); font-weight: 700;
+  letter-spacing: 2px; text-transform: uppercase; line-height: 1.1;
+}
+.hero-dept .hero-units {
+  font-family: var(--font-body);
+  font-size: 11px; color: var(--gold);
+  letter-spacing: 2px; text-transform: uppercase;
+  margin-top: 4px;
+}
+.hero-vol {
+  text-align: right; flex-shrink: 0;
+}
+.hero-vol-label {
+  font-family: var(--font-display); font-size: 10px;
+  color: var(--gold); letter-spacing: 2px; text-transform: uppercase;
+}
+.hero-vol-num {
+  font-family: var(--font-display); font-size: 28px;
+  color: var(--white); font-weight: 700; line-height: 1;
+}
+.hero-vol-date {
+  font-family: var(--font-body); font-size: 10px;
+  color: rgba(255,255,255,0.5); margin-top: 2px;
+}
+
+/* Hero center content */
+.hero-center {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  position: relative; z-index: 2;
+  padding: 2rem var(--side-pad) 1.5rem;
+}
+.hero-title-block {
+  text-align: center;
+  border: 3px solid var(--gold);
+  padding: clamp(1.5rem, 4vw, 2.5rem) clamp(1.5rem, 5vw, 3rem);
+  background: rgba(26,43,107,0.6);
+  backdrop-filter: blur(8px);
+  max-width: 600px; width: 100%;
+  animation: fadeUp 1s ease 0.2s both;
+}
+.hero-pub-label {
+  font-family: var(--font-display);
+  font-size: 10px; letter-spacing: 4px;
+  color: var(--gold); text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.hero-main-title {
+  font-family: var(--font-display);
+  font-size: clamp(40px, 10vw, 68px);
+  font-weight: 700; color: var(--white);
+  line-height: 0.9; text-transform: uppercase;
+  letter-spacing: 3px;
+}
+.hero-main-title .gold { color: var(--gold); display: block; }
+.hero-main-sub {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 7vw, 48px);
+  color: var(--gold); font-weight: 700;
+  text-transform: uppercase; letter-spacing: 3px;
+  line-height: 1;
+}
+.hero-divider {
+  width: 60px; height: 3px; background: var(--gold);
+  margin: 14px auto;
+}
+.hero-subtitle {
+  font-family: var(--font-serif);
+  font-size: clamp(13px, 2vw, 16px);
+  color: rgba(255,255,255,0.8);
+  font-style: italic; line-height: 1.6;
+}
+.hero-for {
+  font-family: var(--font-body);
+  font-size: 10px; letter-spacing: 3px;
+  color: rgba(255,255,255,0.45);
+  text-transform: uppercase; margin-top: 10px;
+}
+
+/* Hero TOC cards */
+.hero-toc {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 0; margin-top: 2rem;
+  max-width: 600px; width: 100%;
+  animation: fadeUp 1s ease 0.5s both;
+}
+.hero-toc-item {
+  background: rgba(0,0,0,0.35);
+  border-top: 3px solid var(--red);
+  padding: 14px 16px; text-align: center;
+  cursor: pointer; transition: background 0.2s;
+  text-decoration: none;
+}
+.hero-toc-item:nth-child(2) { border-top-color: var(--gold); }
+.hero-toc-item:nth-child(3) { border-top-color: var(--red); }
+.hero-toc-item:hover { background: rgba(0,0,0,0.5); }
+.hero-toc-num {
+  font-family: var(--font-display);
+  font-size: 28px; color: var(--gold); font-weight: 700; line-height: 1;
+}
+.hero-toc-title {
+  font-family: var(--font-display);
+  font-size: 11px; color: var(--white);
+  text-transform: uppercase; letter-spacing: 1px;
+  margin-top: 4px; line-height: 1.3;
+}
+.hero-toc-tag {
+  font-size: 9px; color: rgba(255,255,255,0.4);
+  text-transform: uppercase; letter-spacing: 1px; margin-top: 3px;
+}
+
+/* Hero footer */
+.hero-footer {
+  position: relative; z-index: 2;
+  padding: 0.8rem var(--side-pad);
+  background: rgba(0,0,0,0.35);
+  display: flex; justify-content: space-between; align-items: center;
+  border-top: 1px solid rgba(245,197,24,0.2);
+}
+.hero-footer span {
+  font-family: var(--font-body);
+  font-size: 10px; color: rgba(255,255,255,0.4);
+  letter-spacing: 1px;
+}
+.hero-footer .hf-center {
+  font-family: var(--font-display);
+  font-size: 12px; color: var(--gold);
+  letter-spacing: 3px; text-transform: uppercase;
+}
+
+/* Scroll hint */
+.scroll-hint {
+  position: relative; z-index: 2;
+  text-align: center; padding: 1rem 0 1.5rem;
+  animation: pulse 2s ease-in-out infinite;
+}
+.scroll-hint svg {
+  width: 24px; height: 24px;
+  stroke: var(--gold); stroke-width: 2; fill: none;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.9; }
+}
+
+/* ══════ ARTICLE SECTIONS ══════ */
+.article-section {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding: 0 var(--side-pad);
+}
+.article-wrapper {
+  padding: 3rem 0;
+  border-bottom: 1px solid var(--midgray);
+}
+.article-wrapper:last-of-type { border-bottom: none; }
+
+/* Article header */
+.art-section-stripe {
+  display: flex; justify-content: space-between; align-items: center;
+  background: var(--navy);
+  padding: 10px 20px; margin-bottom: 1.5rem;
+  border-radius: 2px;
+}
+.art-section-stripe .ss-title {
+  font-family: var(--font-display);
+  font-size: 11px; color: var(--gold);
+  letter-spacing: 3px; text-transform: uppercase;
+}
+.art-section-stripe .ss-num {
+  font-family: var(--font-display);
+  font-size: 10px; color: rgba(255,255,255,0.5);
+  letter-spacing: 2px; text-transform: uppercase;
+}
+.art-category {
+  font-family: var(--font-display);
+  font-size: 11px; letter-spacing: 3px;
+  color: var(--red); text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.art-title {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 5vw, 40px);
+  font-weight: 700; color: var(--navy);
+  line-height: 1.05; text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.art-title em { color: var(--red); font-style: normal; }
+.art-deck {
+  font-family: var(--font-serif);
+  font-size: clamp(14px, 2vw, 16px);
+  color: var(--text-light); font-style: italic;
+  margin-top: 10px; line-height: 1.6;
+  max-width: 38em;
+}
+.art-byline {
+  font-family: var(--font-body);
+  font-size: 11px; color: #999;
+  letter-spacing: 1px; text-transform: uppercase;
+  margin-top: 10px;
+}
+.art-red-rule {
+  height: 4px; background: var(--red);
+  width: 60px; margin: 1.2rem 0 1.5rem;
+}
+
+/* Article body text */
+.art-body p {
+  font-size: 16px; line-height: 1.8;
+  color: var(--text); margin-bottom: 1rem;
+}
+.art-body p strong { color: var(--navy); }
+.art-body h3 {
+  font-family: var(--font-display);
+  font-size: 16px; color: var(--navy);
+  letter-spacing: 1px; text-transform: uppercase;
+  margin: 2rem 0 0.8rem;
+  padding-bottom: 4px;
+  border-bottom: 3px solid var(--gold);
+  display: inline-block;
+}
+
+/* Pull quote */
+.pull-quote {
+  border-left: 5px solid var(--gold);
+  background: var(--ltgray);
+  padding: 1.25rem 1.5rem;
+  margin: 1.5rem 0;
+  border-radius: 0 4px 4px 0;
+}
+.pull-quote p {
+  font-family: var(--font-serif) !important;
+  font-size: 18px !important; font-weight: 700;
+  color: var(--navy) !important; line-height: 1.5 !important;
+  font-style: italic; margin-bottom: 0 !important;
+}
+.pull-quote cite {
+  display: block; font-family: var(--font-body);
+  font-size: 11px; color: var(--red);
+  letter-spacing: 2px; text-transform: uppercase;
+  margin-top: 8px; font-style: normal;
+}
+
+/* Two and three column grids */
+.two-col {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 1.25rem; margin: 1.25rem 0;
+}
+.three-col {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 1rem; margin: 1.25rem 0;
+}
+
+/* Info box (navy) */
+.info-box {
+  background: var(--navy); color: var(--white);
+  padding: 1rem 1.25rem; border-radius: 4px;
+}
+.info-box h4 {
+  font-family: var(--font-display);
+  font-size: 12px; letter-spacing: 2px;
+  color: var(--gold); text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.info-box ul { list-style: none; }
+.info-box ul li {
+  font-family: var(--font-body);
+  font-size: 14px; color: rgba(255,255,255,0.88);
+  padding: 5px 0 5px 16px; position: relative;
+  line-height: 1.5;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.info-box ul li:last-child { border-bottom: none; }
+.info-box ul li::before {
+  content: '▸'; position: absolute; left: 0;
+  color: var(--gold); font-size: 12px;
+}
+
+/* Side box (red border) */
+.side-box {
+  border: 2px solid var(--red);
+  padding: 1rem 1.25rem; border-radius: 4px;
+}
+.side-box h4 {
+  font-family: var(--font-display);
+  font-size: 12px; letter-spacing: 2px;
+  color: var(--red); text-transform: uppercase;
+  margin-bottom: 10px;
+  padding-bottom: 6px; border-bottom: 1px solid var(--midgray);
+}
+.side-box ul { list-style: none; }
+.side-box ul li {
+  font-family: var(--font-body);
+  font-size: 14px; color: var(--text);
+  padding: 5px 0 5px 16px; position: relative;
+  line-height: 1.5;
+  border-bottom: 1px solid var(--midgray);
+}
+.side-box ul li:last-child { border-bottom: none; }
+.side-box ul li::before {
+  content: '•'; position: absolute; left: 2px;
+  color: var(--red); font-weight: 700;
+}
+
+/* Drill box */
+.drill-box {
+  background: #fffbeb; border: 1px solid var(--gold);
+  border-left: 5px solid var(--gold);
+  padding: 1rem 1.25rem; margin: 1.5rem 0;
+  border-radius: 0 4px 4px 0;
+}
+.drill-box .db-label {
+  font-family: var(--font-display);
+  font-size: 10px; letter-spacing: 3px;
+  color: var(--gold-dim); text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.drill-box p {
+  font-size: 14px !important; color: var(--text-light) !important;
+  line-height: 1.6 !important; margin: 0 !important;
+}
+
+/* ══════ TRAINING RECORDS ══════ */
+.tr-card {
+  border: 2px solid var(--navy);
+  margin: 2rem 0; border-radius: 4px;
+  overflow: hidden;
+}
+.tr-card-hdr {
+  background: var(--navy);
+  padding: 12px 18px;
+  display: flex; align-items: center; gap: 10px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.tr-card-hdr:hover { background: var(--navy-deep); }
+.tr-icon {
+  width: 26px; height: 26px;
+  background: var(--gold); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display);
+  font-size: 13px; color: var(--navy); font-weight: 700;
+  flex-shrink: 0;
+}
+.tr-card-hdr h3 {
+  font-family: var(--font-display);
+  font-size: 13px; letter-spacing: 2px;
+  color: var(--white); text-transform: uppercase;
+  flex: 1;
+}
+.tr-toggle {
+  color: var(--gold); font-size: 18px;
+  transition: transform 0.3s;
+  font-family: var(--font-display);
+}
+.tr-card.open .tr-toggle { transform: rotate(180deg); }
+.tr-card-body {
+  padding: 0; max-height: 0;
+  overflow: hidden; transition: max-height 0.4s ease, padding 0.4s ease;
+}
+.tr-card.open .tr-card-body {
+  padding: 1.25rem;
+  max-height: 800px;
+}
+.tr-desc-label {
+  font-family: var(--font-display);
+  font-size: 10px; letter-spacing: 2px;
+  color: var(--red); text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.tr-desc-text {
+  font-family: var(--font-body);
+  font-size: 14px; line-height: 1.6;
+  color: var(--text-light);
+  padding: 10px 14px; background: var(--ltgray);
+  border-left: 3px solid var(--navy);
+  margin-bottom: 1rem;
+}
+.tr-obj-label {
+  font-family: var(--font-display);
+  font-size: 10px; letter-spacing: 2px;
+  color: var(--red); text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.tr-obj-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 8px; margin-bottom: 1rem;
+}
+.tr-obj-item {
+  border: 1px solid var(--midgray);
+  padding: 8px 12px; border-radius: 3px;
+  background: var(--white);
+}
+.tr-obj-num {
+  font-family: var(--font-display);
+  font-size: 9px; letter-spacing: 2px;
+  color: var(--navy); text-transform: uppercase;
+  display: block; margin-bottom: 2px;
+}
+.tr-obj-text {
+  font-family: var(--font-body);
+  font-size: 13px; line-height: 1.4; color: var(--text);
+}
+.tr-fields {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 8px; margin-top: 10px;
+}
+.tr-field {
+  border: 1px solid var(--midgray);
+  padding: 8px 12px; border-radius: 3px;
+}
+.tr-field-label {
+  font-family: var(--font-display);
+  font-size: 9px; letter-spacing: 2px;
+  color: #999; text-transform: uppercase;
+  display: block; margin-bottom: 2px;
+}
+.tr-field-value {
+  font-family: var(--font-body);
+  font-size: 15px; font-weight: 700; color: var(--navy);
+}
+.tr-nfpa {
+  font-family: var(--font-body);
+  font-size: 11px; color: #aaa;
+  text-align: right; margin-top: 10px;
+  font-style: italic;
+}
+
+/* ══════ ACTIVITIES SECTION ══════ */
+.activities-section {
+  background: var(--white);
+  padding: 3rem 0;
+  border-top: 4px solid var(--navy);
+}
+.activities-header {
+  max-width: var(--max-w); margin: 0 auto;
+  padding: 0 var(--side-pad) 2rem;
+}
+.activities-header h2 {
+  font-family: var(--font-display);
+  font-size: clamp(24px, 4vw, 32px);
+  font-weight: 700; color: var(--navy);
+  text-transform: uppercase; letter-spacing: 2px;
+}
+.activities-header p {
+  font-family: var(--font-body);
+  font-size: 14px; color: var(--text-light);
+  margin-top: 6px;
+}
+.acts-grid {
+  max-width: var(--max-w); margin: 0 auto;
+  padding: 0 var(--side-pad);
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+.act-card {
+  padding: 1.5rem;
+  background: var(--cream);
+  border: 1px solid var(--midgray);
+  border-radius: 4px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.act-card:hover {
+  border-color: var(--navy);
+  box-shadow: 0 2px 12px rgba(26,43,107,0.08);
+}
+.act-num {
+  font-family: var(--font-display);
+  font-size: 36px; font-weight: 700;
+  color: var(--midgray); line-height: 1;
+  margin-bottom: 4px;
+}
+.act-cat {
+  font-family: var(--font-display);
+  font-size: 10px; letter-spacing: 3px;
+  color: var(--red); text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.act-title {
+  font-family: var(--font-display);
+  font-size: 17px; font-weight: 600;
+  color: var(--navy); text-transform: uppercase;
+  letter-spacing: 1px; margin-bottom: 8px;
+}
+.act-body {
+  font-family: var(--font-body);
+  font-size: 14px; line-height: 1.6; color: var(--text-light);
+}
+
+/* ══════ BACK COVER / FOOTER ══════ */
+.mag-footer {
+  background: var(--navy);
+  position: relative; overflow: hidden;
+  padding: 4rem var(--side-pad);
+  text-align: center;
+}
+.mag-footer::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0;
+  height: 5px;
+  background: linear-gradient(90deg, var(--gold), var(--red), var(--gold));
+}
+.footer-badge {
+  width: 100px; height: 100px;
+  background: rgba(255,255,255,0.04);
+  border: 3px solid var(--gold);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 1.5rem; font-size: 42px;
+}
+.footer-motto {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 5vw, 42px);
+  font-weight: 700; color: var(--white);
+  text-transform: uppercase; letter-spacing: 4px; line-height: 1.1;
+}
+.footer-motto em { color: var(--gold); font-style: normal; display: block; }
+.footer-sub {
+  font-family: var(--font-serif);
+  font-size: 14px; color: rgba(255,255,255,0.5);
+  font-style: italic; margin: 1rem 0 1.5rem;
+}
+.footer-rule {
+  width: 60px; height: 3px;
+  background: var(--gold); margin: 0 auto 1rem;
+}
+.footer-dept {
+  font-family: var(--font-display);
+  font-size: 16px; color: var(--white);
+  letter-spacing: 3px; text-transform: uppercase;
+}
+.footer-units {
+  font-family: var(--font-body);
+  font-size: 11px; color: var(--gold);
+  letter-spacing: 2px; text-transform: uppercase;
+  margin-top: 6px;
+}
+.footer-source {
+  font-family: var(--font-body);
+  font-size: 10px; color: rgba(255,255,255,0.25);
+  letter-spacing: 1px; margin-top: 2rem;
+}
+.footer-print {
+  display: inline-flex; align-items: center; gap: 8px;
+  margin-top: 1.5rem;
+  padding: 10px 24px;
+  background: transparent;
+  border: 1px solid rgba(245,197,24,0.3);
+  color: var(--gold);
+  font-family: var(--font-display);
+  font-size: 11px; letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer; border-radius: 3px;
+  transition: border-color 0.2s, background 0.2s;
+}
+.footer-print:hover {
+  border-color: var(--gold);
+  background: rgba(245,197,24,0.1);
+}
+
+/* ══════ RESPONSIVE ══════ */
+@media (max-width: 768px) {
+  .hero-toc { grid-template-columns: 1fr; gap: 0; }
+  .two-col, .tr-obj-grid, .tr-fields { grid-template-columns: 1fr; }
+  .three-col { grid-template-columns: 1fr; }
+  .acts-grid { grid-template-columns: 1fr; }
+  .nav-links { display: none; }
+  .nav-toggle { display: block; }
+  .nav-links.open {
+    display: flex; flex-direction: column;
+    position: absolute; top: 56px; left: 0; right: 0;
+    background: var(--navy-deep);
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding: 0.5rem 0;
+  }
+  .nav-links.open a { padding: 10px var(--side-pad); }
+  .hero-header { flex-wrap: wrap; }
+  .hero-vol { display: none; }
+  .hero-footer .hf-left, .hero-footer .hf-right { display: none; }
+}
+
+@media (max-width: 480px) {
+  .art-body p { font-size: 15px; }
+  .pull-quote p { font-size: 16px !important; }
+  .hero-badge { width: 48px; height: 48px; font-size: 22px; }
+}
+
+/* ══════ PRINT ══════ */
+@media print {
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  body { background: #fff; }
+  .site-nav, .progress-bar, .scroll-hint, .footer-print, .nav-toggle { display: none !important; }
+  .tr-card-body { max-height: none !important; padding: 1.25rem !important; }
+  .article-wrapper { break-inside: avoid; }
+  .tr-card { break-inside: avoid; }
+}
+
+/* ══════ SMOOTH ENTRANCE ANIMATIONS ══════ */
+.fade-in {
+  opacity: 0; transform: translateY(16px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.fade-in.visible {
+  opacity: 1; transform: translateY(0);
+}
+</style>
+</head>
+<body>
+
+<!-- Progress Bar -->
+<div class="progress-bar" id="progressBar"></div>
+
+<!-- Sticky Navigation -->
+<nav class="site-nav" id="siteNav">
+  <div class="site-nav-inner">
+    <a href="#top" class="nav-brand">
+      <div class="nav-badge">🔥</div>
+      <span class="nav-title">CFR Training</span>
+    </a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#article1">Venting Smoke</a></li>
+      <li><a href="#article2">Fire Attack</a></li>
+      <li><a href="#article3">Excellence</a></li>
+      <li><a href="#activities">Activities</a></li>
+    </ul>
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- ═══════════ HERO / COVER ═══════════ -->
+<section class="hero" id="top">
+  <div class="hero-bg"></div>
+  <div class="hero-grain"></div>
+  <div class="hero-stripe-top"></div>
+  <div class="hero-stripe-red"></div>
+
+  <div class="hero-header">
+    <div class="hero-badge">🔥</div>
+    <div class="hero-dept">
+      <h1>Centerville Fire Rescue</h1>
+      <div class="hero-units">Station 1 · Engine 1 · Truck 1 · Rescue 1</div>
+    </div>
+    <div class="hero-vol">
+      <span class="hero-vol-label">Volume</span>
+      <span class="hero-vol-num">01</span>
+      <span class="hero-vol-date">March 2026</span>
+    </div>
+  </div>
+
+  <div class="hero-center">
+    <div class="hero-title-block">
+      <div class="hero-pub-label">Company Training Publication</div>
+      <div class="hero-main-title">Training<span class="gold">Ideas &amp;</span></div>
+      <div class="hero-main-sub">Discussion</div>
+      <div class="hero-divider"></div>
+      <div class="hero-subtitle">Ventilation tactics, fire attack principles,<br>and leadership standards for every shift.</div>
+      <div class="hero-divider"></div>
+      <div class="hero-for">For Sergeants &amp; Engineers · Based on FDTN Vol. 30, Issue 1</div>
+    </div>
+    <div class="hero-toc">
+      <a class="hero-toc-item" href="#article1">
+        <div class="hero-toc-num">01</div>
+        <div class="hero-toc-title">Venting Smoke</div>
+        <div class="hero-toc-tag">Fireground Ops</div>
+      </a>
+      <a class="hero-toc-item" href="#article2">
+        <div class="hero-toc-num">02</div>
+        <div class="hero-toc-title">Fire Attack Basics</div>
+        <div class="hero-toc-tag">Suppression</div>
+      </a>
+      <a class="hero-toc-item" href="#article3">
+        <div class="hero-toc-num">03</div>
+        <div class="hero-toc-title">Setting Standards</div>
+        <div class="hero-toc-tag">Officer Development</div>
+      </a>
+    </div>
+  </div>
+
+  <div class="scroll-hint">
+    <svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </div>
+
+  <div class="hero-footer">
+    <span class="hf-left">Centerville Fire Rescue</span>
+    <span class="hf-center">Training Saves Lives</span>
+    <span class="hf-right">Station 1 · 2026</span>
+  </div>
+</section>
+
+<!-- ═══════════ ARTICLE 1: VENTING SMOKE ═══════════ -->
+<div class="article-section" id="article1">
+  <div class="article-wrapper">
+    <div class="art-section-stripe fade-in">
+      <span class="ss-title">Training Ideas &amp; Discussion</span>
+      <span class="ss-num">Article 01 — Fireground Operations</span>
+    </div>
+
+    <div class="fade-in">
+      <div class="art-category">Fireground Operations · Ventilation</div>
+      <div class="art-title">Venting <em>Smoke</em> —<br>Fireground Operations</div>
+      <div class="art-deck">Ventilation is not just opening a window. It is a planned, purposeful, officer-supervised operation. Done wrong, it spreads fire and kills firefighters.</div>
+      <div class="art-byline">Source: V. Dunn, Deputy Chief (Ret.) — FDNY · FDTN Vol. 30, Issue 1</div>
+      <div class="art-red-rule"></div>
+    </div>
+
+    <div class="art-body">
+      <div class="pull-quote fade-in">
+        <p>"Ventilation before the line is ready can spread fire or burn searching firefighters."</p>
+        <cite>V. Dunn, Deputy Chief (Ret.) — FDNY</cite>
+      </div>
+
+      <div class="two-col fade-in">
+        <div class="info-box">
+          <h4>Four Purposes of Venting</h4>
+          <ul>
+            <li>To save lives</li>
+            <li>To assist the hoseline advance</li>
+            <li>To prevent or reduce effects of an explosion</li>
+            <li>To limit fire spread</li>
+          </ul>
+        </div>
+        <div class="side-box">
+          <h4>Critical Timing Rule</h4>
+          <ul>
+            <li>Venting MUST be timed with the hoseline advance</li>
+            <li>Venting before the line is ready spreads fire or burns searching firefighters</li>
+            <li>The officer must give the order to vent — no freelancing</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3 class="fade-in">Key Points by Situation</h3>
+      <div class="fade-in">
+        <p><strong>Multi-Story Residential:</strong> Vent the roof skylight, scuttle, or bulkhead door at the highest point over the interior stairway. Smoke rises, accumulates at the top floor, and asphyxiates sleeping occupants. Venting over the stairway removes the threat and saves lives.</p>
+        <p><strong>Venting for Extinguishment:</strong> Vent the opposite side of the building from the attack. Hose streams are effective at 30–50 feet — dense smoke and heat push crews back past that range.</p>
+        <p><strong>Explosion Prevention:</strong> In strip malls and commercial buildings, early removal of a roof skylight releases expanding gases safely before a smoke or gas explosion occurs.</p>
+        <p><strong>Concealed Roof Space:</strong> The most serious and frequent structural fire spread problem. Fire enters below the roof deck and spreads horizontally across multiple occupancies. A vent cut directly over the main fire area reverses the mushrooming effect.</p>
+      </div>
+
+      <div class="drill-box fade-in">
+        <div class="db-label">💡 Drill Idea</div>
+        <p>Using a pre-plan from your first-due area, identify all vent points on the building. Walk through: Where is the concealed roof space? When does the vent crew act relative to the attack crew? Who gives the order?</p>
+      </div>
+    </div>
+
+    <!-- Training Record 1 -->
+    <div class="tr-card fade-in" id="tr1">
+      <div class="tr-card-hdr" onclick="toggleTR('tr1')">
+        <div class="tr-icon">📋</div>
+        <h3>Training Record — Enter on Your Training Sheet</h3>
+        <span class="tr-toggle">▾</span>
+      </div>
+      <div class="tr-card-body">
+        <div class="tr-desc-label">Training Description</div>
+        <div class="tr-desc-text">Company-level discussion and/or tabletop on fireground ventilation principles. Topics covered: the four purposes of venting, ventilation timing and coordination with hoseline advance, venting for life safety in multi-story residential occupancies, venting for extinguishment, explosion prevention venting in commercial buildings, and controlling fire spread through concealed roof spaces.</div>
+        <div class="tr-obj-label">Training Objectives</div>
+        <div class="tr-obj-grid">
+          <div class="tr-obj-item"><span class="tr-obj-num">Objective 1</span><span class="tr-obj-text">State the four purposes of firefighting ventilation.</span></div>
+          <div class="tr-obj-item"><span class="tr-obj-num">Objective 2</span><span class="tr-obj-text">Explain why venting must be coordinated with the hoseline advance.</span></div>
+          <div class="tr-obj-item"><span class="tr-obj-num">Objective 3</span><span class="tr-obj-text">Describe the correct venting strategy for a multi-story residential fire.</span></div>
+          <div class="tr-obj-item"><span class="tr-obj-num">Objective 4</span><span class="tr-obj-text">Explain the hazard of concealed roof spaces and how to address it.</span></div>
+          <div class="tr-obj-item"><span class="tr-obj-num">Objective 5</span><span class="tr-obj-text">Identify vent points on a target hazard building in the first-due area.</span></div>
+          <div class="tr-obj-item"><span class="tr-obj-num">Objective 6</span><span class="tr-obj-text">Demonstrate understanding of officer responsibility for vent operations.</span></div>
+        </div>
+        <div class="tr-fields">
+          <div class="tr-field"><span class="tr-field-label">Training Type</span><span class="tr-field-value">Company</span></div>
+          <div class="tr-field"><span class="tr-field-label">Duration</span><span class="tr-field-value">2 Hours</span></div>
+        </div>
+        <div class="tr-nfpa">NFPA 1001 · FF II Skills | Category: Fireground Operations / Ventilation</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ ARTICLE 2: FIRE ATTACK BASICS ═══════════ -->
+<div class="article-section" id="article2">
+  <div class="article-wrapper">
+    <div class="art-section-stripe fade-in">
+      <span class="ss-title">Training Ideas &amp; Discussion</span>
+      <span class="ss-num">Article 02 — Fire Suppression</span>
+    </div>
+
+    <div class="fade-in">
+      <div class="art-category">Fire Suppression · Hoseline Operations</div>
+      <div class="art-title">Fire Attack <em>Basics</em></div>
+      <div class="art-deck">Every suppression operation comes down to hose placement, water application, and coordinated movement. These basics don't get old — they save lives every time they're done right.</div>
+      <div class="art-byline">Source: FDTN Vol. 30, Issue 1 · For: Sergeants &amp; Engineers</div>
+      <div class="art-red-rule"></div>
+    </div>
+
+    <div class="art-body">
+      <div class="pull-quote fade-in">
+        <p>"The first line goes to the seat of the fire. The second line protects the first crew and the primary means of egress."</p>
+        <cite>FDTN Vol. 30, Issue 1</cite>
+      </div>
+
+      <div class="two-col fade-in">
+        <div>
+          <h3>Hoseline Selection</h3>
+          <p><strong>1¾" line (150–200 gpm):</strong> Standard residential attack line. Maneuverable in tight hallways and stairwells. Requires two-person team minimum.</p>
+          <p><strong>2½" line (250+ gpm):</strong> Commercial, large-volume, or defensive operations. High flow for large compartments or exterior exposure protection.</p>
+          <p><strong>Rule:</strong> Match the line to the fire load — never underflow a large compartment fire. An undersized line gives the fire the advantage.</p>
+        </div>
+        <div>
+          <h3>Line Placement Priority</h3>
+          <div class="info-box">
+            <h4>Placement Rules</h4>
+            <ul>
+              <li>First line: seat of the fire</li>
+              <li>Second line: protects egress &amp; backs first crew</li>
+              <li>Third line: secondary egress or exposure</li>
+              <li>Never advance past the fire — cut off retreat</li>
+              <li>Keep the line between victims and fire</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <h3 class="fade-in">Nozzle Techniques</h3>
+      <div class="three-col fade-in">
+        <div class="side-box">
+          <h4>Straight Stream</h4>
+          <ul>
+            <li>Penetrates deep into fire compartment</li>
+            <li>Best for reaching seat of fire through doorway</li>
+            <li>Minimal steam conversion — push fire forward if misused</li>
+          </ul>
+        </div>
+        <div class="side-box">
+          <h4>Fog / Narrow Fog</h4>
+          <ul>
+            <li>Maximum steam conversion and cooling</li>
+            <li>Use in confined space with ventilation</li>
+            <li>Can push fire if used in wrong direction</li>
+          </ul>
+        </div>
+        <div class="side-box">
+          <h4>Combination</h4>
+          <ul>
+            <li>Rotate between straight and wide fog</li>
+            <li>Good for moving through compartments</li>
+            <li>Crew must communicate during transitions</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3 class="fade-in">Advancing the Line</h3>
+      <div class="fade-in">
+        <p><strong>Stairways:</strong> Flake the hose on each landing before advancing. Never let the hose kink at the door — the nozzleman needs slack. Assign one member solely to hose management on multi-story operations.</p>
+        <p><strong>Hallways:</strong> Stay low, move fast. The officer calls the nozzle open before the fire room — brief burst to cool the overhead, then advance through the door for final attack.</p>
+        <p><strong>Backup crew:</strong> The backup firefighter keeps tension on the hose, watches the nozzleman's back, and calls a retreat if conditions deteriorate.</p>
+      </div>
+
+      <div class="drill-box fade-in">
+        <div class="db-label">💡 Drill Idea</div>
+        <p>Set up a dry hose advancement drill in the station or parking lot. Practice: pulling and flaking on stairs, advancing through a doorway with a charged 1¾" line, and calling "water on" / "water off" communications between nozzle and pump operator. Time each iteration.</p>
+      </div>
+    </div>
+
+    <!-- Training Record 2 -->
+    <div class="tr-card fade-in" id="tr2">
+      <div class="tr-card-hdr" onclick="toggleTR('tr2')">
+        <div class="tr-icon">📋</div>
+        <h3>Training Record — Enter on Your Training Sheet</h3>
+        <span class="tr-toggle">▾</span>
+      </div>
+      <div class="tr-card-body">
+        <div class="tr-desc-label">Training Description</div>
+        <div class="tr-desc-text">Company-level discussion and/or hands-on drill covering fire attack hoseline operations. Topics covered: hoseline selection and sizing, line placement priorities, nozzle technique selection and application, stairway and hallway advancement procedures, and backup crew responsibilities during interior suppression operations.</div>
+        <div class="tr-obj-label">Training Objectives</div>
+        <div class="tr-obj-grid">
+          <div class="tr-obj-item"><span class="tr-obj-num">Objective 1</span><span class="tr-obj-text">Select the correct hoseline size for a given occupancy type and fire load.</span></div>
+          <div class="tr-obj-item"><span class="tr-obj-num">Objective 2</span><span class="tr-obj-text">State the priority order for hoseline placement during a structure fire.</span></div>
+          <div class="tr-obj-item"><span class="tr-obj-num">Objective 3</span><span class="tr-obj-text">Demonstrate proper nozzle technique for interior fire attack.</span></div>
+          <div class="tr-obj-item"><span class="tr-obj-num">Objective 4</span><span class="tr-obj-text">Describe the procedure for advancing a charged hoseline up a stairway.</span></div>
+          <div class="tr-obj-item"><span class="tr-obj-num">Objective 5</span><span class="tr-obj-text">Explain the role of the backup firefighter during interior suppression.</span></div>
+          <div class="tr-obj-item"><span class="tr-obj-num">Objective 6</span><span class="tr-obj-text">Demonstrate nozzle-to-pump operator communications during an attack.</span></div>
+        </div>
+        <div class="tr-fields">
+          <div class="tr-field"><span class="tr-field-label">Training Type</span><span class="tr-field-value">Company</span></div>
+          <div class="tr-field"><span class="tr-field-label">Duration</span><span class="tr-field-value">2 Hours</span></div>
+        </div>
+        <div class="tr-nfpa">NFPA 1001 · FF II Skills | Category: Fire Suppression / Hoseline Operations</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ ARTICLE 3: EXECUTION OF EXCELLENCE ═══════════ -->
+<div class="article-section" id="article3">
+  <div class="article-wrapper">
+    <div class="art-section-stripe fade-in">
+      <span class="ss-title">Training Ideas &amp; Discussion</span>
+      <span class="ss-num">Article 03 — Officer Development</span>
+    </div>
+
+    <div class="fade-in">
+      <div class="art-category">Officer Development · Leadership Standards</div>
+      <div class="art-title">Execution of<br><em>Excellence</em></div>
+      <div class="art-deck">Setting expectations is the foundation of a high-performing shift. Officers who establish clear standards — and hold them consistently — build the crews that perform when it matters most.</div>
+      <div class="art-byline">Source: FDTN Vol. 30, Issue 1 · Officer-Level Discussion</div>
+      <div class="art-red-rule"></div>
+    </div>
+
+    <div class="art-body">
+      <div class="pull-quote fade-in">
+        <p>"You cannot hold your crew to a standard you haven't clearly defined. Say it, write it, enforce it."</p>
+        <cite>FDTN Vol. 30, Issue 1</cite>
+      </div>
+
+      <div class="two-col fade-in">
+        <div>
+          <h3>The Officer's Standard</h3>
+          <p>Excellence on the fireground doesn't happen by accident — it's built during every shift through consistent expectations, regular feedback, and deliberate training. The officer who shows up and just "lets things run" is setting a standard too: mediocrity.</p>
+          <p>High-performing companies share one trait: their officers define what right looks like, model it personally, and correct deviations immediately and without hesitation.</p>
+        </div>
+        <div>
+          <div class="info-box">
+            <h4>What Officers Must Define</h4>
+            <ul>
+              <li>Apparatus check standards and timing</li>
+              <li>Turnout gear donning expectations</li>
+              <li>Radio discipline on the fireground</li>
+              <li>Accountability procedures</li>
+              <li>Post-incident debriefing format</li>
+              <li>Physical fitness expectations for shift</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <h3 class="fade-in">The Feedback Loop</h3>
+      <div class="fade-in">
+        <p><strong>Real-time correction:</strong> Address deviations immediately — not days later. Waiting erodes the standard. A brief, direct correction on the spot is far more effective than a counseling session a week after the fact.</p>
+        <p><strong>After-action review:</strong> Every incident — even minor calls — deserves a brief debriefing. What did we do well? What would we change? Even a 5-minute tailgate debrief builds a culture of continuous improvement.</p>
+        <p><strong>Recognition:</strong> Catch your crew doing things right and call it out. Specific, genuine recognition reinforces the behavior you want repeated. "Good job today" is less powerful than "The way you managed that hose on the stairs was exactly right."</p>
+      </div>
+
+      <div class="two-col fade-in">
+        <div class="side-box">
+          <h4>Signs of a High-Standard Company</h4>
+          <ul>
+            <li>Equipment is always ready — no surprises on scene</li>
+            <li>Crew can articulate their assignment before arrival</li>
+            <li>Radio traffic is clear, concise, and professional</li>
+            <li>Post-incident debriefs happen without being prompted</li>
+            <li>New members are mentored, not just observed</li>
+          </ul>
+        </div>
+        <div class="side-box">
+          <h4>Officer Discussion Prompts</h4>
+          <ul>
+            <li>What are the top 3 standards on our shift right now?</li>
+            <li>Where are we falling short — and why?</li>
+            <li>What did our last incident teach us?</li>
+            <li>How do we onboard a new member to our standard?</li>
+            <li>What does excellence look like at 0300?</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="drill-box fade-in">
+        <div class="db-label">💡 Officer Activity</div>
+        <p>Gather your shift officers. Each officer writes down the top 3 standards they hold their crew to. Compare lists — where do they align? Where are there gaps? Use this to build a written set of shift expectations that every crew member can articulate.</p>
+      </div>
+    </div>
+
+    <!-- Training Record 3 -->
+    <div class="tr-card fade-in" id="tr3">
+      <div class="tr-card-hdr" onclick="toggleTR('tr3')">
+        <div class="tr-icon">📋</div>
+        <h3>Training Record — Enter on Your Training Sheet</h3>
+        <span class="tr-toggle">▾</span>
+      </div>
+      <div class="tr-card-body">
+        <div class="tr-desc-label">Training Description</div>
+        <div class="tr-desc-text">Officer-level discussion on establishing and maintaining performance standards for shift personnel. Topics covered: defining clear operational expectations, delivering real-time corrections, conducting after-action reviews, building a feedback culture, and using recognition to reinforce high-performance behavior.</div>
+        <div class="tr-obj-label">Training Objectives</div>
+        <div class="tr-obj-grid">
+          <div class="tr-obj-item"><span class="tr-obj-num">Objective 1</span><span class="tr-obj-text">Identify the key operational standards that must be defined for a shift.</span></div>
+          <div class="tr-obj-item"><span class="tr-obj-num">Objective 2</span><span class="tr-obj-text">Explain the importance of real-time correction vs. delayed feedback.</span></div>
+          <div class="tr-obj-item"><span class="tr-obj-num">Objective 3</span><span class="tr-obj-text">Describe the format and purpose of an after-action debriefing.</span></div>
+          <div class="tr-obj-item"><span class="tr-obj-num">Objective 4</span><span class="tr-obj-text">Demonstrate how to deliver specific, actionable recognition to crew members.</span></div>
+          <div class="tr-obj-item"><span class="tr-obj-num">Objective 5</span><span class="tr-obj-text">Develop a written list of top operational standards for your company.</span></div>
+          <div class="tr-obj-item"><span class="tr-obj-num">Objective 6</span><span class="tr-obj-text">Lead a 10-minute after-action review following a training evolution.</span></div>
+        </div>
+        <div class="tr-fields">
+          <div class="tr-field"><span class="tr-field-label">Training Type</span><span class="tr-field-value">Officer</span></div>
+          <div class="tr-field"><span class="tr-field-label">Duration</span><span class="tr-field-value">1 Hour</span></div>
+        </div>
+        <div class="tr-nfpa">NFPA 1021 · Fire Officer I/II | Category: Officer Development / Leadership</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ SUGGESTED ACTIVITIES ═══════════ -->
+<section class="activities-section" id="activities">
+  <div class="activities-header fade-in">
+    <h2>Suggested Shift Training Activities</h2>
+    <p>Pick one or more per shift — coordinate with your company officer before initiating.</p>
+  </div>
+  <div class="acts-grid">
+    <div class="act-card fade-in">
+      <div class="act-num">01</div>
+      <div class="act-cat">Ventilation</div>
+      <div class="act-title">Pre-Plan Vent Walk</div>
+      <div class="act-body">Pull a pre-plan for a first-due target hazard. Walk the building and identify every vent point: roof skylights, scuttles, HVAC, concealed spaces. Discuss who vents, when, and on whose order. Debrief as a company after.</div>
+    </div>
+    <div class="act-card fade-in">
+      <div class="act-num">02</div>
+      <div class="act-cat">Fire Attack</div>
+      <div class="act-title">Hose Deployment Drill</div>
+      <div class="act-body">Pull and stretch your attack line in the parking lot or station. Practice: proper flaking on stairs, advancing a charged 1¾" line through a door, and calling water on/off with the pump operator. Time each evolution and compare runs.</div>
+    </div>
+    <div class="act-card fade-in">
+      <div class="act-num">03</div>
+      <div class="act-cat">Suppression</div>
+      <div class="act-title">Nozzle Technique Review</div>
+      <div class="act-body">Set up a water flow demonstration with a charged line. Practice transitioning between straight stream, narrow fog, and wide fog. Discuss when each pattern is appropriate. Review fire behavior during each technique.</div>
+    </div>
+    <div class="act-card fade-in">
+      <div class="act-num">04</div>
+      <div class="act-cat">Officer Development</div>
+      <div class="act-title">Standards &amp; Expectations Meeting</div>
+      <div class="act-body">Officers: gather your crew and conduct a standards discussion. Write down your top 3 company expectations. Share them. Compare with other officers on shift. Create a one-page written standard that every crew member signs off on.</div>
+    </div>
+    <div class="act-card fade-in">
+      <div class="act-num">05</div>
+      <div class="act-cat">Accountability</div>
+      <div class="act-title">Tabletop Scenario</div>
+      <div class="act-body">Run a kitchen table scenario involving a two-story residential fire. Address: Who gives the vent order? What size line do you pull? Where does the second line go? What happens if conditions deteriorate? Debrief thoroughly — no wrong answers.</div>
+    </div>
+    <div class="act-card fade-in">
+      <div class="act-num">06</div>
+      <div class="act-cat">Leadership</div>
+      <div class="act-title">After-Action Practice</div>
+      <div class="act-body">After any training evolution or call, conduct a structured 5-minute debrief: What was the plan? What did we do well? What would we change? Who improves from this? Practice makes the debrief part of your culture — not an afterthought.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ FOOTER / BACK COVER ═══════════ -->
+<footer class="mag-footer">
+  <div class="footer-badge">🔥</div>
+  <div class="footer-motto">Training<em>Saves Lives</em></div>
+  <div class="footer-sub">"The more you sweat in training, the less you bleed in battle."</div>
+  <div class="footer-rule"></div>
+  <div class="footer-dept">Centerville Fire Rescue</div>
+  <div class="footer-units">Station 1 · Engine 1 · Truck 1 · Rescue 1</div>
+  <button class="footer-print" onclick="window.print()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+    Print Magazine
+  </button>
+  <div class="footer-source">Source: FDTN Vol. 30, Issue 1 · Prepared for Shift Training — March 2026</div>
+</footer>
+
+<script>
+// ═══ PROGRESS BAR ═══
+const progressBar = document.getElementById('progressBar');
+function updateProgress() {
+  const h = document.documentElement.scrollHeight - window.innerHeight;
+  const pct = h > 0 ? (window.scrollY / h) * 100 : 0;
+  progressBar.style.width = pct + '%';
+}
+
+// ═══ STICKY NAV ═══
+const siteNav = document.getElementById('siteNav');
+let lastScroll = 0;
+function updateNav() {
+  const y = window.scrollY;
+  siteNav.classList.toggle('visible', y > window.innerHeight * 0.6);
+  lastScroll = y;
+
+  // Active link highlighting
+  const sections = ['article1','article2','article3','activities'];
+  const links = document.querySelectorAll('.nav-links a');
+  let current = '';
+  sections.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && el.getBoundingClientRect().top < 200) current = id;
+  });
+  links.forEach(a => {
+    a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+  });
+}
+
+// ═══ MOBILE NAV TOGGLE ═══
+document.getElementById('navToggle').addEventListener('click', () => {
+  document.getElementById('navLinks').classList.toggle('open');
+});
+
+// Close mobile nav on link click
+document.querySelectorAll('.nav-links a').forEach(a => {
+  a.addEventListener('click', () => {
+    document.getElementById('navLinks').classList.remove('open');
+  });
+});
+
+// ═══ TRAINING RECORD TOGGLE ═══
+function toggleTR(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+
+// ═══ SCROLL ANIMATIONS ═══
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+      observer.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+// ═══ SCROLL LISTENER ═══
+window.addEventListener('scroll', () => {
+  requestAnimationFrame(() => { updateProgress(); updateNav(); });
+}, { passive: true });
+
+// Init
+updateProgress();
+updateNav();
+</script>
+
+</body>
+</html>
