@@ -1320,23 +1320,23 @@ function loadAICapture(jobId) {
         initCanvas(null);
 
         setTimeout(function() {
-        console.log('AI Import: canvas ready, w=' + canvas.width + ' h=' + canvas.height);
         fetch(svgUrl).then(function(r){return r.text()}).then(function(svgText) {
-            console.log('AI Import: SVG fetched, ' + svgText.length + ' chars');
             fabric.loadSVGFromString(svgText, function(objects, options) {
-                console.log('AI Import: parsed ' + (objects ? objects.length : 0) + ' objects');
                 if (!objects || !objects.length) { toast('Failed to parse SVG'); return; }
                 var svgW = options.width || 800, svgH = options.height || 600;
                 var scale = Math.min((canvas.width - 40) / svgW, (canvas.height - 40) / svgH);
-                console.log('AI Import: scale=' + scale + ' svgW=' + svgW + ' svgH=' + svgH);
-                var grp = fabric.util.groupSVGElements(objects, options);
-                grp.set({
-                    left: 20, top: 20,
-                    scaleX: scale, scaleY: scale,
-                    selectable: true, evented: true, isBg: true
+                var offX = 20, offY = 20;
+
+                objects.forEach(function(obj) {
+                    obj.set({
+                        left: (obj.left || 0) * scale + offX,
+                        top: (obj.top || 0) * scale + offY,
+                        scaleX: (obj.scaleX || 1) * scale,
+                        scaleY: (obj.scaleY || 1) * scale,
+                        selectable: true
+                    });
+                    canvas.add(obj);
                 });
-                canvas.add(grp);
-                canvas.sendToBack(grp);
 
                 var features = job.ai_features || [];
                 var featureMap = {
@@ -1361,7 +1361,7 @@ function loadAICapture(jobId) {
                 canvas.renderAll();
                 saveHistory();
                 saveData();
-                toast('AI floor plan loaded! Draw on top and drag symbols into place.');
+                toast('AI floor plan loaded! Select, move, resize, or delete any element.');
             });
         }).catch(function(err) { toast('Failed to fetch SVG: ' + err.message); });
         }, 200);
