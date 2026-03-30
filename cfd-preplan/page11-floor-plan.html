@@ -1319,46 +1319,46 @@ function loadAICapture(jobId) {
         document.getElementById('annotSection').classList.remove('hidden');
         initCanvas(null);
 
-        fabric.loadSVGFromURL(svgUrl, function(objects, options) {
-            if (!objects || !objects.length) { toast('Failed to parse SVG'); return; }
-            var svgW = options.width || 800, svgH = options.height || 600;
-            var scale = Math.min((canvas.width - 40) / svgW, (canvas.height - 40) / svgH);
-            objects.forEach(function(obj) {
-                obj.set({
-                    left: (obj.left || 0) * scale + 20,
-                    top: (obj.top || 0) * scale + 20,
-                    scaleX: (obj.scaleX || 1) * scale,
-                    scaleY: (obj.scaleY || 1) * scale,
-                    selectable: true
+        fetch(svgUrl).then(function(r){return r.text()}).then(function(svgText) {
+            fabric.loadSVGFromString(svgText, function(objects, options) {
+                if (!objects || !objects.length) { toast('Failed to parse SVG — ' + objects); return; }
+                var svgW = options.width || 800, svgH = options.height || 600;
+                var scale = Math.min((canvas.width - 40) / svgW, (canvas.height - 40) / svgH);
+                var grp = fabric.util.groupSVGElements(objects, options);
+                grp.set({
+                    left: 20, top: 20,
+                    scaleX: scale, scaleY: scale,
+                    selectable: false, evented: false, isBg: true
                 });
-                canvas.add(obj);
-            });
+                canvas.add(grp);
+                canvas.sendToBack(grp);
 
-            var features = job.ai_features || [];
-            var featureMap = {
-                'fdc': 'fdc', 'fire_alarm_pull_station': 'pull', 'fire_alarm': 'facp',
-                'knox_box': 'knox', 'sprinkler': 'sprinkler', 'standpipe': 'standpipe',
-                'hydrant': 'hydrant', 'electrical_panel': 'elec', 'electrical_shutoff': 'elec-off',
-                'gas_shutoff': 'gas-off', 'water_shutoff': 'water-off', 'exit_doors': 'exit',
-                'exit': 'exit', 'stairs': 'stairs', 'elevator': 'elevator',
-                'smoke_detector': 'smoke', 'extinguisher': 'extinguisher'
-            };
-            features.forEach(function(f, idx) {
-                var symbolType = featureMap[f.type_id] || null;
-                if (symbolType) {
-                    var obj = getSymbol(symbolType);
-                    if (obj) {
-                        obj.set({ left: 60 + (idx % 6) * 80, top: canvas.height - 100 + Math.floor(idx / 6) * 50 });
-                        canvas.add(obj);
+                var features = job.ai_features || [];
+                var featureMap = {
+                    'fdc': 'fdc', 'fire_alarm_pull_station': 'pull', 'fire_alarm': 'facp',
+                    'knox_box': 'knox', 'sprinkler': 'sprinkler', 'standpipe': 'standpipe',
+                    'hydrant': 'hydrant', 'electrical_panel': 'elec', 'electrical_shutoff': 'elec-off',
+                    'gas_shutoff': 'gas-off', 'water_shutoff': 'water-off', 'exit_doors': 'exit',
+                    'exit': 'exit', 'stairs': 'stairs', 'elevator': 'elevator',
+                    'smoke_detector': 'smoke', 'extinguisher': 'extinguisher'
+                };
+                features.forEach(function(f, idx) {
+                    var symbolType = featureMap[f.type_id] || null;
+                    if (symbolType) {
+                        var obj = getSymbol(symbolType);
+                        if (obj) {
+                            obj.set({ left: 60 + (idx % 6) * 80, top: canvas.height - 100 + Math.floor(idx / 6) * 50 });
+                            canvas.add(obj);
+                        }
                     }
-                }
-            });
+                });
 
-            canvas.renderAll();
-            saveHistory();
-            saveData();
-            toast('AI capture loaded! Drag rooms and symbols to correct positions.');
-        });
+                canvas.renderAll();
+                saveHistory();
+                saveData();
+                toast('AI floor plan loaded! Draw on top and drag symbols into place.');
+            });
+        }).catch(function(err) { toast('Failed to fetch SVG: ' + err.message); });
 
         // Pre-fill form data into localStorage
         var formData = job.ai_form_data || {};
