@@ -1319,11 +1319,16 @@ function loadAICapture(jobId) {
         document.getElementById('annotSection').classList.remove('hidden');
         initCanvas(null);
 
+        setTimeout(function() {
+        console.log('AI Import: canvas ready, w=' + canvas.width + ' h=' + canvas.height);
         fetch(svgUrl).then(function(r){return r.text()}).then(function(svgText) {
+            console.log('AI Import: SVG fetched, ' + svgText.length + ' chars');
             fabric.loadSVGFromString(svgText, function(objects, options) {
-                if (!objects || !objects.length) { toast('Failed to parse SVG — ' + objects); return; }
+                console.log('AI Import: parsed ' + (objects ? objects.length : 0) + ' objects');
+                if (!objects || !objects.length) { toast('Failed to parse SVG'); return; }
                 var svgW = options.width || 800, svgH = options.height || 600;
                 var scale = Math.min((canvas.width - 40) / svgW, (canvas.height - 40) / svgH);
+                console.log('AI Import: scale=' + scale + ' svgW=' + svgW + ' svgH=' + svgH);
                 var grp = fabric.util.groupSVGElements(objects, options);
                 grp.set({
                     left: 20, top: 20,
@@ -1359,6 +1364,7 @@ function loadAICapture(jobId) {
                 toast('AI floor plan loaded! Draw on top and drag symbols into place.');
             });
         }).catch(function(err) { toast('Failed to fetch SVG: ' + err.message); });
+        }, 200);
 
         // Pre-fill form data into localStorage
         var formData = job.ai_form_data || {};
