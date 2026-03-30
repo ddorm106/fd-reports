@@ -1325,18 +1325,21 @@ function loadAICapture(jobId) {
                 if (!objects || !objects.length) { toast('Failed to parse SVG'); return; }
                 var svgW = options.width || 800, svgH = options.height || 600;
                 var scale = Math.min((canvas.width - 40) / svgW, (canvas.height - 40) / svgH);
-                var offX = 20, offY = 20;
 
-                objects.forEach(function(obj) {
-                    obj.set({
-                        left: (obj.left || 0) * scale + offX,
-                        top: (obj.top || 0) * scale + offY,
-                        scaleX: (obj.scaleX || 1) * scale,
-                        scaleY: (obj.scaleY || 1) * scale,
-                        selectable: true
-                    });
-                    canvas.add(obj);
+                // Group first for correct coordinate transforms, then ungroup for editability
+                var grp = fabric.util.groupSVGElements(objects, options);
+                grp.set({ left: 20, top: 20, scaleX: scale, scaleY: scale });
+                canvas.add(grp);
+                canvas.setActiveObject(grp);
+                // Ungroup so each rect/text/line is individually editable
+                var items = grp._objects.slice();
+                grp._restoreObjectsState();
+                canvas.remove(grp);
+                items.forEach(function(item) {
+                    item.set({ selectable: true, evented: true });
+                    canvas.add(item);
                 });
+                canvas.discardActiveObject();
 
                 var features = job.ai_features || [];
                 var featureMap = {
