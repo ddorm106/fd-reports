@@ -1319,12 +1319,20 @@ function loadAICapture(jobId) {
         document.getElementById('annotSection').classList.remove('hidden');
         initCanvas(null);
 
-        fabric.Image.fromURL(svgUrl, function(img) {
-            if (!img || !img.width) { toast('Failed to load SVG image'); return; }
-            var scale = Math.min((canvas.width - 40) / img.width, (canvas.height - 40) / img.height);
-            img.set({ left: 20, top: 20, scaleX: scale, scaleY: scale, selectable: false, evented: false, isBg: true });
-            canvas.add(img);
-            canvas.sendToBack(img);
+        fabric.loadSVGFromURL(svgUrl, function(objects, options) {
+            if (!objects || !objects.length) { toast('Failed to parse SVG'); return; }
+            var svgW = options.width || 800, svgH = options.height || 600;
+            var scale = Math.min((canvas.width - 40) / svgW, (canvas.height - 40) / svgH);
+            objects.forEach(function(obj) {
+                obj.set({
+                    left: (obj.left || 0) * scale + 20,
+                    top: (obj.top || 0) * scale + 20,
+                    scaleX: (obj.scaleX || 1) * scale,
+                    scaleY: (obj.scaleY || 1) * scale,
+                    selectable: true
+                });
+                canvas.add(obj);
+            });
 
             var features = job.ai_features || [];
             var featureMap = {
@@ -1349,8 +1357,8 @@ function loadAICapture(jobId) {
             canvas.renderAll();
             saveHistory();
             saveData();
-            toast('AI capture loaded! Drag symbols to correct positions.');
-        }, { crossOrigin: 'anonymous' });
+            toast('AI capture loaded! Drag rooms and symbols to correct positions.');
+        });
 
         // Pre-fill form data into localStorage
         var formData = job.ai_form_data || {};
