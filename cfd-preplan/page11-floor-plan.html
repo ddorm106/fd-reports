@@ -102,6 +102,11 @@
             <button onclick="document.getElementById('dsFile').click()">Load JSON File</button>
             <input type="file" id="dsFile" accept=".json" style="display:none">
         </div>
+        <div class="import-panel" style="margin-top:12px;border-top:1px solid #e2e8f0;padding-top:12px">
+            <h4>🤖 Import AI Capture</h4>
+            <p style="font-size:11px;color:#666;margin:0 0 8px">Load AI-generated floor plan from DivisionScan captures</p>
+            <button onclick="importAICapture()">Load AI Capture</button>
+        </div>
     </div>
 
     <!-- ANNOTATION / DRAWING SECTION -->
@@ -1269,6 +1274,119 @@ document.getElementById('addKeyBtn').onclick = function() {
     switchToSelect();
     toast('Symbol key added — drag to reposition');
 };
+
+/* AI Capture Import — loads from divisionscan.org */
+var DS_API = 'https://divisionscan.org';
+
+function importAICapture() {
+    toast('Loading captures...');
+    fetch(DS_API + '/api/jobs?status=processed').then(function(r){return r.json()}).then(function(d) {
+        var jobs = d.jobs || [];
+        if (!jobs.length) { toast('No processed captures found'); return; }
+        if (jobs.length === 1) { loadAICapture(jobs[0].id); return; }
+        var modal = document.createElement('div');
+        modal.id = 'aiCaptureModal';
+        modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:2000;display:flex;justify-content:center;align-items:center';
+        var bx = '<div style="background:#fff;border-radius:12px;padding:24px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto">';
+        bx += '<h3 style="margin:0 0 4px;color:#1e3a5f">Import AI Capture</h3>';
+        bx += '<p style="color:#888;font-size:12px;margin:0 0 16px">' + jobs.length + ' processed captures</p>';
+        jobs.forEach(function(j) {
+            var dt = j.created_at ? new Date(j.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
+            var conf = j.ai_confidence ? Math.round(j.ai_confidence * 100) + '% confidence' : '';
+            bx += '<div onclick="loadAICapture(\'' + j.id + '\');document.getElementById(\'aiCaptureModal\').remove()" style="padding:12px;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:8px;cursor:pointer" onmouseover="this.style.borderColor=\'#1e3a5f\'" onmouseout="this.style.borderColor=\'#e2e8f0\'">';
+            bx += '<div style="font-weight:600;color:#1e3a5f">' + escH(j.building_name || 'Unnamed') + '</div>';
+            if (j.building_address) bx += '<div style="font-size:12px;color:#666">' + escH(j.building_address) + '</div>';
+            bx += '<div style="font-size:11px;color:#999;margin-top:4px">' + j.photo_count + ' photos \u00b7 ' + j.department + ' \u00b7 ' + conf + ' \u00b7 ' + dt + '</div></div>';
+        });
+        bx += '<div style="text-align:center;margin-top:12px"><button onclick="document.getElementById(\'aiCaptureModal\').remove()" style="padding:8px 20px;border:1px solid #ccc;border-radius:6px;background:#fff;cursor:pointer">Cancel</button></div></div>';
+        modal.innerHTML = bx;
+        modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+        document.body.appendChild(modal);
+    }).catch(function(err) { toast('Could not connect: ' + (err.message || 'Network error')); });
+}
+
+function loadAICapture(jobId) {
+    toast('Loading AI capture...');
+    fetch(DS_API + '/api/jobs/' + jobId).then(function(r){return r.json()}).then(function(d) {
+        var job = d.job;
+        if (!job) { toast('Job not found'); return; }
+
+        var svgKey = job.ai_floor_plan_r2_key;
+        if (!svgKey) { toast('No floor plan SVG found'); return; }
+
+        var svgUrl = DS_API + '/api/media/' + svgKey;
+        document.getElementById('uploadSection').classList.add('hidden');
+        document.getElementById('annotSection').classList.remove('hidden');
+        initCanvas(null);
+
+        fabric.Image.fromURL(svgUrl, function(img) {
+            if (!img || !img.width) { toast('Failed to load SVG image'); return; }
+            var scale = Math.min((canvas.width - 40) / img.width, (canvas.height - 40) / img.height);
+            img.set({ left: 20, top: 20, scaleX: scale, scaleY: scale, selectable: false, evented: false, isBg: true });
+            canvas.add(img);
+            canvas.sendToBack(img);
+
+            var features = job.ai_features || [];
+            var featureMap = {
+                'fdc': 'fdc', 'fire_alarm_pull_station': 'pull', 'fire_alarm': 'facp',
+                'knox_box': 'knox', 'sprinkler': 'sprinkler', 'standpipe': 'standpipe',
+                'hydrant': 'hydrant', 'electrical_panel': 'elec', 'electrical_shutoff': 'elec-off',
+                'gas_shutoff': 'gas-off', 'water_shutoff': 'water-off', 'exit_doors': 'exit',
+                'exit': 'exit', 'stairs': 'stairs', 'elevator': 'elevator',
+                'smoke_detector': 'smoke', 'extinguisher': 'extinguisher'
+            };
+            features.forEach(function(f, idx) {
+                var symbolType = featureMap[f.type_id] || null;
+                if (symbolType) {
+                    var obj = getSymbol(symbolType);
+                    if (obj) {
+                        obj.set({ left: 60 + (idx % 6) * 80, top: canvas.height - 100 + Math.floor(idx / 6) * 50 });
+                        canvas.add(obj);
+                    }
+                }
+            });
+
+            canvas.renderAll();
+            saveHistory();
+            saveData();
+            toast('AI capture loaded! Drag symbols to correct positions.');
+        }, { crossOrigin: 'anonymous' });
+
+        // Pre-fill form data into localStorage
+        var formData = job.ai_form_data || {};
+        var fieldData = job.field_data || {};
+        var merged = {};
+        for (var k in formData) merged[k] = formData[k];
+        for (var k2 in fieldData) merged[k2] = fieldData[k2];
+
+        try {
+            var saved = JSON.parse(localStorage.getItem('preFirePlan') || '{}');
+            if (job.building_name) saved.business_name = job.building_name;
+            if (job.building_address) saved.address = job.building_address;
+            if (job.latitude) saved.latitude = String(job.latitude);
+            if (job.longitude) saved.longitude = String(job.longitude);
+            if (merged.construction_type) saved.construction_type = merged.construction_type;
+            if (merged.occupancy_type) saved.occupancy_types = [merged.occupancy_type];
+            if (merged.roof_type) saved.roof_covering = merged.roof_type;
+            if (merged.has_sprinkler) saved.sprinklered = 'Yes';
+            if (merged.sprinkler_type) saved.sprinkler_type = merged.sprinkler_type;
+            if (merged.has_fire_alarm) saved.fire_alarm = 'Yes';
+            if (merged.has_standpipe) saved.standpipe = 'Yes';
+            if (merged.has_knox_box) saved.knox_box = 'Yes';
+            if (merged.knox_box_location) saved.knox_box_loc = merged.knox_box_location;
+            if (merged.fdc_location) saved.fdc_loc = merged.fdc_location;
+            if (merged.contact_name) saved.primary_contact = merged.contact_name;
+            if (merged.contact_phone) saved.primary_tel = merged.contact_phone;
+            if (merged.electrical_shutoff) saved.electric_loc = merged.electrical_shutoff;
+            if (merged.gas_shutoff) saved.natural_gas_loc = merged.gas_shutoff;
+            if (merged.water_shutoff) saved.water_shutoff_loc = merged.water_shutoff;
+            if (merged.special_hazards) saved.life_safety_concerns = merged.special_hazards;
+            if (job.floors) saved.num_stories = String(job.floors);
+            localStorage.setItem('preFirePlan', JSON.stringify(saved));
+        } catch(e) { console.warn('Failed to save form data:', e); }
+
+    }).catch(function(err) { toast('Failed to load: ' + (err.message || 'error')); });
+}
 
 /* DivisionScan import */
 document.getElementById('dsFile').onchange = function() {
