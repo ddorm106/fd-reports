@@ -1312,62 +1312,46 @@ function loadAICapture(jobId) {
         if (!job) { toast('Job not found'); return; }
 
         var svgKey = job.ai_floor_plan_r2_key;
-        if (!svgKey) { toast('No floor plan SVG found'); return; }
 
-        var svgUrl = DS_API + '/api/media/' + svgKey;
-        document.getElementById('uploadSection').classList.add('hidden');
-        document.getElementById('annotSection').classList.remove('hidden');
-        initCanvas(null);
+        // If SVG exists, load it — otherwise just load form data and open blank canvas
+        if (svgKey) {
+            var svgUrl = DS_API + '/api/media/' + svgKey;
+            document.getElementById('uploadSection').classList.add('hidden');
+            document.getElementById('annotSection').classList.remove('hidden');
+            initCanvas(null);
 
-        setTimeout(function() {
-        fetch(svgUrl).then(function(r){return r.text()}).then(function(svgText) {
-            fabric.loadSVGFromString(svgText, function(objects, options) {
-                if (!objects || !objects.length) { toast('Failed to parse SVG'); return; }
-                var svgW = options.width || 800, svgH = options.height || 600;
-                var scale = Math.min((canvas.width - 40) / svgW, (canvas.height - 40) / svgH);
-
-                // Group first for correct coordinate transforms, then ungroup for editability
-                var grp = fabric.util.groupSVGElements(objects, options);
-                grp.set({ left: 20, top: 20, scaleX: scale, scaleY: scale });
-                canvas.add(grp);
-                canvas.setActiveObject(grp);
-                // Ungroup so each rect/text/line is individually editable
-                var items = grp._objects.slice();
-                grp._restoreObjectsState();
-                canvas.remove(grp);
-                items.forEach(function(item) {
-                    item.set({ selectable: true, evented: true });
-                    canvas.add(item);
+            setTimeout(function() {
+            fetch(svgUrl).then(function(r){return r.text()}).then(function(svgText) {
+                fabric.loadSVGFromString(svgText, function(objects, options) {
+                    if (!objects || !objects.length) { toast('Failed to parse SVG'); return; }
+                    var svgW = options.width || 800, svgH = options.height || 600;
+                    var scale = Math.min((canvas.width - 40) / svgW, (canvas.height - 40) / svgH);
+                    var grp = fabric.util.groupSVGElements(objects, options);
+                    grp.set({ left: 20, top: 20, scaleX: scale, scaleY: scale });
+                    canvas.add(grp);
+                    canvas.setActiveObject(grp);
+                    var items = grp._objects.slice();
+                    grp._restoreObjectsState();
+                    canvas.remove(grp);
+                    items.forEach(function(item) {
+                        item.set({ selectable: true, evented: true });
+                        canvas.add(item);
+                    });
+                    canvas.discardActiveObject();
+                    canvas.renderAll();
+                    saveHistory();
+                    saveData();
+                    toast('AI floor plan loaded!');
                 });
-                canvas.discardActiveObject();
-
-                var features = job.ai_features || [];
-                var featureMap = {
-                    'fdc': 'fdc', 'fire_alarm_pull_station': 'pull', 'fire_alarm': 'facp',
-                    'knox_box': 'knox', 'sprinkler': 'sprinkler', 'standpipe': 'standpipe',
-                    'hydrant': 'hydrant', 'electrical_panel': 'elec', 'electrical_shutoff': 'elec-off',
-                    'gas_shutoff': 'gas-off', 'water_shutoff': 'water-off', 'exit_doors': 'exit',
-                    'exit': 'exit', 'stairs': 'stairs', 'elevator': 'elevator',
-                    'smoke_detector': 'smoke', 'extinguisher': 'extinguisher'
-                };
-                features.forEach(function(f, idx) {
-                    var symbolType = featureMap[f.type_id] || null;
-                    if (symbolType) {
-                        var obj = getSymbol(symbolType);
-                        if (obj) {
-                            obj.set({ left: 60 + (idx % 6) * 80, top: canvas.height - 100 + Math.floor(idx / 6) * 50 });
-                            canvas.add(obj);
-                        }
-                    }
-                });
-
-                canvas.renderAll();
-                saveHistory();
-                saveData();
-                toast('AI floor plan loaded! Select, move, resize, or delete any element.');
-            });
-        }).catch(function(err) { toast('Failed to fetch SVG: ' + err.message); });
-        }, 200);
+            }).catch(function(err) { toast('Failed to fetch SVG: ' + err.message); });
+            }, 200);
+        } else {
+            // No SVG — open blank canvas so user can draw manually
+            document.getElementById('uploadSection').classList.add('hidden');
+            document.getElementById('annotSection').classList.remove('hidden');
+            initCanvas(null);
+            toast('Building data loaded — no AI floor plan yet. Draw your floor plan manually.');
+        }
 
         // Pre-fill form data into localStorage
         var formData = job.ai_form_data || {};
