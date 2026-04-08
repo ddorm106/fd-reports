@@ -1280,9 +1280,9 @@ var DS_API = 'https://divisionscan.org';
 
 function importAICapture() {
     toast('Loading captures...');
-    fetch(DS_API + '/api/jobs?status=processed').then(function(r){return r.json()}).then(function(d) {
+    fetch(DS_API + '/api/jobs?limit=20').then(function(r){return r.json()}).then(function(d) {
         var jobs = d.jobs || [];
-        if (!jobs.length) { toast('No processed captures found'); return; }
+        if (!jobs.length) { toast('No captures found'); return; }
         if (jobs.length === 1) { loadAICapture(jobs[0].id); return; }
         var modal = document.createElement('div');
         modal.id = 'aiCaptureModal';
