@@ -858,8 +858,42 @@ function setupEvents() {
         window._zoomSaveTimer = setTimeout(saveData, 300);
     });
 
-    // Alt+drag or middle-mouse to pan
+    // Alt+drag, middle-mouse, OR two-finger touch to pan/pinch
     var _isPanning = false, _lastPanX = 0, _lastPanY = 0;
+    var _touches = {}, _lastPinchDist = null;
+    canvas.upperCanvasEl.addEventListener('touchstart', function(e) {
+        Array.from(e.changedTouches).forEach(function(t) { _touches[t.identifier] = {x:t.clientX,y:t.clientY}; });
+        if (Object.keys(_touches).length === 2) { e.preventDefault(); _lastPinchDist = null; }
+    }, { passive: false });
+    canvas.upperCanvasEl.addEventListener('touchmove', function(e) {
+        var ids = Object.keys(_touches);
+        if (ids.length === 2 && e.touches.length >= 2) {
+            e.preventDefault();
+            var t1 = e.touches[0], t2 = e.touches[1];
+            var cx = (t1.clientX + t2.clientX) / 2, cy = (t1.clientY + t2.clientY) / 2;
+            var rect = canvas.upperCanvasEl.getBoundingClientRect();
+            var dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+            if (_lastPinchDist) {
+                var ratio = dist / _lastPinchDist;
+                var zoom = Math.min(Math.max(canvas.getZoom() * ratio, 0.1), 10);
+                canvas.zoomToPoint({x: cx - rect.left, y: cy - rect.top}, zoom);
+                updateZoomLabel();
+            }
+            var prevCx = (parseFloat(_touches[ids[0]].x) + parseFloat(_touches[ids[1]].x)) / 2;
+            var prevCy = (parseFloat(_touches[ids[0]].y) + parseFloat(_touches[ids[1]].y)) / 2;
+            var vpt = canvas.viewportTransform;
+            canvas.setViewportTransform([vpt[0],vpt[1],vpt[2],vpt[3],vpt[4]+(cx-prevCx),vpt[5]+(cy-prevCy)]);
+            _lastPinchDist = dist;
+        }
+        Array.from(e.changedTouches).forEach(function(t) {
+            if (_touches[t.identifier]) _touches[t.identifier] = {x:t.clientX,y:t.clientY};
+        });
+    }, { passive: false });
+    canvas.upperCanvasEl.addEventListener('touchend', function(e) {
+        Array.from(e.changedTouches).forEach(function(t) { delete _touches[t.identifier]; });
+        if (Object.keys(_touches).length < 2) _lastPinchDist = null;
+    });
+
     canvas.on('mouse:down', function(opt) {
         if (opt.e.altKey || opt.e.button === 1) {
             _isPanning = true;
@@ -1378,6 +1412,7 @@ function _loadSVGFallback(svgUrl) {
             canvas.discardActiveObject();
             canvas.renderAll(); saveHistory(); saveData();
             toast('SVG floor plan loaded. Objects are individually selectable.');
+                    setTimeout(function() { fitToObjects(); }, 100);
         });
     }).catch(function(err) { toast('Failed to fetch SVG: ' + err.message); });
 }
