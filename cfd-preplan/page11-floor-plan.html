@@ -1311,83 +1311,318 @@ function loadAICapture(jobId) {
         var job = d.job;
         if (!job) { toast('Job not found'); return; }
 
-        var svgKey = job.ai_floor_plan_r2_key;
+        // Open canvas regardless
+        document.getElementById('uploadSection').classList.add('hidden');
+        document.getElementById('annotSection').classList.remove('hidden');
+        initCanvas(null);
 
-        // If SVG exists, load it — otherwise just load form data and open blank canvas
-        if (svgKey) {
-            var svgUrl = DS_API + '/api/media/' + svgKey;
-            document.getElementById('uploadSection').classList.add('hidden');
-            document.getElementById('annotSection').classList.remove('hidden');
-            initCanvas(null);
-
-            setTimeout(function() {
-            fetch(svgUrl).then(function(r){return r.text()}).then(function(svgText) {
-                fabric.loadSVGFromString(svgText, function(objects, options) {
-                    if (!objects || !objects.length) { toast('Failed to parse SVG'); return; }
-                    var svgW = options.width || 800, svgH = options.height || 600;
-                    var scale = Math.min((canvas.width - 40) / svgW, (canvas.height - 40) / svgH);
-                    var grp = fabric.util.groupSVGElements(objects, options);
-                    grp.set({ left: 20, top: 20, scaleX: scale, scaleY: scale });
-                    canvas.add(grp);
-                    canvas.setActiveObject(grp);
-                    var items = grp._objects.slice();
-                    grp._restoreObjectsState();
-                    canvas.remove(grp);
-                    items.forEach(function(item) {
-                        item.set({ selectable: true, evented: true });
-                        canvas.add(item);
-                    });
-                    canvas.discardActiveObject();
-                    canvas.renderAll();
-                    saveHistory();
-                    saveData();
-                    toast('AI floor plan loaded!');
-                });
-            }).catch(function(err) { toast('Failed to fetch SVG: ' + err.message); });
-            }, 200);
-        } else {
-            // No SVG — open blank canvas so user can draw manually
-            document.getElementById('uploadSection').classList.add('hidden');
-            document.getElementById('annotSection').classList.remove('hidden');
-            initCanvas(null);
-            toast('Building data loaded — no AI floor plan yet. Draw your floor plan manually.');
-        }
-
-        // Pre-fill form data into localStorage
-        var formData = job.ai_form_data || {};
+        // Pre-fill pre-plan form data
         var fieldData = job.field_data || {};
-        var merged = {};
-        for (var k in formData) merged[k] = formData[k];
-        for (var k2 in fieldData) merged[k2] = fieldData[k2];
-
         try {
             var saved = JSON.parse(localStorage.getItem('preFirePlan') || '{}');
-            if (job.building_name) saved.business_name = job.building_name;
+            if (job.building_name)  saved.business_name = job.building_name;
             if (job.building_address) saved.address = job.building_address;
-            if (job.latitude) saved.latitude = String(job.latitude);
+            if (job.latitude)  saved.latitude  = String(job.latitude);
             if (job.longitude) saved.longitude = String(job.longitude);
-            if (merged.construction_type) saved.construction_type = merged.construction_type;
-            if (merged.occupancy_type) saved.occupancy_types = [merged.occupancy_type];
-            if (merged.roof_type) saved.roof_covering = merged.roof_type;
-            if (merged.has_sprinkler) saved.sprinklered = 'Yes';
-            if (merged.sprinkler_type) saved.sprinkler_type = merged.sprinkler_type;
-            if (merged.has_fire_alarm) saved.fire_alarm = 'Yes';
-            if (merged.has_standpipe) saved.standpipe = 'Yes';
-            if (merged.has_knox_box) saved.knox_box = 'Yes';
-            if (merged.knox_box_location) saved.knox_box_loc = merged.knox_box_location;
-            if (merged.fdc_location) saved.fdc_loc = merged.fdc_location;
-            if (merged.contact_name) saved.primary_contact = merged.contact_name;
-            if (merged.contact_phone) saved.primary_tel = merged.contact_phone;
-            if (merged.electrical_shutoff) saved.electric_loc = merged.electrical_shutoff;
-            if (merged.gas_shutoff) saved.natural_gas_loc = merged.gas_shutoff;
-            if (merged.water_shutoff) saved.water_shutoff_loc = merged.water_shutoff;
-            if (merged.special_hazards) saved.life_safety_concerns = merged.special_hazards;
+            if (fieldData.construction_type) saved.construction_type = fieldData.construction_type;
+            if (fieldData.occupancy_type)    saved.occupancy_types   = [fieldData.occupancy_type];
+            if (fieldData.roof_type)         saved.roof_covering     = fieldData.roof_type;
+            if (fieldData.has_sprinkler)     saved.sprinklered       = 'Yes';
+            if (fieldData.sprinkler_type)    saved.sprinkler_type    = fieldData.sprinkler_type;
+            if (fieldData.has_fire_alarm)    saved.fire_alarm        = 'Yes';
+            if (fieldData.has_standpipe)     saved.standpipe         = 'Yes';
+            if (fieldData.has_knox_box)      saved.knox_box          = 'Yes';
+            if (fieldData.contact_name)      saved.primary_contact   = fieldData.contact_name;
+            if (fieldData.contact_phone)     saved.primary_tel       = fieldData.contact_phone;
+            if (fieldData.special_hazards)   saved.life_safety_concerns = fieldData.special_hazards;
             if (job.floors) saved.num_stories = String(job.floors);
             localStorage.setItem('preFirePlan', JSON.stringify(saved));
-        } catch(e) { console.warn('Failed to save form data:', e); }
+        } catch(e) {}
+
+        // Get layout JSON from ai_form_data
+        var aiData = job.ai_form_data || {};
+        var layout  = aiData.layout || null;
+
+        if (!layout || !layout.rooms) {
+            // No layout — fall back to SVG if available
+            var svgKey = job.ai_floor_plan_r2_key;
+            if (svgKey) {
+                _loadSVGFallback(DS_API + '/api/media/' + svgKey);
+            } else {
+                toast('No floor plan yet — draw manually or re-process the job.');
+            }
+            return;
+        }
+
+        // ── Build editable floor plan from JSON layout ────────────────────────
+        setTimeout(function() {
+            _buildEditableFloorPlan(layout, job);
+        }, 200);
 
     }).catch(function(err) { toast('Failed to load: ' + (err.message || 'error')); });
 }
+
+function _loadSVGFallback(svgUrl) {
+    fetch(svgUrl).then(function(r){return r.text()}).then(function(svgText) {
+        fabric.loadSVGFromString(svgText, function(objects, options) {
+            if (!objects || !objects.length) { toast('Failed to parse SVG'); return; }
+            var svgW = options.width || 800, svgH = options.height || 600;
+            var scale = Math.min((canvas.width - 40) / svgW, (canvas.height - 40) / svgH);
+            var grp = fabric.util.groupSVGElements(objects, options);
+            grp.set({ left: 20, top: 20, scaleX: scale, scaleY: scale });
+            canvas.add(grp);
+            var items = grp._objects.slice();
+            grp._restoreObjectsState();
+            canvas.remove(grp);
+            items.forEach(function(item) { item.set({ selectable: true, evented: true }); canvas.add(item); });
+            canvas.discardActiveObject();
+            canvas.renderAll(); saveHistory(); saveData();
+            toast('SVG floor plan loaded. Objects are individually selectable.');
+        });
+    }).catch(function(err) { toast('Failed to fetch SVG: ' + err.message); });
+}
+
+// Room type colors
+var ROOM_COLORS = {
+    foyer:'#dbeafe', hallway:'#f1f5f9', office:'#d1fae5', kitchen:'#fef9c3',
+    restroom:'#ede9fe', storage:'#fee2e2', apparatus_bay:'#fed7aa',
+    training_room:'#cffafe', mechanical:'#e5e7eb', stairwell:'#fce7f3', other:'#f5f3ff',
+};
+var ROOM_STROKES = {
+    foyer:'#2563eb', hallway:'#64748b', office:'#059669', kitchen:'#ca8a04',
+    restroom:'#7c3aed', storage:'#dc2626', apparatus_bay:'#ea580c',
+    training_room:'#0891b2', mechanical:'#4b5563', stairwell:'#be185d', other:'#8b5cf6',
+};
+
+function _buildEditableFloorPlan(layout, job) {
+    var W = layout.canvas_width  || 1000;
+    var H = layout.canvas_height || 700;
+    var rooms   = layout.rooms   || [];
+    var walls   = layout.walls   || [];
+    var doors   = layout.doors   || [];
+    var windows = layout.windows || [];
+
+    // Scale factor to fit canvas
+    var scaleX = (canvas.width  - 40) / W;
+    var scaleY = (canvas.height - 40) / H;
+    var scale  = Math.min(scaleX, scaleY, 1);
+    var ox = 20, oy = 20; // offset
+
+    function sx(v) { return ox + v * scale; }
+    function sy(v) { return oy + v * scale; }
+    function ss(v) { return v * scale; }
+
+    // ── Rooms (filled rectangles) ──────────────────────────────────────────
+    rooms.forEach(function(r) {
+        var fill   = ROOM_COLORS[r.type]   || '#f5f3ff';
+        var stroke = ROOM_STROKES[r.type]  || '#8b5cf6';
+        var rect = new fabric.Rect({
+            left: sx(r.x), top: sy(r.y),
+            width: ss(r.w), height: ss(r.h),
+            fill: fill, stroke: stroke, strokeWidth: 1.5,
+            selectable: true, evented: true, rx: 2, ry: 2,
+        });
+        rect.customType = 'room';
+        rect.customData = { id: r.id, label: r.label, type: r.type, notes: r.notes || '' };
+
+        var fs = Math.max(8, Math.min(13, ss(r.w) / 9));
+        var lbl = new fabric.Text(r.label, {
+            left: sx(r.x) + ss(r.w)/2, top: sy(r.y) + ss(r.h)/2,
+            fontSize: fs, fontFamily: 'system-ui, sans-serif',
+            fill: stroke, fontWeight: '600',
+            originX: 'center', originY: 'center',
+            selectable: false, evented: false,
+            textAlign: 'center', width: ss(r.w) - 8,
+        });
+        lbl.customType = 'room-label';
+        lbl.customData = rect.customData;
+
+        canvas.add(rect);
+        canvas.add(lbl);
+    });
+
+    // ── Walls (lines) ───────────────────────────────────────────────────────
+    walls.forEach(function(w, i) {
+        var line = new fabric.Line([sx(w.x1), sy(w.y1), sx(w.x2), sy(w.y2)], {
+            stroke: '#1e293b', strokeWidth: Math.max(2, ss(w.thickness || 5)),
+            strokeLineCap: 'square', selectable: true, evented: true,
+            hasBorders: true, hasControls: true, perPixelTargetFind: true,
+        });
+        line.customType = 'wall';
+        line.customData = { thickness: w.thickness || 5, index: i };
+        canvas.add(line);
+    });
+
+    // ── Windows (triple line) ───────────────────────────────────────────────
+    windows.forEach(function(w, i) {
+        var dx = w.x2 - w.x1, dy = w.y2 - w.y1;
+        var len = Math.sqrt(dx*dx + dy*dy);
+        if (len < 1) return;
+        var nx = -dy/len * 3 * scale, ny = dx/len * 3 * scale;
+        var grp = new fabric.Group([
+            new fabric.Line([sx(w.x1), sy(w.y1), sx(w.x2), sy(w.y2)], { stroke:'#93c5fd', strokeWidth: 6 * scale }),
+            new fabric.Line([sx(w.x1), sy(w.y1), sx(w.x2), sy(w.y2)], { stroke:'#1e293b', strokeWidth: 1 }),
+            new fabric.Line([sx(w.x1)+nx, sy(w.y1)+ny, sx(w.x2)+nx, sy(w.y2)+ny], { stroke:'#1e293b', strokeWidth: 1 }),
+            new fabric.Line([sx(w.x1)-nx, sy(w.y1)-ny, sx(w.x2)-nx, sy(w.y2)-ny], { stroke:'#1e293b', strokeWidth: 1 }),
+        ], { selectable: true, evented: true });
+        grp.customType = 'window';
+        grp.customData = { index: i };
+        canvas.add(grp);
+    });
+
+    // ── Doors (line + arc swing) ────────────────────────────────────────────
+    doors.forEach(function(d, i) {
+        var rad = (d.angle || 0) * Math.PI / 180;
+        var sw  = ss(d.width || 36);
+        var ex  = sx(d.x) + sw * Math.cos(rad);
+        var ey  = sy(d.y) + sw * Math.sin(rad);
+        var dir = d.swing_dir === 'ccw' ? -1 : 1;
+        var arcAngle = rad + dir * ((d.swing || 90) * Math.PI / 180);
+        var ax  = sx(d.x) + sw * Math.cos(arcAngle);
+        var ay  = sy(d.y) + sw * Math.sin(arcAngle);
+        var sweep = dir > 0 ? 0 : 1;
+
+        var elements;
+        if (d.type === 'rollup') {
+            elements = [
+                new fabric.Line([sx(d.x), sy(d.y), ex, ey], { stroke:'#ea580c', strokeWidth: 4, strokeDashArray:[8,4] }),
+            ];
+        } else {
+            var arcPath = 'M ' + ex + ' ' + ey + ' A ' + sw + ' ' + sw + ' 0 0 ' + sweep + ' ' + ax + ' ' + ay;
+            elements = [
+                new fabric.Line([sx(d.x), sy(d.y), ex, ey], { stroke:'#1e293b', strokeWidth: 3 }),
+                new fabric.Path(arcPath, { fill:'', stroke:'#475569', strokeWidth: 1.5, strokeDashArray:[4,2] }),
+            ];
+        }
+        var grp = new fabric.Group(elements, { selectable: true, evented: true });
+        grp.customType = 'door';
+        grp.customData = { type: d.type||'single', angle: d.angle||0, swing: d.swing||90, swing_dir: d.swing_dir||'cw', width: d.width||36, index: i };
+        canvas.add(grp);
+    });
+
+    // ── Side A label ────────────────────────────────────────────────────────
+    var sideA = new fabric.Text('▲  SIDE A — FRONT', {
+        left: canvas.width / 2, top: canvas.height - 18,
+        fontSize: 11, fontFamily: 'system-ui', fill: '#64748b', fontWeight: '700',
+        originX: 'center', letterSpacing: 2,
+        selectable: false, evented: false,
+    });
+    canvas.add(sideA);
+
+    canvas.renderAll();
+    saveHistory();
+    saveData();
+    toast('Floor plan loaded — ' + rooms.length + ' rooms, ' + walls.length + ' walls, ' + doors.length + ' doors. Select any element to edit.');
+
+    // ── Show properties panel on selection ─────────────────────────────────
+    canvas.on('selection:created', _showPropertiesPanel);
+    canvas.on('selection:updated', _showPropertiesPanel);
+    canvas.on('selection:cleared', _hidePropertiesPanel);
+}
+
+function _showPropertiesPanel(e) {
+    var obj = e.selected && e.selected[0];
+    if (!obj) return;
+    var panel = document.getElementById('aiPropPanel');
+    if (!panel) { panel = document.createElement('div'); panel.id = 'aiPropPanel'; document.body.appendChild(panel); }
+
+    panel.style.cssText = 'position:fixed;bottom:80px;right:16px;background:#1e293b;color:#e2e8f0;border-radius:10px;padding:14px 16px;z-index:1000;min-width:220px;max-width:280px;box-shadow:0 4px 20px rgba(0,0,0,0.4);font-family:system-ui,sans-serif;font-size:13px';
+
+    var type = obj.customType || (obj._objects && obj._objects[0] && obj._objects[0].customType) || 'object';
+    var data = obj.customData || {};
+    var html = '<div style="font-weight:700;margin-bottom:10px;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:1px">' + type.replace('-',' ') + '</div>';
+
+    if (type === 'room') {
+        html += '<div style="margin-bottom:8px"><label style="display:block;font-size:11px;color:#64748b;margin-bottom:3px">Label</label>';
+        html += '<input id="prop-label" value="' + (data.label||'').replace(/"/g,'&quot;') + '" style="width:100%;background:#0f172a;border:1px solid #334155;border-radius:5px;color:#e2e8f0;padding:5px 8px;font-size:12px"></div>';
+        html += '<div style="margin-bottom:8px"><label style="display:block;font-size:11px;color:#64748b;margin-bottom:3px">Type</label>';
+        html += '<select id="prop-type" style="width:100%;background:#0f172a;border:1px solid #334155;border-radius:5px;color:#e2e8f0;padding:5px 8px;font-size:12px">';
+        ['foyer','hallway','office','kitchen','restroom','storage','apparatus_bay','training_room','mechanical','stairwell','other'].forEach(function(t) {
+            html += '<option value="' + t + '"' + (t === data.type ? ' selected' : '') + '>' + t.replace(/_/g,' ') + '</option>';
+        });
+        html += '</select></div>';
+        html += '<div style="margin-bottom:10px"><label style="display:block;font-size:11px;color:#64748b;margin-bottom:3px">Notes</label>';
+        html += '<textarea id="prop-notes" rows="2" style="width:100%;background:#0f172a;border:1px solid #334155;border-radius:5px;color:#e2e8f0;padding:5px 8px;font-size:12px;resize:none">' + (data.notes||'') + '</textarea></div>';
+        html += '<button onclick="_applyRoomProps()" style="width:100%;background:#2563eb;color:white;border:none;border-radius:6px;padding:7px;cursor:pointer;font-size:12px;font-weight:600">Apply</button>';
+    } else if (type === 'wall') {
+        html += '<div style="margin-bottom:10px"><label style="display:block;font-size:11px;color:#64748b;margin-bottom:6px">Thickness: <span id="wall-thick-val">' + (data.thickness||5) + '</span>px</label>';
+        html += '<input type="range" id="prop-wall-thick" min="2" max="20" value="' + (data.thickness||5) + '" style="width:100%" oninput="document.getElementById(\'wall-thick-val\').textContent=this.value"></div>';
+        html += '<div style="margin-bottom:10px"><label style="display:block;font-size:11px;color:#64748b;margin-bottom:3px">Color</label>';
+        html += '<select id="prop-wall-color" style="width:100%;background:#0f172a;border:1px solid #334155;border-radius:5px;color:#e2e8f0;padding:5px 8px;font-size:12px">';
+        html += '<option value="#1e293b">Exterior (dark)</option><option value="#475569">Interior (medium)</option><option value="#94a3b8">Partition (light)</option></select></div>';
+        html += '<button onclick="_applyWallProps()" style="width:100%;background:#2563eb;color:white;border:none;border-radius:6px;padding:7px;cursor:pointer;font-size:12px;font-weight:600">Apply</button>';
+    } else if (type === 'door') {
+        html += '<div style="margin-bottom:8px"><label style="display:block;font-size:11px;color:#64748b;margin-bottom:3px">Type</label>';
+        html += '<select id="prop-door-type" style="width:100%;background:#0f172a;border:1px solid #334155;border-radius:5px;color:#e2e8f0;padding:5px 8px;font-size:12px">';
+        ['single','double','rollup','sliding'].forEach(function(t){
+            html += '<option value="' + t + '"' + (t===data.type?' selected':'') + '>' + t + '</option>';
+        });
+        html += '</select></div>';
+        html += '<div style="margin-bottom:8px"><label style="display:block;font-size:11px;color:#64748b;margin-bottom:3px">Swing</label>';
+        html += '<select id="prop-door-swing" style="width:100%;background:#0f172a;border:1px solid #334155;border-radius:5px;color:#e2e8f0;padding:5px 8px;font-size:12px">';
+        html += '<option value="cw"' + (data.swing_dir==='cw'?' selected':'') + '>Clockwise</option>';
+        html += '<option value="ccw"' + (data.swing_dir==='ccw'?' selected':'') + '>Counter-clockwise</option></select></div>';
+    } else if (type === 'window') {
+        html += '<div style="color:#94a3b8;font-size:12px">Window segment.<br>Move or delete to edit.<br>Use "Wall" tool to add new windows.</div>';
+    }
+
+    html += '<div style="margin-top:10px;padding-top:10px;border-top:1px solid #334155;display:flex;gap:8px">';
+    html += '<button onclick="_deleteSelected()" style="flex:1;background:#dc2626;color:white;border:none;border-radius:6px;padding:6px;cursor:pointer;font-size:12px">🗑 Delete</button>';
+    html += '<button onclick="_hidePropertiesPanel()" style="flex:1;background:#334155;color:white;border:none;border-radius:6px;padding:6px;cursor:pointer;font-size:12px">✕ Close</button>';
+    html += '</div>';
+
+    panel.innerHTML = html;
+    panel.style.display = 'block';
+    panel._selectedObj = obj;
+}
+
+function _hidePropertiesPanel() {
+    var p = document.getElementById('aiPropPanel');
+    if (p) p.style.display = 'none';
+}
+
+function _applyRoomProps() {
+    var p = document.getElementById('aiPropPanel');
+    if (!p || !p._selectedObj) return;
+    var obj = p._selectedObj;
+    var label = document.getElementById('prop-label').value;
+    var type  = document.getElementById('prop-type').value;
+    var notes = document.getElementById('prop-notes').value;
+    var fill   = ROOM_COLORS[type]   || '#f5f3ff';
+    var stroke = ROOM_STROKES[type]  || '#8b5cf6';
+    obj.set({ fill: fill, stroke: stroke });
+    obj.customData = { id: obj.customData.id, label: label, type: type, notes: notes };
+    // Update the label text object
+    canvas.getObjects().forEach(function(o) {
+        if (o.customType === 'room-label' && o.customData && o.customData.id === obj.customData.id) {
+            o.set({ text: label, fill: stroke });
+            o.customData.label = label;
+            o.customData.type  = type;
+        }
+    });
+    canvas.renderAll(); saveHistory(); saveData();
+    toast('Room updated');
+}
+
+function _applyWallProps() {
+    var p = document.getElementById('aiPropPanel');
+    if (!p || !p._selectedObj) return;
+    var obj = p._selectedObj;
+    var thick = parseInt(document.getElementById('prop-wall-thick').value);
+    var color = document.getElementById('prop-wall-color').value;
+    obj.set({ strokeWidth: thick, stroke: color });
+    obj.customData.thickness = thick;
+    canvas.renderAll(); saveHistory(); saveData();
+    toast('Wall updated');
+}
+
+function _deleteSelected() {
+    var active = canvas.getActiveObject();
+    if (active) { canvas.remove(active); canvas.discardActiveObject(); canvas.renderAll(); saveHistory(); saveData(); }
+    _hidePropertiesPanel();
+}
+
+
 
 /* DivisionScan import */
 document.getElementById('dsFile').onchange = function() {
