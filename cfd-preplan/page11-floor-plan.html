@@ -991,7 +991,18 @@ function finishWall() {
 function saveHistory(){historyIdx++;history=history.slice(0,historyIdx);var j=canvas.toJSON(['isBg','isOpening','nfpaData','isWall','isLegendKey']);j.viewportTransform=canvas.viewportTransform.slice();history.push(JSON.stringify(j));if(history.length>50){history.shift();historyIdx--}}
 function undo(){if(historyIdx<=0)return;historyIdx--;var parsed;try{parsed=JSON.parse(history[historyIdx])}catch(e){parsed=null}var savedVpt=parsed&&parsed.viewportTransform||null;canvas.loadFromJSON(history[historyIdx],function(){if(savedVpt&&savedVpt.length===6)canvas.setViewportTransform(savedVpt);canvas.renderAll();bringOpeningsToFront();updateZoomLabel()})}
 function redo(){if(historyIdx>=history.length-1)return;historyIdx++;var parsed;try{parsed=JSON.parse(history[historyIdx])}catch(e){parsed=null}var savedVpt=parsed&&parsed.viewportTransform||null;canvas.loadFromJSON(history[historyIdx],function(){if(savedVpt&&savedVpt.length===6)canvas.setViewportTransform(savedVpt);canvas.renderAll();bringOpeningsToFront();updateZoomLabel()})}
-function saveData(){if(!canvas)return;var j=canvas.toJSON(['isBg','isOpening','nfpaData','isWall','isLegendKey']);j.viewportTransform=canvas.viewportTransform.slice();floorData[currentFloor]=JSON.stringify(j);var all={};for(var f in floorData)all[f]=floorData[f];try{var saved=JSON.parse(localStorage.getItem('preFirePlan')||'{}');saved.floor_plan_data=JSON.stringify(all);localStorage.setItem('preFirePlan',JSON.stringify(saved))}catch(e){}}
+function saveData(){if(!canvas)return;
+    // Temporarily hide isBg image objects so they don't get serialized
+    // (fabric.Image from data URLs doesn't deserialize reliably)
+    var bgObjs = canvas.getObjects().filter(function(o){ return o.isBg; });
+    bgObjs.forEach(function(o){ o._skipSave = true; canvas.remove(o); });
+    var j=canvas.toJSON(['isBg','isOpening','nfpaData','isWall','isLegendKey']);
+    // Re-add bg objects
+    bgObjs.forEach(function(o){ canvas.add(o); canvas.sendToBack(o); delete o._skipSave; });
+    j.viewportTransform=canvas.viewportTransform.slice();
+    // Store bg object info separately so we can restore later
+    j._bgKeys = bgObjs.map(function(o){ return o._srcKey || null; });
+    floorData[currentFloor]=JSON.stringify(j);var all={};for(var f in floorData)all[f]=floorData[f];try{var saved=JSON.parse(localStorage.getItem('preFirePlan')||'{}');saved.floor_plan_data=JSON.stringify(all);localStorage.setItem('preFirePlan',JSON.stringify(saved))}catch(e){}}
 function loadSavedData(){try{var saved=JSON.parse(localStorage.getItem('preFirePlan')||'{}');if(saved.floor_plan_data){var all=JSON.parse(saved.floor_plan_data);for(var f in all)floorData[f]=all[f];floorCount=Math.max(1,Math.max.apply(null,Object.keys(floorData).map(Number)));renderFloorTabs();if(floorData[1]){document.getElementById('uploadSection').classList.add('hidden');document.getElementById('annotSection').classList.remove('hidden');canvas=new fabric.Canvas('floor-canvas',{preserveObjectStacking:true,backgroundColor:'transparent',allowTouchScrolling:false,enablePointerEvents:true});
 fabric.Object.prototype.set({cornerSize:16,cornerColor:'#1e3a5f',cornerStrokeColor:'#fff',cornerStyle:'circle',transparentCorners:false,borderColor:'#1e3a5f',borderScaleFactor:2,padding:8,rotatingPointOffset:30});
 var parsed;try{parsed=JSON.parse(floorData[1])}catch(e){parsed=null}var savedVpt=parsed&&parsed.viewportTransform||null;setupEvents();canvas.loadFromJSON(floorData[1],function(){if(savedVpt&&savedVpt.length===6){canvas.setViewportTransform(savedVpt)}canvas.renderAll();bringOpeningsToFront();updateZoomLabel();saveHistory()})}}}catch(e){console.error(e)}}
@@ -1403,7 +1414,14 @@ function loadAICapture(jobId) {
         var job = d.job;
         if (!job) { toast('Job not found'); return; }
 
-        // Open canvas regardless
+        // Open canvas — clear any saved floor plan data first to avoid
+        // stale fabric.js state causing "did not match expected pattern" errors
+        try {
+            var saved = JSON.parse(localStorage.getItem('preFirePlan') || '{}');
+            delete saved.floor_plan_data;
+            localStorage.setItem('preFirePlan', JSON.stringify(saved));
+        } catch(e) {}
+        floorData = {};
         document.getElementById('uploadSection').classList.add('hidden');
         document.getElementById('annotSection').classList.remove('hidden');
         initCanvas(null);
