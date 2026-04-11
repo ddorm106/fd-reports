@@ -1184,13 +1184,15 @@ document.getElementById('zoomInBtn').onclick = function() { zoomCanvas(1.2); };
 document.getElementById('zoomOutBtn').onclick = function() { zoomCanvas(0.8); };
 document.getElementById('zoomResetBtn').onclick = resetZoom;
 
-document.getElementById('rotateCWBtn').onclick  = function() { rotateAllBy(90); };
-document.getElementById('rotateCCWBtn').onclick = function() { rotateAllBy(-90); };
-document.getElementById('rotateResetBtn').onclick = function() { rotateAllBy(-_currentRotation); };
-document.getElementById('rotateSlider').oninput = function() {
-    var delta = parseFloat(this.value) - _currentRotation;
-    rotateAllBy(delta);
-};
+if (document.getElementById('rotateCWBtn')) {
+    document.getElementById('rotateCWBtn').onclick  = function() { rotateAllBy(90); };
+    document.getElementById('rotateCCWBtn').onclick = function() { rotateAllBy(-90); };
+    document.getElementById('rotateResetBtn').onclick = function() { rotateAllBy(-_currentRotation); };
+    document.getElementById('rotateSlider').oninput = function() {
+        var delta = parseFloat(this.value) - _currentRotation;
+        rotateAllBy(delta);
+    };
+}
 
 /* ========================================================
    UPLOAD / IMPORT
@@ -2513,7 +2515,7 @@ function bizEsc(s) { if (!s) return ''; var d = document.createElement('div'); d
 
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+
 <script>
 function ppGeneratePDF() {
   var data = JSON.parse(localStorage.getItem('preFirePlan') || '{}');
