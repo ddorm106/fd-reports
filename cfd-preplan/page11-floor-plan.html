@@ -1399,6 +1399,10 @@ document.getElementById('addKeyBtn').onclick = function() {
 };
 
 /* AI Capture Import — loads from divisionscan.org */
+function escH(s) {
+    if (!s) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 var DS_API = 'https://divisionscan.org';
 
 // ── SVG Upload — load as background image ─────────────────────────────────
