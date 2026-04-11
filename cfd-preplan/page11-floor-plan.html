@@ -1661,340 +1661,270 @@ var ROOM_STROKES = {
 };
 
 function _buildEditableFloorPlan(layout, job) {
-    var W = layout.canvas_width  || 1000;
-    var H = layout.canvas_height || 700;
+    var W = layout.canvas_width  || 1200;
+    var H = layout.canvas_height || 900;
     var rooms   = layout.rooms   || [];
     var walls   = layout.walls   || [];
     var doors   = layout.doors   || [];
     var windows = layout.windows || [];
     var objects = layout.objects || [];
-    var openings= layout.openings|| [];
 
-    // Scale factor to fit canvas
-    var scaleX = (canvas.width  - 40) / W;
-    var scaleY = (canvas.height - 40) / H;
-    var sc  = Math.min(scaleX, scaleY, 1.5);
-    var ox = (canvas.width  - W*sc) / 2;
-    var oy = (canvas.height - H*sc) / 2;
+    // Scale to fit canvas with padding
+    var sc = Math.min((canvas.width - 40) / W, (canvas.height - 40) / H, 1.5);
+    var ox = (canvas.width  - W * sc) / 2;
+    var oy = (canvas.height - H * sc) / 2;
+    function sx(v){ return ox + v * sc; }
+    function sy(v){ return oy + v * sc; }
+    function ss(v){ return v * sc; }
 
-    function sx(v) { return ox + v * sc; }
-    function sy(v) { return oy + v * sc; }
-    function ss(v) { return v * sc; }
+    // Wall thickness matching iOS: max(5, scale * 0.35) / 2
+    var WALL_HALF = Math.max(4, sc * 0.35) / 2;
 
-    var WALL_HALF = Math.max(4, sc * 0.35);
-
-    // ── Paper background ────────────────────────────────────────────────────
-    var bg = new fabric.Rect({
+    // ── Paper background ──────────────────────────────────────────────────
+    canvas.add(new fabric.Rect({
         left: ox, top: oy, width: W*sc, height: H*sc,
         fill: '#F5F3EF', stroke: '#CBD5E1', strokeWidth: 1,
         selectable: false, evented: false, isBg: true,
+    }));
+
+    // ── Room fills — colored polygons from wall convex hull ───────────────
+    // Build convex hull from all wall endpoints
+    var allPts = [];
+    walls.forEach(function(w) {
+        allPts.push({x: sx(w.x1), y: sy(w.y1)});
+        allPts.push({x: sx(w.x2), y: sy(w.y2)});
     });
-    canvas.add(bg);
+    if (allPts.length >= 3) {
+        var cx = allPts.reduce(function(s,p){return s+p.x;},0)/allPts.length;
+        var cy = allPts.reduce(function(s,p){return s+p.y;},0)/allPts.length;
+        allPts.sort(function(a,b){ return Math.atan2(a.y-cy,a.x-cx) - Math.atan2(b.y-cy,b.x-cx); });
+        // Remove near-duplicates
+        var unique = [allPts[0]];
+        for (var i=1;i<allPts.length;i++) {
+            var prev = unique[unique.length-1];
+            if (Math.hypot(allPts[i].x-prev.x, allPts[i].y-prev.y) > 2) unique.push(allPts[i]);
+        }
+        if (unique.length >= 3) {
+            // Use rooms array for per-room fills if available, else one big hull fill
+            if (rooms.length > 0) {
+                rooms.forEach(function(r) {
+                    var fill = ROOM_COLORS[r.type] || '#f5f3ff';
+                    canvas.add(new fabric.Rect({
+                        left: sx(r.x), top: sy(r.y), width: ss(r.w), height: ss(r.h),
+                        fill: fill + 'BB', stroke: 'none', strokeWidth: 0,
+                        selectable: true, evented: true, rx: 2,
+                    }));
+                    var fs = Math.max(9, Math.min(14, ss(r.w)/9));
+                    canvas.add(new fabric.Text(r.label || '', {
+                        left: sx(r.x + r.w/2), top: sy(r.y + r.h/2),
+                        fontSize: fs, fontFamily: 'system-ui, sans-serif',
+                        fill: ROOM_STROKES[r.type] || '#8b5cf6', fontWeight: '700',
+                        originX: 'center', originY: 'center',
+                        selectable: false, evented: false,
+                    }));
+                });
+            } else {
+                var hull = new fabric.Polygon(unique, {
+                    fill: 'rgba(220,235,255,0.5)', stroke: 'none',
+                    selectable: false, evented: false,
+                });
+                canvas.add(hull);
+            }
+        }
+    }
 
-    // ── Room fills (convex hull from wall endpoints, not axis-aligned boxes) ─
-    rooms.forEach(function(r) {
-        var fill = ROOM_COLORS[r.type] || '#f5f3ff';
-        var stroke = ROOM_STROKES[r.type] || '#8b5cf6';
-        var rect = new fabric.Rect({
-            left: sx(r.x), top: sy(r.y),
-            width: ss(r.w), height: ss(r.h),
-            fill: fill + 'BB', stroke: 'none', strokeWidth: 0,
-            selectable: true, evented: true, rx: 2, ry: 2,
-            opacity: 0.85,
-        });
-        rect.customType = 'room';
-        rect.customData = { id: r.id, label: r.label, type: r.type, notes: r.notes || '' };
-        canvas.add(rect);
-
-        var fs = Math.max(9, Math.min(14, ss(r.w) / 9));
-        var lbl = new fabric.Text(r.label || '', {
-            left: sx(r.x + r.w/2), top: sy(r.y + r.h/2),
-            fontSize: fs, fontFamily: 'system-ui, sans-serif',
-            fill: stroke, fontWeight: '700',
-            originX: 'center', originY: 'center',
-            selectable: false, evented: false,
-            textAlign: 'center',
-        });
-        lbl.customType = 'room-label';
-        canvas.add(lbl);
-    });
-
-    // ── Walls — iOS-matching thick filled charcoal polygons ─────────────────
+    // ── Walls — iOS-matching thick filled charcoal polygons ───────────────
     walls.forEach(function(w, i) {
-        var dx = sx(w.x2) - sx(w.x1);
-        var dy = sy(w.y2) - sy(w.y1);
-        var len = Math.sqrt(dx*dx + dy*dy);
+        var x1=sx(w.x1),y1=sy(w.y1),x2=sx(w.x2),y2=sy(w.y2);
+        var dx=x2-x1, dy=y2-y1, len=Math.sqrt(dx*dx+dy*dy);
         if (len < 1) return;
-        var nx = -dy/len * WALL_HALF, ny = dx/len * WALL_HALF;
-        var pts = [
-            { x: sx(w.x1)+nx, y: sy(w.y1)+ny },
-            { x: sx(w.x2)+nx, y: sy(w.y2)+ny },
-            { x: sx(w.x2)-nx, y: sy(w.y2)-ny },
-            { x: sx(w.x1)-nx, y: sy(w.y1)-ny },
-        ];
-        var poly = new fabric.Polygon(pts, {
+        var nx=-dy/len*WALL_HALF, ny=dx/len*WALL_HALF;
+        var poly = new fabric.Polygon([
+            {x:x1+nx, y:y1+ny}, {x:x2+nx, y:y2+ny},
+            {x:x2-nx, y:y2-ny}, {x:x1-nx, y:y1-ny}
+        ], {
             fill: '#2D2D2D', stroke: '#1A1A1A', strokeWidth: 0.5,
             selectable: true, evented: true,
-            hasBorders: true, hasControls: true,
-            perPixelTargetFind: true,
+            hasBorders: true, hasControls: true, perPixelTargetFind: true,
         });
         poly.customType = 'wall';
-        poly.customData = { index: i, x1: w.x1, y1: w.y1, x2: w.x2, y2: w.y2, thickness: w.thickness || 5 };
+        poly.customData = {index: i, x1:w.x1, y1:w.y1, x2:w.x2, y2:w.y2};
         canvas.add(poly);
     });
 
-    // ── Openings (glass doors) — blue-tinted gap with GL label ──────────────
-    openings.forEach(function(o, i) {
-        // Find nearest wall angle
-        var wallAngle = 0;
-        if (walls.length) {
-            var bestD = Infinity;
-            walls.forEach(function(w) {
-                var wdx = w.x2-w.x1, wdy = w.y2-w.y1;
-                var wl = Math.sqrt(wdx*wdx+wdy*wdy);
-                if (wl < 0.01) return;
-                var t = Math.max(0, Math.min(1, ((o.x-w.x1)*wdx+(o.y-w.y1)*wdy)/(wl*wl)));
-                var px = w.x1+t*wdx, py = w.y1+t*wdy;
-                var d = Math.sqrt((o.x-px)*(o.x-px)+(o.y-py)*(o.y-py));
-                if (d < bestD) { bestD = d; wallAngle = Math.atan2(wdy,wdx); }
-            });
-        }
-        var cosA = Math.cos(wallAngle), sinA = Math.sin(wallAngle);
+    // ── Openings (glass doors) ─────────────────────────────────────────────
+    (layout.openings || []).forEach(function(o, i) {
+        var wallAngle = _nearestWallAngle(o.x, o.y, walls);
+        var cosA=Math.cos(wallAngle), sinA=Math.sin(wallAngle);
         var half = ss((o.width||3)/2);
-        var nx = -sinA*WALL_HALF, ny = cosA*WALL_HALF;
-        var cx = sx(o.x), cy = sy(o.y);
-        var pts = [
-            { x: cx-half*cosA+nx, y: cy-half*sinA+ny },
-            { x: cx+half*cosA+nx, y: cy+half*sinA+ny },
-            { x: cx+half*cosA-nx, y: cy+half*sinA-ny },
-            { x: cx-half*cosA-nx, y: cy-half*sinA-ny },
-        ];
-        var gapPoly = new fabric.Polygon(pts, {
-            fill: 'rgba(135,206,250,0.5)', stroke: '#4DA6D4', strokeWidth: 0.75,
-            selectable: true, evented: true,
-        });
-        gapPoly.customType = 'opening';
-        gapPoly.customData = { index: i };
-        canvas.add(gapPoly);
-        // GL label
-        var glLbl = new fabric.Text('GL', {
-            left: cx + nx*2, top: cy + ny*2,
-            fontSize: 8, fontFamily: 'system-ui', fill: '#1A6090', fontWeight: '700',
-            originX: 'center', originY: 'center',
-            selectable: false, evented: false,
-        });
-        canvas.add(glLbl);
+        var cpx=sx(o.x), cpy=sy(o.y);
+        var nx=-sinA*WALL_HALF, ny=cosA*WALL_HALF;
+        var gap = new fabric.Polygon([
+            {x:cpx-half*cosA+nx, y:cpy-half*sinA+ny},
+            {x:cpx+half*cosA+nx, y:cpy+half*sinA+ny},
+            {x:cpx+half*cosA-nx, y:cpy+half*sinA-ny},
+            {x:cpx-half*cosA-nx, y:cpy-half*sinA-ny}
+        ], { fill:'rgba(135,206,250,0.5)', stroke:'#4DA6D4', strokeWidth:0.75, selectable:true, evented:true });
+        gap.customType = 'opening';
+        canvas.add(gap);
+        canvas.add(new fabric.Text('GL', {
+            left: cpx+nx*2, top: cpy+ny*2,
+            fontSize:8, fill:'#1A6090', fontWeight:'700',
+            originX:'center', originY:'center', selectable:false, evented:false
+        }));
     });
 
-    // ── Windows — iOS-matching blue fill + 3 parallel lines ─────────────────
+    // ── Windows — blue fill + 3 parallel lines ────────────────────────────
     windows.forEach(function(w, i) {
-        var dx = sx(w.x2)-sx(w.x1), dy = sy(w.y2)-sy(w.y1);
-        var len = Math.sqrt(dx*dx+dy*dy);
-        if (len < 1) return;
-        var nx = -dy/len * WALL_HALF, ny = dx/len * WALL_HALF;
-        var x1=sx(w.x1), y1=sy(w.y1), x2=sx(w.x2), y2=sy(w.y2);
-
-        // Blue gap polygon
-        var winPts = [
-            { x: x1+nx, y: y1+ny }, { x: x2+nx, y: y2+ny },
-            { x: x2-nx, y: y2-ny }, { x: x1-nx, y: y1-ny },
-        ];
-        var winGap = new fabric.Polygon(winPts, {
-            fill: '#C8E0F0', stroke: 'none',
-            selectable: false, evented: false,
-        });
-        canvas.add(winGap);
-
-        // 3 parallel lines: outer, center, outer
-        [-1, 0, 1].forEach(function(side) {
+        var x1=sx(w.x1),y1=sy(w.y1),x2=sx(w.x2),y2=sy(w.y2);
+        var dx=x2-x1, dy=y2-y1, len=Math.sqrt(dx*dx+dy*dy);
+        if (len < 2) return;
+        var nx=-dy/len, ny=dx/len;
+        // Blue gap
+        canvas.add(new fabric.Polygon([
+            {x:x1+nx*WALL_HALF, y:y1+ny*WALL_HALF}, {x:x2+nx*WALL_HALF, y:y2+ny*WALL_HALF},
+            {x:x2-nx*WALL_HALF, y:y2-ny*WALL_HALF}, {x:x1-nx*WALL_HALF, y:y1-ny*WALL_HALF}
+        ], { fill:'#C8E0F0', stroke:'none', selectable:false, evented:false }));
+        // 3 parallel lines
+        [-1,0,1].forEach(function(side) {
             var off = side * WALL_HALF * 0.6;
-            var offX = -dy/len * off, offY = dx/len * off;
-            canvas.add(new fabric.Line([x1+offX, y1+offY, x2+offX, y2+offY], {
-                stroke: '#1E1E1E', strokeWidth: side === 0 ? 1.5 : 0.75,
-                selectable: false, evented: false,
+            canvas.add(new fabric.Line([x1+nx*off,y1+ny*off,x2+nx*off,y2+ny*off], {
+                stroke:'#1E1E1E', strokeWidth: side===0 ? 1.5 : 0.75,
+                selectable:false, evented:false
             }));
         });
-
-        // Invisible hit-target for selection
-        var winHit = new fabric.Line([x1, y1, x2, y2], {
-            stroke: 'transparent', strokeWidth: WALL_HALF * 2 + 4,
-            selectable: true, evented: true,
-            perPixelTargetFind: false,
+        // Invisible hit target
+        var hit = new fabric.Line([x1,y1,x2,y2], {
+            stroke:'transparent', strokeWidth: WALL_HALF*2+8,
+            selectable:true, evented:true,
         });
-        winHit.customType = 'window';
-        winHit.customData = { index: i, x1: w.x1, y1: w.y1, x2: w.x2, y2: w.y2 };
-        canvas.add(winHit);
+        hit.customType = 'window';
+        hit.customData = {index:i, x1:w.x1, y1:w.y1, x2:w.x2, y2:w.y2};
+        canvas.add(hit);
     });
 
-    // ── Doors — iOS-matching: white gap + hinge dot + panel + dashed arc ────
+    // ── Doors — white gap + hinge dot + panel + dashed arc ────────────────
     doors.forEach(function(d, i) {
-        var rad = (d.angle || 0) * Math.PI / 180;
-        var doorPx = ss(d.width || 36);
-        var cosR = Math.cos(rad), sinR = Math.sin(rad);
-        var nx = -sinR * WALL_HALF, ny = cosR * WALL_HALF;
-        var cx = sx(d.x), cy = sy(d.y);
+        var rad = (d.angle||0) * Math.PI / 180;
+        var doorPx = ss(d.width||36);
+        var cosR=Math.cos(rad), sinR=Math.sin(rad);
+        var nx=-sinR*WALL_HALF, ny=cosR*WALL_HALF;
+        var cpx=sx(d.x), cpy=sy(d.y);
+        var gx1=cpx-doorPx/2*cosR, gy1=cpy-doorPx/2*sinR;
+        var gx2=cpx+doorPx/2*cosR, gy2=cpy+doorPx/2*sinR;
+        // White gap
+        canvas.add(new fabric.Polygon([
+            {x:gx1+nx,y:gy1+ny},{x:gx2+nx,y:gy2+ny},
+            {x:gx2-nx,y:gy2-ny},{x:gx1-nx,y:gy1-ny}
+        ], {fill:'#F5F3EF', stroke:'none', selectable:false, evented:false}));
 
-        // White gap in wall
-        var gx1 = cx - doorPx/2*cosR, gy1 = cy - doorPx/2*sinR;
-        var gx2 = cx + doorPx/2*cosR, gy2 = cy + doorPx/2*sinR;
-        var gapPts = [
-            { x: gx1+nx, y: gy1+ny }, { x: gx2+nx, y: gy2+ny },
-            { x: gx2-nx, y: gy2-ny }, { x: gx1-nx, y: gy1-ny },
-        ];
-        var gap = new fabric.Polygon(gapPts, {
-            fill: '#F5F3EF', stroke: 'none',
-            selectable: false, evented: false,
-        });
-        canvas.add(gap);
-
-        if (d.type === 'rollup') {
-            var rl = new fabric.Line([gx1, gy1, gx2, gy2], {
-                stroke: '#C05020', strokeWidth: 2.5, strokeDashArray: [7, 3],
-                selectable: true, evented: true,
+        if (d.type==='rollup') {
+            var rl = new fabric.Line([gx1,gy1,gx2,gy2], {
+                stroke:'#C05020', strokeWidth:2.5, strokeDashArray:[7,3],
+                selectable:true, evented:true
             });
-            rl.customType = 'door';
-            rl.customData = { type: 'rollup', index: i };
+            rl.customType='door'; rl.customData={type:'rollup',index:i};
             canvas.add(rl);
         } else {
-            // Hinge at left end of gap
-            var hx = gx1, hy = gy1;
-            var swingAngle = rad + Math.PI/2;
-            // Panel end (door in open position)
-            var pex = hx + doorPx * Math.cos(swingAngle);
-            var pey = hy + doorPx * Math.sin(swingAngle);
-            // Arc end (where gap ends along wall)
-            var aex = hx + doorPx * cosR;
-            var aey = hy + doorPx * sinR;
-
+            var hx=gx1, hy=gy1;
+            var swA=rad+Math.PI/2;
+            var pex=hx+doorPx*Math.cos(swA), pey=hy+doorPx*Math.sin(swA);
+            var aex=hx+doorPx*cosR, aey=hy+doorPx*sinR;
             // Hinge dot
-            var hinge = new fabric.Circle({
-                left: hx - 3, top: hy - 3, radius: 3,
-                fill: '#2D2D2D', stroke: 'none',
-                selectable: false, evented: false,
-            });
-            canvas.add(hinge);
-
-            // Door panel line
-            var panel = new fabric.Line([hx, hy, pex, pey], {
-                stroke: '#1E1E1E', strokeWidth: 1.8,
-                selectable: false, evented: false,
-            });
-            canvas.add(panel);
-
-            // Quarter-circle arc (dashed)
-            var arcD = 'M ' + aex.toFixed(1) + ' ' + aey.toFixed(1) +
-                       ' A ' + doorPx.toFixed(1) + ' ' + doorPx.toFixed(1) +
-                       ' 0 0 0 ' + pex.toFixed(1) + ' ' + pey.toFixed(1);
-            var arc = new fabric.Path(arcD, {
-                fill: '', stroke: '#555', strokeWidth: 0.9,
-                strokeDashArray: [4, 2],
-                selectable: false, evented: false,
-            });
-            canvas.add(arc);
-
-            // Invisible hit-target group for selection
-            var hitLine = new fabric.Line([hx, hy, pex, pey], {
-                stroke: 'transparent', strokeWidth: 8,
-                selectable: true, evented: true,
-            });
-            hitLine.customType = 'door';
-            hitLine.customData = {
-                type: d.type || 'single', angle: d.angle || 0,
-                swing: d.swing || 90, swing_dir: d.swing_dir || 'cw',
-                width: d.width || 36, index: i
-            };
-            canvas.add(hitLine);
+            canvas.add(new fabric.Circle({left:hx-3,top:hy-3,radius:3,fill:'#2D2D2D',selectable:false,evented:false}));
+            // Door panel
+            canvas.add(new fabric.Line([hx,hy,pex,pey],{stroke:'#1E1E1E',strokeWidth:1.8,selectable:false,evented:false}));
+            // Arc
+            var arcD='M '+aex.toFixed(1)+' '+aey.toFixed(1)+' A '+doorPx.toFixed(1)+' '+doorPx.toFixed(1)+' 0 0 0 '+pex.toFixed(1)+' '+pey.toFixed(1);
+            canvas.add(new fabric.Path(arcD,{fill:'',stroke:'#555',strokeWidth:0.9,strokeDashArray:[4,2],selectable:false,evented:false}));
+            // Hit target
+            var hit=new fabric.Line([hx,hy,pex,pey],{stroke:'transparent',strokeWidth:10,selectable:true,evented:true});
+            hit.customType='door';
+            hit.customData={type:d.type||'single',angle:d.angle||0,swing:d.swing||90,swing_dir:d.swing_dir||'cw',width:d.width||36,index:i};
+            canvas.add(hit);
         }
     });
 
-    // ── Furniture objects — rotated colored rectangles with labels ───────────
+    // ── Furniture objects — rotated colored rectangles ────────────────────
     var OBJ_COLORS = {
-        toilet:      { fill:'#C5DCF0', stroke:'#2060B0' },
-        bathtub:     { fill:'#B8D4EE', stroke:'#2060B0' },
-        sink:        { fill:'#C5DCF0', stroke:'#2060B0' },
-        stove:       { fill:'#FFE0C0', stroke:'#B04010' },
-        oven:        { fill:'#FFE0C0', stroke:'#B04010' },
-        refrigerator:{ fill:'#C8DEF0', stroke:'#306080' },
-        dishwasher:  { fill:'#C8DEF0', stroke:'#306080' },
-        washerDryer: { fill:'#C8DEF0', stroke:'#306080' },
-        bed:         { fill:'#E0D0F8', stroke:'#5030A0' },
-        sofa:        { fill:'#C8EED4', stroke:'#206040' },
-        table:       { fill:'#F0E4C8', stroke:'#705020' },
-        chair:       { fill:'#F0E4C8', stroke:'#705020' },
-        television:  { fill:'#D0D0E8', stroke:'#303070' },
-        fireplace:   { fill:'#FFD8B8', stroke:'#C04000' },
-        stairs:      { fill:'#FFFFC0', stroke:'#707000' },
-        storage:     { fill:'#E8E0D4', stroke:'#504030' },
-        ceiling_fan: { fill:'#F0F0F8', stroke:'#404060' },
-        light_fixture:{ fill:'#FFFFC8', stroke:'#806000' },
-        computer:    { fill:'#D8DCF0', stroke:'#303060' },
+        toilet:{fill:'#C5DCF0',stroke:'#2060B0'}, bathtub:{fill:'#B8D4EE',stroke:'#2060B0'},
+        sink:{fill:'#C5DCF0',stroke:'#2060B0'}, stove:{fill:'#FFE0C0',stroke:'#B04010'},
+        oven:{fill:'#FFE0C0',stroke:'#B04010'}, refrigerator:{fill:'#C8DEF0',stroke:'#306080'},
+        dishwasher:{fill:'#C8DEF0',stroke:'#306080'}, washerDryer:{fill:'#C8DEF0',stroke:'#306080'},
+        bed:{fill:'#E0D0F8',stroke:'#5030A0'}, sofa:{fill:'#C8EED4',stroke:'#206040'},
+        table:{fill:'#F0E4C8',stroke:'#705020'}, chair:{fill:'#F0E4C8',stroke:'#705020'},
+        television:{fill:'#D0D0E8',stroke:'#303070'}, fireplace:{fill:'#FFD8B8',stroke:'#C04000'},
+        stairs:{fill:'#FFFFC0',stroke:'#707000'}, storage:{fill:'#E8E0D4',stroke:'#504030'},
+        ceiling_fan:{fill:'#F0F0F8',stroke:'#404060'}, light_fixture:{fill:'#FFFFC8',stroke:'#806000'},
+        computer:{fill:'#D8DCF0',stroke:'#303060'},
     };
     objects.forEach(function(o, i) {
-        var col = OBJ_COLORS[o.category] || { fill:'#E0E0E0', stroke:'#505050' };
-        var w = Math.max(12, o.w || (o.widthFt ? o.widthFt * sc : 20));
-        var h = Math.max(12, o.d || (o.depthFt ? o.depthFt * sc : 20));
-        var angle = (o.angle || 0) * 180 / Math.PI; // convert radians to degrees for fabric
+        var col = OBJ_COLORS[o.category] || {fill:'#E0E0E0',stroke:'#505050'};
+        var w = Math.max(12, o.w || 20);
+        var h = Math.max(12, o.d || 20);
+        var angleDeg = (o.angle||0) * 180 / Math.PI;
         var rect = new fabric.Rect({
-            left: sx(o.x) - w/2, top: sy(o.y) - h/2,
-            width: w, height: h,
-            fill: col.fill, stroke: col.stroke, strokeWidth: 1,
-            angle: angle,
-            originX: 'left', originY: 'top',
-            selectable: true, evented: true,
-            opacity: 0.85,
+            left: sx(o.x)-w/2, top: sy(o.y)-h/2, width:w, height:h,
+            fill:col.fill, stroke:col.stroke, strokeWidth:1,
+            angle:angleDeg, selectable:true, evented:true, opacity:0.9,
         });
-        rect.customType = 'object';
-        rect.customData = { category: o.category, label: o.label || '', index: i };
+        rect.customType='object'; rect.customData={category:o.category,label:o.label||'',index:i};
         canvas.add(rect);
-
         if (o.label) {
-            var lbl = new fabric.Text(o.label, {
-                left: sx(o.x), top: sy(o.y) + Math.max(w,h)/2 + 3,
-                fontSize: 8, fontFamily: 'system-ui', fill: col.stroke, fontWeight: '600',
-                originX: 'center', originY: 'top',
-                selectable: false, evented: false,
-            });
-            canvas.add(lbl);
+            canvas.add(new fabric.Text(o.label,{
+                left:sx(o.x), top:sy(o.y)+Math.max(w,h)/2+3,
+                fontSize:8, fill:col.stroke, fontWeight:'600',
+                originX:'center', originY:'top', selectable:false, evented:false
+            }));
         }
     });
 
-    // ── Wall dimension labels ────────────────────────────────────────────────
+    // ── Wall dimension labels ─────────────────────────────────────────────
+    var pxPerFt = sc * (layout.scale_px_per_ft || 8);
     walls.forEach(function(w) {
-        var x1=sx(w.x1), y1=sy(w.y1), x2=sx(w.x2), y2=sy(w.y2);
-        var dx=x2-x1, dy=y2-y1, len=Math.sqrt(dx*dx+dy*dy);
-        if (len < 50) return;
+        var x1=sx(w.x1),y1=sy(w.y1),x2=sx(w.x2),y2=sy(w.y2);
+        var dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy);
+        if (len<50) return;
         var nx=-dy/len, ny=dx/len;
         var mx=(x1+x2)/2, my=(y1+y2)/2;
-        // Estimate ft from pixel length
-        var pxPerFt = sc * (layout.scale_px_per_ft || 8);
         var ft = Math.round(len / pxPerFt);
-        if (ft < 1) return;
-        var dimLbl = new fabric.Text(ft + "'", {
-            left: mx + nx*16, top: my + ny*16,
-            fontSize: 8, fontFamily: 'monospace', fill: '#3040A0',
-            originX: 'center', originY: 'center',
-            opacity: 0.85, selectable: false, evented: false,
-        });
-        canvas.add(dimLbl);
+        if (ft<1) return;
+        canvas.add(new fabric.Text(ft+"'",{
+            left:mx+nx*16,top:my+ny*16,
+            fontSize:9, fill:'#3040A0', fontFamily:'monospace',
+            originX:'center',originY:'center',opacity:0.85,
+            selectable:false,evented:false
+        }));
     });
 
-    // ── Side A label ────────────────────────────────────────────────────────
-    canvas.add(new fabric.Text('▲  SIDE A — FRONT', {
-        left: canvas.width/2, top: canvas.height - 16,
-        fontSize: 11, fontFamily: 'system-ui', fill: '#64748b', fontWeight: '700',
-        originX: 'center', letterSpacing: 2,
-        selectable: false, evented: false,
+    // ── Side A label ──────────────────────────────────────────────────────
+    canvas.add(new fabric.Text('▲  SIDE A — FRONT',{
+        left:canvas.width/2, top:canvas.height-16,
+        fontSize:11, fontFamily:'system-ui', fill:'#64748b', fontWeight:'700',
+        originX:'center', letterSpacing:2, selectable:false, evented:false,
     }));
 
     canvas.renderAll();
-    setTimeout(function() { fitToObjects(); }, 100);
-    saveHistory();
-    saveData();
-    toast('Floor plan loaded — ' + rooms.length + ' rooms, ' + walls.length + ' walls, ' + doors.length + ' doors. Select any element to edit.');
+    setTimeout(function(){ fitToObjects(); }, 100);
+    saveHistory(); saveData();
+    toast('Floor plan loaded — '+rooms.length+' rooms, '+walls.length+' walls, '+doors.length+' doors. Tap any element to select and edit.');
 
     canvas.on('selection:created', _showPropertiesPanel);
     canvas.on('selection:updated', _showPropertiesPanel);
     canvas.on('selection:cleared', _hidePropertiesPanel);
+}
+
+// Helper: nearest wall angle for openings
+function _nearestWallAngle(x, y, walls) {
+    var best=0, bestD=Infinity;
+    walls.forEach(function(w){
+        var dx=w.x2-w.x1, dy=w.y2-w.y1, wl=Math.sqrt(dx*dx+dy*dy);
+        if(wl<0.01) return;
+        var t=Math.max(0,Math.min(1,((x-w.x1)*dx+(y-w.y1)*dy)/(wl*wl)));
+        var d=Math.hypot(x-(w.x1+t*dx),y-(w.y1+t*dy));
+        if(d<bestD){bestD=d;best=Math.atan2(dy,dx);}
+    });
+    return best;
 }
 
 
