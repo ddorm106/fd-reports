@@ -1381,10 +1381,16 @@ function loadAICapture(jobId) {
             // No layout — fall back to SVG if available
             var svgKey = job.ai_floor_plan_r2_key;
             if (svgKey) {
-                _loadSVGFallback(DS_API + '/api/media/' + svgKey);
+                _loadSVGFallback(DS_API + '/api/media/' + svgKey, false);
             } else {
                 toast('No floor plan yet — draw manually or re-process the job.');
             }
+            return;
+        }
+
+        // Device-rendered SVG from LiDAR iOS app — bypass JSON reconstruction
+        if (layout.svg_generated_on_device && job.ai_floor_plan_r2_key) {
+            _loadSVGFallback(DS_API + '/api/media/' + job.ai_floor_plan_r2_key, true);
             return;
         }
 
@@ -1396,8 +1402,31 @@ function loadAICapture(jobId) {
     }).catch(function(err) { toast('Failed to load: ' + (err.message || 'error')); });
 }
 
-function _loadSVGFallback(svgUrl) {
+function _loadSVGFallback(svgUrl, isDeviceRendered) {
     fetch(svgUrl).then(function(r){return r.text()}).then(function(svgText) {
+        // Device-rendered SVG from DivisionScan iOS app — load as background image
+        // This preserves the exact render from the iPad (rotated walls, furniture, etc.)
+        if (isDeviceRendered || svgText.indexOf('DivisionScan LiDAR') >= 0) {
+            var svgBlob = new Blob([svgText], {type:'image/svg+xml'});
+            var svgUrl2 = URL.createObjectURL(svgBlob);
+            fabric.Image.fromURL(svgUrl2, function(img) {
+                var sc = Math.min((canvas.width - 40) / img.width, (canvas.height - 40) / img.height);
+                img.set({
+                    left: (canvas.width  - img.width  * sc) / 2,
+                    top:  (canvas.height - img.height * sc) / 2,
+                    scaleX: sc, scaleY: sc,
+                    selectable: false, evented: false, isBg: true
+                });
+                canvas.add(img);
+                canvas.sendToBack(img);
+                canvas.renderAll();
+                setTimeout(function() { fitToObjects(); }, 100);
+                saveHistory(); saveData();
+                toast('LiDAR floor plan loaded — add markers, annotations, and symbols on top.');
+            });
+            return;
+        }
+        // Legacy — load as editable objects
         fabric.loadSVGFromString(svgText, function(objects, options) {
             if (!objects || !objects.length) { toast('Failed to parse SVG'); return; }
             var svgW = options.width || 800, svgH = options.height || 600;
@@ -1411,8 +1440,8 @@ function _loadSVGFallback(svgUrl) {
             items.forEach(function(item) { item.set({ selectable: true, evented: true }); canvas.add(item); });
             canvas.discardActiveObject();
             canvas.renderAll(); saveHistory(); saveData();
-            toast('SVG floor plan loaded. Objects are individually selectable.');
-                    setTimeout(function() { fitToObjects(); }, 100);
+            toast('Floor plan loaded.');
+            setTimeout(function() { fitToObjects(); }, 100);
         });
     }).catch(function(err) { toast('Failed to fetch SVG: ' + err.message); });
 }
