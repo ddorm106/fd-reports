@@ -1005,7 +1005,24 @@ function saveData(){if(!canvas)return;
     floorData[currentFloor]=JSON.stringify(j);var all={};for(var f in floorData)all[f]=floorData[f];try{var saved=JSON.parse(localStorage.getItem('preFirePlan')||'{}');saved.floor_plan_data=JSON.stringify(all);localStorage.setItem('preFirePlan',JSON.stringify(saved))}catch(e){}}
 function loadSavedData(){try{var saved=JSON.parse(localStorage.getItem('preFirePlan')||'{}');if(saved.floor_plan_data){var all=JSON.parse(saved.floor_plan_data);for(var f in all)floorData[f]=all[f];floorCount=Math.max(1,Math.max.apply(null,Object.keys(floorData).map(Number)));renderFloorTabs();if(floorData[1]){document.getElementById('uploadSection').classList.add('hidden');document.getElementById('annotSection').classList.remove('hidden');canvas=new fabric.Canvas('floor-canvas',{preserveObjectStacking:true,backgroundColor:'transparent',allowTouchScrolling:false,enablePointerEvents:true});
 fabric.Object.prototype.set({cornerSize:16,cornerColor:'#1e3a5f',cornerStrokeColor:'#fff',cornerStyle:'circle',transparentCorners:false,borderColor:'#1e3a5f',borderScaleFactor:2,padding:8,rotatingPointOffset:30});
-var parsed;try{parsed=JSON.parse(floorData[1])}catch(e){parsed=null}var savedVpt=parsed&&parsed.viewportTransform||null;setupEvents();canvas.loadFromJSON(floorData[1],function(){if(savedVpt&&savedVpt.length===6){canvas.setViewportTransform(savedVpt)}canvas.renderAll();bringOpeningsToFront();updateZoomLabel();saveHistory()})}}}catch(e){console.error(e)}}
+var parsed;try{parsed=JSON.parse(floorData[1])}catch(e){parsed=null}var savedVpt=parsed&&parsed.viewportTransform||null;setupEvents();canvas.loadFromJSON(floorData[1],function(){
+            if(savedVpt&&savedVpt.length===6){canvas.setViewportTransform(savedVpt);}
+            try{canvas.renderAll();bringOpeningsToFront();updateZoomLabel();saveHistory();}
+            catch(loadErr){
+                // Bad saved data — clear it and start fresh
+                console.warn('Saved floor plan data was corrupt, clearing:', loadErr);
+                try{var s=JSON.parse(localStorage.getItem('preFirePlan')||'{}');delete s.floor_plan_data;localStorage.setItem('preFirePlan',JSON.stringify(s));}catch(e2){}
+                floorData={};
+                canvas.clear();
+                document.getElementById('uploadSection').classList.remove('hidden');
+                document.getElementById('annotSection').classList.add('hidden');
+            }
+        });}}}catch(e){
+            // Outer catch — clear corrupt data entirely
+            console.warn('loadSavedData failed, clearing corrupt data:', e);
+            try{var s=JSON.parse(localStorage.getItem('preFirePlan')||'{}');delete s.floor_plan_data;localStorage.setItem('preFirePlan',JSON.stringify(s));}catch(e2){}
+            floorData={};
+        }}
 function renderFloorTabs(){var tabs=document.getElementById('floorTabs'),html='';for(var i=1;i<=floorCount;i++)html+='<button class="floor-tab'+(i===currentFloor?' active':'')+'" data-floor="'+i+'">Floor '+i+'</button>';html+='<button class="add-floor-btn" id="addFloorBtn">+ Add Floor</button>';tabs.innerHTML=html;tabs.querySelectorAll('.floor-tab').forEach(function(b){b.onclick=function(){switchFloor(parseInt(b.dataset.floor))}});document.getElementById('addFloorBtn').onclick=addFloor}
 function switchFloor(f){if(canvas){var j=canvas.toJSON(['isBg','isOpening','nfpaData','isWall','isLegendKey']);j.viewportTransform=canvas.viewportTransform.slice();floorData[currentFloor]=JSON.stringify(j)}currentFloor=f;renderFloorTabs();if(floorData[f]){var parsed;try{parsed=JSON.parse(floorData[f])}catch(e){parsed=null}var savedVpt=parsed&&parsed.viewportTransform||null;canvas.loadFromJSON(floorData[f],function(){if(savedVpt&&savedVpt.length===6){canvas.setViewportTransform(savedVpt)}canvas.renderAll();bringOpeningsToFront();updateZoomLabel()})}else{canvas.clear();canvas.backgroundColor='transparent';canvas.setViewportTransform([1,0,0,1,0,0]);canvas.renderAll();updateZoomLabel()}saveHistory()}
 function addFloor(){floorCount++;switchFloor(floorCount);toast('Floor '+floorCount+' added')}
@@ -2116,5 +2133,1039 @@ function ppLoadFromFile(input){var file=input&&input.files&&input.files[0];if(!f
 function ppCloseModal(){document.getElementById('ppModalBg').classList.remove('show')}
 function ppToast(msg,type){var t=document.getElementById('ppToast');t.textContent=msg;t.className='pp-toast '+(type||'success');t.style.display='block';clearTimeout(window._ppTT);window._ppTT=setTimeout(function(){t.style.display='none'},3000)}
 </script>
-</body>
+
+<!-- Pre-Plan Save/Resume Toolbar -->
+<style>
+.pp-toolbar{position:fixed;bottom:0;left:0;right:0;background:#1a1a1e;border-top:2px solid #c0392b;padding:8px 12px;display:flex;align-items:center;justify-content:center;gap:8px;z-index:9999;flex-wrap:wrap}
+.pp-toolbar .pp-btn{padding:8px 14px;border-radius:6px;border:none;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all .15s;white-space:nowrap}
+.pp-btn-save{background:#27ae60;color:#fff}.pp-btn-save:hover{background:#2ecc71}
+.pp-btn-file{background:#2980b9;color:#fff}.pp-btn-file:hover{background:#3498db}
+.pp-btn-load{background:#8e44ad;color:#fff}.pp-btn-load:hover{background:#9b59b6}
+.pp-btn-link{background:#e67e22;color:#fff}.pp-btn-link:hover{background:#f39c12}
+.pp-modal-bg{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:10000;display:none;justify-content:center;align-items:center}
+.pp-modal-bg.show{display:flex}
+.pp-modal{background:#24242a;border-radius:12px;padding:24px;max-width:420px;width:90%;color:#fff;border:1px solid #444;position:relative}
+.pp-modal h3{color:#e67e22;margin-bottom:12px;font-size:16px}
+.pp-modal p{color:#aaa;font-size:13px;margin-bottom:12px;line-height:1.5}
+.pp-modal .pp-code{background:#1a1a1e;border:2px solid #e67e22;border-radius:8px;padding:14px;text-align:center;font-size:28px;letter-spacing:6px;font-weight:700;color:#e67e22;font-family:monospace;margin:12px 0;user-select:all}
+.pp-modal .pp-link{background:#1a1a1e;border:1px solid #555;border-radius:6px;padding:10px;font-size:12px;color:#3498db;word-break:break-all;margin:8px 0;cursor:pointer;user-select:all}
+.pp-modal .pp-link:hover{background:#2a2a30}
+.pp-modal-actions{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.pp-modal .pp-close{position:absolute;top:10px;right:14px;background:none;border:none;color:#888;font-size:20px;cursor:pointer}
+.pp-modal .pp-close:hover{color:#fff}
+.pp-modal input[type=text]{background:#1a1a1e;border:1px solid #555;border-radius:6px;padding:10px;color:#fff;font-size:14px;width:100%;margin:8px 0}
+.pp-modal input[type=file]{display:none}
+.pp-toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);padding:8px 20px;border-radius:6px;font-size:12px;font-weight:600;z-index:10001;display:none;box-shadow:0 2px 12px rgba(0,0,0,0.4)}
+.pp-toast.success{background:#27ae60;color:#fff}.pp-toast.error{background:#c0392b;color:#fff}
+.pp-saved-indicator{color:#27ae60;font-size:11px;display:none;align-items:center;gap:4px}
+@media(max-width:480px){.pp-toolbar{gap:4px;padding:6px 8px}.pp-toolbar .pp-btn{padding:6px 10px;font-size:11px}}
+.mat-btn.warn,.mat-btn.danger{border-color:#ddd!important}
+.mat-btn.warn:hover,.mat-btn.danger:hover{border-color:#c0392b!important}
+.mat-btn.warn.selected,.mat-btn.danger.selected{border-color:#c0392b!important;background:#fdf2f0!important;color:#c0392b!important;box-shadow:0 0 0 1px #c0392b!important}
+</style>
+
+<div class="pp-toolbar" id="ppToolbar">
+  <span class="pp-saved-indicator" id="ppSaved">✓ Auto-saved</span>
+  <button class="pp-btn pp-btn-save" onclick="ppSaveCloud()" title="Save to cloud & get a link">☁️ Save to Cloud</button>
+  <button class="pp-btn pp-btn-file" onclick="ppGeneratePDF()" title="Download as PDF report">📥 PDF Report</button>
+  <button class="pp-btn pp-btn-file" onclick="ppExportFile()" title="Download as JSON backup" style="background:#6c757d">💾 Backup</button>
+  <button class="pp-btn pp-btn-load" onclick="ppShowLoadModal()" title="Load from file or resume link">📂 Load / Resume</button>
+  <button class="pp-btn pp-btn-load" onclick="ppShowBusinessModal()" title="Load data from Business Database" style="background:#8e44ad">🏢 Load from Business DB</button>
+  <button class="pp-btn pp-btn-link" onclick="ppPublishToBook()" title="Publish to Pre-Plan Book for truck access">📖 Publish to Book</button>
+</div>
+
+<div class="pp-modal-bg" id="ppModalBg" onclick="if(event.target===this)ppCloseModal()">
+  <div class="pp-modal" id="ppModal"></div>
+</div>
+<div class="pp-toast" id="ppToast"></div>
+
+<script>
+(function(){
+  // Auto-resume from URL parameter
+  const params = new URLSearchParams(window.location.search);
+  const resumeCode = params.get('resume');
+  if (resumeCode) {
+    fetch('/api/load-draft?code=' + resumeCode.toUpperCase())
+      .then(r => r.json())
+      .then(d => {
+        if (d.success && d.data) {
+          localStorage.setItem('preFirePlan', JSON.stringify(d.data));
+          ppToast('Progress loaded from cloud!', 'success');
+          // Clean URL
+          const clean = window.location.pathname;
+          history.replaceState(null, '', clean);
+          // Reload to pick up the data
+          setTimeout(() => location.reload(), 800);
+        }
+      })
+      .catch(() => {});
+  }
+
+  // Show auto-save indicator when localStorage changes
+  const origSave = localStorage.setItem.bind(localStorage);
+  const savedEl = document.getElementById('ppSaved');
+  
+  // Periodic check for data
+  let lastData = localStorage.getItem('preFirePlan');
+  setInterval(() => {
+    const cur = localStorage.getItem('preFirePlan');
+    if (cur !== lastData) {
+      lastData = cur;
+      savedEl.style.display = 'flex';
+      clearTimeout(window._ppSavedTimeout);
+      window._ppSavedTimeout = setTimeout(() => { savedEl.style.display = 'none'; }, 2000);
+    }
+  }, 1000);
+})();
+
+// Relabel Secondary Phone -> Email Address
+(function(){
+  var lbl = document.querySelector('label[for="secondary_tel"]');
+  if (lbl) lbl.textContent = 'Email Address:';
+  var inp = document.getElementById('secondary_tel');
+  if (inp) { inp.type = 'email'; inp.placeholder = 'email@example.com'; }
+})();
+
+function ppGetData() {
+  try { return JSON.parse(localStorage.getItem('preFirePlan') || '{}'); } catch(e) { return {}; }
+}
+
+function ppSaveCloud() {
+  const data = ppGetData();
+  if (!data || Object.keys(data).length === 0) { ppToast('No pre-plan data to save', 'error'); return; }
+  
+  // Check if we already have a code saved
+  const existingCode = localStorage.getItem('ppCloudCode') || undefined;
+  
+  const modal = document.getElementById('ppModal');
+  modal.innerHTML = '<button class="pp-close" onclick="ppCloseModal()">&times;</button><h3>☁️ Saving to Cloud...</h3><p>Please wait...</p>';
+  document.getElementById('ppModalBg').classList.add('show');
+
+  fetch('/api/save-draft', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ data, code: existingCode })
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.success) {
+      localStorage.setItem('ppCloudCode', d.code);
+      const link = window.location.origin + '/index.html?resume=' + d.code;
+      modal.innerHTML = '<button class="pp-close" onclick="ppCloseModal()">&times;</button>' +
+        '<h3>✅ Saved to Cloud!</h3>' +
+        '<p>Use the code or link below to resume on any device. This save expires in 7 days.</p>' +
+        '<div class="pp-code">' + d.code + '</div>' +
+        '<div class="pp-link" onclick="ppCopyLink(this)" title="Click to copy">' + link + '</div>' +
+        '<div class="pp-modal-actions">' +
+          '<button class="pp-btn pp-btn-link" onclick="ppCopyLink(document.querySelector(&apos;.pp-link&apos;))">📋 Copy Link</button>' +
+          '<button class="pp-btn pp-btn-save" onclick="ppCloseModal()">Done</button>' +
+        '</div>';
+    } else {
+      modal.innerHTML = '<button class="pp-close" onclick="ppCloseModal()">&times;</button><h3>❌ Save Failed</h3><p>' + (d.error || 'Unknown error') + '</p>';
+    }
+  })
+  .catch(err => {
+    modal.innerHTML = '<button class="pp-close" onclick="ppCloseModal()">&times;</button><h3>❌ Save Failed</h3><p>' + err.message + '</p>';
+  });
+}
+
+function ppCopyLink(el) {
+  const text = el?.textContent || '';
+  navigator.clipboard.writeText(text).then(() => ppToast('Copied to clipboard!', 'success')).catch(() => {
+    // Fallback
+    const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+    ppToast('Copied!', 'success');
+  });
+}
+
+function ppExportFile() {
+  const data = ppGetData();
+  if (!data || Object.keys(data).length === 0) { ppToast('No pre-plan data to export', 'error'); return; }
+  
+  const name = data.business_name || 'preplan';
+  const safeName = name.replace(/[^a-zA-Z0-9]/g, '-').replace(/-+/g, '-').substring(0, 30);
+  const exportObj = {
+    _type: 'centerville-preplan-draft',
+    _exported: new Date().toISOString(),
+    _business: data.business_name || '',
+    data: data
+  };
+  const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = safeName + '-draft-' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  ppToast('Draft exported!', 'success');
+}
+
+function ppShowLoadModal() {
+  const modal = document.getElementById('ppModal');
+  modal.innerHTML = '<button class="pp-close" onclick="ppCloseModal()">&times;</button>' +
+    '<h3>📂 Load / Resume Pre-Plan</h3>' +
+    '<p><strong>Option 1:</strong> Enter a resume code</p>' +
+    '<input type="text" id="ppResumeCode" placeholder="Enter 6-character code" maxlength="6" style="text-transform:uppercase;text-align:center;letter-spacing:4px;font-size:18px">' +
+    '<button class="pp-btn pp-btn-link" onclick="ppLoadFromCode()" style="width:100%;justify-content:center;margin-bottom:16px">Load from Code</button>' +
+    '<p><strong>Option 2:</strong> Load from exported file</p>' +
+    '<button class="pp-btn pp-btn-file" onclick="document.getElementById(&apos;ppFileInput&apos;).click()" style="width:100%;justify-content:center">📁 Choose File</button>' +
+    '<input type="file" id="ppFileInput" accept=".json" onchange="ppLoadFromFile(this)">';
+  document.getElementById('ppModalBg').classList.add('show');
+  setTimeout(() => document.getElementById('ppResumeCode')?.focus(), 100);
+}
+
+function ppLoadFromCode() {
+  const code = document.getElementById('ppResumeCode')?.value?.trim().toUpperCase();
+  if (!code || code.length < 4) { ppToast('Enter a valid code', 'error'); return; }
+
+  fetch('/api/load-draft?code=' + code)
+    .then(r => r.json())
+    .then(d => {
+      if (d.success && d.data) {
+        localStorage.setItem('preFirePlan', JSON.stringify(d.data));
+        localStorage.setItem('ppCloudCode', code);
+        ppToast('Pre-plan loaded! Refreshing...', 'success');
+        ppCloseModal();
+        setTimeout(() => location.reload(), 800);
+      } else {
+        ppToast(d.error || 'Code not found or expired', 'error');
+      }
+    })
+    .catch(err => ppToast('Load failed: ' + err.message, 'error'));
+}
+
+function ppLoadFromFile(input) {
+  const file = input.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const obj = JSON.parse(e.target.result);
+      const data = obj.data || obj;
+      if (typeof data !== 'object') throw new Error('Invalid file');
+      localStorage.setItem('preFirePlan', JSON.stringify(data));
+      ppToast('Pre-plan loaded from file! Refreshing...', 'success');
+      ppCloseModal();
+      setTimeout(() => location.reload(), 800);
+    } catch(err) {
+      ppToast('Invalid file format', 'error');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function ppCloseModal() {
+  document.getElementById('ppModalBg').classList.remove('show');
+}
+
+function ppPublishToBook() {
+  const data = ppGetData();
+  if (!data || Object.keys(data).length === 0) { ppToast('No pre-plan data to publish', 'error'); return; }
+  if (!data.business_name) { ppToast('Business name is required before publishing', 'error'); return; }
+
+  const modal = document.getElementById('ppModal');
+  modal.innerHTML = '<button class="pp-close" onclick="ppCloseModal()">&times;</button><h3>📖 Publishing to Pre-Plan Book...</h3><p>Saving permanently for truck & tablet access...</p>';
+  document.getElementById('ppModalBg').classList.add('show');
+
+  fetch('/api/preplans/publish', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ data, published_by: '' })
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.success) {
+      modal.innerHTML = '<button class="pp-close" onclick="ppCloseModal()">&times;</button>' +
+        '<h3>✅ ' + (d.action === 'updated' ? 'Pre-Plan Updated!' : 'Pre-Plan Published!') + '</h3>' +
+        '<p>This pre-plan is now available in the Pre-Plan Book on all trucks, tablets, and phones.</p>' +
+        '<div style="margin:16px 0"><a href="/book/view/' + d.id + '" style="display:inline-block;padding:12px 20px;background:#c0392b;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px">📖 View in Book</a></div>' +
+        '<div class="pp-modal-actions">' +
+          '<button class="pp-btn pp-btn-save" onclick="ppCloseModal()">Done</button>' +
+        '</div>';
+    } else {
+      modal.innerHTML = '<button class="pp-close" onclick="ppCloseModal()">&times;</button><h3>❌ Publish Failed</h3><p>' + (d.error || 'Unknown error') + '</p>';
+    }
+  })
+  .catch(err => {
+    modal.innerHTML = '<button class="pp-close" onclick="ppCloseModal()">&times;</button><h3>❌ Publish Failed</h3><p>' + err.message + '</p>';
+  });
+}
+
+function ppToast(msg, type) {
+  const t = document.getElementById('ppToast');
+  t.textContent = msg;
+  t.className = 'pp-toast ' + (type || 'success');
+  t.style.display = 'block';
+  clearTimeout(window._ppTT);
+  window._ppTT = setTimeout(() => { t.style.display = 'none'; }, 3000);
+}
+
+
+function ppShowBusinessModal() {
+  const modal = document.getElementById('ppModal');
+  modal.innerHTML = '<button class="pp-close" onclick="ppCloseModal()">&times;</button>' +
+    '<h3>🏢 Load from Business Database</h3>' +
+    '<p style="color:#aaa;font-size:12px;margin-bottom:10px">Search for a business to auto-fill your pre-plan form.</p>' +
+    '<input type="text" id="bizSearch" placeholder="Search by address or business name..." oninput="clearTimeout(window._bizST);window._bizST=setTimeout(bizDoSearch,300)" style="margin-bottom:8px">' +
+    '<div id="bizResults" style="max-height:300px;overflow-y:auto"></div>';
+  document.getElementById('ppModalBg').classList.add('show');
+  setTimeout(() => {
+    document.getElementById('bizSearch').focus();
+    bizDoSearch();
+  }, 100);
+}
+
+async function bizDoSearch() {
+  const q = document.getElementById('bizSearch').value.trim();
+  const el = document.getElementById('bizResults');
+  el.innerHTML = '<div style="color:#888;font-size:12px;padding:12px;text-align:center">Loading...</div>';
+  try {
+    const params = new URLSearchParams({ limit: 20 });
+    if (q) params.set('search', q);
+    const r = await fetch('/api/businesses?' + params);
+    const d = await r.json();
+    if (!d.success || !d.businesses || d.businesses.length === 0) {
+      el.innerHTML = '<div style="color:#666;font-size:12px;padding:20px;text-align:center">No businesses found' + (q ? ' for "' + q + '"' : '') + '</div>';
+      return;
+    }
+    el.innerHTML = d.businesses.map(b => {
+      const sqft = b.sq_footage ? b.sq_footage.toLocaleString() + ' sqft' : '';
+      const occ = b.occupancy_class || '';
+      const nff = b.nff_50 ? 'NFF: ' + b.nff_50 + ' GPM' : '';
+      const meta = [occ, sqft, nff].filter(x => x).join(' · ');
+      return '<div onclick="bizSelect(' + b.id + ')" style="background:#1a1a1e;border:1px solid #333;border-radius:8px;padding:10px 12px;margin-bottom:6px;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor=\'#8e44ad\'" onmouseout="this.style.borderColor=\'#333\'">' +
+        '<div style="font-weight:600;font-size:13px;color:#fff">' + bizEsc(b.business_name || 'Unnamed') + '</div>' +
+        '<div style="color:#aaa;font-size:12px">' + bizEsc(b.address) + '</div>' +
+        (meta ? '<div style="color:#888;font-size:11px;margin-top:3px">' + bizEsc(meta) + '</div>' : '') +
+        '</div>';
+    }).join('') +
+    (d.total > 20 ? '<div style="color:#666;font-size:11px;text-align:center;padding:8px">Showing 20 of ' + d.total + ' — refine your search</div>' : '');
+  } catch (err) {
+    el.innerHTML = '<div style="color:#e74c3c;font-size:12px;padding:12px">Error: ' + err.message + '</div>';
+  }
+}
+
+async function bizSelect(id) {
+  try {
+    const r = await fetch('/api/businesses/' + id);
+    const d = await r.json();
+    if (!d.success || !d.business) { ppToast('Failed to load business', 'error'); return; }
+    const b = d.business;
+
+    // Load existing pre-plan data
+    let saved = {};
+    try { saved = JSON.parse(localStorage.getItem('preFirePlan') || '{}'); } catch(e) {}
+
+    // Generate PFP number from business occ_id or DB id
+    if (!saved.pfp_number) {
+      const idNum = b.occ_id || b.id || 0;
+      const yr = new Date().getFullYear();
+      saved.pfp_number = 'PFP-' + yr + '-' + String(idNum).padStart(3, '0');
+    }
+
+    // Map business fields to pre-plan fields
+    if (b.business_name) saved.business_name = b.business_name;
+    if (b.address) saved.address = b.address;
+    if (b.latitude) saved.latitude = String(b.latitude);
+    if (b.longitude) saved.longitude = String(b.longitude);
+    if (b.occupancy_class) saved.occupancy_types = b.occupancy_class;
+    if (b.property_use) saved.hazard_contents = b.property_use;
+    if (b.sq_footage) saved.total_sq_ft = String(b.sq_footage);
+    if (b.occupant_load) saved.occupant_load_day = String(b.occupant_load);
+    if (b.contact_name) saved.primary_contact = b.contact_name;
+    if (b.phone) saved.primary_tel = b.phone;
+    if (b.phone) saved.telephone_no = b.phone;
+    if (b.email) saved.secondary_tel = b.email;
+    if (b.parcel_number) saved.map_book_page = b.parcel_number;
+    if (b.parcel_number) saved.tax_id = b.parcel_number;
+    if (b.notes) saved.notes = b.notes;
+
+    // Fire flow / NFF data
+    if (b.nff_25) saved.nff_25 = String(b.nff_25);
+    if (b.nff_50) saved.nff_50 = String(b.nff_50);
+    if (b.nff_75) saved.nff_75 = String(b.nff_75);
+    if (b.nff_100) saved.nff_100 = String(b.nff_100);
+    if (b.nff_50) saved.calculated_nff = String(b.nff_50);
+    if (b.sq_footage) saved.effective_area = String(b.sq_footage);
+
+    // Property values for reference in notes
+    if (b.property_value || b.content_value) {
+      const propNote = [];
+      if (b.property_value) propNote.push('Property: $' + b.property_value.toLocaleString());
+      if (b.content_value) propNote.push('Contents: $' + b.content_value.toLocaleString());
+      const existing = saved.special_considerations || '';
+      const valLine = propNote.join(' | ');
+      if (!existing.includes('Property:')) {
+        saved.special_considerations = existing ? existing + '\n' + valLine : valLine;
+      }
+    }
+
+    localStorage.setItem('preFirePlan', JSON.stringify(saved));
+    ppCloseModal();
+    ppToast('Loaded: ' + (b.business_name || b.address), 'success');
+
+    // Reload page to pick up data
+    setTimeout(() => location.reload(), 800);
+  } catch (err) {
+    ppToast('Load failed: ' + err.message, 'error');
+  }
+}
+
+function bizEsc(s) { if (!s) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+<script>
+function ppGeneratePDF() {
+  var data = JSON.parse(localStorage.getItem('preFirePlan') || '{}');
+  if (!data || Object.keys(data).length === 0) { ppToast('No pre-plan data to export', 'error'); return; }
+
+  ppToast('Generating PDF...', 'success');
+
+  setTimeout(function(){
+    try {
+      ppBuildPDF(data);
+    } catch(e) {
+      ppToast('PDF error: ' + e.message, 'error');
+      console.error(e);
+    }
+  }, 200);
+}
+
+function ppBuildPDF(d) {
+  var jsPDF = window.jspdf.jsPDF;
+  var doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
+  var W = 215.9, H = 279.4;
+  var M = 15;
+  var pw = W - 2 * M;
+  var y = M;
+
+  var ctMap = {
+    fire_resistive: 'Type I - Fire Resistive',
+    non_combustible: 'Type II - Non-Combustible',
+    ordinary: 'Type III - Ordinary',
+    heavy_timber: 'Type IV - Heavy Timber',
+    wood: 'Type V - Wood Frame'
+  };
+
+  function checkPage(need) {
+    if (y + need > H - M) { doc.addPage(); y = M; return true; }
+    return false;
+  }
+
+  function sectionHeader(text) {
+    checkPage(14);
+    doc.setFillColor(192, 57, 43);
+    doc.rect(M, y, pw, 8, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text(text, M + 3, y + 5.5);
+    doc.setTextColor(0, 0, 0);
+    y += 10;
+  }
+
+  function fieldRow(label, value, opts) {
+    if (!value) return;
+    opts = opts || {};
+    checkPage(7);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 100, 100);
+    doc.text(label, M + 2, y + 4);
+    doc.setTextColor(0, 0, 0);
+    if (opts.bold) doc.setFont('helvetica', 'bold');
+    if (opts.color) doc.setTextColor(opts.color[0], opts.color[1], opts.color[2]);
+    var maxW = pw - 60;
+    var lines = doc.splitTextToSize(String(value), maxW);
+    doc.text(lines, M + 55, y + 4);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(0, 0, 0);
+    var lineH = Math.max(1, lines.length) * 4.5;
+    y += lineH + 2;
+    doc.setDrawColor(220, 220, 220);
+    doc.line(M + 2, y, M + pw - 2, y);
+    y += 1;
+  }
+
+  function bigField(label, value) {
+    if (!value) return;
+    checkPage(10);
+    doc.setFontSize(9);
+    doc.setTextColor(100, 100, 100);
+    doc.text(label, M + 2, y + 4);
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(192, 57, 43);
+    doc.text(String(value), M + 55, y + 5);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(0, 0, 0);
+    y += 9;
+  }
+
+  function yesNo(label, value, loc) {
+    if (!value) return;
+    var isYes = value === 'Yes';
+    fieldRow(label, value + (loc ? ' - ' + loc : ''), {
+      bold: true,
+      color: isYes ? [39, 174, 96] : value === 'No' ? [231, 76, 60] : [0, 0, 0]
+    });
+  }
+
+  function sectionGap() { y += 3; }
+
+  // ====== TITLE BANNER ======
+  doc.setFillColor(192, 57, 43);
+  doc.rect(0, 0, W, 42, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(10);
+  doc.text('CENTERVILLE FIRE DEPARTMENT', M, 12);
+  doc.setFontSize(22);
+  doc.setFont('helvetica', 'bold');
+  doc.text('PRE-FIRE PLAN', M, 23);
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'normal');
+  doc.text(d.business_name || 'Unknown', M, 32);
+  doc.setFontSize(10);
+  if (d.address) doc.text(d.address, M, 38);
+  if (d.pfp_number) {
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text(d.pfp_number, W - M, 23, { align: 'right' });
+  }
+  doc.setTextColor(0, 0, 0);
+  y = 48;
+
+  // Quick reference boxes
+  var qrItems = [];
+  if (ctMap[d.construction_type]) qrItems.push({ lbl: 'CONSTRUCTION', val: ctMap[d.construction_type] });
+  if (d.num_stories) qrItems.push({ lbl: 'STORIES', val: d.num_stories });
+  if (d.total_sq_ft) qrItems.push({ lbl: 'SQ FT', val: d.total_sq_ft });
+  if (d.sprinklered) qrItems.push({ lbl: 'SPRINKLER', val: d.sprinklered });
+  if (d.knox_box === 'Yes') qrItems.push({ lbl: 'KNOX BOX', val: d.knox_box_loc || 'YES' });
+  if (d.calculated_nff||d.nff_result) qrItems.push({ lbl: 'NFF', val: (d.nff_result||d.calculated_nff) + ' GPM' });
+
+  if (qrItems.length > 0) {
+    doc.setFillColor(245, 245, 245);
+    doc.roundedRect(M, y, pw, 12, 2, 2, 'F');
+    var qrX = M + 4;
+    doc.setFontSize(7);
+    qrItems.forEach(function(qi) {
+      doc.setTextColor(130, 130, 130);
+      doc.text(qi.lbl, qrX, y + 4);
+      doc.setTextColor(0, 0, 0);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.text(String(qi.val).substring(0, 20), qrX, y + 9);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      qrX += 32;
+    });
+    y += 16;
+  }
+
+  // ====== PAGE 1: LOCATION & ACCESS ======
+  sectionHeader('Location & Access');
+  fieldRow('Address', d.address);
+  fieldRow('Phone', d.telephone_no);
+  fieldRow('Fire District', d.fire_district);
+  fieldRow('Map/Book Page', d.map_book_page);
+  fieldRow('Tax ID', d.tax_id);
+  fieldRow('PFP Number', d.pfp_number);
+  if (d.latitude && d.longitude) fieldRow('GPS', d.latitude + ', ' + d.longitude);
+  fieldRow('Directions', d.general_directions);
+  sectionGap();
+
+  // ====== PAGE 2: OPERATING & CONTACT ======
+  sectionHeader('Operating & Contact Info');
+  fieldRow('Primary Contact', d.primary_contact);
+  fieldRow('Primary Phone', d.primary_tel);
+  fieldRow('Secondary Contact', d.secondary_contact);
+  fieldRow('Email Address', d.secondary_tel);
+  fieldRow('Operating Hours', d.operating_hours);
+  fieldRow('Primary Access', d.primary_access);
+  fieldRow('Exterior Access', d.exterior_access);
+  fieldRow('Ext. Door Type', d.exterior_door);
+  fieldRow('Interior Roof Access', d.interior_roof);
+  fieldRow('Aerial Obstructions', d.aerial_obstructions);
+  sectionGap();
+
+  // ====== PAGE 3: OCCUPANCY ======
+  sectionHeader('Occupancy');
+  fieldRow('Occupancy Type', d.occupancy_types);
+  fieldRow('Hazard Contents', d.hazard_contents, { color: [230, 126, 34] });
+  fieldRow('High Fire Load', d.high_fire_load, { color: [230, 126, 34] });
+  fieldRow('Life Safety Concerns', d.life_safety_concerns, { color: [230, 126, 34] });
+  fieldRow('Evacuation Plan', d.evac_plan);
+  fieldRow('Occupant Load (Day)', d.occupant_load_day);
+  fieldRow('Occupant Load (Night)', d.occupant_load_night);
+  fieldRow('Assembly Points', d.assembly_point_locs);
+  sectionGap();
+
+  // ====== PAGE 4: CONSTRUCTION ======
+  sectionHeader('Construction');
+  fieldRow('Construction Type', ctMap[d.construction_type] || d.construction_type);
+  fieldRow('Stories', d.num_stories);
+  fieldRow('Total Sq Ft', d.total_sq_ft);
+  if (d.length && d.width) fieldRow('Dimensions', d.length + ' ft x ' + d.width + ' ft' + (d.height ? ' x ' + d.height + ' ft H' : ''));
+  fieldRow('Roof Construction', d.roof_construction);
+  fieldRow('Roof Covering', d.roof_covering);
+  yesNo('Roof Trusses', d.roof_trusses);
+  fieldRow('Truss Type', d.truss_type);
+  fieldRow('Deck Material', d.deck_material);
+  fieldRow('Floor Construction', d.floor_construction);
+  yesNo('Floor Trusses', d.floor_trusses);
+  fieldRow('Floor Truss Type', d.floor_truss_type);
+  fieldRow('Wall Construction', d.wall_construction);
+  sectionGap();
+
+  // ====== PAGE 5: FIRE PROTECTION ======
+  sectionHeader('Fire Protection Systems');
+  yesNo('Sprinkler System', d.sprinklered);
+  fieldRow('Sprinkler Type', d.sprinkler_type);
+  fieldRow('FDC Location', d.fdc_loc, { color: [230, 126, 34], bold: true });
+  yesNo('Standpipe', d.standpipe);
+  fieldRow('Standpipe Type', d.standpipe_type);
+  yesNo('Fire Alarm', d.fire_alarm);
+  fieldRow('Alarm Type', d.fire_alarm_type);
+  fieldRow('Panel Location', d.panel_loc, { color: [230, 126, 34], bold: true });
+  yesNo('Knox Box', d.knox_box, d.knox_box_loc);
+  fieldRow('Fire Pumps', d.fire_pumps);
+  sectionGap();
+
+  // ====== PAGE 6: UTILITIES ======
+  sectionHeader('Utilities');
+  yesNo('Natural Gas', d.natural_gas);
+  fieldRow('Gas Shutoff Location', d.natural_gas_loc, { color: [230, 126, 34], bold: true });
+  yesNo('LP Gas', d.lp_gas);
+  fieldRow('LP Shutoff Location', d.lp_gas_loc, { color: [230, 126, 34], bold: true });
+  fieldRow('Electric Service', d.electric);
+  fieldRow('Elec Shutoff Location', d.electric_loc, { color: [230, 126, 34], bold: true });
+  fieldRow('Emergency Power', d.emergency_power);
+  yesNo('Solar Power', d.solar_power);
+  sectionGap();
+
+  // ====== PAGE 7: HAZARDS & SPECIAL RESCUE ======
+  sectionHeader('Hazards & Special Rescue');
+  yesNo('Confined Space', d.confined_space);
+  yesNo('High Angle', d.high_angle);
+  yesNo('Water Rescue', d.water_rescue);
+
+  // NFPA 704 Diamond
+  if (d.nfpa_health || d.nfpa_fire || d.nfpa_instability || d.nfpa_special) {
+    checkPage(20);
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    doc.text('NFPA 704 Diamond', M + 2, y + 3);
+    y += 6;
+    var bx = M + 20;
+    doc.setFillColor(52, 152, 219); doc.rect(bx, y, 18, 10, 'F');
+    doc.setTextColor(255, 255, 255); doc.setFontSize(9); doc.setFont('helvetica', 'bold');
+    doc.text('H:' + (d.nfpa_health || '0'), bx + 2, y + 7);
+    doc.setFillColor(231, 76, 60); doc.rect(bx + 22, y, 18, 10, 'F');
+    doc.text('F:' + (d.nfpa_fire || '0'), bx + 24, y + 7);
+    doc.setFillColor(241, 196, 15); doc.rect(bx + 44, y, 18, 10, 'F');
+    doc.setTextColor(0, 0, 0);
+    doc.text('I:' + (d.nfpa_instability || '0'), bx + 46, y + 7);
+    doc.setFillColor(240, 240, 240); doc.rect(bx + 66, y, 18, 10, 'F');
+    doc.text('S:' + (d.nfpa_special || '-'), bx + 68, y + 7);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(0, 0, 0);
+    y += 14;
+  }
+
+  fieldRow('Chemical', d.chem_name_1, {bold:true});
+  if(d.chem_un_1) fieldRow('UN Number', d.chem_un_1, {color:[192,57,43]});
+  if(d.chem_guide_1) fieldRow('ERG Guide #', d.chem_guide_1, {color:[192,57,43],bold:true});
+  if(d.chem_class_1) fieldRow('Hazard Class', d.chem_class_1);
+  fieldRow('Quantity', d.chem_qty_1);
+  fieldRow('Chemical Location', d.chem_loc_1, { color: [230, 126, 34], bold: true });
+  fieldRow('MSDS On-Site', d.msds_onsite);
+  fieldRow('HazMat Notes', d.hazmat_notes, { color: [230, 126, 34] });
+
+  // Additional chemicals
+  for (var ci = 2; ci <= 10; ci++) {
+    if (!d['chem_name_' + ci]) continue;
+    fieldRow('Chemical ' + ci, d['chem_name_' + ci], {bold:true});
+    if(d['chem_un_'+ci]) fieldRow('  UN Number', d['chem_un_'+ci], {color:[192,57,43]});
+    if(d['chem_guide_'+ci]) fieldRow('  ERG Guide #', d['chem_guide_'+ci], {color:[192,57,43],bold:true});
+    if(d['chem_class_'+ci]) fieldRow('  Hazard Class', d['chem_class_'+ci]);
+    fieldRow('  Quantity', d['chem_qty_' + ci]);
+    fieldRow('  Location', d['chem_loc_' + ci], { color: [230, 126, 34], bold: true });
+  }
+  sectionGap();
+
+  // ====== PAGE 8: FIRE FLOW & WATER SUPPLY ======
+  sectionHeader('Fire Flow & Water Supply');
+  fieldRow('Effective Area', (d.nff_area||d.effective_area) ? (d.nff_area||d.effective_area) + ' sq ft' : '');
+  var dsNff=d.nff_result||d.calculated_nff||'';
+  bigField('Needed Fire Flow', dsNff ? dsNff + ' GPM' : '');
+  if(dsNff){
+    var dsNffNum=parseFloat(dsNff)||0;
+    var dsDur=d.nff_duration||(dsNffNum<=2500?'2 hours':(dsNffNum<=3500?'3 hours':'4 hours'));
+    fieldRow('Duration', dsDur, {bold:true});
+  }
+  if(d.available_supply) fieldRow('Available Supply', d.available_supply, {bold:true,color:[39,174,96]});
+  sectionGap();
+
+  // Hydrants
+  for (var hi = 1; hi <= 5; hi++) {
+    var hl = d['hyd_loc_' + hi];
+    if (!hl) continue;
+    if (hi === 1) {
+      checkPage(8);
+      doc.setFontSize(9); doc.setFont('helvetica', 'bold');
+      doc.text('HYDRANT DATA', M + 2, y + 4);
+      doc.setFont('helvetica', 'normal'); y += 6;
+    }
+    fieldRow('Hydrant ' + hi, hl);
+    fieldRow('  Static PSI', d['hyd_static_' + hi]);
+    fieldRow('  Residual PSI', d['hyd_res_' + hi]);
+    fieldRow('  Flow GPM', d['hyd_flow_' + hi], { bold: true, color: [52, 152, 219] });
+    fieldRow('  Distance', d['hyd_dist_' + hi]);
+  }
+  sectionGap();
+
+  // ====== PAGE 9: NOTES ======
+  if (d.notes || d.special_considerations) {
+    sectionHeader('Notes & Special Considerations');
+    if (d.notes) {
+      checkPage(12);
+      doc.setFontSize(9);
+      doc.setTextColor(60, 60, 60);
+      var noteLines = doc.splitTextToSize(d.notes, pw - 4);
+      doc.text(noteLines, M + 2, y + 4);
+      y += noteLines.length * 4 + 4;
+    }
+    if (d.special_considerations) {
+      checkPage(12);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(230, 126, 34);
+      doc.text('SPECIAL CONSIDERATIONS:', M + 2, y + 4);
+      y += 5;
+      doc.setFont('helvetica', 'normal');
+      var spLines = doc.splitTextToSize(d.special_considerations, pw - 4);
+      doc.text(spLines, M + 2, y + 4);
+      y += spLines.length * 4 + 4;
+    }
+    doc.setTextColor(0, 0, 0);
+    sectionGap();
+  }
+
+  // ====== PAGE 10: SITE PLAN ======
+  // ====== PAGE 11: FLOOR PLAN ======
+  var planPromises = [];
+
+  if (d.site_plan_data) {
+    planPromises.push(ppRenderCanvas(d.site_plan_data, 900, 550).then(function(imgData) {
+      doc.addPage(); y = M;
+      sectionHeader('Site Plan');
+      if (imgData) {
+        var imgW = pw; var imgH = imgW * (550 / 900);
+        checkPage(imgH + 5);
+        doc.addImage(imgData, 'PNG', M, y, imgW, imgH);
+        y += imgH + 5;
+      } else {
+        doc.setFontSize(10); doc.setTextColor(150, 150, 150);
+        doc.text('Site plan data could not be rendered', M + 2, y + 5);
+        y += 10;
+      }
+    }));
+  }
+
+  if (d.floor_plan_data) {
+    var floorAll;
+    try { floorAll = JSON.parse(d.floor_plan_data); } catch(e) { floorAll = null; }
+    if (floorAll) {
+      var floorKeys = Object.keys(floorAll).sort(function(a, b) { return Number(a) - Number(b); });
+      floorKeys.forEach(function(fk) {
+        planPromises.push(ppRenderCanvas(floorAll[fk], 900, 600).then(function(imgData) {
+          doc.addPage(); y = M;
+          sectionHeader('Floor Plan' + (floorKeys.length > 1 ? ' - Floor ' + fk : ''));
+          if (imgData) {
+            var imgW = pw; var imgH = imgW * (600 / 900);
+            checkPage(imgH + 5);
+            doc.addImage(imgData, 'PNG', M, y, imgW, imgH);
+            y += imgH + 5;
+          } else {
+            doc.setFontSize(10); doc.setTextColor(150, 150, 150);
+            doc.text('Floor plan could not be rendered', M + 2, y + 5);
+            y += 10;
+          }
+        }));
+      });
+    }
+  }
+
+  // Footers on every page
+  function addFooters() {
+    var pages = doc.internal.getNumberOfPages();
+    for (var i = 1; i <= pages; i++) {
+      doc.setPage(i);
+      doc.setFontSize(7);
+      doc.setTextColor(150, 150, 150);
+      doc.text('Centerville Fire Department Pre-Plan  |  ' + (d.business_name || '') + '  |  Generated ' + new Date().toLocaleDateString(), M, H - 8);
+      doc.text('Page ' + i + ' of ' + pages, W - M, H - 8, { align: 'right' });
+    }
+  }
+
+  var safeName = (d.business_name || 'preplan').replace(/[^a-zA-Z0-9]/g, '-').replace(/-+/g, '-');
+
+  if (planPromises.length > 0) {
+    Promise.all(planPromises).then(function() {
+      addFooters();
+      doc.save(safeName + '-preplan.pdf');
+      ppToast('PDF downloaded!', 'success');
+    }).catch(function(err) {
+      console.error('Plan render error:', err);
+      addFooters();
+      doc.save(safeName + '-preplan.pdf');
+      ppToast('PDF downloaded (plans may be missing)', 'success');
+    });
+  } else {
+    addFooters();
+    doc.save(safeName + '-preplan.pdf');
+    ppToast('PDF downloaded!', 'success');
+  }
+}
+
+// Render a fabric.js JSON canvas to a PNG data URL for PDF embedding
+function ppRenderCanvas(jsonStr, w, h) {
+  return new Promise(function(resolve) {
+    try {
+      var jsonData;
+      if (typeof jsonStr === 'string') {
+        try { jsonData = JSON.parse(jsonStr); } catch(e) { resolve(null); return; }
+      } else { jsonData = jsonStr; }
+
+      var el = document.createElement('canvas');
+      el.width = w; el.height = h;
+      el.style.position = 'fixed';
+      el.style.left = '-9999px';
+      document.body.appendChild(el);
+
+      var fc = new fabric.StaticCanvas(el, { width: w, height: h, backgroundColor: '#ffffff' });
+      fc.loadFromJSON(jsonData, function() {
+        fc.renderAll();
+        setTimeout(function() {
+          try {
+            var dataUrl = fc.toDataURL({ format: 'png', quality: 1 });
+            resolve(dataUrl);
+          } catch(e) { resolve(null); }
+          finally {
+            fc.dispose();
+            if (el.parentNode) el.parentNode.removeChild(el);
+          }
+        }, 300);
+      });
+    } catch(e) { resolve(null); }
+  });
+}
+</script>
+
+<!-- Pre-Plan Photo Upload Component -->
+<style>
+.photo-fab{position:fixed;bottom:60px;right:16px;width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,#c0392b,#e67e22);color:#fff;border:none;font-size:22px;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,0.4);z-index:9998;display:flex;align-items:center;justify-content:center;transition:transform .2s}
+.photo-fab:hover{transform:scale(1.1)}
+.photo-fab .badge{position:absolute;top:-2px;right:-2px;background:#27ae60;color:#fff;border-radius:10px;min-width:18px;height:18px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px}
+.photo-panel{position:fixed;bottom:60px;right:0;width:340px;max-height:calc(100vh - 120px);background:#1e1e24;border:1px solid #444;border-radius:12px 0 0 12px;z-index:9999;display:none;flex-direction:column;box-shadow:-4px 0 20px rgba(0,0,0,0.4)}
+.photo-panel.open{display:flex}
+.photo-panel-hdr{background:linear-gradient(135deg,#c0392b,#e67e22);padding:12px 16px;border-radius:12px 0 0 0;display:flex;align-items:center;justify-content:space-between}
+.photo-panel-hdr h3{color:#fff;font-size:14px;margin:0}
+.photo-panel-hdr button{background:none;border:none;color:rgba(255,255,255,0.8);font-size:20px;cursor:pointer}
+.photo-upload-zone{margin:10px;border:2px dashed #555;border-radius:8px;padding:20px;text-align:center;cursor:pointer;transition:all .2s}
+.photo-upload-zone:hover,.photo-upload-zone.dragover{border-color:#e67e22;background:rgba(230,126,34,0.05)}
+.photo-upload-zone input{display:none}
+.photo-upload-zone p{color:#888;font-size:12px;margin-top:4px}
+.photo-upload-zone .icon{font-size:28px}
+.photo-cat-row{display:flex;gap:4px;padding:0 10px;flex-wrap:wrap;margin-bottom:6px}
+.photo-cat-btn{padding:4px 10px;border-radius:12px;border:1px solid #555;background:#2a2a32;color:#aaa;font-size:11px;cursor:pointer;transition:all .15s}
+.photo-cat-btn:hover{border-color:#e67e22;color:#fff}
+.photo-cat-btn.active{background:#c0392b;border-color:#c0392b;color:#fff}
+.photo-list{flex:1;overflow-y:auto;padding:8px}
+.photo-card{background:#2a2a32;border-radius:8px;margin-bottom:8px;overflow:hidden;border:1px solid #333;transition:border-color .15s}
+.photo-card:hover{border-color:#555}
+.photo-card img{width:100%;height:140px;object-fit:cover;display:block;cursor:pointer}
+.photo-card-info{padding:8px 10px;display:flex;align-items:center;gap:6px}
+.photo-card-info input{flex:1;background:#1a1a1e;border:1px solid #444;color:#fff;padding:4px 8px;border-radius:4px;font-size:11px}
+.photo-card-info .photo-del{background:none;border:none;color:#c0392b;font-size:16px;cursor:pointer;padding:2px 4px}
+.photo-card-info .photo-del:hover{color:#e74c3c}
+.photo-card-cat{padding:0 10px 8px;display:flex;gap:3px;flex-wrap:wrap}
+.photo-card-cat .mini-cat{padding:2px 8px;border-radius:8px;font-size:10px;cursor:pointer;border:1px solid #444;color:#888;background:#1a1a1e}
+.photo-card-cat .mini-cat.active{background:#c0392b;border-color:#c0392b;color:#fff}
+.photo-empty{text-align:center;padding:30px 16px;color:#666;font-size:13px}
+.photo-count{color:#888;font-size:11px;padding:0 10px 4px}
+.photo-progress{height:3px;background:#333;margin:0 10px 6px;border-radius:2px;display:none}
+.photo-progress-bar{height:100%;background:linear-gradient(90deg,#e67e22,#27ae60);border-radius:2px;transition:width .3s;width:0%}
+.photo-lightbox{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.9);z-index:10002;display:none;align-items:center;justify-content:center;cursor:pointer}
+.photo-lightbox.show{display:flex}
+.photo-lightbox img{max-width:95%;max-height:90vh;border-radius:4px;box-shadow:0 0 30px rgba(0,0,0,0.5)}
+.photo-lightbox .lb-close{position:absolute;top:12px;right:16px;color:#fff;font-size:28px;cursor:pointer;background:rgba(0,0,0,0.5);border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center}
+@media(max-width:500px){.photo-panel{width:100%;border-radius:12px 12px 0 0;bottom:56px;max-height:60vh}}
+</style>
+
+<button class="photo-fab" id="photoFab" onclick="phToggle()" title="Photos">
+  &#x1F4F7; <span class="badge" id="photoBadge" style="display:none">0</span>
+</button>
+
+<div class="photo-panel" id="photoPanel">
+  <div class="photo-panel-hdr">
+    <h3>&#x1F4F7; Photos</h3>
+    <button onclick="phToggle()">&times;</button>
+  </div>
+  <div class="photo-upload-zone" id="phDropZone" onclick="document.getElementById('phFileInput').click()">
+    <div class="icon">&#x1F4F8;</div>
+    <p><strong>Tap to add photo</strong></p>
+    <p>or drag & drop</p>
+    <input type="file" id="phFileInput" accept="image/*" capture="environment" multiple>
+  </div>
+  <div class="photo-progress" id="phProgress"><div class="photo-progress-bar" id="phProgressBar"></div></div>
+  <div class="photo-cat-row" id="phCatFilter">
+    <button class="photo-cat-btn active" data-cat="all" onclick="phFilterCat('all',this)">All</button>
+    <button class="photo-cat-btn" data-cat="Exterior" onclick="phFilterCat('Exterior',this)">Exterior</button>
+    <button class="photo-cat-btn" data-cat="Interior" onclick="phFilterCat('Interior',this)">Interior</button>
+    <button class="photo-cat-btn" data-cat="Hazard" onclick="phFilterCat('Hazard',this)">Hazard</button>
+    <button class="photo-cat-btn" data-cat="Utility" onclick="phFilterCat('Utility',this)">Utility</button>
+    <button class="photo-cat-btn" data-cat="Access" onclick="phFilterCat('Access',this)">Access</button>
+    <button class="photo-cat-btn" data-cat="Fire Protection" onclick="phFilterCat('Fire Protection',this)">FP</button>
+  </div>
+  <div class="photo-count" id="phCount"></div>
+  <div class="photo-list" id="phList"><div class="photo-empty">No photos yet. Tap above to add.</div></div>
+</div>
+
+<div class="photo-lightbox" id="phLightbox" onclick="phCloseLB()">
+  <span class="lb-close">&times;</span>
+  <img id="phLBImg" src="">
+</div>
+
+<script>
+(function(){
+  var phOpen=false,phPhotos=[],phFilter='all',phPlanId='';
+
+  function getPlanId(){
+    if(phPlanId)return phPlanId;
+    try{
+      var d=JSON.parse(localStorage.getItem('preFirePlan')||'{}');
+      var key=(d.business_name||'')+'|'+(d.address||'');
+      if(key==='|'){var sid=localStorage.getItem('phSessionId');if(!sid){sid='session-'+Date.now();localStorage.setItem('phSessionId',sid)}key=sid}
+      phPlanId=key;return key;
+    }catch(e){return 'unknown'}
+  }
+
+  function getCurrentPage(){
+    var m=window.location.pathname.match(/page(\d+)/);
+    return m?'Page '+m[1]:'General';
+  }
+
+  window.phToggle=function(){
+    phOpen=!phOpen;
+    document.getElementById('photoPanel').classList.toggle('open',phOpen);
+    if(phOpen)phLoadPhotos();
+  };
+
+  var dz=document.getElementById('phDropZone');
+  dz.addEventListener('dragover',function(e){e.preventDefault();dz.classList.add('dragover')});
+  dz.addEventListener('dragleave',function(){dz.classList.remove('dragover')});
+  dz.addEventListener('drop',function(e){e.preventDefault();dz.classList.remove('dragover');if(e.dataTransfer.files.length)phHandleFiles(e.dataTransfer.files)});
+  document.getElementById('phFileInput').addEventListener('change',function(e){if(e.target.files.length)phHandleFiles(e.target.files);e.target.value=''});
+
+  function phHandleFiles(files){
+    var arr=Array.from(files),total=arr.length,done=0;
+    var prog=document.getElementById('phProgress'),bar=document.getElementById('phProgressBar');
+    prog.style.display='block';bar.style.width='0%';
+    function next(){
+      if(done>=total){setTimeout(function(){prog.style.display='none'},500);phLoadPhotos();return}
+      bar.style.width=((done/total)*80)+'%';
+      phCompressAndUpload(arr[done],function(){done++;bar.style.width=((done/total)*100)+'%';next()});
+    }
+    next();
+  }
+
+  function phCompressAndUpload(file,cb){
+    var reader=new FileReader();
+    reader.onload=function(e){
+      var img=new Image();
+      img.onload=function(){
+        var maxW=1200,maxH=1200,w=img.width,h=img.height;
+        if(w>maxW){h=h*maxW/w;w=maxW}
+        if(h>maxH){w=w*maxH/h;h=maxH}
+        w=Math.round(w);h=Math.round(h);
+        var canvas=document.createElement('canvas');
+        canvas.width=w;canvas.height=h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        var quality=0.7,dataUrl=canvas.toDataURL('image/jpeg',quality);
+        if(dataUrl.length>800000){quality=0.5;dataUrl=canvas.toDataURL('image/jpeg',quality)}
+        if(dataUrl.length>800000){quality=0.3;dataUrl=canvas.toDataURL('image/jpeg',quality)}
+        var base64=dataUrl.split(',')[1];
+        fetch('/api/preplan/photos',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({plan_id:getPlanId(),page:getCurrentPage(),category:'General',caption:'',data_base64:base64,file_type:'image/jpeg',file_size:base64.length,width:w,height:h})
+        }).then(function(r){return r.json()}).then(function(d){if(!d.success)console.error('Upload failed:',d.error);cb()}).catch(function(err){console.error('Upload error:',err);cb()});
+      };
+      img.src=e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  window.phLoadPhotos=function(){
+    var url='/api/preplan/photos?plan_id='+encodeURIComponent(getPlanId());
+    if(phFilter!=='all')url+='&category='+encodeURIComponent(phFilter);
+    fetch(url).then(function(r){return r.json()}).then(function(d){
+      if(!d.success)return;
+      phPhotos=d.photos||[];phRender();
+      var badge=document.getElementById('photoBadge');
+      if(d.count>0){badge.textContent=d.count;badge.style.display='flex'}else{badge.style.display='none'}
+    }).catch(function(err){console.error('Load photos error:',err)});
+  };
+
+  function phRender(){
+    var list=document.getElementById('phList');
+    document.getElementById('phCount').textContent=phPhotos.length+' photo'+(phPhotos.length!==1?'s':'');
+    if(phPhotos.length===0){list.innerHTML='<div class="photo-empty">No photos'+(phFilter!=='all'?' in this category':'')+'. Tap above to add.</div>';return}
+    var cats=['General','Exterior','Interior','Hazard','Utility','Access','Fire Protection'];
+    list.innerHTML=phPhotos.map(function(p){
+      var catBtns=cats.map(function(c){return '<span class="mini-cat'+(p.category===c?' active':'')+'" onclick="phSetCat(\''+p.id+'\',\''+c+'\')">'+c+'</span>'}).join('');
+      return '<div class="photo-card" id="pc-'+p.id+'">'+
+        '<img src="/api/preplan/photos/'+p.id+'/image" loading="lazy" onclick="phShowLB(\'/api/preplan/photos/'+p.id+'/image\')">'+
+        '<div class="photo-card-info">'+
+          '<input type="text" value="'+phEsc(p.caption||'')+'" placeholder="Add caption..." onchange="phCaption(\''+p.id+'\',this.value)">'+
+          '<button class="photo-del" onclick="phDel(\''+p.id+'\')" title="Delete">&#x1F5D1;</button>'+
+        '</div><div class="photo-card-cat">'+catBtns+'</div></div>';
+    }).join('');
+  }
+
+  window.phFilterCat=function(cat,btn){
+    phFilter=cat;
+    document.querySelectorAll('#phCatFilter .photo-cat-btn').forEach(function(b){b.classList.remove('active')});
+    btn.classList.add('active');phLoadPhotos();
+  };
+
+  window.phCaption=function(id,val){
+    fetch('/api/preplan/photos/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({caption:val})}).catch(function(e){console.error(e)});
+  };
+
+  window.phSetCat=function(id,cat){
+    fetch('/api/preplan/photos/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({category:cat})}).then(function(){phLoadPhotos()}).catch(function(e){console.error(e)});
+  };
+
+  window.phDel=function(id){
+    if(!confirm('Delete this photo?'))return;
+    fetch('/api/preplan/photos/'+id,{method:'DELETE'}).then(function(){phLoadPhotos()}).catch(function(e){console.error(e)});
+  };
+
+  window.phShowLB=function(src){document.getElementById('phLBImg').src=src;document.getElementById('phLightbox').classList.add('show')};
+  window.phCloseLB=function(){document.getElementById('phLightbox').classList.remove('show')};
+
+  function phEsc(s){if(!s)return '';return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+  setTimeout(function(){
+    fetch('/api/preplan/photos?plan_id='+encodeURIComponent(getPlanId()))
+      .then(function(r){return r.json()})
+      .then(function(d){if(d.success&&d.count>0){var b=document.getElementById('photoBadge');b.textContent=d.count;b.style.display='flex'}})
+      .catch(function(){});
+  },500);
+})();
+</script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9ea6597a1b4d678a',t:'MTc3NTg3MjMyMQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
