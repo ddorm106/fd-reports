@@ -61,6 +61,46 @@ table.hyd-table td input[type=number]{width:80px}
 .remove-row-btn:hover{opacity:1;background:#fef2f2}
 .loading-spinner{display:inline-block;width:14px;height:14px;border:2px solid #ccc;border-top-color:#1e3a5f;border-radius:50%;animation:spin .6s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+/* ── Mobile-friendly hydrant table ────────────────────────────────────
+   On narrow screens, collapse the 11-column table into per-hydrant cards.
+   Uses data-label attrs (added via JS below) as row labels. */
+@media (max-width: 720px) {
+  .hyd-table { border: 0; background: transparent; }
+  .hyd-table thead { display: none; }
+  .hyd-table tbody, .hyd-table tr, .hyd-table td { display: block; width: 100%; }
+  .hyd-table tr {
+    background: #fff; border: 1px solid #d4d7dc; border-radius: 10px;
+    padding: 12px; margin-bottom: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px;
+  }
+  .hyd-table td {
+    padding: 0; border: 0; position: relative;
+    display: flex; flex-direction: column; gap: 2px;
+    font-size: 12px;
+  }
+  .hyd-table td::before {
+    content: attr(data-label);
+    font-size: 10px; color: #6b7280; text-transform: uppercase;
+    letter-spacing: 0.5px; font-weight: 600;
+  }
+  /* First cell (row number) spans full width as header */
+  .hyd-table td:first-child {
+    grid-column: 1 / -1; font-weight: 700; font-size: 14px; color: #c0392b;
+    border-bottom: 1px solid #e5e7eb; padding-bottom: 6px; margin-bottom: 4px;
+  }
+  .hyd-table td:first-child::before { content: "Hydrant"; }
+  /* Last cell (remove button) spans full width, right-aligned */
+  .hyd-table td:last-child {
+    grid-column: 1 / -1; justify-content: flex-end; flex-direction: row;
+    border-top: 1px solid #e5e7eb; padding-top: 6px; margin-top: 4px;
+  }
+  .hyd-table td:last-child::before { content: ""; display: none; }
+  /* Inputs fill their cell */
+  .hyd-table td input { width: 100% !important; min-width: 0 !important; font-size: 14px; }
+  /* Readonly (calculated) inputs — subtle highlight */
+  .hyd-table td input[readonly] { background: #f0f4f8; font-weight: 700; }
+}
 </style>
 </head>
 <body>
@@ -247,9 +287,9 @@ table.hyd-table td input[type=number]{width:80px}
                         <th>#</th><th>Hyd #</th><th>Location</th><th>Static</th><th>Residual</th><th>Pitot</th><th>Flow GPM</th><th>AFF GPM</th><th>Distance</th><th>Date Tested</th><th></th>
                     </tr></thead>
                     <tbody id="hydTbody">
-                        <tr id="hydRow_1"><td>1</td><td><input name="hyd_num_1" placeholder="#" style="width:50px"></td><td><input name="hyd_loc_1" placeholder="Location"></td><td><input name="hyd_static_1" type="number" oninput="autoCalcRow(1)"></td><td><input name="hyd_res_1" type="number" oninput="autoCalcRow(1)"></td><td><input name="hyd_pitot_1" type="number" oninput="autoCalcRow(1)"></td><td><input name="hyd_flow_1" type="number" id="hyd_flow_1" readonly style="background:#f0f4f8;font-weight:700"></td><td><input name="hyd_aff_1" type="number" id="hyd_aff_1" readonly style="background:#f0f4f8;font-weight:700"></td><td><input name="hyd_dist_1" placeholder="ft"></td><td><input name="hyd_date_1" placeholder="Date" style="width:90px"></td><td><button type="button" class="remove-row-btn" onclick="removeHydRow(this)" title="Remove row">✕</button></td></tr>
-                        <tr id="hydRow_2"><td>2</td><td><input name="hyd_num_2" placeholder="#" style="width:50px"></td><td><input name="hyd_loc_2" placeholder="Location"></td><td><input name="hyd_static_2" type="number" oninput="autoCalcRow(2)"></td><td><input name="hyd_res_2" type="number" oninput="autoCalcRow(2)"></td><td><input name="hyd_pitot_2" type="number" oninput="autoCalcRow(2)"></td><td><input name="hyd_flow_2" type="number" id="hyd_flow_2" readonly style="background:#f0f4f8;font-weight:700"></td><td><input name="hyd_aff_2" type="number" id="hyd_aff_2" readonly style="background:#f0f4f8;font-weight:700"></td><td><input name="hyd_dist_2" placeholder="ft"></td><td><input name="hyd_date_2" placeholder="Date" style="width:90px"></td><td><button type="button" class="remove-row-btn" onclick="removeHydRow(this)" title="Remove row">✕</button></td></tr>
-                        <tr id="hydRow_3"><td>3</td><td><input name="hyd_num_3" placeholder="#" style="width:50px"></td><td><input name="hyd_loc_3" placeholder="Location"></td><td><input name="hyd_static_3" type="number" oninput="autoCalcRow(3)"></td><td><input name="hyd_res_3" type="number" oninput="autoCalcRow(3)"></td><td><input name="hyd_pitot_3" type="number" oninput="autoCalcRow(3)"></td><td><input name="hyd_flow_3" type="number" id="hyd_flow_3" readonly style="background:#f0f4f8;font-weight:700"></td><td><input name="hyd_aff_3" type="number" id="hyd_aff_3" readonly style="background:#f0f4f8;font-weight:700"></td><td><input name="hyd_dist_3" placeholder="ft"></td><td><input name="hyd_date_3" placeholder="Date" style="width:90px"></td><td><button type="button" class="remove-row-btn" onclick="removeHydRow(this)" title="Remove row">✕</button></td></tr>
+                        <tr id="hydRow_1"><td data-label="#">1</td><td data-label="Hyd #"><input name="hyd_num_1" placeholder="#" style="width:50px"></td><td data-label="Location"><input name="hyd_loc_1" placeholder="Location"></td><td data-label="Static"><input name="hyd_static_1" type="number" oninput="autoCalcRow(1)"></td><td data-label="Residual"><input name="hyd_res_1" type="number" oninput="autoCalcRow(1)"></td><td data-label="Pitot"><input name="hyd_pitot_1" type="number" oninput="autoCalcRow(1)"></td><td data-label="Flow GPM"><input name="hyd_flow_1" type="number" id="hyd_flow_1" readonly style="background:#f0f4f8;font-weight:700"></td><td data-label="AFF GPM"><input name="hyd_aff_1" type="number" id="hyd_aff_1" readonly style="background:#f0f4f8;font-weight:700"></td><td data-label="Distance"><input name="hyd_dist_1" placeholder="ft"></td><td data-label="Date"><input name="hyd_date_1" placeholder="Date" style="width:90px"></td><td><button type="button" class="remove-row-btn" onclick="removeHydRow(this)" title="Remove row">&times;</button></td></tr>
+                        <tr id="hydRow_2"><td data-label="#">2</td><td data-label="Hyd #"><input name="hyd_num_2" placeholder="#" style="width:50px"></td><td data-label="Location"><input name="hyd_loc_2" placeholder="Location"></td><td data-label="Static"><input name="hyd_static_2" type="number" oninput="autoCalcRow(2)"></td><td data-label="Residual"><input name="hyd_res_2" type="number" oninput="autoCalcRow(2)"></td><td data-label="Pitot"><input name="hyd_pitot_2" type="number" oninput="autoCalcRow(2)"></td><td data-label="Flow GPM"><input name="hyd_flow_2" type="number" id="hyd_flow_2" readonly style="background:#f0f4f8;font-weight:700"></td><td data-label="AFF GPM"><input name="hyd_aff_2" type="number" id="hyd_aff_2" readonly style="background:#f0f4f8;font-weight:700"></td><td data-label="Distance"><input name="hyd_dist_2" placeholder="ft"></td><td data-label="Date"><input name="hyd_date_2" placeholder="Date" style="width:90px"></td><td><button type="button" class="remove-row-btn" onclick="removeHydRow(this)" title="Remove row">&times;</button></td></tr>
+                        <tr id="hydRow_3"><td data-label="#">3</td><td data-label="Hyd #"><input name="hyd_num_3" placeholder="#" style="width:50px"></td><td data-label="Location"><input name="hyd_loc_3" placeholder="Location"></td><td data-label="Static"><input name="hyd_static_3" type="number" oninput="autoCalcRow(3)"></td><td data-label="Residual"><input name="hyd_res_3" type="number" oninput="autoCalcRow(3)"></td><td data-label="Pitot"><input name="hyd_pitot_3" type="number" oninput="autoCalcRow(3)"></td><td data-label="Flow GPM"><input name="hyd_flow_3" type="number" id="hyd_flow_3" readonly style="background:#f0f4f8;font-weight:700"></td><td data-label="AFF GPM"><input name="hyd_aff_3" type="number" id="hyd_aff_3" readonly style="background:#f0f4f8;font-weight:700"></td><td data-label="Distance"><input name="hyd_dist_3" placeholder="ft"></td><td data-label="Date"><input name="hyd_date_3" placeholder="Date" style="width:90px"></td><td><button type="button" class="remove-row-btn" onclick="removeHydRow(this)" title="Remove row">&times;</button></td></tr>
                     </tbody>
                 </table>
                 </div>
@@ -537,16 +577,16 @@ function addHydRow() {
     var tb = document.getElementById('hydTbody');
     var tr = document.createElement('tr');
     tr.id = 'hydRow_' + hydCount;
-    tr.innerHTML = '<td>' + hydCount + '</td>' +
-        '<td><input name="hyd_num_' + hydCount + '" placeholder="#" style="width:50px"></td>' +
-        '<td><input name="hyd_loc_' + hydCount + '" placeholder="Location"></td>' +
-        '<td><input name="hyd_static_' + hydCount + '" type="number" oninput="autoCalcRow(' + hydCount + ')"></td>' +
-        '<td><input name="hyd_res_' + hydCount + '" type="number" oninput="autoCalcRow(' + hydCount + ')"></td>' +
-        '<td><input name="hyd_pitot_' + hydCount + '" type="number" oninput="autoCalcRow(' + hydCount + ')"></td>' +
-        '<td><input name="hyd_flow_' + hydCount + '" type="number" id="hyd_flow_' + hydCount + '" readonly style="background:#f0f4f8;font-weight:700"></td>' +
-        '<td><input name="hyd_aff_' + hydCount + '" type="number" id="hyd_aff_' + hydCount + '" readonly style="background:#f0f4f8;font-weight:700"></td>' +
-        '<td><input name="hyd_dist_' + hydCount + '" placeholder="ft"></td>' +
-        '<td><input name="hyd_date_' + hydCount + '" placeholder="Date" style="width:90px"></td>' +
+    tr.innerHTML = '<td data-label="#">' + hydCount + '</td>' +
+        '<td data-label="Hyd #"><input name="hyd_num_' + hydCount + '" placeholder="#" style="width:50px"></td>' +
+        '<td data-label="Location"><input name="hyd_loc_' + hydCount + '" placeholder="Location"></td>' +
+        '<td data-label="Static"><input name="hyd_static_' + hydCount + '" type="number" oninput="autoCalcRow(' + hydCount + ')"></td>' +
+        '<td data-label="Residual"><input name="hyd_res_' + hydCount + '" type="number" oninput="autoCalcRow(' + hydCount + ')"></td>' +
+        '<td data-label="Pitot"><input name="hyd_pitot_' + hydCount + '" type="number" oninput="autoCalcRow(' + hydCount + ')"></td>' +
+        '<td data-label="Flow GPM"><input name="hyd_flow_' + hydCount + '" type="number" id="hyd_flow_' + hydCount + '" readonly style="background:#f0f4f8;font-weight:700"></td>' +
+        '<td data-label="AFF GPM"><input name="hyd_aff_' + hydCount + '" type="number" id="hyd_aff_' + hydCount + '" readonly style="background:#f0f4f8;font-weight:700"></td>' +
+        '<td data-label="Distance"><input name="hyd_dist_' + hydCount + '" placeholder="ft"></td>' +
+        '<td data-label="Date"><input name="hyd_date_' + hydCount + '" placeholder="Date" style="width:90px"></td>' +
         '<td><button type="button" class="remove-row-btn" onclick="removeHydRow(this)" title="Remove row">✕</button></td>';
     tb.appendChild(tr);
 }
