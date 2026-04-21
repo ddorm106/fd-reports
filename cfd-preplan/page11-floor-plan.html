@@ -1398,12 +1398,12 @@ document.getElementById('addKeyBtn').onclick = function() {
     toast('Symbol key added — drag to reposition');
 };
 
-/* AI Capture Import — loads from divisionscan.org */
+/* AI Capture Import — loads from fdtraining.org (DivisionScan iOS app) */
 function escH(s) {
     if (!s) return '';
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-var DS_API = 'https://divisionscan.org';
+var DS_API = '';  // Use same-origin fdtraining.org endpoints (was divisionscan.org, deprecated)
 
 // ── SVG Upload — load as background image ─────────────────────────────────
 function handleSVGUpload(input) {
