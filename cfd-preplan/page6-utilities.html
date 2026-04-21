@@ -234,7 +234,29 @@
 
         <div class="nav-buttons">
             <button type="button" class="btn-secondary" onclick="navigate('page5-fire-protection.html',document.getElementById('theForm'))">← Previous</button>
-            <button type="button" class="btn-primary" onclick="navigate('page7-special-rescue.html',document.getElementById('theForm'))">Next →</button>
+            <button type="button" class="btn-secondary" onclick="typicalUtilities()" title="Mark typical building: electric + natural gas only; LP/solar/generator = No">Typical Building</button>
+            <button type="button" class="btn-primary" onclick="navigate('page7-special-rescue.html',document.getElementById('theForm'))">Next &rarr;</button>
+        </div>
+
+        <script>
+        // "Typical Building" quick-fill: most commercial buildings have electric +
+        // natural gas, and don't have solar/LP/generator. Sets the common case
+        // so the firefighter only has to override the rare ones.
+        function typicalUtilities(){
+          var settings = [
+            ['electric','Yes'], ['natural_gas','Yes'],
+            ['lp_gas','No'], ['emergency_power','No'],
+            ['solar_power','No'], ['solar_battery','No']
+          ];
+          settings.forEach(function(pair){
+            var r = document.querySelector('input[name="'+pair[0]+'"][value="'+pair[1]+'"]');
+            if (r) { r.checked = true; r.dispatchEvent(new Event('change', {bubbles:true})); }
+          });
+          var f = document.getElementById('theForm');
+          if (typeof saveFormData === 'function' && f) saveFormData(f);
+          if (typeof showToast === 'function') showToast('Set typical utilities — electric + natural gas only', 'info');
+        }
+        </script>
         </div>
     </div>
 </div>

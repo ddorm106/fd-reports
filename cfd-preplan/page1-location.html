@@ -68,6 +68,31 @@
 var form=document.getElementById('theForm');
 if(form){loadFormData(form);autoSave(form);}
 
+// Show a banner at the top of page 1 when this plan was auto-filled from a
+// DivisionScan capture. The bridge writes a reserved _scan_meta key that we
+// read here; banner includes a shortcut to the floor plan (page 11).
+(function showScanLinkBanner(){
+  var d = getSavedData();
+  var m = d && d._scan_meta;
+  if (!m || !m.scan_id) return;
+  var dateStr = '';
+  try { dateStr = new Date(m.scan_date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); } catch(e) {}
+  var by = m.captured_by ? ' by ' + m.captured_by : '';
+  var areaStr = m.total_area ? Math.round(m.total_area) + ' ft&sup2;' : '';
+  var mkStr = m.marker_count ? m.marker_count + ' marker' + (m.marker_count===1?'':'s') : '';
+  var details = [dateStr, areaStr, mkStr].filter(Boolean).join(' &middot; ');
+  var banner = document.createElement('div');
+  banner.style.cssText = 'background:linear-gradient(135deg,#1e3a5f,#c0392b);color:#fff;padding:12px 16px;border-radius:10px;margin:0 0 20px 0;display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:13px';
+  banner.innerHTML = '<span style="font-size:20px">&#128241;</span>'
+    + '<div style="flex:1;min-width:200px">'
+    + '<div style="font-weight:700">Linked to DivisionScan capture' + by + '</div>'
+    + (details ? '<div style="opacity:0.85;font-size:12px;margin-top:2px">' + details + '</div>' : '')
+    + '</div>'
+    + '<a href="page11-floor-plan.html" style="background:rgba(255,255,255,0.2);color:#fff;text-decoration:none;padding:6px 12px;border-radius:6px;font-weight:600;font-size:12px">View Floor Plan &rarr;</a>';
+  var formEl = document.getElementById('theForm');
+  if (formEl && formEl.parentNode) formEl.parentNode.insertBefore(banner, formEl);
+})();
+
 // Safari / iOS detection
 var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);

@@ -185,8 +185,24 @@
 
         <div class="nav-buttons">
             <button type="button" class="btn-secondary" onclick="navigate('page6-utilities.html',document.getElementById('theForm'))">← Previous</button>
-            <button type="button" class="btn-primary" onclick="navigate('page8-fire-flow.html',document.getElementById('theForm'))">Next →</button>
+            <button type="button" class="btn-secondary" onclick="markAllNoAndContinue()" title="Set all rescue categories to No and move to next page">No Special Rescue Needs &rarr;</button>
+            <button type="button" class="btn-primary" onclick="navigate('page8-fire-flow.html',document.getElementById('theForm'))">Next &rarr;</button>
         </div>
+
+        <script>
+        // Quick-skip: mark all rescue radio pairs as "No" and advance. Most buildings
+        // have zero special rescue needs; this saves firefighters 6 taps.
+        function markAllNoAndContinue(){
+          var pairs = ['confined_space','high_angle','water_rescue'];
+          pairs.forEach(function(n){
+            var r = document.querySelector('input[name="'+n+'"][value="No"]');
+            if (r) { r.checked = true; r.dispatchEvent(new Event('change', {bubbles:true})); }
+          });
+          var f = document.getElementById('theForm');
+          if (typeof saveFormData === 'function' && f) saveFormData(f);
+          navigate('page8-fire-flow.html', f);
+        }
+        </script>
     </div>
 </div>
 <footer>

@@ -165,7 +165,19 @@
 
         <div class="nav-buttons">
             <button type="button" class="btn-secondary" onclick="navigate('page8-fire-flow.html',document.getElementById('theForm'))">← Previous</button>
-            <button type="button" class="btn-primary" onclick="navigate('page10-site-plan.html',document.getElementById('theForm'))">Next →</button>
+            <button type="button" class="btn-secondary" onclick="markNoHazmatAndContinue()" title="Mark building as having no hazmat and move to next page">No Hazmat &rarr;</button>
+            <button type="button" class="btn-primary" onclick="navigate('page10-site-plan.html',document.getElementById('theForm'))">Next &rarr;</button>
+        </div>
+
+        <script>
+        function markNoHazmatAndContinue(){
+          var r = document.querySelector('input[name="msds_onsite"][value="No"]');
+          if (r) { r.checked = true; r.dispatchEvent(new Event('change', {bubbles:true})); }
+          var f = document.getElementById('theForm');
+          if (typeof saveFormData === 'function' && f) saveFormData(f);
+          navigate('page10-site-plan.html', f);
+        }
+        </script>
         </div>
     </div>
 </div>
