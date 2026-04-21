@@ -2,1015 +2,1082 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Pre-Plan Floor Plan (v2)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Pre-Fire Plan · Floor Plan</title>
 <link rel="stylesheet" href="styles-preplan.css">
 <style>
-  /* ───────── New page 11 — fabric.js removed, pure Canvas 2D ───────── */
-  * { box-sizing: border-box; }
-  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif; background:#f5f5f7; }
+:root {
+  --bg: #f5f7fa;
+  --surface: #ffffff;
+  --border: #d1d9e3;
+  --muted: #64748b;
+  --text: #1e293b;
+  --primary: #1e3a5f;
+  --primary-hover: #163050;
+  --accent: #c0392b;
+  --success: #16a34a;
+  --wall: #0f172a;
+  --door: #ea580c;
+  --window: #0ea5e9;
+  --object: #7c3aed;
+  --marker: #dc2626;
+  --selection: #fbbf24;
+}
+* { box-sizing: border-box; }
+body.fp-body { background: var(--bg); }
+.fp-host {
+  max-width: 1400px; margin: 0 auto; padding: 16px; color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+.fp-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+.fp-head h2 { font-size: 20px; margin: 0; font-weight: 700; color: var(--primary); }
+.fp-head .fp-sub { color: var(--muted); font-size: 13px; }
+.fp-head .fp-grow { flex: 1; }
+.fp-toolbar {
+  display: flex; gap: 6px; padding: 8px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 10px; margin-bottom: 8px;
+  flex-wrap: wrap; align-items: center;
+}
+.fp-toolbar .sep { width: 1px; height: 24px; background: var(--border); margin: 0 4px; }
+.fp-btn {
+  padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px;
+  background: var(--surface); color: var(--text); font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px;
+  user-select: none; -webkit-tap-highlight-color: transparent;
+}
+.fp-btn:hover { background: #eef2f7; }
+.fp-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.fp-btn.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+.fp-btn.primary:hover { background: var(--primary-hover); }
+.fp-btn.accent { background: var(--accent); color: #fff; border-color: var(--accent); }
+.fp-btn.ghost { background: transparent; border-color: transparent; color: var(--muted); }
+.fp-btn.ghost:hover { background: #eef2f7; color: var(--text); }
+.fp-btn.sm { padding: 6px 10px; font-size: 12px; }
+.fp-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-  .fp-toolbar {
-    display:flex; gap:6px; padding:8px 10px; background:#24242a; color:#fff;
-    flex-wrap:wrap; align-items:center; position:sticky; top:0; z-index:30;
-    border-bottom:1px solid #000;
-  }
-  .fp-toolbar button {
-    background:#333a44; color:#fff; border:1px solid #4a5568; padding:7px 12px;
-    border-radius:6px; cursor:pointer; font-size:12px; font-weight:600; white-space:nowrap;
-    transition:all .12s;
-  }
-  .fp-toolbar button:hover { background:#4a5568; }
-  .fp-toolbar button.active { background:#c0392b; border-color:#c0392b; }
-  .fp-toolbar button.primary { background:#1e3a5f; border-color:#1e3a5f; }
-  .fp-toolbar button.primary:hover { background:#2c5282; }
-  .fp-toolbar .sep { width:1px; height:24px; background:#4a5568; margin:0 4px; }
-  .fp-toolbar .title { font-size:13px; color:#aaa; margin-left:auto; margin-right:8px; }
+.fp-stage {
+  position: relative; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; overflow: hidden; touch-action: none;
+  height: 70vh; min-height: 500px;
+}
+.fp-canvas-wrap {
+  position: absolute; inset: 0; overflow: hidden;
+  background-image:
+    linear-gradient(to right, rgba(15,23,42,0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(15,23,42,0.04) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+.fp-canvas-wrap.threed { perspective: 1200px; perspective-origin: 50% 85%; }
+.fp-canvas-wrap.threed canvas {
+  transform: rotateX(55deg) scale(0.9);
+  transform-origin: 50% 50%;
+  transition: transform 0.4s ease;
+  box-shadow: 0 30px 60px rgba(0,0,0,0.25);
+}
+.fp-canvas-wrap canvas {
+  position: absolute; top: 0; left: 0;
+  image-rendering: crisp-edges;
+  transition: transform 0s;
+}
+.fp-status {
+  position: absolute; bottom: 8px; left: 8px; padding: 4px 10px;
+  background: rgba(255,255,255,0.9); border: 1px solid var(--border);
+  border-radius: 6px; font-size: 11px; color: var(--muted);
+  pointer-events: none; font-family: ui-monospace, monospace;
+}
+.fp-empty {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; color: var(--muted);
+  text-align: center; padding: 20px; pointer-events: none;
+}
+.fp-empty.hidden { display: none; }
+.fp-empty .icon { font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
+.fp-empty h3 { font-size: 18px; margin: 0 0 4px; color: var(--text); }
 
-  .fp-container { position:relative; padding:12px; max-width:1400px; margin:0 auto; }
+/* Layers panel (pops out from right) */
+.fp-layers {
+  position: absolute; top: 8px; right: 8px; width: 220px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px; font-size: 13px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.1); display: none; z-index: 10;
+}
+.fp-layers.open { display: block; }
+.fp-layers h4 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; color: var(--muted); letter-spacing: 0.05em; }
+.fp-layer-row {
+  display: flex; align-items: center; gap: 8px; padding: 6px 4px;
+  cursor: pointer; border-radius: 6px; user-select: none;
+}
+.fp-layer-row:hover { background: #f1f5f9; }
+.fp-layer-row input[type=checkbox] { width: 16px; height: 16px; cursor: pointer; }
+.fp-layer-row .swatch { width: 14px; height: 14px; border-radius: 3px; }
+.fp-layer-row .count { margin-left: auto; color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
 
-  .fp-canvas-wrap {
-    background:#fff; border:2px solid #cbd5e1; border-radius:12px; overflow:hidden;
-    position:relative; touch-action:none;
-    box-shadow:0 2px 8px rgba(0,0,0,0.08);
-  }
-  #fpCanvas {
-    display:block; background:
-      linear-gradient(to right,#e8ecf2 1px,transparent 1px),
-      linear-gradient(to bottom,#e8ecf2 1px,transparent 1px),
-      linear-gradient(to right,#d1d8e4 1px,transparent 1px),
-      linear-gradient(to bottom,#d1d8e4 1px,transparent 1px),
-      #fff;
-    background-size:10px 10px,10px 10px,50px 50px,50px 50px;
-    touch-action:none;
-    cursor:default;
-  }
-  #fpCanvas.mode-pan { cursor:grab; }
-  #fpCanvas.mode-pan:active { cursor:grabbing; }
-  #fpCanvas.mode-select { cursor:pointer; }
-  #fpCanvas.mode-marker { cursor:crosshair; }
-  #fpCanvas.mode-delete { cursor:not-allowed; }
+/* Edit panel (bottom) */
+.fp-edit-panel {
+  position: absolute; bottom: 32px; left: 50%; transform: translateX(-50%);
+  width: min(520px, calc(100% - 32px));
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 14px 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15); display: none; z-index: 15;
+}
+.fp-edit-panel.open { display: block; }
+.fp-edit-panel .ep-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.fp-edit-panel .ep-title { font-weight: 700; font-size: 14px; color: var(--primary); }
+.fp-edit-panel .ep-sub { color: var(--muted); font-size: 12px; }
+.fp-edit-panel .ep-grow { flex: 1; }
+.fp-edit-panel .ep-body { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.fp-edit-panel label { font-size: 12px; color: var(--muted); }
+.fp-edit-panel input[type=text], .fp-edit-panel select {
+  padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px;
+  font-size: 13px; background: #fff; color: var(--text);
+}
+.fp-edit-panel .door-type-group { display: inline-flex; gap: 4px; }
+.fp-edit-panel .door-type-group .fp-btn.sm { font-size: 11px; padding: 4px 8px; }
 
-  /* Layers panel — floating right side */
-  .fp-layers {
-    position:absolute; top:60px; right:22px; background:rgba(36,36,42,0.96); color:#fff;
-    border-radius:10px; padding:12px 14px; font-size:12px; min-width:190px;
-    box-shadow:0 4px 16px rgba(0,0,0,0.3); backdrop-filter:blur(8px); z-index:20;
-    transition:transform .2s, opacity .2s;
-  }
-  .fp-layers.hidden { transform:translateX(220px); opacity:0; pointer-events:none; }
-  .fp-layers h4 { margin:0 0 8px 0; font-size:12px; color:#ccc; text-transform:uppercase; letter-spacing:1px; }
-  .fp-layers label {
-    display:flex; align-items:center; gap:8px; padding:6px 0;
-    cursor:pointer; user-select:none;
-  }
-  .fp-layers label:hover { color:#e67e22; }
-  .fp-layers input[type=checkbox] { accent-color:#c0392b; width:16px; height:16px; }
-  .fp-layers .count { color:#888; font-size:11px; margin-left:auto; }
-  .fp-layers .swatch { width:14px; height:14px; border-radius:3px; border:1px solid #555; }
+/* Marker placement palette */
+.fp-marker-palette {
+  position: absolute; top: 60px; left: 8px; width: 260px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px; font-size: 12px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.1); display: none; z-index: 10;
+}
+.fp-marker-palette.open { display: block; }
+.fp-marker-palette h4 { margin: 0 0 8px; font-size: 11px; text-transform: uppercase; color: var(--muted); }
+.fp-marker-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.fp-marker-chip {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 8px 4px; border: 1px solid var(--border); border-radius: 6px;
+  cursor: pointer; font-size: 10px; text-align: center; line-height: 1.2;
+  background: #fff;
+}
+.fp-marker-chip:hover { background: #f1f5f9; }
+.fp-marker-chip.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.fp-marker-chip .chip-icon { font-size: 16px; }
 
-  /* Selection edit panel — floating bottom */
-  .fp-edit {
-    position:fixed; bottom:16px; left:50%; transform:translateX(-50%);
-    background:rgba(30,30,36,0.98); color:#fff; border-radius:14px;
-    padding:14px 18px; min-width:320px; max-width:calc(100vw - 40px);
-    box-shadow:0 8px 32px rgba(0,0,0,0.4); z-index:25;
-    backdrop-filter:blur(8px);
-    display:none; flex-direction:column; gap:10px;
-  }
-  .fp-edit.active { display:flex; }
-  .fp-edit .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-  .fp-edit .title { font-weight:700; font-size:14px; flex:1; }
-  .fp-edit .meta { color:#aaa; font-size:11px; }
-  .fp-edit button {
-    background:#333a44; color:#fff; border:1px solid #4a5568; padding:6px 12px;
-    border-radius:6px; cursor:pointer; font-size:12px; font-weight:600;
-  }
-  .fp-edit button.danger { background:#c0392b; border-color:#c0392b; }
-  .fp-edit button.danger:hover { background:#e74c3c; }
-  .fp-edit button.primary { background:#1e3a5f; border-color:#1e3a5f; }
-  .fp-edit input, .fp-edit select {
-    background:#1a1a1e; border:1px solid #4a5568; color:#fff;
-    padding:6px 10px; border-radius:6px; font-size:12px; width:100%;
-  }
-  .fp-edit input:focus, .fp-edit select:focus { border-color:#c0392b; outline:none; }
+/* Toasts */
+.fp-toast {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  padding: 10px 18px; background: #0f172a; color: #fff; border-radius: 8px;
+  font-size: 13px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 200;
+  opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s;
+}
+.fp-toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+.fp-toast.ok { background: var(--success); }
+.fp-toast.err { background: var(--accent); }
 
-  /* Add-marker picker */
-  .fp-marker-picker {
-    position:fixed; bottom:16px; left:50%; transform:translateX(-50%);
-    background:rgba(30,30,36,0.98); color:#fff; border-radius:14px; padding:12px;
-    display:none; z-index:26; box-shadow:0 8px 32px rgba(0,0,0,0.4);
-    max-width:400px;
-  }
-  .fp-marker-picker.active { display:block; }
-  .fp-marker-picker h4 { margin:0 0 10px; font-size:13px; }
-  .fp-marker-picker .marker-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
-  .fp-marker-picker .marker-grid button {
-    background:#333a44; border:1px solid #4a5568; color:#fff; padding:8px 4px;
-    border-radius:6px; cursor:pointer; font-size:11px; text-align:center;
-  }
-  .fp-marker-picker .marker-grid button:hover { background:#c0392b; border-color:#c0392b; }
-
-  /* 3D view wrapper */
-  .fp-canvas-wrap.perspective {
-    perspective:1800px; perspective-origin:50% 40%;
-  }
-  .fp-canvas-wrap.perspective #fpCanvas {
-    transform:rotateX(55deg) scale(0.9); transform-origin:50% 50%;
-    transition:transform 0.4s;
-  }
-  .fp-canvas-wrap #fpCanvas { transition:transform 0.4s; }
-
-  /* Info banner */
-  .fp-info {
-    background:#e3f2fd; color:#0d47a1; border-left:4px solid #1e88e5;
-    padding:10px 14px; border-radius:6px; font-size:13px; margin-bottom:12px;
-  }
-  .fp-info.err { background:#fef2f2; color:#991b1b; border-color:#c0392b; }
-  .fp-info.ok  { background:#f0fdf4; color:#166534; border-color:#22c55e; }
-
-  @media (max-width:720px) {
-    .fp-layers { top:auto; bottom:16px; right:16px; left:16px; width:auto; }
-    .fp-edit { left:10px; right:10px; transform:none; min-width:0; max-width:none; }
-    .fp-marker-picker { left:10px; right:10px; transform:none; max-width:none; }
-    .fp-toolbar { gap:4px; padding:6px; }
-    .fp-toolbar button { padding:6px 8px; font-size:11px; }
-    .fp-toolbar .title { display:none; }
-  }
+@media (max-width: 720px) {
+  .fp-layers { width: 180px; }
+  .fp-marker-palette { width: 220px; top: 56px; }
+  .fp-edit-panel { width: calc(100% - 16px); }
+  .fp-btn { padding: 7px 10px; font-size: 12px; }
+  .fp-stage { height: 60vh; min-height: 400px; }
+}
 </style>
 </head>
-<body>
+<body class="fp-body">
 
-<div class="fp-toolbar">
-  <button id="tbSelect" class="active" onclick="FP.setMode('select')">✋ Select</button>
-  <button id="tbPan" onclick="FP.setMode('pan')">✥ Pan</button>
-  <button id="tbAddMarker" onclick="FP.openMarkerPicker()">📍 Marker</button>
-  <button id="tbDelete" onclick="FP.setMode('delete')">🗑 Delete</button>
-  <div class="sep"></div>
-  <button id="tb3D" onclick="FP.toggle3D()">⛶ 3D</button>
-  <button id="tbLayers" onclick="FP.toggleLayers()">☰ Layers</button>
-  <div class="sep"></div>
-  <button id="tbZoomIn" onclick="FP.zoom(1.25)">+</button>
-  <button id="tbZoomOut" onclick="FP.zoom(0.8)">−</button>
-  <button id="tbFit" onclick="FP.fitToScreen()">⊡ Fit</button>
-  <div class="sep"></div>
-  <button class="primary" onclick="FP.loadLatest()">↓ Load Latest</button>
-  <button class="primary" onclick="FP.saveToForm()">✓ Save</button>
-  <button onclick="FP.clearAll()" title="Start fresh">⟲</button>
-  <div class="title" id="planTitle">No plan loaded</div>
+<!-- Page nav container (uses existing styles-preplan.css for the title bar) -->
+<div class="fp-host">
+  <div class="fp-head">
+    <h2>🏢 Pre-Fire Plan — Floor Plan</h2>
+    <span class="fp-sub" id="fp-meta">No capture loaded</span>
+    <div class="fp-grow"></div>
+    <a href="page10-site-plan.html" class="fp-btn ghost sm">← Site Plan</a>
+    <a href="page12-summary.html" class="fp-btn ghost sm">Summary →</a>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="fp-toolbar">
+    <button class="fp-btn active" id="tool-select" data-tool="select" title="Select & pan">
+      <span>✋</span> Select
+    </button>
+    <button class="fp-btn" id="tool-pan" data-tool="pan" title="Pan only">
+      <span>🖐</span> Pan
+    </button>
+    <button class="fp-btn" id="tool-marker" data-tool="marker" title="Place a marker (FDC, Knox, hydrant...)">
+      <span>📍</span> Marker
+    </button>
+    <button class="fp-btn" id="tool-delete" data-tool="delete" title="Tap an element to delete">
+      <span>🗑</span> Delete
+    </button>
+    <span class="sep"></span>
+    <button class="fp-btn" id="btn-3d" title="Toggle 3D perspective view">
+      <span>📦</span> 3D
+    </button>
+    <button class="fp-btn" id="btn-layers" title="Show/hide layers">
+      <span>🎛</span> Layers
+    </button>
+    <span class="sep"></span>
+    <button class="fp-btn sm" id="btn-zoom-in">+</button>
+    <button class="fp-btn sm" id="btn-zoom-out">−</button>
+    <button class="fp-btn sm" id="btn-fit">Fit</button>
+    <span class="sep"></span>
+    <button class="fp-btn primary" id="btn-load-latest" title="Load most recent DivisionScan capture for this department">
+      <span>⬇</span> Load Latest
+    </button>
+    <button class="fp-btn accent" id="btn-save" title="Save to pre-plan form">
+      <span>💾</span> Save
+    </button>
+    <button class="fp-btn ghost sm" id="btn-clear" title="Clear the canvas">
+      Clear
+    </button>
+  </div>
+
+  <!-- Canvas stage -->
+  <div class="fp-stage" id="stage">
+    <div class="fp-canvas-wrap" id="canvas-wrap">
+      <canvas id="fp-canvas"></canvas>
+    </div>
+
+    <div class="fp-empty" id="empty-state">
+      <div class="icon">📐</div>
+      <h3>No floor plan loaded</h3>
+      <p style="margin: 0; font-size: 13px;">Click <strong>Load Latest</strong> to pull your most recent DivisionScan capture,<br>or save a scan on the iPad to continue.</p>
+    </div>
+
+    <div class="fp-status" id="status">—</div>
+
+    <!-- Layers panel -->
+    <div class="fp-layers" id="layers">
+      <h4>Layers</h4>
+      <label class="fp-layer-row"><input type="checkbox" data-layer="walls" checked><span class="swatch" style="background: var(--wall);"></span>Walls<span class="count" id="ct-walls">0</span></label>
+      <label class="fp-layer-row"><input type="checkbox" data-layer="doors" checked><span class="swatch" style="background: var(--door);"></span>Doors<span class="count" id="ct-doors">0</span></label>
+      <label class="fp-layer-row"><input type="checkbox" data-layer="windows" checked><span class="swatch" style="background: var(--window);"></span>Windows<span class="count" id="ct-windows">0</span></label>
+      <label class="fp-layer-row"><input type="checkbox" data-layer="objects" checked><span class="swatch" style="background: var(--object);"></span>Objects<span class="count" id="ct-objects">0</span></label>
+      <label class="fp-layer-row"><input type="checkbox" data-layer="markers" checked><span class="swatch" style="background: var(--marker);"></span>Markers<span class="count" id="ct-markers">0</span></label>
+      <label class="fp-layer-row"><input type="checkbox" data-layer="grid" checked><span class="swatch" style="background: #e2e8f0; border: 1px solid #cbd5e1;"></span>Grid</label>
+    </div>
+
+    <!-- Marker palette (opens when Marker tool selected) -->
+    <div class="fp-marker-palette" id="marker-palette">
+      <h4>Pick marker type</h4>
+      <div class="fp-marker-grid" id="marker-grid"></div>
+    </div>
+
+    <!-- Edit panel (opens when element selected) -->
+    <div class="fp-edit-panel" id="edit-panel">
+      <div class="ep-head">
+        <div>
+          <div class="ep-title" id="ep-title">—</div>
+          <div class="ep-sub" id="ep-sub">—</div>
+        </div>
+        <div class="ep-grow"></div>
+        <button class="fp-btn accent sm" id="ep-delete">🗑 Delete</button>
+        <button class="fp-btn ghost sm" id="ep-close">✕</button>
+      </div>
+      <div class="ep-body" id="ep-body"></div>
+    </div>
+  </div>
 </div>
 
-<div class="fp-container">
-  <div class="fp-info" id="fpBanner" style="display:none"></div>
+<div class="fp-toast" id="toast"></div>
 
-  <div class="fp-canvas-wrap" id="canvasWrap">
-    <canvas id="fpCanvas" width="1200" height="800"></canvas>
-  </div>
-
-  <div class="fp-layers" id="layersPanel">
-    <h4>Layers</h4>
-    <label><input type="checkbox" id="lyrWalls" checked onchange="FP.redraw()"><span class="swatch" style="background:#222"></span>Walls<span class="count" id="cntWalls">0</span></label>
-    <label><input type="checkbox" id="lyrDoors" checked onchange="FP.redraw()"><span class="swatch" style="background:#c0392b"></span>Doors<span class="count" id="cntDoors">0</span></label>
-    <label><input type="checkbox" id="lyrWindows" checked onchange="FP.redraw()"><span class="swatch" style="background:#1e88e5"></span>Windows<span class="count" id="cntWindows">0</span></label>
-    <label><input type="checkbox" id="lyrObjects" checked onchange="FP.redraw()"><span class="swatch" style="background:#6b7280"></span>Objects<span class="count" id="cntObjects">0</span></label>
-    <label><input type="checkbox" id="lyrMarkers" checked onchange="FP.redraw()"><span class="swatch" style="background:#fbbf24"></span>Markers<span class="count" id="cntMarkers">0</span></label>
-    <label><input type="checkbox" id="lyrGrid" checked onchange="FP.redraw()"><span class="swatch" style="background:#fff;border-color:#999"></span>Grid</label>
-  </div>
-</div>
-
-<!-- Edit panel -->
-<div class="fp-edit" id="editPanel">
-  <div class="row">
-    <div class="title" id="editTitle">Element</div>
-    <div class="meta" id="editMeta"></div>
-    <button onclick="FP.closeEdit()" style="background:transparent;border:0;color:#888;padding:2px 8px">✕</button>
-  </div>
-  <div id="editBody"></div>
-  <div class="row" style="justify-content:flex-end">
-    <button class="danger" onclick="FP.deleteSelected()">🗑 Delete</button>
-  </div>
-</div>
-
-<!-- Marker picker -->
-<div class="fp-marker-picker" id="markerPicker">
-  <h4>Place a marker — tap a spot on the floor plan</h4>
-  <div class="marker-grid" id="markerGrid"></div>
-  <div class="row" style="margin-top:10px;justify-content:flex-end;gap:6px">
-    <button onclick="FP.closeMarkerPicker()" style="background:#333a44;border:0;color:#fff;padding:6px 12px;border-radius:6px">Cancel</button>
-  </div>
-</div>
-
-<!-- ───────── PAGE 11 v2 — pure-canvas floor plan editor ───────── -->
 <script>
-(function(){
-  'use strict';
+// ============================================================================
+// Floor Plan Editor v2 — clean canvas-based implementation
+// ============================================================================
+// Data model stored in localStorage.preFirePlan.floor_plan_data:
+//   {
+//     canvas_width, canvas_height, scale_px_per_ft,
+//     walls:    [{x1, y1, x2, y2}],
+//     doors:    [{x, y, width, angle, type}],
+//     windows:  [{x, y, width, angle}],
+//     objects:  [{x, y, width, depth, angle, category, label}],
+//     markers:  [{id, type, x, y, label, note}]
+//   }
 
-  // ─── State ────────────────────────────────────────────────────────────
-  const state = {
-    // Geometry loaded from /api/jobs/{id} → ai_form_data.layout
-    // (coords are in canvas pixels at scale_px_per_ft=12 by default)
-    plan: null,       // {canvas_width, canvas_height, scale_px_per_ft, walls, doors, windows, objects}
-    markers: [],      // [{id, name, category, x, y, note}]
-    meta: null,       // job meta (id, building_name, etc.)
-    dept: 'CFD',
+(function() {
+'use strict';
 
-    // View transform (canvas px → screen px)
-    view: { offsetX: 0, offsetY: 0, zoom: 1 },
+// ---------- Marker types (fire service semiotics) ----------
+const MARKER_TYPES = [
+  { id: 'fdc',             label: 'FDC',         icon: '🚒', color: '#dc2626', abbr: 'FDC' },
+  { id: 'knox_box',        label: 'Knox Box',    icon: '🔑', color: '#f59e0b', abbr: 'KX'  },
+  { id: 'fire_hydrant',    label: 'Hydrant',     icon: '⛲', color: '#1e40af', abbr: 'HY'  },
+  { id: 'sprinkler_riser', label: 'Spr Riser',   icon: '💧', color: '#0891b2', abbr: 'SR'  },
+  { id: 'fire_alarm_panel',label: 'FA Panel',    icon: '🚨', color: '#b91c1c', abbr: 'FAP' },
+  { id: 'gas_shutoff',     label: 'Gas Shutoff', icon: '🔥', color: '#eab308', abbr: 'GAS' },
+  { id: 'electric_panel',  label: 'Elec Panel',  icon: '⚡', color: '#a855f7', abbr: 'ELEC'},
+  { id: 'water_shutoff',   label: 'Water Off',   icon: '🚰', color: '#0ea5e9', abbr: 'H2O' },
+  { id: 'exit',            label: 'Exit',        icon: '🚪', color: '#16a34a', abbr: 'EXIT'},
+  { id: 'stairs',          label: 'Stairs',      icon: '🪜', color: '#64748b', abbr: 'STR' },
+  { id: 'elevator',        label: 'Elevator',    icon: '🛗', color: '#475569', abbr: 'ELV' },
+  { id: 'hazmat',          label: 'Hazmat',      icon: '☣️', color: '#7c2d12', abbr: 'HAZ' },
+];
 
-    // Interaction
-    mode: 'select',   // 'select' | 'pan' | 'marker' | 'delete'
-    pendingMarkerType: null,
-    selected: null,   // {kind:'wall'|'door'|...|'marker', index:int}
-    drag: null,       // active drag state
-    is3D: false,
-    layersVisible: true,
+// ---------- State ----------
+const state = {
+  data: null,      // floor_plan_data object
+  view: { zoom: 1, panX: 0, panY: 0, width: 0, height: 0 },
+  tool: 'select', // select | pan | marker | delete
+  selectedMarkerType: 'fdc',
+  selected: null, // { kind: 'wall'|'door'|'window'|'object'|'marker', index: N }
+  visibleLayers: { walls: true, doors: true, windows: true, objects: true, markers: true, grid: true },
+  threeD: false,
+  scanMeta: null,  // { scan_id, captured_by, scan_date, department, ... }
+  drag: null,      // active drag
+  dpr: window.devicePixelRatio || 1,
+};
 
-    // Dimensions
-    cssW: 1200, cssH: 800, dpr: 1,
+// ---------- DOM refs ----------
+const stage = document.getElementById('stage');
+const wrap  = document.getElementById('canvas-wrap');
+const canvas = document.getElementById('fp-canvas');
+const ctx = canvas.getContext('2d');
+const emptyState = document.getElementById('empty-state');
+const statusEl = document.getElementById('status');
+const editPanel = document.getElementById('edit-panel');
+const layersPanel = document.getElementById('layers');
+const markerPalette = document.getElementById('marker-palette');
+const toast = document.getElementById('toast');
+
+// ---------- Helpers ----------
+function showToast(msg, kind) {
+  toast.textContent = msg;
+  toast.className = 'fp-toast show' + (kind ? ' ' + kind : '');
+  setTimeout(() => toast.className = 'fp-toast', 2500);
+}
+function degToRad(d) { return d * Math.PI / 180; }
+function dist(x1, y1, x2, y2) { return Math.hypot(x2-x1, y2-y1); }
+
+// ---------- Data persistence ----------
+function emptyData() {
+  return {
+    canvas_width: 1000, canvas_height: 700, scale_px_per_ft: 12,
+    walls: [], doors: [], windows: [], objects: [], markers: []
   };
+}
+function loadFromStorage() {
+  try {
+    const raw = localStorage.getItem('preFirePlan');
+    if (!raw) return null;
+    const plan = JSON.parse(raw);
+    if (plan.floor_plan_data) return plan.floor_plan_data;
+    return null;
+  } catch (e) { return null; }
+}
+function saveToStorage() {
+  if (!state.data) return;
+  let plan = {};
+  try { plan = JSON.parse(localStorage.getItem('preFirePlan') || '{}'); } catch (e) {}
+  plan.floor_plan_data = state.data;
+  plan.floor_plan_data.savedAt = new Date().toISOString();
+  localStorage.setItem('preFirePlan', JSON.stringify(plan));
+}
 
-  // Common firefighter markers (keep compact for mobile)
-  const MARKER_TYPES = [
-    { id:'fdc',              name:'FDC',         cat:'fire_protection', color:'#c0392b' },
-    { id:'knox_box',         name:'Knox',        cat:'access',          color:'#e67e22' },
-    { id:'fire_hydrant',     name:'Hydrant',     cat:'water',           color:'#1e88e5' },
-    { id:'sprinkler_riser',  name:'Riser',       cat:'fire_protection', color:'#c0392b' },
-    { id:'fire_alarm_panel', name:'FA Panel',    cat:'fire_protection', color:'#e67e22' },
-    { id:'gas_shutoff',      name:'Gas',         cat:'utility',         color:'#fbbf24' },
-    { id:'electric_panel',   name:'Electric',    cat:'utility',         color:'#fbbf24' },
-    { id:'water_shutoff',    name:'Water',       cat:'utility',         color:'#1e88e5' },
-    { id:'exit',             name:'Exit',        cat:'access',          color:'#22c55e' },
-    { id:'stairs',           name:'Stairs',      cat:'access',          color:'#6b7280' },
-    { id:'elevator',         name:'Elevator',    cat:'access',          color:'#6b7280' },
-    { id:'hazmat',           name:'Hazmat',      cat:'hazmat',          color:'#ef4444' },
-  ];
-
-  // ─── Canvas setup ─────────────────────────────────────────────────────
-  const canvas = document.getElementById('fpCanvas');
-  const ctx = canvas.getContext('2d');
-
-  function resizeCanvas() {
-    const wrap = document.getElementById('canvasWrap');
-    const w = wrap.clientWidth;
-    const h = Math.max(400, Math.min(window.innerHeight - 180, 900));
-    state.cssW = w;
-    state.cssH = h;
-    state.dpr = window.devicePixelRatio || 1;
-    canvas.width  = Math.round(w * state.dpr);
-    canvas.height = Math.round(h * state.dpr);
-    canvas.style.width  = w + 'px';
-    canvas.style.height = h + 'px';
-    redraw();
+// ---------- Capture import ----------
+function ingestJobPayload(job) {
+  const layout = (job && job.ai_form_data && job.ai_form_data.layout) || null;
+  if (!layout || !layout.walls) {
+    showToast('No layout data in that capture', 'err');
+    return false;
   }
-
-  // ─── Transform helpers ────────────────────────────────────────────────
-  function screenToCanvas(sx, sy) {
-    // Convert CSS-pixel screen coords to floor-plan canvas coords
-    return {
-      x: (sx - state.view.offsetX) / state.view.zoom,
-      y: (sy - state.view.offsetY) / state.view.zoom,
-    };
+  const data = {
+    canvas_width:    layout.canvas_width  || 1000,
+    canvas_height:   layout.canvas_height || 700,
+    scale_px_per_ft: layout.scale_px_per_ft || 12,
+    walls:   (layout.walls   || []).slice(),
+    doors:   (layout.doors   || []).slice(),
+    windows: (layout.windows || []).slice(),
+    objects: (layout.objects || []).slice(),
+    markers: []
+  };
+  // Preserve any ai_features (markers placed at capture time) as real markers
+  if (Array.isArray(job.ai_features)) {
+    const sc = data.scale_px_per_ft;
+    job.ai_features.forEach((f, i) => {
+      // f.x/y could be in either ft or px — guess: if magnitude < canvas_width/scale, it's ft
+      let x = typeof f.x === 'number' ? f.x : 0;
+      let y = typeof f.y === 'number' ? f.y : 0;
+      // We emit markers in ai_features using canvas px coords already in the worker
+      data.markers.push({
+        id: 'm_' + Date.now() + '_' + i,
+        type: f.category || f.name || 'marker',
+        x: x, y: y,
+        label: f.name || f.category || '',
+        note: f.note || ''
+      });
+    });
   }
-  function canvasToScreen(cx, cy) {
-    return {
-      x: cx * state.view.zoom + state.view.offsetX,
-      y: cy * state.view.zoom + state.view.offsetY,
-    };
+  state.data = data;
+  state.scanMeta = {
+    scan_id: job.id,
+    captured_by: job.captured_by,
+    scan_date: job.created_at,
+    department: job.department,
+    building_name: job.building_name,
+    marker_count: data.markers.length
+  };
+  updateMeta();
+  updateCounts();
+  hideEmpty();
+  fitToView();
+  draw();
+  return true;
+}
+
+async function loadLatestCapture() {
+  // Hostname-aware: CFD on fdtraining, PCFD on preplans.pcfdmembers
+  const host = window.location.hostname;
+  const dept = host.includes('pcfdmembers') ? 'PCFD' : 'CFD';
+  try {
+    const listRes = await fetch(`/api/jobs?dept=${dept}&limit=1`, { cache: 'no-store' });
+    if (!listRes.ok) throw new Error('HTTP ' + listRes.status);
+    const list = await listRes.json();
+    const jobs = list.jobs || [];
+    if (!jobs.length) { showToast('No captures found for ' + dept, 'err'); return; }
+    const jobId = jobs[0].id;
+    const jobRes = await fetch(`/api/jobs/${jobId}`, { cache: 'no-store' });
+    if (!jobRes.ok) throw new Error('HTTP ' + jobRes.status);
+    const jobData = await jobRes.json();
+    const job = jobData.job || jobData;
+    if (ingestJobPayload(job)) {
+      showToast(`Loaded: ${job.building_name || job.id}`, 'ok');
+      saveToStorage();
+    }
+  } catch (e) {
+    showToast('Load failed: ' + (e.message || e), 'err');
   }
+}
 
-  // ─── Draw ─────────────────────────────────────────────────────────────
-  function redraw() {
-    ctx.save();
-    ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0); // reset to CSS-px
-    ctx.clearRect(0, 0, state.cssW, state.cssH);
+// ---------- View transforms ----------
+function resizeCanvas() {
+  const rect = wrap.getBoundingClientRect();
+  state.view.width = rect.width;
+  state.view.height = rect.height;
+  canvas.width  = Math.floor(rect.width  * state.dpr);
+  canvas.height = Math.floor(rect.height * state.dpr);
+  canvas.style.width  = rect.width  + 'px';
+  canvas.style.height = rect.height + 'px';
+  draw();
+}
 
-    if (!state.plan) {
-      // Empty state
-      ctx.fillStyle = '#888';
-      ctx.font = '16px -apple-system,sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('No floor plan loaded', state.cssW/2, state.cssH/2 - 10);
-      ctx.font = '13px -apple-system,sans-serif';
-      ctx.fillStyle = '#aaa';
-      ctx.fillText('Tap "Load Latest" to import your DivisionScan capture', state.cssW/2, state.cssH/2 + 14);
-      ctx.restore();
-      return;
-    }
+function dataToScreen(x, y) {
+  return {
+    sx: x * state.view.zoom + state.view.panX,
+    sy: y * state.view.zoom + state.view.panY
+  };
+}
+function screenToData(sx, sy) {
+  return {
+    x: (sx - state.view.panX) / state.view.zoom,
+    y: (sy - state.view.panY) / state.view.zoom
+  };
+}
 
-    ctx.translate(state.view.offsetX, state.view.offsetY);
-    ctx.scale(state.view.zoom, state.view.zoom);
+function fitToView() {
+  if (!state.data) return;
+  const padding = 40;
+  const cw = state.data.canvas_width;
+  const ch = state.data.canvas_height;
+  const zx = (state.view.width - padding*2) / cw;
+  const zy = (state.view.height - padding*2) / ch;
+  state.view.zoom = Math.min(zx, zy, 2.0);
+  state.view.panX = (state.view.width - cw * state.view.zoom) / 2;
+  state.view.panY = (state.view.height - ch * state.view.zoom) / 2;
+  draw();
+}
 
-    const p = state.plan;
-    const L = {
-      walls:   document.getElementById('lyrWalls').checked,
-      doors:   document.getElementById('lyrDoors').checked,
-      windows: document.getElementById('lyrWindows').checked,
-      objects: document.getElementById('lyrObjects').checked,
-      markers: document.getElementById('lyrMarkers').checked,
-    };
+// ---------- Draw ----------
+function clearCanvas() {
+  ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+  ctx.clearRect(0, 0, state.view.width, state.view.height);
+}
 
-    // Plan outline
-    ctx.strokeStyle = '#94a3b8';
-    ctx.lineWidth = 1 / state.view.zoom;
-    ctx.strokeRect(0, 0, p.canvas_width, p.canvas_height);
+function draw() {
+  clearCanvas();
+  if (!state.data) { updateStatus(); return; }
+  const d = state.data;
 
-    // Objects (draw first — under walls)
-    if (L.objects && p.objects) {
-      p.objects.forEach((o, i) => drawObject(o, i));
-    }
-    // Walls
-    if (L.walls && p.walls) {
-      p.walls.forEach((w, i) => drawWall(w, i));
-    }
-    // Doors
-    if (L.doors && p.doors) {
-      p.doors.forEach((d, i) => drawDoor(d, i));
-    }
-    // Windows
-    if (L.windows && p.windows) {
-      p.windows.forEach((w, i) => drawWindow(w, i));
-    }
-    // Markers on top
-    if (L.markers && state.markers) {
-      state.markers.forEach((m, i) => drawMarker(m, i));
-    }
+  // Apply pan+zoom
+  ctx.save();
+  ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+  ctx.translate(state.view.panX, state.view.panY);
+  ctx.scale(state.view.zoom, state.view.zoom);
 
-    ctx.restore();
+  // Draw order: objects (floor) → walls → windows → doors → markers (top)
+  if (state.visibleLayers.objects) d.objects.forEach((o, i) => drawObject(o, isSelected('object', i)));
+  if (state.visibleLayers.walls)   d.walls.forEach((w, i) => drawWall(w, isSelected('wall', i)));
+  if (state.visibleLayers.windows) d.windows.forEach((w, i) => drawWindow(w, isSelected('window', i)));
+  if (state.visibleLayers.doors)   d.doors.forEach((dr, i) => drawDoor(dr, isSelected('door', i)));
+  if (state.visibleLayers.markers) d.markers.forEach((m, i) => drawMarker(m, isSelected('marker', i)));
 
-    updateCounts();
-  }
+  ctx.restore();
+  updateStatus();
+}
 
-  function drawWall(w, i) {
-    const selected = isSelected('wall', i);
-    ctx.strokeStyle = selected ? '#c0392b' : '#222';
-    ctx.lineWidth = selected ? 8 / state.view.zoom : 6 / state.view.zoom;
-    ctx.lineCap = 'round';
+function isSelected(kind, index) {
+  return state.selected && state.selected.kind === kind && state.selected.index === index;
+}
+
+function drawWall(w, sel) {
+  ctx.beginPath();
+  ctx.moveTo(w.x1, w.y1);
+  ctx.lineTo(w.x2, w.y2);
+  ctx.lineWidth = sel ? 6 / state.view.zoom : 4 / state.view.zoom;
+  ctx.strokeStyle = sel ? '#fbbf24' : '#0f172a';
+  ctx.lineCap = 'square';
+  ctx.stroke();
+}
+
+function drawDoor(d, sel) {
+  const cx = d.x, cy = d.y;
+  const w = d.width || 30;
+  const a = degToRad(d.angle || 0);
+  const dx = Math.cos(a) * w / 2;
+  const dy = Math.sin(a) * w / 2;
+  // Opening — break in wall
+  ctx.save();
+  ctx.lineWidth = 8 / state.view.zoom;
+  ctx.strokeStyle = '#fff';
+  ctx.beginPath();
+  ctx.moveTo(cx - dx, cy - dy);
+  ctx.lineTo(cx + dx, cy + dy);
+  ctx.stroke();
+  // Door swing arc (single door = quarter circle, double = two arcs, rollup = dashed)
+  ctx.lineWidth = (sel ? 3 : 1.5) / state.view.zoom;
+  ctx.strokeStyle = sel ? '#fbbf24' : '#ea580c';
+  if (d.type === 'rollup') {
+    ctx.setLineDash([4/state.view.zoom, 3/state.view.zoom]);
     ctx.beginPath();
-    ctx.moveTo(w.x1, w.y1);
-    ctx.lineTo(w.x2, w.y2);
+    ctx.moveTo(cx - dx, cy - dy);
+    ctx.lineTo(cx + dx, cy + dy);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  } else if (d.type === 'double') {
+    // Two arcs from each end, meeting in middle
+    ctx.beginPath();
+    ctx.arc(cx - dx, cy - dy, w/2, a, a + Math.PI/2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(cx + dx, cy + dy, w/2, a + Math.PI, a + Math.PI + Math.PI/2);
+    ctx.stroke();
+  } else {
+    // Single — arc from one endpoint
+    ctx.beginPath();
+    ctx.arc(cx - dx, cy - dy, w, a, a + Math.PI/2);
+    ctx.stroke();
+    // Line from hinge to opposite end (shows door leaf when closed)
+    ctx.beginPath();
+    ctx.moveTo(cx - dx, cy - dy);
+    ctx.lineTo(cx + dx, cy + dy);
     ctx.stroke();
   }
+  ctx.restore();
+}
 
-  function drawDoor(d, i) {
-    const selected = isSelected('door', i);
-    ctx.save();
-    ctx.translate(d.x, d.y);
-    ctx.rotate((d.angle || 0) * Math.PI / 180);
-    const w = d.width || 30;
-
-    // Door as a break in wall + arc for swing
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(-w/2, -4, w, 8);
-
-    ctx.strokeStyle = selected ? '#c0392b' : '#c0392b';
-    ctx.lineWidth = selected ? 4 / state.view.zoom : 2 / state.view.zoom;
-
-    // Draw the swing arc — single doors swing, double is a double-swing, rollup is straight
-    if (d.type === 'double') {
-      ctx.beginPath();
-      ctx.arc(-w/4, -4, w/2, -Math.PI/2, 0);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.arc( w/4, -4, w/2, Math.PI, 3*Math.PI/2);
-      ctx.stroke();
-    } else if (d.type === 'rollup') {
-      // Rollup: dashed line
-      ctx.setLineDash([4/state.view.zoom, 3/state.view.zoom]);
-      ctx.beginPath();
-      ctx.moveTo(-w/2, 0); ctx.lineTo(w/2, 0);
-      ctx.stroke();
-      ctx.setLineDash([]);
-    } else {
-      // single swing
-      ctx.beginPath();
-      ctx.arc(-w/2, -4, w, 0, Math.PI/2);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(-w/2, -4); ctx.lineTo(w/2, -4);
-      ctx.stroke();
-    }
-
-    if (selected) {
-      // Big highlight circle
-      ctx.strokeStyle = '#c0392b';
-      ctx.lineWidth = 2 / state.view.zoom;
-      ctx.setLineDash([4/state.view.zoom, 4/state.view.zoom]);
-      ctx.beginPath();
-      ctx.arc(0, 0, w/2 + 10, 0, 2*Math.PI);
-      ctx.stroke();
-      ctx.setLineDash([]);
-    }
-    ctx.restore();
-  }
-
-  function drawWindow(w, i) {
-    const selected = isSelected('window', i);
-    ctx.save();
-    ctx.translate(w.x, w.y);
-    ctx.rotate((w.angle || 0) * Math.PI / 180);
-    const ww = w.width || 30;
-
-    ctx.strokeStyle = selected ? '#c0392b' : '#1e88e5';
-    ctx.lineWidth = selected ? 4 / state.view.zoom : 3 / state.view.zoom;
-    // Three parallel lines = window glyph
+function drawWindow(w, sel) {
+  const cx = w.x, cy = w.y;
+  const width = w.width || 30;
+  const a = degToRad(w.angle || 0);
+  const dx = Math.cos(a) * width / 2;
+  const dy = Math.sin(a) * width / 2;
+  // Break the wall
+  ctx.save();
+  ctx.lineWidth = 8 / state.view.zoom;
+  ctx.strokeStyle = '#fff';
+  ctx.beginPath();
+  ctx.moveTo(cx - dx, cy - dy);
+  ctx.lineTo(cx + dx, cy + dy);
+  ctx.stroke();
+  // Triple line glyph for window (classic floor plan symbol)
+  ctx.lineWidth = (sel ? 3 : 1.5) / state.view.zoom;
+  ctx.strokeStyle = sel ? '#fbbf24' : '#0ea5e9';
+  const perp = { x: -Math.sin(a), y: Math.cos(a) };
+  const off = 3 / state.view.zoom;
+  [-off, 0, off].forEach(o => {
     ctx.beginPath();
-    ctx.moveTo(-ww/2, -3); ctx.lineTo(ww/2, -3);
-    ctx.moveTo(-ww/2,  0); ctx.lineTo(ww/2,  0);
-    ctx.moveTo(-ww/2,  3); ctx.lineTo(ww/2,  3);
+    ctx.moveTo(cx - dx + perp.x * o, cy - dy + perp.y * o);
+    ctx.lineTo(cx + dx + perp.x * o, cy + dy + perp.y * o);
     ctx.stroke();
-    ctx.restore();
-  }
+  });
+  ctx.restore();
+}
 
-  function drawObject(o, i) {
-    const selected = isSelected('object', i);
-    ctx.save();
-    ctx.translate(o.x, o.y);
-    ctx.rotate((o.angle || 0) * Math.PI / 180);
-    const w = o.width || 20, d = o.depth || 20;
-
-    ctx.fillStyle = selected ? 'rgba(192,57,43,0.2)' : 'rgba(107,114,128,0.15)';
-    ctx.strokeStyle = selected ? '#c0392b' : '#6b7280';
-    ctx.lineWidth = (selected ? 2 : 1) / state.view.zoom;
-    ctx.beginPath();
-    ctx.rect(-w/2, -d/2, w, d);
-    ctx.fill();
-    ctx.stroke();
-
-    // Label
-    if (state.view.zoom > 0.6) {
-      ctx.fillStyle = '#333';
-      ctx.font = (10 / state.view.zoom) + 'px -apple-system,sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(o.label || o.category || '', 0, 0);
-    }
-    ctx.restore();
-  }
-
-  function drawMarker(m, i) {
-    const type = MARKER_TYPES.find(t => t.id === (m.marker_type_id || m.category || m.id)) || MARKER_TYPES[0];
-    const selected = isSelected('marker', i);
-    const r = 14 / state.view.zoom;
-
-    ctx.save();
-    ctx.translate(m.x, m.y);
-    // Shadow
-    ctx.fillStyle = 'rgba(0,0,0,0.25)';
-    ctx.beginPath();
-    ctx.arc(1, 2, r, 0, 2*Math.PI);
-    ctx.fill();
-    // Pin body
-    ctx.fillStyle = type.color || '#fbbf24';
-    ctx.strokeStyle = selected ? '#fff' : 'rgba(0,0,0,0.4)';
-    ctx.lineWidth = (selected ? 3 : 1.5) / state.view.zoom;
-    ctx.beginPath();
-    ctx.arc(0, 0, r, 0, 2*Math.PI);
-    ctx.fill();
-    ctx.stroke();
-    // Label letter
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold ' + (11 / state.view.zoom) + 'px -apple-system,sans-serif';
+function drawObject(o, sel) {
+  const cx = o.x, cy = o.y;
+  const w = o.width || 20;
+  const h = o.depth || 20;
+  const a = degToRad(o.angle || 0);
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(a);
+  ctx.fillStyle = sel ? 'rgba(251,191,36,0.4)' : 'rgba(124,58,237,0.18)';
+  ctx.strokeStyle = sel ? '#fbbf24' : '#7c3aed';
+  ctx.lineWidth = (sel ? 2 : 1) / state.view.zoom;
+  ctx.fillRect(-w/2, -h/2, w, h);
+  ctx.strokeRect(-w/2, -h/2, w, h);
+  // Label (upright, small)
+  if (o.label && state.view.zoom > 0.25) {
+    ctx.rotate(-a);
+    ctx.fillStyle = sel ? '#78350f' : '#5b21b6';
+    ctx.font = (11 / state.view.zoom) + 'px system-ui, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText((m.name || type.name).substr(0,3).toUpperCase(), 0, 0);
+    ctx.fillText(o.label, 0, 0);
+  }
+  ctx.restore();
+}
 
-    if (selected) {
-      // Outer ring
-      ctx.strokeStyle = '#c0392b';
-      ctx.lineWidth = 2 / state.view.zoom;
-      ctx.setLineDash([4/state.view.zoom, 4/state.view.zoom]);
-      ctx.beginPath();
-      ctx.arc(0, 0, r + 8, 0, 2*Math.PI);
-      ctx.stroke();
-      ctx.setLineDash([]);
+function drawMarker(m, sel) {
+  const meta = MARKER_TYPES.find(t => t.id === m.type) || { color: '#dc2626', abbr: 'M' };
+  const r = sel ? 14 / state.view.zoom : 12 / state.view.zoom;
+  // Shadow
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.3)';
+  ctx.shadowBlur = 4;
+  ctx.shadowOffsetY = 2;
+  ctx.fillStyle = sel ? '#fbbf24' : meta.color;
+  ctx.beginPath();
+  ctx.arc(m.x, m.y, r, 0, 2*Math.PI);
+  ctx.fill();
+  ctx.restore();
+  // Ring
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 2.5 / state.view.zoom;
+  ctx.stroke();
+  // Abbreviation
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold ' + (r * 0.85) + 'px system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(meta.abbr.slice(0, 3), m.x, m.y);
+}
+
+// ---------- Hit testing ----------
+function hitTest(sx, sy) {
+  if (!state.data) return null;
+  const {x, y} = screenToData(sx, sy);
+  const tol = 8 / state.view.zoom;
+  const d = state.data;
+
+  // Check markers first (drawn on top)
+  if (state.visibleLayers.markers) {
+    for (let i = d.markers.length - 1; i >= 0; i--) {
+      const m = d.markers[i];
+      if (dist(x, y, m.x, m.y) < 14 / state.view.zoom + tol) return { kind: 'marker', index: i };
     }
-    ctx.restore();
+  }
+  // Doors (small circles around door center)
+  if (state.visibleLayers.doors) {
+    for (let i = d.doors.length - 1; i >= 0; i--) {
+      const dr = d.doors[i];
+      const r = Math.max(dr.width / 2 + tol, tol * 2.5);
+      if (dist(x, y, dr.x, dr.y) < r) return { kind: 'door', index: i };
+    }
+  }
+  // Windows
+  if (state.visibleLayers.windows) {
+    for (let i = d.windows.length - 1; i >= 0; i--) {
+      const w = d.windows[i];
+      const r = Math.max(w.width / 2 + tol, tol * 2.5);
+      if (dist(x, y, w.x, w.y) < r) return { kind: 'window', index: i };
+    }
+  }
+  // Objects (rotated rect)
+  if (state.visibleLayers.objects) {
+    for (let i = d.objects.length - 1; i >= 0; i--) {
+      const o = d.objects[i];
+      const a = -degToRad(o.angle || 0);
+      const dx = x - o.x, dy = y - o.y;
+      const lx = dx * Math.cos(a) - dy * Math.sin(a);
+      const ly = dx * Math.sin(a) + dy * Math.cos(a);
+      if (Math.abs(lx) < o.width/2 + tol && Math.abs(ly) < o.depth/2 + tol) {
+        return { kind: 'object', index: i };
+      }
+    }
+  }
+  // Walls (line segment hit test)
+  if (state.visibleLayers.walls) {
+    for (let i = d.walls.length - 1; i >= 0; i--) {
+      const w = d.walls[i];
+      if (pointToSegmentDist(x, y, w.x1, w.y1, w.x2, w.y2) < tol + 3/state.view.zoom) {
+        return { kind: 'wall', index: i };
+      }
+    }
+  }
+  return null;
+}
+
+function pointToSegmentDist(px, py, x1, y1, x2, y2) {
+  const dx = x2 - x1, dy = y2 - y1;
+  const lenSq = dx*dx + dy*dy;
+  if (lenSq === 0) return dist(px, py, x1, y1);
+  let t = ((px - x1) * dx + (py - y1) * dy) / lenSq;
+  t = Math.max(0, Math.min(1, t));
+  return dist(px, py, x1 + t*dx, y1 + t*dy);
+}
+
+// ---------- Interactions ----------
+function setTool(t) {
+  state.tool = t;
+  document.querySelectorAll('.fp-toolbar .fp-btn[data-tool]').forEach(el => {
+    el.classList.toggle('active', el.dataset.tool === t);
+  });
+  // Show/hide marker palette
+  markerPalette.classList.toggle('open', t === 'marker');
+  // Cursor hint
+  wrap.style.cursor = t === 'pan' ? 'grab' : t === 'delete' ? 'crosshair' : 'default';
+  // Deselect if switching away from select
+  if (t !== 'select') { state.selected = null; hideEditPanel(); draw(); }
+}
+
+function selectElement(hit) {
+  state.selected = hit;
+  if (hit) {
+    showEditPanel(hit);
+  } else {
+    hideEditPanel();
+  }
+  draw();
+}
+
+// Pointer events (unified touch + mouse)
+let lastPinchDist = 0;
+let pointerCache = new Map();
+
+wrap.addEventListener('pointerdown', (e) => {
+  wrap.setPointerCapture(e.pointerId);
+  pointerCache.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pointerCache.size === 2) {
+    // Pinch start
+    const pts = Array.from(pointerCache.values());
+    lastPinchDist = dist(pts[0].x, pts[0].y, pts[1].x, pts[1].y);
+    state.drag = { kind: 'pinch' };
+    return;
+  }
+  const rect = wrap.getBoundingClientRect();
+  const sx = e.clientX - rect.left;
+  const sy = e.clientY - rect.top;
+
+  if (state.tool === 'marker') {
+    // Place marker at tap
+    const {x, y} = screenToData(sx, sy);
+    placeMarkerAt(x, y);
+    return;
   }
 
-  function isSelected(kind, i) {
-    return state.selected && state.selected.kind === kind && state.selected.index === i;
-  }
-
-  // ─── Hit testing ──────────────────────────────────────────────────────
-  function hitTest(cx, cy) {
-    // Order: markers (on top) > doors > windows > objects > walls
-    const HIT = 14 / state.view.zoom;
-
-    if (state.plan) {
-      // Markers
-      for (let i = state.markers.length - 1; i >= 0; i--) {
-        const m = state.markers[i];
-        if (Math.hypot(m.x - cx, m.y - cy) < 18 / state.view.zoom)
-          return { kind:'marker', index:i };
-      }
-      // Doors (circular hit around door center, generous radius)
-      if (state.plan.doors) {
-        for (let i = 0; i < state.plan.doors.length; i++) {
-          const d = state.plan.doors[i];
-          const r = Math.max((d.width||30)/2 + HIT, HIT * 2.5);
-          if (Math.hypot(d.x - cx, d.y - cy) < r) return { kind:'door', index:i };
-        }
-      }
-      // Windows
-      if (state.plan.windows) {
-        for (let i = 0; i < state.plan.windows.length; i++) {
-          const w = state.plan.windows[i];
-          const r = Math.max((w.width||30)/2 + HIT, HIT * 2.5);
-          if (Math.hypot(w.x - cx, w.y - cy) < r) return { kind:'window', index:i };
-        }
-      }
-      // Objects (rotated-rectangle hit test)
-      if (state.plan.objects) {
-        for (let i = state.plan.objects.length - 1; i >= 0; i--) {
-          const o = state.plan.objects[i];
-          const a = (o.angle || 0) * Math.PI / 180;
-          const dx = cx - o.x, dy = cy - o.y;
-          const lx = dx * Math.cos(-a) - dy * Math.sin(-a);
-          const ly = dx * Math.sin(-a) + dy * Math.cos(-a);
-          if (Math.abs(lx) < (o.width||20)/2 + HIT && Math.abs(ly) < (o.depth||20)/2 + HIT)
-            return { kind:'object', index:i };
-        }
-      }
-      // Walls (line hit test)
-      if (state.plan.walls) {
-        for (let i = 0; i < state.plan.walls.length; i++) {
-          const w = state.plan.walls[i];
-          if (pointToSegmentDist(cx, cy, w.x1, w.y1, w.x2, w.y2) < HIT)
-            return { kind:'wall', index:i };
-        }
-      }
-    }
-    return null;
-  }
-
-  function pointToSegmentDist(px, py, x1, y1, x2, y2) {
-    const dx = x2-x1, dy = y2-y1;
-    if (dx === 0 && dy === 0) return Math.hypot(px-x1, py-y1);
-    const t = Math.max(0, Math.min(1, ((px-x1)*dx + (py-y1)*dy) / (dx*dx + dy*dy)));
-    return Math.hypot(px - (x1 + t*dx), py - (y1 + t*dy));
-  }
-
-  // ─── Touch/mouse pointer handling ─────────────────────────────────────
-  let activePointers = new Map();
-  let pinchStart = null;
-
-  canvas.addEventListener('pointerdown', (e) => {
-    e.preventDefault();
-    canvas.setPointerCapture(e.pointerId);
-    const rect = canvas.getBoundingClientRect();
-    const sx = e.clientX - rect.left, sy = e.clientY - rect.top;
-    activePointers.set(e.pointerId, { sx, sy, startSx: sx, startSy: sy });
-
-    if (activePointers.size === 2) {
-      // Start pinch
-      const [a, b] = Array.from(activePointers.values());
-      pinchStart = {
-        dist: Math.hypot(a.sx - b.sx, a.sy - b.sy),
-        zoom: state.view.zoom,
-        midSx: (a.sx + b.sx) / 2,
-        midSy: (a.sy + b.sy) / 2,
-      };
-      return;
-    }
-
-    // Single-pointer action
-    const cp = screenToCanvas(sx, sy);
-    const hit = hitTest(cp.x, cp.y);
-
-    if (state.mode === 'marker') {
-      if (state.pendingMarkerType) {
-        const type = MARKER_TYPES.find(t => t.id === state.pendingMarkerType) || MARKER_TYPES[0];
-        state.markers.push({
-          id: 'mk_' + Date.now() + '_' + Math.floor(Math.random()*9999),
-          marker_type_id: type.id,
-          name: type.name,
-          category: type.cat,
-          x: cp.x, y: cp.y, note: ''
-        });
-        // Keep marker mode active with same type so multiple markers can be
-        // placed in a row. User cancels by hitting Select or another tool.
-        showBanner('Placed ' + type.name + ' — tap again to place another, or pick a different tool', 'ok');
-        redraw();
-      }
-      return;
-    }
-
-    if (state.mode === 'delete') {
-      if (hit) {
-        state.selected = hit;
-        deleteSelected();
-      }
-      return;
-    }
-
-    if (state.mode === 'pan') {
-      state.drag = { kind:'pan', lastSx: sx, lastSy: sy };
-      return;
-    }
-
-    // select mode
+  if (state.tool === 'delete') {
+    const hit = hitTest(sx, sy);
     if (hit) {
-      state.selected = hit;
-      openEdit();
-      // Start drag to move
-      state.drag = { kind:'move', lastCx: cp.x, lastCy: cp.y };
+      deleteElement(hit);
+      showToast('Deleted ' + hit.kind, 'ok');
+    }
+    return;
+  }
+
+  // Select or pan
+  if (state.tool === 'select') {
+    const hit = hitTest(sx, sy);
+    if (hit) {
+      selectElement(hit);
+      state.drag = { kind: 'move', hit, startSX: sx, startSY: sy,
+                     origX: getElemX(hit), origY: getElemY(hit), moved: false };
     } else {
-      // tap empty → start pan
-      state.drag = { kind:'pan', lastSx: sx, lastSy: sy };
+      // Empty area tap → deselect + start pan
       state.selected = null;
-      closeEdit();
+      hideEditPanel();
+      state.drag = { kind: 'pan', startX: sx - state.view.panX, startY: sy - state.view.panY };
+      draw();
     }
-    redraw();
+  } else if (state.tool === 'pan') {
+    state.drag = { kind: 'pan', startX: sx - state.view.panX, startY: sy - state.view.panY };
+  }
+});
+
+wrap.addEventListener('pointermove', (e) => {
+  if (!pointerCache.has(e.pointerId)) return;
+  pointerCache.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+  if (state.drag && state.drag.kind === 'pinch' && pointerCache.size === 2) {
+    const pts = Array.from(pointerCache.values());
+    const newDist = dist(pts[0].x, pts[0].y, pts[1].x, pts[1].y);
+    const cx = (pts[0].x + pts[1].x) / 2;
+    const cy = (pts[0].y + pts[1].y) / 2;
+    const rect = wrap.getBoundingClientRect();
+    zoomAt(cx - rect.left, cy - rect.top, newDist / lastPinchDist);
+    lastPinchDist = newDist;
+    return;
+  }
+
+  if (!state.drag || pointerCache.size > 1) return;
+  const rect = wrap.getBoundingClientRect();
+  const sx = e.clientX - rect.left;
+  const sy = e.clientY - rect.top;
+
+  if (state.drag.kind === 'pan') {
+    state.view.panX = sx - state.drag.startX;
+    state.view.panY = sy - state.drag.startY;
+    draw();
+  } else if (state.drag.kind === 'move') {
+    const dx = (sx - state.drag.startSX) / state.view.zoom;
+    const dy = (sy - state.drag.startSY) / state.view.zoom;
+    if (Math.hypot(dx, dy) > 2) state.drag.moved = true;
+    setElemPos(state.drag.hit, state.drag.origX + dx, state.drag.origY + dy);
+    draw();
+  }
+});
+
+function endPointer(e) {
+  if (pointerCache.has(e.pointerId)) pointerCache.delete(e.pointerId);
+  if (pointerCache.size < 2) lastPinchDist = 0;
+  if (pointerCache.size === 0) {
+    if (state.drag && state.drag.kind === 'move' && state.drag.moved) saveToStorage();
+    state.drag = null;
+  }
+}
+wrap.addEventListener('pointerup', endPointer);
+wrap.addEventListener('pointercancel', endPointer);
+wrap.addEventListener('pointerleave', endPointer);
+
+// Mouse wheel zoom
+wrap.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const rect = wrap.getBoundingClientRect();
+  const sx = e.clientX - rect.left;
+  const sy = e.clientY - rect.top;
+  const factor = e.deltaY < 0 ? 1.15 : 1/1.15;
+  zoomAt(sx, sy, factor);
+}, { passive: false });
+
+function zoomAt(sx, sy, factor) {
+  const newZoom = Math.max(0.1, Math.min(8, state.view.zoom * factor));
+  const actual = newZoom / state.view.zoom;
+  // Keep the point under cursor fixed
+  state.view.panX = sx - (sx - state.view.panX) * actual;
+  state.view.panY = sy - (sy - state.view.panY) * actual;
+  state.view.zoom = newZoom;
+  draw();
+}
+
+// ---------- Element helpers ----------
+function getElem(hit) {
+  if (!hit || !state.data) return null;
+  const arr = state.data[hit.kind + 's'];
+  return arr && arr[hit.index];
+}
+function getElemX(hit) {
+  const e = getElem(hit);
+  if (!e) return 0;
+  return hit.kind === 'wall' ? (e.x1 + e.x2) / 2 : e.x;
+}
+function getElemY(hit) {
+  const e = getElem(hit);
+  if (!e) return 0;
+  return hit.kind === 'wall' ? (e.y1 + e.y2) / 2 : e.y;
+}
+function setElemPos(hit, x, y) {
+  const e = getElem(hit);
+  if (!e) return;
+  if (hit.kind === 'wall') {
+    const cx = (e.x1 + e.x2) / 2, cy = (e.y1 + e.y2) / 2;
+    const dx = x - cx, dy = y - cy;
+    e.x1 += dx; e.x2 += dx; e.y1 += dy; e.y2 += dy;
+  } else {
+    e.x = x; e.y = y;
+  }
+}
+
+function deleteElement(hit) {
+  const arr = state.data[hit.kind + 's'];
+  if (!arr) return;
+  arr.splice(hit.index, 1);
+  state.selected = null;
+  hideEditPanel();
+  updateCounts();
+  saveToStorage();
+  draw();
+}
+
+function placeMarkerAt(x, y) {
+  const meta = MARKER_TYPES.find(t => t.id === state.selectedMarkerType);
+  if (!state.data) state.data = emptyData();
+  state.data.markers.push({
+    id: 'm_' + Date.now(),
+    type: state.selectedMarkerType,
+    x: x, y: y,
+    label: meta ? meta.label : state.selectedMarkerType,
+    note: ''
   });
+  updateCounts();
+  saveToStorage();
+  draw();
+  showToast('Marker placed', 'ok');
+  // Stay in marker mode for chain placement — user has to switch back to select manually
+}
 
-  canvas.addEventListener('pointermove', (e) => {
-    if (!activePointers.has(e.pointerId)) return;
-    const rect = canvas.getBoundingClientRect();
-    const sx = e.clientX - rect.left, sy = e.clientY - rect.top;
-    const p = activePointers.get(e.pointerId);
-    p.sx = sx; p.sy = sy;
+// ---------- Edit panel ----------
+function showEditPanel(hit) {
+  const e = getElem(hit);
+  if (!e) return;
+  document.getElementById('ep-title').textContent = hit.kind[0].toUpperCase() + hit.kind.slice(1) + ' #' + (hit.index + 1);
+  let sub = '';
+  const sf = state.data.scale_px_per_ft || 12;
+  if (hit.kind === 'wall')   sub = `Length: ${(dist(e.x1, e.y1, e.x2, e.y2) / sf).toFixed(1)} ft`;
+  else if (hit.kind === 'door' || hit.kind === 'window') sub = `Width: ${(e.width / sf).toFixed(1)} ft`;
+  else if (hit.kind === 'object') sub = `${(e.width / sf).toFixed(1)} × ${(e.depth / sf).toFixed(1)} ft${e.label ? ' · ' + e.label : ''}`;
+  else if (hit.kind === 'marker') sub = (MARKER_TYPES.find(t => t.id === e.type) || {}).label || e.type;
+  document.getElementById('ep-sub').textContent = sub;
 
-    if (activePointers.size === 2 && pinchStart) {
-      // Pinch-zoom
-      const [a, b] = Array.from(activePointers.values());
-      const dist = Math.hypot(a.sx - b.sx, a.sy - b.sy);
-      const newZoom = Math.max(0.2, Math.min(5, pinchStart.zoom * dist / pinchStart.dist));
-      // Keep midpoint stable
-      const cp = screenToCanvas(pinchStart.midSx, pinchStart.midSy);
-      state.view.zoom = newZoom;
-      state.view.offsetX = pinchStart.midSx - cp.x * newZoom;
-      state.view.offsetY = pinchStart.midSy - cp.y * newZoom;
-      redraw();
-      return;
-    }
-
-    if (!state.drag) return;
-
-    if (state.drag.kind === 'pan') {
-      state.view.offsetX += sx - state.drag.lastSx;
-      state.view.offsetY += sy - state.drag.lastSy;
-      state.drag.lastSx = sx;
-      state.drag.lastSy = sy;
-      redraw();
-    } else if (state.drag.kind === 'move' && state.selected) {
-      const cp = screenToCanvas(sx, sy);
-      const dx = cp.x - state.drag.lastCx;
-      const dy = cp.y - state.drag.lastCy;
-      moveSelected(dx, dy);
-      state.drag.lastCx = cp.x;
-      state.drag.lastCy = cp.y;
-      redraw();
-    }
-  });
-
-  function endPointer(e) {
-    activePointers.delete(e.pointerId);
-    if (activePointers.size < 2) pinchStart = null;
-    if (activePointers.size === 0) state.drag = null;
-  }
-  canvas.addEventListener('pointerup', endPointer);
-  canvas.addEventListener('pointercancel', endPointer);
-  canvas.addEventListener('pointerleave', endPointer);
-
-  // Wheel zoom
-  canvas.addEventListener('wheel', (e) => {
-    e.preventDefault();
-    const rect = canvas.getBoundingClientRect();
-    const sx = e.clientX - rect.left, sy = e.clientY - rect.top;
-    const factor = e.deltaY < 0 ? 1.1 : 0.9;
-    zoomAt(sx, sy, factor);
-  }, { passive:false });
-
-  function zoomAt(sx, sy, factor) {
-    const cp = screenToCanvas(sx, sy);
-    state.view.zoom = Math.max(0.2, Math.min(5, state.view.zoom * factor));
-    state.view.offsetX = sx - cp.x * state.view.zoom;
-    state.view.offsetY = sy - cp.y * state.view.zoom;
-    redraw();
-  }
-
-  // ─── Move / Delete ────────────────────────────────────────────────────
-  function moveSelected(dx, dy) {
-    if (!state.selected || !state.plan) return;
-    const s = state.selected;
-    if (s.kind === 'wall') {
-      const w = state.plan.walls[s.index];
-      w.x1 += dx; w.y1 += dy; w.x2 += dx; w.y2 += dy;
-    } else if (s.kind === 'door' && state.plan.doors) {
-      state.plan.doors[s.index].x += dx;
-      state.plan.doors[s.index].y += dy;
-    } else if (s.kind === 'window' && state.plan.windows) {
-      state.plan.windows[s.index].x += dx;
-      state.plan.windows[s.index].y += dy;
-    } else if (s.kind === 'object' && state.plan.objects) {
-      state.plan.objects[s.index].x += dx;
-      state.plan.objects[s.index].y += dy;
-    } else if (s.kind === 'marker') {
-      state.markers[s.index].x += dx;
-      state.markers[s.index].y += dy;
-    }
-  }
-
-  function deleteSelected() {
-    if (!state.selected) return;
-    const s = state.selected;
-    if (s.kind === 'wall') state.plan.walls.splice(s.index, 1);
-    else if (s.kind === 'door') state.plan.doors.splice(s.index, 1);
-    else if (s.kind === 'window') state.plan.windows.splice(s.index, 1);
-    else if (s.kind === 'object') state.plan.objects.splice(s.index, 1);
-    else if (s.kind === 'marker') state.markers.splice(s.index, 1);
-    state.selected = null;
-    closeEdit();
-    redraw();
-  }
-
-  // ─── Edit panel ───────────────────────────────────────────────────────
-  function openEdit() {
-    if (!state.selected) return;
-    const s = state.selected;
-    const panel = document.getElementById('editPanel');
-    const title = document.getElementById('editTitle');
-    const meta  = document.getElementById('editMeta');
-    const body  = document.getElementById('editBody');
-
-    if (s.kind === 'wall') {
-      const w = state.plan.walls[s.index];
-      const lenFt = Math.hypot(w.x2 - w.x1, w.y2 - w.y1) / (state.plan.scale_px_per_ft || 12);
-      title.textContent = 'Wall ' + (s.index+1);
-      meta.textContent = lenFt.toFixed(1) + ' ft';
-      body.innerHTML = '';
-    } else if (s.kind === 'door') {
-      const d = state.plan.doors[s.index];
-      title.textContent = 'Door ' + (s.index+1);
-      meta.textContent = (d.width / (state.plan.scale_px_per_ft || 12)).toFixed(1) + ' ft';
-      body.innerHTML = '<div class="row"><label style="flex:1">Type <select id="ed_doorType"><option value="single">Single swing</option><option value="double">Double</option><option value="rollup">Rollup</option></select></label></div>';
-      document.getElementById('ed_doorType').value = d.type || 'single';
-      document.getElementById('ed_doorType').onchange = (e) => { d.type = e.target.value; redraw(); };
-    } else if (s.kind === 'window') {
-      const w = state.plan.windows[s.index];
-      title.textContent = 'Window ' + (s.index+1);
-      meta.textContent = (w.width / (state.plan.scale_px_per_ft || 12)).toFixed(1) + ' ft';
-      body.innerHTML = '';
-    } else if (s.kind === 'object') {
-      const o = state.plan.objects[s.index];
-      title.textContent = o.label || o.category || 'Object';
-      const scale = state.plan.scale_px_per_ft || 12;
-      meta.textContent = (o.width/scale).toFixed(1) + ' × ' + (o.depth/scale).toFixed(1) + ' ft';
-      body.innerHTML = '<div class="row"><label style="flex:1">Label <input id="ed_objLabel" type="text"></label></div>';
-      const inp = document.getElementById('ed_objLabel');
-      inp.value = o.label || '';
-      inp.oninput = (e) => { o.label = e.target.value; redraw(); };
-    } else if (s.kind === 'marker') {
-      const m = state.markers[s.index];
-      title.textContent = m.name || 'Marker';
-      meta.textContent = m.category || '';
-      body.innerHTML = '<div class="row"><label style="flex:1">Note <input id="ed_mkNote" type="text" placeholder="Optional note"></label></div>';
-      const inp = document.getElementById('ed_mkNote');
-      inp.value = m.note || '';
-      inp.oninput = (e) => { m.note = e.target.value; };
-    }
-    panel.classList.add('active');
-  }
-
-  function closeEdit() {
-    document.getElementById('editPanel').classList.remove('active');
-  }
-
-  // ─── Marker picker ────────────────────────────────────────────────────
-  function openMarkerPicker() {
-    const grid = document.getElementById('markerGrid');
-    grid.innerHTML = '';
-    MARKER_TYPES.forEach(t => {
-      const b = document.createElement('button');
-      b.textContent = t.name;
-      b.style.borderLeft = '4px solid ' + t.color;
-      b.onclick = () => {
-        state.pendingMarkerType = t.id;
-        state.mode = 'marker';
-        syncToolbar();
-        document.getElementById('markerPicker').classList.remove('active');
-        showBanner('Tap on the floor plan where you want to place the ' + t.name + ' marker', 'ok');
-      };
-      grid.appendChild(b);
+  // Body (type-specific edits)
+  const body = document.getElementById('ep-body');
+  body.innerHTML = '';
+  if (hit.kind === 'door') {
+    const group = document.createElement('div');
+    group.className = 'door-type-group';
+    ['single', 'double', 'rollup'].forEach(t => {
+      const btn = document.createElement('button');
+      btn.className = 'fp-btn sm' + (e.type === t ? ' active' : '');
+      btn.textContent = t;
+      btn.onclick = () => { e.type = t; saveToStorage(); showEditPanel(hit); draw(); };
+      group.appendChild(btn);
     });
-    document.getElementById('markerPicker').classList.add('active');
-    closeEdit();
+    const lbl = document.createElement('label'); lbl.textContent = 'Type:';
+    body.appendChild(lbl); body.appendChild(group);
+  } else if (hit.kind === 'object') {
+    const lbl = document.createElement('label'); lbl.textContent = 'Label:';
+    const input = document.createElement('input'); input.type = 'text'; input.value = e.label || '';
+    input.oninput = () => { e.label = input.value; };
+    input.onchange = () => { saveToStorage(); draw(); };
+    body.appendChild(lbl); body.appendChild(input);
+  } else if (hit.kind === 'marker') {
+    const lblN = document.createElement('label'); lblN.textContent = 'Note:';
+    const inp = document.createElement('input'); inp.type = 'text'; inp.value = e.note || '';
+    inp.oninput = () => { e.note = inp.value; };
+    inp.onchange = () => { saveToStorage(); };
+    body.appendChild(lblN); body.appendChild(inp);
+  } else {
+    body.innerHTML = '<span style="color:var(--muted); font-size:12px;">Drag to reposition, or click Delete to remove.</span>';
   }
-  function closeMarkerPicker() {
-    document.getElementById('markerPicker').classList.remove('active');
-    state.pendingMarkerType = null;
-    state.mode = 'select';
-    syncToolbar();
-  }
+  editPanel.classList.add('open');
+}
+function hideEditPanel() { editPanel.classList.remove('open'); }
 
-  // ─── Toolbar sync ─────────────────────────────────────────────────────
-  function syncToolbar() {
-    document.getElementById('tbSelect').classList.toggle('active', state.mode === 'select');
-    document.getElementById('tbPan').classList.toggle('active',    state.mode === 'pan');
-    document.getElementById('tbDelete').classList.toggle('active', state.mode === 'delete');
-    document.getElementById('tbAddMarker').classList.toggle('active', state.mode === 'marker');
-    document.getElementById('tb3D').classList.toggle('active', state.is3D);
-    canvas.className = 'mode-' + state.mode;
+document.getElementById('ep-delete').addEventListener('click', () => {
+  if (state.selected) {
+    deleteElement(state.selected);
+    showToast('Deleted', 'ok');
   }
+});
+document.getElementById('ep-close').addEventListener('click', () => {
+  state.selected = null; hideEditPanel(); draw();
+});
 
-  function setMode(m) {
-    state.mode = m;
-    if (m !== 'marker') state.pendingMarkerType = null;
-    syncToolbar();
-    if (m === 'delete') showBanner('Tap any element to delete it', 'err');
-    else hideBanner();
-  }
-
-  function toggle3D() {
-    state.is3D = !state.is3D;
-    const wrap = document.getElementById('canvasWrap');
-    wrap.classList.toggle('perspective', state.is3D);
-    syncToolbar();
-  }
-  function toggleLayers() {
-    state.layersVisible = !state.layersVisible;
-    document.getElementById('layersPanel').classList.toggle('hidden', !state.layersVisible);
-  }
-  function zoom(f) {
-    zoomAt(state.cssW/2, state.cssH/2, f);
-  }
-  function fitToScreen() {
-    if (!state.plan) return;
-    const pad = 40;
-    const zx = (state.cssW - pad*2) / state.plan.canvas_width;
-    const zy = (state.cssH - pad*2) / state.plan.canvas_height;
-    state.view.zoom = Math.min(zx, zy);
-    state.view.offsetX = (state.cssW - state.plan.canvas_width * state.view.zoom) / 2;
-    state.view.offsetY = (state.cssH - state.plan.canvas_height * state.view.zoom) / 2;
-    redraw();
-  }
-  function clearAll() {
-    if (!confirm('Clear the floor plan? Unsaved changes will be lost.')) return;
-    state.plan = null;
-    state.markers = [];
+// ---------- UI wiring ----------
+document.querySelectorAll('[data-tool]').forEach(el => {
+  el.addEventListener('click', () => setTool(el.dataset.tool));
+});
+document.getElementById('btn-3d').addEventListener('click', (e) => {
+  state.threeD = !state.threeD;
+  wrap.classList.toggle('threed', state.threeD);
+  e.currentTarget.classList.toggle('active', state.threeD);
+});
+document.getElementById('btn-layers').addEventListener('click', (e) => {
+  layersPanel.classList.toggle('open');
+  e.currentTarget.classList.toggle('active', layersPanel.classList.contains('open'));
+});
+document.querySelectorAll('#layers input[data-layer]').forEach(cb => {
+  cb.addEventListener('change', () => {
+    state.visibleLayers[cb.dataset.layer] = cb.checked;
+    draw();
+  });
+});
+document.getElementById('btn-zoom-in').addEventListener('click', () => {
+  zoomAt(state.view.width/2, state.view.height/2, 1.25);
+});
+document.getElementById('btn-zoom-out').addEventListener('click', () => {
+  zoomAt(state.view.width/2, state.view.height/2, 1/1.25);
+});
+document.getElementById('btn-fit').addEventListener('click', fitToView);
+document.getElementById('btn-load-latest').addEventListener('click', loadLatestCapture);
+document.getElementById('btn-save').addEventListener('click', () => {
+  saveToStorage();
+  showToast('Saved to pre-plan', 'ok');
+});
+document.getElementById('btn-clear').addEventListener('click', () => {
+  if (!state.data) return;
+  if (confirm('Clear the entire floor plan? This cannot be undone.')) {
+    state.data = null;
     state.selected = null;
-    state.meta = null;
-    closeEdit();
-    document.getElementById('planTitle').textContent = 'No plan loaded';
-    redraw();
-  }
-
-  function updateCounts() {
-    if (!state.plan) {
-      ['Walls','Doors','Windows','Objects','Markers'].forEach(k => {
-        document.getElementById('cnt'+k).textContent = '0';
-      });
-      return;
-    }
-    document.getElementById('cntWalls').textContent   = (state.plan.walls||[]).length;
-    document.getElementById('cntDoors').textContent   = (state.plan.doors||[]).length;
-    document.getElementById('cntWindows').textContent = (state.plan.windows||[]).length;
-    document.getElementById('cntObjects').textContent = (state.plan.objects||[]).length;
-    document.getElementById('cntMarkers').textContent = state.markers.length;
-  }
-
-  // ─── Banner ───────────────────────────────────────────────────────────
-  function showBanner(msg, type) {
-    const b = document.getElementById('fpBanner');
-    b.className = 'fp-info ' + (type || '');
-    b.textContent = msg;
-    b.style.display = 'block';
-  }
-  function hideBanner() { document.getElementById('fpBanner').style.display = 'none'; }
-
-  // ─── Load from API ────────────────────────────────────────────────────
-  async function loadLatest() {
-    showBanner('Loading latest capture...', '');
-    // Determine dept by hostname
-    const isPcfd = location.hostname.indexOf('pcfdmembers.org') >= 0;
-    state.dept = isPcfd ? 'PCFD' : 'CFD';
-    const api = isPcfd ? 'https://preplans.pcfdmembers.org/api/jobs?dept=PCFD&limit=1'
-                       : 'https://fdtraining.org/api/jobs?dept=CFD&limit=1';
+    state.scanMeta = null;
     try {
-      const r = await fetch(api, { credentials: 'omit' });
-      const d = await r.json();
-      const jobs = d.jobs || d.results || (d.job ? [d.job] : []);
-      if (!jobs.length) { showBanner('No captures found', 'err'); return; }
-      await loadJob(jobs[0].id || jobs[0].job_id);
-    } catch (e) {
-      showBanner('Load failed: ' + e.message, 'err');
-    }
+      const plan = JSON.parse(localStorage.getItem('preFirePlan') || '{}');
+      delete plan.floor_plan_data;
+      localStorage.setItem('preFirePlan', JSON.stringify(plan));
+    } catch(e){}
+    hideEditPanel();
+    showEmpty();
+    updateMeta();
+    updateCounts();
+    draw();
   }
+});
 
-  async function loadJob(id) {
-    const isPcfd = location.hostname.indexOf('pcfdmembers.org') >= 0;
-    const api = (isPcfd ? 'https://preplans.pcfdmembers.org' : 'https://fdtraining.org') + '/api/jobs/' + id;
-    try {
-      const r = await fetch(api, { credentials: 'omit' });
-      const d = await r.json();
-      const job = d.job || d;
-      const layout = (job.ai_form_data && job.ai_form_data.layout) || job.layout;
-      if (!layout) { showBanner('Capture has no floor plan data', 'err'); return; }
-      state.plan = {
-        canvas_width:  layout.canvas_width  || 400,
-        canvas_height: layout.canvas_height || 400,
-        scale_px_per_ft: layout.scale_px_per_ft || 12,
-        walls:   (layout.walls   || []).map(w => ({ x1:w.x1, y1:w.y1, x2:w.x2, y2:w.y2 })),
-        doors:   (layout.doors   || []).map(x => ({ x:x.x, y:x.y, width:x.width, angle:x.angle, type:x.type || 'single' })),
-        windows: (layout.windows || []).map(x => ({ x:x.x, y:x.y, width:x.width, angle:x.angle })),
-        objects: (layout.objects || []).map(x => ({ x:x.x, y:x.y, width:x.width, depth:x.depth, angle:x.angle, category:x.category, label:x.label })),
-      };
-      state.markers = (job.ai_features || []).map(m => ({
-        id: 'mk_imported_' + Math.random().toString(36).slice(2,8),
-        marker_type_id: m.marker_type_id || m.id,
-        name: m.name || m.marker_name,
-        category: m.category,
-        x: m.x, y: m.y, note: m.note || ''
-      }));
-      state.meta = job;
-      state.dept = job.department || state.dept;
-      document.getElementById('planTitle').textContent = (job.building_name || 'Untitled') + ' · ' + state.dept;
-      fitToScreen();
-      showBanner('Loaded "' + (job.building_name || 'Untitled') + '" — ' + (state.plan.walls.length) + ' walls, ' + (state.plan.doors||[]).length + ' doors, ' + state.markers.length + ' markers', 'ok');
-      setTimeout(hideBanner, 3500);
-    } catch (e) {
-      showBanner('Load failed: ' + e.message, 'err');
-    }
+// ---------- Marker palette ----------
+(function buildMarkerPalette() {
+  const grid = document.getElementById('marker-grid');
+  MARKER_TYPES.forEach(t => {
+    const chip = document.createElement('div');
+    chip.className = 'fp-marker-chip' + (t.id === state.selectedMarkerType ? ' active' : '');
+    chip.innerHTML = `<span class="chip-icon">${t.icon}</span><span>${t.label}</span>`;
+    chip.onclick = () => {
+      state.selectedMarkerType = t.id;
+      document.querySelectorAll('.fp-marker-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+    };
+    grid.appendChild(chip);
+  });
+})();
+
+// ---------- UI updates ----------
+function updateMeta() {
+  const el = document.getElementById('fp-meta');
+  if (state.scanMeta) {
+    const dt = state.scanMeta.scan_date ? new Date(state.scanMeta.scan_date).toLocaleString() : '';
+    el.textContent = [state.scanMeta.department, state.scanMeta.building_name, dt].filter(Boolean).join(' · ');
+  } else {
+    el.textContent = state.data ? 'Loaded from local storage' : 'No capture loaded';
   }
+}
+function updateCounts() {
+  const d = state.data || emptyData();
+  document.getElementById('ct-walls').textContent   = (d.walls || []).length;
+  document.getElementById('ct-doors').textContent   = (d.doors || []).length;
+  document.getElementById('ct-windows').textContent = (d.windows || []).length;
+  document.getElementById('ct-objects').textContent = (d.objects || []).length;
+  document.getElementById('ct-markers').textContent = (d.markers || []).length;
+}
+function updateStatus() {
+  const z = (state.view.zoom * 100).toFixed(0);
+  const tool = state.tool;
+  statusEl.textContent = `Tool: ${tool} · Zoom: ${z}% · Pan: (${state.view.panX.toFixed(0)}, ${state.view.panY.toFixed(0)})`;
+}
+function showEmpty() { emptyState.classList.remove('hidden'); }
+function hideEmpty() { emptyState.classList.add('hidden'); }
 
-  // ─── Save back to form localStorage ───────────────────────────────────
-  function saveToForm() {
-    if (!state.plan) { showBanner('No plan to save', 'err'); return; }
-    try {
-      const saved = JSON.parse(localStorage.getItem('preFirePlan') || '{}');
-      saved.floor_plan_data = {
-        canvas_width: state.plan.canvas_width,
-        canvas_height: state.plan.canvas_height,
-        scale_px_per_ft: state.plan.scale_px_per_ft,
-        walls: state.plan.walls,
-        doors: state.plan.doors,
-        windows: state.plan.windows,
-        objects: state.plan.objects,
-        markers: state.markers,
-        savedAt: new Date().toISOString(),
-      };
-      localStorage.setItem('preFirePlan', JSON.stringify(saved));
-      showBanner('✓ Floor plan saved to pre-plan form', 'ok');
-      setTimeout(hideBanner, 2500);
-    } catch (e) {
-      showBanner('Save failed: ' + e.message, 'err');
-    }
-  }
-
-  // ─── Load floor_plan_data from localStorage on page open ──────────────
-  function loadFromForm() {
-    try {
-      const saved = JSON.parse(localStorage.getItem('preFirePlan') || '{}');
-      if (saved.floor_plan_data && saved.floor_plan_data.walls) {
-        const fp = saved.floor_plan_data;
-        state.plan = {
-          canvas_width: fp.canvas_width || 400,
-          canvas_height: fp.canvas_height || 400,
-          scale_px_per_ft: fp.scale_px_per_ft || 12,
-          walls: fp.walls || [], doors: fp.doors || [],
-          windows: fp.windows || [], objects: fp.objects || [],
-        };
-        state.markers = fp.markers || [];
-        // Also read scan meta if bridge populated it
-        if (saved._scan_meta) {
-          state.dept = saved._scan_meta.department || state.dept;
-          document.getElementById('planTitle').textContent = (saved.business_name || 'Untitled') + ' · ' + state.dept;
-        }
-        fitToScreen();
-      }
-    } catch (e) { console.warn('loadFromForm:', e); }
-  }
-
-  // ─── Expose public API ────────────────────────────────────────────────
-  window.FP = {
-    setMode, toggle3D, toggleLayers, zoom, fitToScreen, clearAll,
-    openMarkerPicker, closeMarkerPicker,
-    deleteSelected, closeEdit,
-    loadLatest, loadJob, saveToForm,
-    redraw,
-  };
-
-  // ─── Boot ─────────────────────────────────────────────────────────────
-  window.addEventListener('resize', resizeCanvas);
+// ---------- Init ----------
+function init() {
   resizeCanvas();
-  loadFromForm();
-  syncToolbar();
-  if (!state.plan) showBanner('Tap "Load Latest" to import your DivisionScan capture', '');
+  window.addEventListener('resize', resizeCanvas);
+
+  const saved = loadFromStorage();
+  if (saved && (saved.walls || []).length) {
+    state.data = saved;
+    hideEmpty();
+    fitToView();
+  } else {
+    showEmpty();
+  }
+  updateMeta();
+  updateCounts();
+  draw();
+}
+init();
+
+// Expose a tiny API for debugging
+window.FP = { state, draw, fitToView, loadLatestCapture };
+
 })();
 </script>
-
-<!-- Navigation (matches other preplan pages) -->
-<div style="max-width:1400px;margin:0 auto;padding:14px 16px;display:flex;gap:10px">
-  <button type="button" onclick="navigate('page10-site-plan.html', null)" style="background:#e2e8f0;border:0;padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer">← Previous</button>
-  <button type="button" onclick="navigate('page12-additional-notes.html', null)" style="background:#1e3a5f;color:#fff;border:0;padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer;margin-left:auto">Next →</button>
-</div>
-
-<!-- Let navigate() work across pages without theForm -->
-<script src="preplan-common.js"></script>
-<script>
-// Shim for pages that expect navigate(to, form) — we don't have a form on this page
-window.navigate = window.navigate || function(to, _form) { location.href = to; };
-</script>
-
 </body>
 </html>
