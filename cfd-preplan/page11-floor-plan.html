@@ -5,10 +5,12 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <title>Pre-Fire Plan · Floor Plan</title>
 <link rel="stylesheet" href="styles-preplan.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
 :root {
   --bg: #f5f7fa;
   --surface: #ffffff;
+  --surface-2: #f8fafc;
   --border: #d1d9e3;
   --muted: #64748b;
   --text: #1e293b;
@@ -16,6 +18,7 @@
   --primary-hover: #163050;
   --accent: #c0392b;
   --success: #16a34a;
+  --amber: #f59e0b;
   --wall: #0f172a;
   --door: #ea580c;
   --window: #0ea5e9;
@@ -23,42 +26,89 @@
   --marker: #dc2626;
   --selection: #fbbf24;
 }
-* { box-sizing: border-box; }
-body.fp-body { background: var(--bg); }
-.fp-host {
-  max-width: 1400px; margin: 0 auto; padding: 16px; color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-}
-.fp-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
-.fp-head h2 { font-size: 20px; margin: 0; font-weight: 700; color: var(--primary); }
-.fp-head .fp-sub { color: var(--muted); font-size: 13px; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body.fp-body { background: var(--bg); margin: 0; }
+.fp-host { max-width: 1600px; margin: 0 auto; padding: 12px; color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+.fp-head { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+.fp-head h2 { font-size: 18px; margin: 0; font-weight: 700; color: var(--primary); }
+.fp-head .fp-sub { color: var(--muted); font-size: 12px; }
 .fp-head .fp-grow { flex: 1; }
+
+/* Top toolbar — modes + view + IO */
 .fp-toolbar {
-  display: flex; gap: 6px; padding: 8px; background: var(--surface);
-  border: 1px solid var(--border); border-radius: 10px; margin-bottom: 8px;
+  display: flex; gap: 5px; padding: 6px 8px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px;
   flex-wrap: wrap; align-items: center;
 }
-.fp-toolbar .sep { width: 1px; height: 24px; background: var(--border); margin: 0 4px; }
+.fp-toolbar .sep { width: 1px; height: 22px; background: var(--border); margin: 0 3px; }
 .fp-btn {
-  padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px;
-  background: var(--surface); color: var(--text); font-size: 13px; font-weight: 600;
-  cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px;
-  user-select: none; -webkit-tap-highlight-color: transparent;
+  padding: 7px 11px; border: 1px solid var(--border); border-radius: 7px;
+  background: var(--surface); color: var(--text); font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all 0.12s; display: inline-flex; align-items: center; gap: 5px;
+  user-select: none; line-height: 1;
 }
-.fp-btn:hover { background: #eef2f7; }
+.fp-btn:hover { background: var(--surface-2); }
 .fp-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
 .fp-btn.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
 .fp-btn.primary:hover { background: var(--primary-hover); }
 .fp-btn.accent { background: var(--accent); color: #fff; border-color: var(--accent); }
 .fp-btn.ghost { background: transparent; border-color: transparent; color: var(--muted); }
-.fp-btn.ghost:hover { background: #eef2f7; color: var(--text); }
-.fp-btn.sm { padding: 6px 10px; font-size: 12px; }
+.fp-btn.ghost:hover { background: var(--surface-2); color: var(--text); }
+.fp-btn.sm { padding: 5px 8px; font-size: 11px; }
 .fp-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* Workspace: left symbol panel + main canvas */
+.fp-workspace { display: grid; grid-template-columns: 240px 1fr; gap: 6px; }
+@media (max-width: 900px) { .fp-workspace { grid-template-columns: 1fr; } }
+
+/* Symbol panel */
+.fp-symbols {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+  height: 75vh; min-height: 500px; overflow: hidden; display: flex; flex-direction: column;
+}
+.fp-symbols-head { padding: 8px 10px; border-bottom: 1px solid var(--border);
+  font-size: 11px; text-transform: uppercase; color: var(--muted); letter-spacing: 0.05em;
+  display: flex; align-items: center; gap: 6px; background: var(--surface-2); }
+.fp-symbols-head input[type=text] {
+  flex: 1; padding: 5px 8px; font-size: 12px; border: 1px solid var(--border);
+  border-radius: 5px; outline: none; color: var(--text);
+}
+.fp-symbols-body { flex: 1; overflow-y: auto; padding: 4px; }
+.fp-cat {
+  margin-bottom: 4px; border-radius: 6px; overflow: hidden;
+}
+.fp-cat-title {
+  padding: 6px 10px; background: var(--surface-2); color: var(--primary);
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+  cursor: pointer; display: flex; align-items: center; gap: 6px;
+  user-select: none; border-radius: 5px;
+}
+.fp-cat-title:hover { background: #eef2f7; }
+.fp-cat-title .caret { margin-left: auto; font-size: 10px; opacity: 0.6; transition: transform 0.15s; }
+.fp-cat.collapsed .caret { transform: rotate(-90deg); }
+.fp-cat.collapsed .fp-cat-grid { display: none; }
+.fp-cat-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; padding: 4px 2px 6px;
+}
+.fp-sym-chip {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 6px 2px; border: 1px solid var(--border); border-radius: 5px;
+  cursor: pointer; font-size: 9px; line-height: 1.1; text-align: center;
+  background: var(--surface); color: var(--text); min-height: 56px;
+  justify-content: center; overflow: hidden; transition: all 0.1s;
+}
+.fp-sym-chip:hover { background: var(--surface-2); border-color: var(--primary); }
+.fp-sym-chip.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.fp-sym-chip.active svg { filter: brightness(0) invert(1); }
+.fp-sym-chip svg { width: 26px; height: 26px; flex: 0 0 auto; }
+.fp-sym-chip span { font-size: 9px; overflow: hidden; text-overflow: ellipsis; max-width: 100%; white-space: nowrap; }
+
+/* Canvas stage */
 .fp-stage {
   position: relative; background: var(--surface); border: 1px solid var(--border);
-  border-radius: 12px; overflow: hidden; touch-action: none;
-  height: 70vh; min-height: 500px;
+  border-radius: 8px; overflow: hidden; touch-action: none;
+  height: 75vh; min-height: 500px;
 }
 .fp-canvas-wrap {
   position: absolute; inset: 0; overflow: hidden;
@@ -67,23 +117,22 @@ body.fp-body { background: var(--bg); }
     linear-gradient(to bottom, rgba(15,23,42,0.04) 1px, transparent 1px);
   background-size: 20px 20px;
 }
-.fp-canvas-wrap.threed { perspective: 1200px; perspective-origin: 50% 85%; }
-.fp-canvas-wrap.threed canvas {
-  transform: rotateX(55deg) scale(0.9);
-  transform-origin: 50% 50%;
-  transition: transform 0.4s ease;
-  box-shadow: 0 30px 60px rgba(0,0,0,0.25);
+.fp-canvas-wrap.hide-grid { background-image: none; }
+.fp-canvas-wrap canvas { position: absolute; top: 0; left: 0; image-rendering: crisp-edges; }
+.fp-3d-wrap {
+  position: absolute; inset: 0; display: none; background:
+    linear-gradient(to bottom, #e2e8f0 0%, #f8fafc 50%, #eef2f7 100%);
 }
-.fp-canvas-wrap canvas {
-  position: absolute; top: 0; left: 0;
-  image-rendering: crisp-edges;
-  transition: transform 0s;
-}
+.fp-3d-wrap.on { display: block; }
+.fp-3d-wrap canvas { display: block; width: 100%; height: 100%; }
+
+/* Overlays on stage */
 .fp-status {
   position: absolute; bottom: 8px; left: 8px; padding: 4px 10px;
-  background: rgba(255,255,255,0.9); border: 1px solid var(--border);
+  background: rgba(255,255,255,0.92); border: 1px solid var(--border);
   border-radius: 6px; font-size: 11px; color: var(--muted);
-  pointer-events: none; font-family: ui-monospace, monospace;
+  pointer-events: none; font-family: ui-monospace, Menlo, monospace;
+  z-index: 5;
 }
 .fp-empty {
   position: absolute; inset: 0; display: flex; flex-direction: column;
@@ -91,73 +140,70 @@ body.fp-body { background: var(--bg); }
   text-align: center; padding: 20px; pointer-events: none;
 }
 .fp-empty.hidden { display: none; }
-.fp-empty .icon { font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
+.fp-empty .icon { font-size: 48px; margin-bottom: 12px; opacity: 0.4; }
 .fp-empty h3 { font-size: 18px; margin: 0 0 4px; color: var(--text); }
 
-/* Layers panel (pops out from right) */
-.fp-layers {
-  position: absolute; top: 8px; right: 8px; width: 220px;
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: 10px; padding: 10px; font-size: 13px;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.1); display: none; z-index: 10;
+/* Floating panels */
+.fp-panel {
+  position: absolute; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px; font-size: 12px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.1); z-index: 10; display: none;
 }
-.fp-layers.open { display: block; }
-.fp-layers h4 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; color: var(--muted); letter-spacing: 0.05em; }
+.fp-panel.open { display: block; }
+.fp-panel h4 { margin: 0 0 6px; font-size: 11px; text-transform: uppercase;
+  color: var(--muted); letter-spacing: 0.05em; }
+
+#layers { top: 8px; right: 8px; width: 220px; }
 .fp-layer-row {
-  display: flex; align-items: center; gap: 8px; padding: 6px 4px;
-  cursor: pointer; border-radius: 6px; user-select: none;
+  display: flex; align-items: center; gap: 8px; padding: 5px 4px;
+  cursor: pointer; border-radius: 5px; user-select: none;
 }
-.fp-layer-row:hover { background: #f1f5f9; }
-.fp-layer-row input[type=checkbox] { width: 16px; height: 16px; cursor: pointer; }
-.fp-layer-row .swatch { width: 14px; height: 14px; border-radius: 3px; }
-.fp-layer-row .count { margin-left: auto; color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.fp-layer-row:hover { background: var(--surface-2); }
+.fp-layer-row input[type=checkbox] { width: 15px; height: 15px; cursor: pointer; }
+.fp-layer-row .swatch { width: 13px; height: 13px; border-radius: 3px; }
+.fp-layer-row .count { margin-left: auto; color: var(--muted); font-size: 11px;
+  font-variant-numeric: tabular-nums; }
+
+/* 3D controls */
+#threeD-controls { top: 8px; left: 8px; width: 180px; }
+#threeD-controls label { display: block; margin: 6px 0 2px; font-size: 11px; color: var(--muted); }
+#threeD-controls input[type=range] { width: 100%; }
 
 /* Edit panel (bottom) */
-.fp-edit-panel {
-  position: absolute; bottom: 32px; left: 50%; transform: translateX(-50%);
-  width: min(520px, calc(100% - 32px));
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: 12px; padding: 14px 16px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.15); display: none; z-index: 15;
+#edit-panel {
+  bottom: 32px; left: 50%; transform: translateX(-50%);
+  width: min(560px, calc(100% - 32px)); padding: 12px 14px;
+  z-index: 15;
 }
-.fp-edit-panel.open { display: block; }
-.fp-edit-panel .ep-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-.fp-edit-panel .ep-title { font-weight: 700; font-size: 14px; color: var(--primary); }
-.fp-edit-panel .ep-sub { color: var(--muted); font-size: 12px; }
-.fp-edit-panel .ep-grow { flex: 1; }
-.fp-edit-panel .ep-body { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.fp-edit-panel label { font-size: 12px; color: var(--muted); }
-.fp-edit-panel input[type=text], .fp-edit-panel select {
-  padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px;
-  font-size: 13px; background: #fff; color: var(--text);
+#edit-panel.open { display: block; }
+#edit-panel .ep-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+#edit-panel .ep-title { font-weight: 700; font-size: 13px; color: var(--primary); }
+#edit-panel .ep-sub { color: var(--muted); font-size: 11px; }
+#edit-panel .ep-grow { flex: 1; }
+#edit-panel .ep-body { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+#edit-panel label { font-size: 11px; color: var(--muted); }
+#edit-panel input[type=text], #edit-panel input[type=number], #edit-panel select {
+  padding: 5px 7px; border: 1px solid var(--border); border-radius: 5px;
+  font-size: 12px; background: #fff; color: var(--text);
 }
-.fp-edit-panel .door-type-group { display: inline-flex; gap: 4px; }
-.fp-edit-panel .door-type-group .fp-btn.sm { font-size: 11px; padding: 4px 8px; }
+#edit-panel input[type=text] { min-width: 140px; }
+#edit-panel .door-type-group { display: inline-flex; gap: 3px; }
+#edit-panel .door-type-group .fp-btn.sm { font-size: 10px; padding: 3px 7px; }
 
-/* Marker placement palette */
-.fp-marker-palette {
-  position: absolute; top: 60px; left: 8px; width: 260px;
+/* Toolbox for Text placement */
+#text-input-overlay {
+  position: absolute; z-index: 20; display: none; gap: 6px;
   background: var(--surface); border: 1px solid var(--border);
-  border-radius: 10px; padding: 10px; font-size: 12px;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.1); display: none; z-index: 10;
+  padding: 6px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
-.fp-marker-palette.open { display: block; }
-.fp-marker-palette h4 { margin: 0 0 8px; font-size: 11px; text-transform: uppercase; color: var(--muted); }
-.fp-marker-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-.fp-marker-chip {
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
-  padding: 8px 4px; border: 1px solid var(--border); border-radius: 6px;
-  cursor: pointer; font-size: 10px; text-align: center; line-height: 1.2;
-  background: #fff;
-}
-.fp-marker-chip:hover { background: #f1f5f9; }
-.fp-marker-chip.active { background: var(--primary); color: #fff; border-color: var(--primary); }
-.fp-marker-chip .chip-icon { font-size: 16px; }
+#text-input-overlay.open { display: flex; }
+#text-input-overlay input { padding: 5px 8px; border: 1px solid var(--border);
+  border-radius: 5px; font-size: 13px; outline: none; width: 180px; }
 
-/* Toasts */
+/* Toast */
 .fp-toast {
-  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-  padding: 10px 18px; background: #0f172a; color: #fff; border-radius: 8px;
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  padding: 9px 16px; background: #0f172a; color: #fff; border-radius: 7px;
   font-size: 13px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 200;
   opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s;
 }
@@ -166,185 +212,1073 @@ body.fp-body { background: var(--bg); }
 .fp-toast.err { background: var(--accent); }
 
 @media (max-width: 720px) {
-  .fp-layers { width: 180px; }
-  .fp-marker-palette { width: 220px; top: 56px; }
-  .fp-edit-panel { width: calc(100% - 16px); }
-  .fp-btn { padding: 7px 10px; font-size: 12px; }
-  .fp-stage { height: 60vh; min-height: 400px; }
+  .fp-host { padding: 8px; }
+  .fp-btn { padding: 6px 9px; font-size: 11px; }
+  .fp-stage, .fp-symbols { height: 65vh; min-height: 380px; }
+  #layers { width: 180px; }
 }
 </style>
 </head>
 <body class="fp-body">
-
-<!-- Page nav container (uses existing styles-preplan.css for the title bar) -->
 <div class="fp-host">
   <div class="fp-head">
-    <h2>🏢 Pre-Fire Plan — Floor Plan</h2>
+    <h2>🏢 Floor Plan</h2>
     <span class="fp-sub" id="fp-meta">No capture loaded</span>
     <div class="fp-grow"></div>
     <a href="page10-site-plan.html" class="fp-btn ghost sm">← Site Plan</a>
     <a href="page12-summary.html" class="fp-btn ghost sm">Summary →</a>
   </div>
 
-  <!-- Toolbar -->
   <div class="fp-toolbar">
-    <button class="fp-btn active" id="tool-select" data-tool="select" title="Select & pan">
-      <span>✋</span> Select
-    </button>
-    <button class="fp-btn" id="tool-pan" data-tool="pan" title="Pan only">
-      <span>🖐</span> Pan
-    </button>
-    <button class="fp-btn" id="tool-marker" data-tool="marker" title="Place a marker (FDC, Knox, hydrant...)">
-      <span>📍</span> Marker
-    </button>
-    <button class="fp-btn" id="tool-delete" data-tool="delete" title="Tap an element to delete">
-      <span>🗑</span> Delete
-    </button>
+    <button class="fp-btn active" id="tool-select" data-tool="select" title="Select, drag, edit">✋ Select</button>
+    <button class="fp-btn" id="tool-pan" data-tool="pan" title="Pan only">🖐 Pan</button>
+    <button class="fp-btn" id="tool-wall" data-tool="wall" title="Draw walls">📏 Wall</button>
+    <button class="fp-btn" id="tool-text" data-tool="text" title="Add text label">Aa Text</button>
+    <button class="fp-btn" id="tool-measure" data-tool="measure" title="Measure distance">📐 Measure</button>
+    <button class="fp-btn" id="tool-place" data-tool="place" title="Place selected symbol" disabled>📍 Place</button>
+    <button class="fp-btn" id="tool-delete" data-tool="delete" title="Delete on tap">🗑 Delete</button>
     <span class="sep"></span>
-    <button class="fp-btn" id="btn-3d" title="Toggle 3D perspective view">
-      <span>📦</span> 3D
-    </button>
-    <button class="fp-btn" id="btn-layers" title="Show/hide layers">
-      <span>🎛</span> Layers
-    </button>
+    <button class="fp-btn" id="btn-undo" title="Undo">↶</button>
+    <button class="fp-btn" id="btn-redo" title="Redo">↷</button>
+    <span class="sep"></span>
+    <button class="fp-btn" id="btn-3d" title="Toggle 3D isometric view">📦 3D</button>
+    <button class="fp-btn" id="btn-layers" title="Show/hide layers">🎛 Layers</button>
     <span class="sep"></span>
     <button class="fp-btn sm" id="btn-zoom-in">+</button>
     <button class="fp-btn sm" id="btn-zoom-out">−</button>
     <button class="fp-btn sm" id="btn-fit">Fit</button>
     <span class="sep"></span>
-    <button class="fp-btn primary" id="btn-load-latest" title="Load most recent DivisionScan capture for this department">
-      <span>⬇</span> Load Latest
-    </button>
-    <button class="fp-btn accent" id="btn-save" title="Save to pre-plan form">
-      <span>💾</span> Save
-    </button>
-    <button class="fp-btn ghost sm" id="btn-clear" title="Clear the canvas">
-      Clear
-    </button>
+    <button class="fp-btn primary" id="btn-load-latest">⬇ Load Latest</button>
+    <button class="fp-btn accent" id="btn-save">💾 Save</button>
+    <button class="fp-btn ghost sm" id="btn-clear">Clear</button>
   </div>
 
-  <!-- Canvas stage -->
-  <div class="fp-stage" id="stage">
-    <div class="fp-canvas-wrap" id="canvas-wrap">
-      <canvas id="fp-canvas"></canvas>
-    </div>
+  <div class="fp-workspace">
 
-    <div class="fp-empty" id="empty-state">
-      <div class="icon">📐</div>
-      <h3>No floor plan loaded</h3>
-      <p style="margin: 0; font-size: 13px;">Click <strong>Load Latest</strong> to pull your most recent DivisionScan capture,<br>or save a scan on the iPad to continue.</p>
-    </div>
-
-    <div class="fp-status" id="status">—</div>
-
-    <!-- Layers panel -->
-    <div class="fp-layers" id="layers">
-      <h4>Layers</h4>
-      <label class="fp-layer-row"><input type="checkbox" data-layer="walls" checked><span class="swatch" style="background: var(--wall);"></span>Walls<span class="count" id="ct-walls">0</span></label>
-      <label class="fp-layer-row"><input type="checkbox" data-layer="doors" checked><span class="swatch" style="background: var(--door);"></span>Doors<span class="count" id="ct-doors">0</span></label>
-      <label class="fp-layer-row"><input type="checkbox" data-layer="windows" checked><span class="swatch" style="background: var(--window);"></span>Windows<span class="count" id="ct-windows">0</span></label>
-      <label class="fp-layer-row"><input type="checkbox" data-layer="objects" checked><span class="swatch" style="background: var(--object);"></span>Objects<span class="count" id="ct-objects">0</span></label>
-      <label class="fp-layer-row"><input type="checkbox" data-layer="markers" checked><span class="swatch" style="background: var(--marker);"></span>Markers<span class="count" id="ct-markers">0</span></label>
-      <label class="fp-layer-row"><input type="checkbox" data-layer="grid" checked><span class="swatch" style="background: #e2e8f0; border: 1px solid #cbd5e1;"></span>Grid</label>
-    </div>
-
-    <!-- Marker palette (opens when Marker tool selected) -->
-    <div class="fp-marker-palette" id="marker-palette">
-      <h4>Pick marker type</h4>
-      <div class="fp-marker-grid" id="marker-grid"></div>
-    </div>
-
-    <!-- Edit panel (opens when element selected) -->
-    <div class="fp-edit-panel" id="edit-panel">
-      <div class="ep-head">
-        <div>
-          <div class="ep-title" id="ep-title">—</div>
-          <div class="ep-sub" id="ep-sub">—</div>
-        </div>
-        <div class="ep-grow"></div>
-        <button class="fp-btn accent sm" id="ep-delete">🗑 Delete</button>
-        <button class="fp-btn ghost sm" id="ep-close">✕</button>
+    <!-- Symbol panel -->
+    <aside class="fp-symbols">
+      <div class="fp-symbols-head">
+        <span>Symbols</span>
+        <input type="text" id="sym-search" placeholder="Search...">
       </div>
-      <div class="ep-body" id="ep-body"></div>
+      <div class="fp-symbols-body" id="sym-body"></div>
+    </aside>
+
+    <!-- Canvas stage -->
+    <div class="fp-stage" id="stage">
+      <div class="fp-canvas-wrap" id="canvas-wrap">
+        <canvas id="fp-canvas"></canvas>
+      </div>
+      <div class="fp-3d-wrap" id="threed-wrap">
+        <canvas id="three-canvas"></canvas>
+      </div>
+
+      <div class="fp-empty" id="empty-state">
+        <div class="icon">📐</div>
+        <h3>No floor plan loaded</h3>
+        <p style="margin: 0; font-size: 13px;">Click <strong>Load Latest</strong> for a DivisionScan capture,<br>draw walls with the Wall tool, or drop symbols from the palette.</p>
+      </div>
+
+      <div class="fp-status" id="status">—</div>
+
+      <div class="fp-panel" id="layers">
+        <h4>Layers</h4>
+        <label class="fp-layer-row"><input type="checkbox" data-layer="walls" checked><span class="swatch" style="background: var(--wall);"></span>Walls<span class="count" id="ct-walls">0</span></label>
+        <label class="fp-layer-row"><input type="checkbox" data-layer="doors" checked><span class="swatch" style="background: var(--door);"></span>Doors<span class="count" id="ct-doors">0</span></label>
+        <label class="fp-layer-row"><input type="checkbox" data-layer="windows" checked><span class="swatch" style="background: var(--window);"></span>Windows<span class="count" id="ct-windows">0</span></label>
+        <label class="fp-layer-row"><input type="checkbox" data-layer="objects" checked><span class="swatch" style="background: var(--object);"></span>Objects<span class="count" id="ct-objects">0</span></label>
+        <label class="fp-layer-row"><input type="checkbox" data-layer="symbols" checked><span class="swatch" style="background: var(--marker);"></span>Symbols<span class="count" id="ct-symbols">0</span></label>
+        <label class="fp-layer-row"><input type="checkbox" data-layer="texts" checked><span class="swatch" style="background: #475569;"></span>Text<span class="count" id="ct-texts">0</span></label>
+        <label class="fp-layer-row"><input type="checkbox" data-layer="measurements" checked><span class="swatch" style="background: #eab308;"></span>Measures<span class="count" id="ct-measurements">0</span></label>
+        <label class="fp-layer-row"><input type="checkbox" data-layer="grid" checked><span class="swatch" style="background: #e2e8f0; border: 1px solid #cbd5e1;"></span>Grid</label>
+      </div>
+
+      <div class="fp-panel" id="threeD-controls">
+        <h4>3D View</h4>
+        <label>Wall height (ft)</label>
+        <input type="range" id="td-wall-h" min="6" max="20" step="0.5" value="10">
+        <label>Rotate</label>
+        <input type="range" id="td-rotate" min="0" max="360" step="1" value="45">
+        <label>Tilt</label>
+        <input type="range" id="td-tilt" min="10" max="80" step="1" value="45">
+        <button class="fp-btn sm" id="td-reset" style="margin-top: 6px; width: 100%;">Reset view</button>
+      </div>
+
+      <div class="fp-panel" id="edit-panel">
+        <div class="ep-head">
+          <div>
+            <div class="ep-title" id="ep-title">—</div>
+            <div class="ep-sub" id="ep-sub">—</div>
+          </div>
+          <div class="ep-grow"></div>
+          <button class="fp-btn accent sm" id="ep-delete">🗑 Delete</button>
+          <button class="fp-btn ghost sm" id="ep-close">✕</button>
+        </div>
+        <div class="ep-body" id="ep-body"></div>
+      </div>
+
+      <div id="text-input-overlay">
+        <input type="text" id="text-input" placeholder="Text label" autocomplete="off">
+        <button class="fp-btn primary sm" id="text-confirm">Add</button>
+        <button class="fp-btn ghost sm" id="text-cancel">✕</button>
+      </div>
     </div>
   </div>
 </div>
 
 <div class="fp-toast" id="toast"></div>
-
 <script>
 // ============================================================================
-// Floor Plan Editor v2 — clean canvas-based implementation
+// Symbol Library — 115 items, drawn as real-looking objects via Canvas 2D
+// Each symbol has: { id, label, cat, w, h, draw(ctx,x,y,w,h,angle,scale), icon() }
+//   - draw(): renders on the main floor plan canvas (at rotated position)
+//   - icon(): returns inline SVG string for the symbol palette
+//   - meta: { extrude3D: {type, height, color} } for Three.js 3D render
 // ============================================================================
-// Data model stored in localStorage.preFirePlan.floor_plan_data:
-//   {
-//     canvas_width, canvas_height, scale_px_per_ft,
-//     walls:    [{x1, y1, x2, y2}],
-//     doors:    [{x, y, width, angle, type}],
-//     windows:  [{x, y, width, angle}],
-//     objects:  [{x, y, width, depth, angle, category, label}],
-//     markers:  [{id, type, x, y, label, note}]
-//   }
+
+const SYMBOLS = (function(){
+
+  // Common colors (fire service conventions)
+  const C = {
+    fire: '#dc2626', fireDk: '#991b1b', fireLt: '#fca5a5',
+    red: '#dc2626', amber: '#f59e0b', orange: '#ea580c',
+    blue: '#2563eb', blueLt: '#60a5fa', cyan: '#06b6d4',
+    green: '#16a34a', greenDk: '#166534',
+    wood: '#a78160', woodDk: '#78543c', woodLt: '#d4c4a8',
+    metal: '#9ca3af', metalDk: '#4b5563', metalLt: '#d1d5db',
+    fabric: '#d4c4a8', fabricDk: '#a89778', fabricBeige: '#e8dfd0',
+    glass: '#cfe7f5', glassEdge: '#7bb3d6',
+    white: '#ffffff', offwhite: '#f5f5f5', black: '#111827',
+    gray: '#6b7280', grayLt: '#e5e7eb', grayDk: '#374151',
+  };
+
+  // Shortcut drawing helpers (take ctx already translated+rotated to symbol origin)
+  function rect(ctx, x, y, w, h, fill, stroke, sw, r) {
+    ctx.fillStyle = fill; ctx.strokeStyle = stroke || fill;
+    ctx.lineWidth = sw || 1;
+    if (r && ctx.roundRect) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); ctx.fill(); if (stroke) ctx.stroke(); }
+    else { if (fill) ctx.fillRect(x, y, w, h); if (stroke) ctx.strokeRect(x, y, w, h); }
+  }
+  function circle(ctx, cx, cy, r, fill, stroke, sw) {
+    ctx.fillStyle = fill; ctx.strokeStyle = stroke || fill; ctx.lineWidth = sw || 1;
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); if (fill) ctx.fill(); if (stroke) ctx.stroke();
+  }
+  function line(ctx, x1, y1, x2, y2, stroke, sw) {
+    ctx.strokeStyle = stroke; ctx.lineWidth = sw || 1;
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+  }
+  function textAt(ctx, t, x, y, size, color, bold) {
+    ctx.fillStyle = color || '#111'; ctx.font = (bold?'bold ':'') + size + 'px system-ui, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(t, x, y);
+  }
+
+  // Build icon SVG programmatically — same drawing functions run on an OffscreenCanvas
+  // producing the palette thumbnail. This guarantees palette matches canvas output.
+  function toIconSVG(sym) {
+    const s = 48;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${s} ${s}" width="${s}" height="${s}">`;
+    // We draw into an OffscreenCanvas then encode as PNG inline — but that's runtime-only.
+    // For palette, render using the same draw() fn against a tiny fake canvas via a rasterizer.
+    return svg + `</svg>`;
+  }
+
+  // ========== FIRE PROTECTION ==========
+  const fire = [
+    { id:'facp', label:'FACP', cat:'fire', w:32, h:24, extrude3D:{h:3,color:C.fire}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, C.fire, C.fireDk, 1.5, 3);
+      circle(ctx, -w*0.25, -h*0.2, 2, C.fireLt, '#fff', 0.5);
+      circle(ctx, 0, -h*0.2, 2, '#86efac', '#fff', 0.5);
+      circle(ctx, w*0.25, -h*0.2, 2, '#fde047', '#fff', 0.5);
+      textAt(ctx, 'FACP', 0, h*0.2, 7, '#fff', true);
+    }},
+    { id:'annunciator', label:'Annunciator', cat:'fire', w:26, h:20, extrude3D:{h:2,color:C.fire}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, C.fire, C.fireDk, 1.5, 2);
+      rect(ctx, -w*0.35, -h*0.25, w*0.7, h*0.3, '#1f1f1f', '#000', 0.5, 1);
+      textAt(ctx, 'ANN', 0, h*0.2, 6, '#fff', true);
+    }},
+    { id:'fdc', label:'FDC', cat:'fire', w:22, h:22, extrude3D:{h:2.5,color:C.fire}, draw(ctx,w,h){
+      // Fire Department Connection — body + 2 siamese caps
+      rect(ctx, -w/2, -h*0.2, w, h*0.7, C.fire, C.fireDk, 1.5, 3);
+      circle(ctx, -w*0.22, h*0.15, w*0.18, '#e5e7eb', C.fireDk, 1.5);
+      circle(ctx, w*0.22, h*0.15, w*0.18, '#e5e7eb', C.fireDk, 1.5);
+      textAt(ctx, 'FDC', 0, -h*0.3, 7, '#fff', true);
+    }},
+    { id:'sprinkler', label:'Sprinkler Riser', cat:'fire', w:20, h:20, extrude3D:{h:10,color:C.blue}, draw(ctx,w,h){
+      circle(ctx, 0, 0, w*0.4, '#dbeafe', C.blue, 1.5);
+      line(ctx, 0, -w*0.25, 0, w*0.25, C.blue, 1);
+      line(ctx, -w*0.25, 0, w*0.25, 0, C.blue, 1);
+      circle(ctx, 0, 0, 2, C.blue, null, 0);
+    }},
+    { id:'standpipe', label:'Standpipe', cat:'fire', w:20, h:24, extrude3D:{h:8,color:'#4b5563'}, draw(ctx,w,h){
+      rect(ctx, -w*0.15, -h/2, w*0.3, h, '#6b7280', '#374151', 1, 2);
+      rect(ctx, -w*0.3, -h*0.15, w*0.6, h*0.12, C.fire, C.fireDk, 1, 1);
+      textAt(ctx, 'SP', 0, h*0.3, 7, C.fire, true);
+    }},
+    { id:'extinguisher', label:'Extinguisher', cat:'fire', w:14, h:22, extrude3D:{h:2.5,color:C.fire}, draw(ctx,w,h){
+      rect(ctx, -w*0.35, -h*0.4, w*0.7, h*0.8, C.fire, C.fireDk, 1.5, 3);
+      rect(ctx, -w*0.2, -h*0.5, w*0.4, h*0.12, '#666', '#333', 1, 1);
+      textAt(ctx, 'FE', 0, 0, 6, '#fff', true);
+    }},
+    { id:'hydrant', label:'Hydrant', cat:'fire', w:22, h:22, extrude3D:{h:3,color:C.fire}, draw(ctx,w,h){
+      circle(ctx, 0, 0, w*0.42, C.fire, C.fireDk, 1.5);
+      circle(ctx, 0, -w*0.45, w*0.17, '#ef4444', C.fireDk, 1);
+      circle(ctx, -w*0.4, w*0.22, w*0.17, '#ef4444', C.fireDk, 1);
+      circle(ctx, w*0.4, w*0.22, w*0.17, '#ef4444', C.fireDk, 1);
+      circle(ctx, 0, 0, w*0.17, C.fireLt, C.fireDk, 0.75);
+      textAt(ctx, 'H', 0, 0, 8, '#fff', true);
+    }},
+    { id:'pull', label:'Pull Station', cat:'fire', w:14, h:20, extrude3D:{h:2.5,color:C.fire}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, C.fire, C.fireDk, 1.5, 2);
+      rect(ctx, -w*0.3, h*0.1, w*0.6, h*0.3, '#fff', C.fireDk, 0.75, 1);
+      textAt(ctx, 'PS', 0, -h*0.2, 6, '#fff', true);
+    }},
+    { id:'smoke', label:'Smoke Detector', cat:'fire', w:18, h:18, extrude3D:{h:1.5,color:'#fff'}, draw(ctx,w,h){
+      circle(ctx, 0, 0, w*0.45, '#fff', '#888', 1.5);
+      circle(ctx, 0, 0, w*0.22, 'transparent', '#bbb', 0.75);
+      circle(ctx, 0, 0, 1.5, C.fire, null);
+    }},
+  ];
+
+  // ========== DOORS & WINDOWS ==========
+  const doors = [
+    { id:'door-l', label:'Door L-Swing', cat:'doors', w:30, h:8, draw(ctx,w,h){
+      // Opening break
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 4;
+      line(ctx, -w/2, 0, w/2, 0, '#fff', 4);
+      // Leaf
+      line(ctx, -w/2, 0, w/2, 0, C.orange, 1.5);
+      // Swing arc
+      ctx.strokeStyle = C.orange; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(-w/2, 0, w, 0, Math.PI/2); ctx.stroke();
+    }},
+    { id:'door-r', label:'Door R-Swing', cat:'doors', w:30, h:8, draw(ctx,w,h){
+      line(ctx, -w/2, 0, w/2, 0, '#fff', 4);
+      line(ctx, -w/2, 0, w/2, 0, C.orange, 1.5);
+      ctx.strokeStyle = C.orange; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(w/2, 0, w, Math.PI/2, Math.PI); ctx.stroke();
+    }},
+    { id:'door-d', label:'Double Door', cat:'doors', w:40, h:8, draw(ctx,w,h){
+      line(ctx, -w/2, 0, w/2, 0, '#fff', 4);
+      line(ctx, -w/2, 0, 0, 0, C.orange, 1.5);
+      line(ctx, 0, 0, w/2, 0, C.orange, 1.5);
+      ctx.strokeStyle = C.orange; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(-w/2, 0, w/2, 0, Math.PI/2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(w/2, 0, w/2, Math.PI/2, Math.PI); ctx.stroke();
+    }},
+    { id:'door-roll', label:'Rollup/Overhead', cat:'doors', w:40, h:10, extrude3D:{h:10,color:'#999'}, draw(ctx,w,h){
+      line(ctx, -w/2, 0, w/2, 0, '#fff', 4);
+      ctx.setLineDash([3, 2]);
+      line(ctx, -w/2, 0, w/2, 0, C.orange, 1.5);
+      ctx.setLineDash([]);
+      // Rollup housing box
+      rect(ctx, -w/2, -4, w, 3, '#999', '#555', 0.75);
+    }},
+    { id:'door-slide', label:'Sliding Door', cat:'doors', w:36, h:6, draw(ctx,w,h){
+      line(ctx, -w/2, 0, w/2, 0, '#fff', 4);
+      line(ctx, -w/2, -1, 0, -1, C.orange, 1.5);
+      line(ctx, 0, 1, w/2, 1, C.orange, 1.5);
+      line(ctx, -w/2, 0, w/2, 0, '#888', 0.5);
+    }},
+    { id:'door-pocket', label:'Pocket Door', cat:'doors', w:32, h:6, draw(ctx,w,h){
+      line(ctx, -w/2, 0, w/2, 0, '#fff', 4);
+      ctx.setLineDash([2, 2]);
+      line(ctx, -w/2, 0, w/2, 0, C.orange, 1);
+      ctx.setLineDash([]);
+      line(ctx, w/2-4, -2, w/2-4, 2, '#888', 1);
+    }},
+    { id:'door-bifold', label:'Bifold/Accordion', cat:'doors', w:32, h:8, draw(ctx,w,h){
+      line(ctx, -w/2, 0, w/2, 0, '#fff', 4);
+      // Zigzag
+      ctx.strokeStyle = C.orange; ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(-w/2, 0);
+      for (let i=0; i<4; i++) { ctx.lineTo(-w/2+w*(i+1)/4, i%2?0:-3); }
+      ctx.stroke();
+    }},
+    { id:'door-revolve', label:'Revolving', cat:'doors', w:28, h:28, draw(ctx,w,h){
+      circle(ctx, 0, 0, w*0.45, '#fff', C.orange, 1.5);
+      line(ctx, -w*0.4, 0, w*0.4, 0, C.orange, 1);
+      line(ctx, 0, -w*0.4, 0, w*0.4, C.orange, 1);
+      line(ctx, -w*0.28, -w*0.28, w*0.28, w*0.28, C.orange, 0.75);
+      line(ctx, w*0.28, -w*0.28, -w*0.28, w*0.28, C.orange, 0.75);
+    }},
+    { id:'win-3', label:"Window 3'", cat:'doors', w:24, h:6, draw(ctx,w,h){
+      line(ctx, -w/2, 0, w/2, 0, '#fff', 4);
+      line(ctx, -w/2, -1.5, w/2, -1.5, C.blue, 0.75);
+      line(ctx, -w/2, 0, w/2, 0, C.blue, 0.75);
+      line(ctx, -w/2, 1.5, w/2, 1.5, C.blue, 0.75);
+    }},
+    { id:'win-4', label:"Window 4'", cat:'doors', w:32, h:6, draw(ctx,w,h){
+      line(ctx, -w/2, 0, w/2, 0, '#fff', 4);
+      line(ctx, -w/2, -1.5, w/2, -1.5, C.blue, 0.75);
+      line(ctx, -w/2, 0, w/2, 0, C.blue, 0.75);
+      line(ctx, -w/2, 1.5, w/2, 1.5, C.blue, 0.75);
+    }},
+    { id:'win-6', label:"Window 6'", cat:'doors', w:48, h:6, draw(ctx,w,h){
+      line(ctx, -w/2, 0, w/2, 0, '#fff', 4);
+      line(ctx, -w/2, -1.5, w/2, -1.5, C.blue, 0.75);
+      line(ctx, -w/2, 0, w/2, 0, C.blue, 0.75);
+      line(ctx, -w/2, 1.5, w/2, 1.5, C.blue, 0.75);
+    }},
+    { id:'exit', label:'EXIT Sign', cat:'doors', w:28, h:14, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, C.green, '#166534', 1.5, 2);
+      textAt(ctx, 'EXIT', 0, 0, 9, '#fff', true);
+    }},
+  ];
+
+  // ========== ACCESS ==========
+  const access = [
+    { id:'stairs', label:'Stairs', cat:'access', w:36, h:28, extrude3D:{h:3,color:C.wood}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, C.woodLt, C.woodDk, 1);
+      for (let i=1; i<6; i++) {
+        line(ctx, -w/2, -h/2 + h*i/6, w/2, -h/2 + h*i/6, C.woodDk, 0.75);
+      }
+      // Up arrow
+      ctx.fillStyle = C.fire;
+      ctx.beginPath();
+      ctx.moveTo(0, -h*0.3);
+      ctx.lineTo(-w*0.12, -h*0.1);
+      ctx.lineTo(w*0.12, -h*0.1);
+      ctx.closePath(); ctx.fill();
+    }},
+    { id:'elevator', label:'Elevator', cat:'access', w:28, h:28, extrude3D:{h:10,color:'#d1d5db'}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#f0f0f0', '#888', 1.5, 2);
+      line(ctx, 0, -h/2+3, 0, h/2-3, '#aaa', 1);
+      line(ctx, -w/2+3, -h/2+3, w/2-3, h/2-3, '#bbb', 0.5);
+      line(ctx, w/2-3, -h/2+3, -w/2+3, h/2-3, '#bbb', 0.5);
+      textAt(ctx, 'ELEV', 0, 0, 8, '#666', true);
+    }},
+    { id:'roof', label:'Roof Access', cat:'access', w:24, h:24, extrude3D:{h:2,color:C.orange}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#fef3c7', '#f59e0b', 1.5, 2);
+      // Ladder rungs
+      line(ctx, -w*0.3, -h*0.35, w*0.3, -h*0.35, '#d97706', 1);
+      line(ctx, -w*0.3, -h*0.1, w*0.3, -h*0.1, '#d97706', 1);
+      line(ctx, -w*0.3, h*0.15, w*0.3, h*0.15, '#d97706', 1);
+      textAt(ctx, 'ROOF', 0, h*0.32, 6, '#d97706', true);
+    }},
+    { id:'knox', label:'Knox Box', cat:'access', w:22, h:18, extrude3D:{h:1.5,color:C.orange}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#f97316', '#c2410c', 1.5, 2);
+      circle(ctx, 0, -1, 3, '#1f1f1f', null);
+      rect(ctx, -1, 1, 2, 5, '#1f1f1f', null);
+      textAt(ctx, 'K', 0, -h*0.35, 5, '#fff', true);
+    }},
+  ];
+
+  // ========== UTILITIES ==========
+  const utilities = [
+    { id:'elec', label:'Electric Panel', cat:'utilities', w:22, h:30, extrude3D:{h:4,color:'#d1d5db'}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#d1d5db', '#4b5563', 1.5, 2);
+      for (let i=0; i<5; i++) {
+        rect(ctx, -w*0.3, -h*0.35 + i*h*0.15, w*0.6, h*0.08, '#1f2937', '#000', 0.5);
+      }
+      line(ctx, 0, -h*0.35, 0, h*0.35, '#6b7280', 0.5);
+    }},
+    { id:'elec-off', label:'Elec Shutoff', cat:'utilities', w:22, h:22, extrude3D:{h:2,color:'#dc2626'}, draw(ctx,w,h){
+      circle(ctx, 0, 0, w*0.45, '#fbbf24', '#b45309', 1.5);
+      textAt(ctx, '⚡', 0, -h*0.1, 10, '#7c2d12', true);
+      textAt(ctx, 'OFF', 0, h*0.22, 6, C.fire, true);
+    }},
+    { id:'gas-off', label:'Gas Shutoff', cat:'utilities', w:22, h:22, extrude3D:{h:2,color:'#fbbf24'}, draw(ctx,w,h){
+      circle(ctx, 0, 0, w*0.45, '#fbbf24', '#b45309', 1.5);
+      textAt(ctx, 'G', 0, -h*0.1, 10, '#7c2d12', true);
+      textAt(ctx, 'OFF', 0, h*0.22, 6, C.fire, true);
+    }},
+    { id:'water-off', label:'Water Shutoff', cat:'utilities', w:22, h:22, extrude3D:{h:2,color:C.cyan}, draw(ctx,w,h){
+      circle(ctx, 0, 0, w*0.45, '#67e8f9', '#0891b2', 1.5);
+      textAt(ctx, 'W', 0, -h*0.1, 10, '#164e63', true);
+      textAt(ctx, 'OFF', 0, h*0.22, 6, C.fire, true);
+    }},
+    { id:'hvac', label:'HVAC', cat:'utilities', w:36, h:24, extrude3D:{h:4,color:'#9ca3af'}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#9ca3af', '#4b5563', 1.5, 2);
+      // Fan blades
+      circle(ctx, 0, 0, h*0.3, '#d1d5db', '#6b7280', 1);
+      for (let i=0; i<4; i++) {
+        ctx.save(); ctx.rotate(i * Math.PI/2);
+        rect(ctx, -1, -h*0.28, 2, h*0.2, '#6b7280', null); ctx.restore();
+      }
+      circle(ctx, 0, 0, 1.5, '#1f2937', null);
+    }},
+    { id:'gen', label:'Generator', cat:'utilities', w:32, h:22, extrude3D:{h:3.5,color:'#374151'}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#374151', '#1f2937', 1.5, 3);
+      rect(ctx, -w*0.3, -h*0.25, w*0.6, h*0.3, '#f59e0b', '#b45309', 0.75, 1);
+      textAt(ctx, 'GEN', 0, h*0.25, 7, '#fff', true);
+    }},
+  ];
+
+  // ========== FURNITURE ==========
+  const furniture = [
+    { id:'bed', label:'Bed', cat:'furniture', w:45, h:70, extrude3D:{h:1.8,color:C.fabric}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#f0ebe3', '#888', 1.5, 3);
+      // Pillows
+      rect(ctx, -w*0.4, -h*0.42, w*0.35, h*0.12, '#fff', '#aaa', 0.75, 4);
+      rect(ctx, w*0.05, -h*0.42, w*0.35, h*0.12, '#fff', '#aaa', 0.75, 4);
+      // Headboard
+      rect(ctx, -w/2-2, -h/2-2, w+4, 4, '#8B7355', '#6B5335', 1, 1);
+      // Sheet fold line
+      line(ctx, -w/2+3, -h*0.2, w/2-3, -h*0.2, '#ccc', 0.75);
+    }},
+    { id:'sofa', label:'Sofa', cat:'furniture', w:55, h:26, extrude3D:{h:2.8,color:C.fabric}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#ddd6c8', '#888', 1.5, 4);
+      // Back
+      rect(ctx, -w/2+2, -h/2+2, w-4, h*0.25, '#c8bfaf', '#999', 0.75, 3);
+      // Arms
+      rect(ctx, -w/2+2, -h/2+2, h*0.35, h-4, '#c8bfaf', '#999', 0.75, 3);
+      rect(ctx, w/2-h*0.35-2, -h/2+2, h*0.35, h-4, '#c8bfaf', '#999', 0.75, 3);
+      // Cushion divisions
+      for (let i=1; i<3; i++) {
+        line(ctx, -w/2 + h*0.35 + (w-h*0.7)*i/3, h*0.05, -w/2 + h*0.35 + (w-h*0.7)*i/3, h/2-3, '#b0a898', 0.75);
+      }
+    }},
+    { id:'desk', label:'Desk', cat:'furniture', w:55, h:28, extrude3D:{h:2.5,color:C.wood}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#e8dfd0', '#888', 1.5, 2);
+      // Drawer unit
+      rect(ctx, w*0.15, -h*0.35, w*0.3, h*0.7, 'transparent', '#aaa', 1, 1);
+      for (let i=1; i<3; i++) {
+        line(ctx, w*0.15, -h*0.35 + h*0.7*i/3, w*0.45, -h*0.35 + h*0.7*i/3, '#bbb', 0.75);
+      }
+    }},
+    { id:'l-desk', label:'L-Desk', cat:'furniture', w:54, h:38, extrude3D:{h:2.5,color:C.wood}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h*0.45, '#e8dfd0', '#888', 1.5, 2);
+      rect(ctx, w*0.2, -h/2, w*0.3, h, '#e8dfd0', '#888', 1.5, 2);
+    }},
+    { id:'table', label:'Table', cat:'furniture', w:40, h:28, extrude3D:{h:2.5,color:C.wood}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#e8dfd0', '#888', 1.5, 2);
+    }},
+    { id:'round-table', label:'Round Table', cat:'furniture', w:36, h:36, extrude3D:{h:2.5,color:C.wood}, draw(ctx,w,h){
+      circle(ctx, 0, 0, Math.min(w,h)/2, '#e8dfd0', '#888', 1.5);
+    }},
+    { id:'conf-table', label:'Conf Table', cat:'furniture', w:80, h:28, extrude3D:{h:2.5,color:C.wood}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#ddd6c8', '#888', 1.5, h/2);
+      line(ctx, -w/3, 0, w/3, 0, '#c0b8a8', 0.75);
+    }},
+    { id:'chair', label:'Chair', cat:'furniture', w:18, h:18, extrude3D:{h:2.5,color:C.fabric}, draw(ctx,w,h){
+      circle(ctx, 0, 0, w*0.45, '#f5f0e8', '#666', 1.5);
+      // Back curve
+      ctx.strokeStyle = '#666'; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.arc(0, -w*0.1, w*0.5, Math.PI*0.8, Math.PI*1.2); ctx.stroke();
+    }},
+    { id:'rolling-chair', label:'Office Chair', cat:'furniture', w:20, h:20, extrude3D:{h:3,color:C.fabric}, draw(ctx,w,h){
+      // Base wheels
+      circle(ctx, 0, 0, w*0.52, 'transparent', '#999', 0.75);
+      for (let i=0; i<5; i++) {
+        const a = Math.PI*2*i/5 - Math.PI/2;
+        circle(ctx, w*0.48*Math.cos(a), w*0.48*Math.sin(a), 1.5, '#888', '#555', 0.5);
+      }
+      // Seat
+      circle(ctx, 0, 0, w*0.35, '#e8e0d4', '#666', 1.5);
+      // Back
+      ctx.strokeStyle = '#555'; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.arc(0, -w*0.08, w*0.4, Math.PI*0.75, Math.PI*1.25); ctx.stroke();
+    }},
+    { id:'bookshelf', label:'Bookshelf', cat:'furniture', w:28, h:14, extrude3D:{h:6,color:C.wood}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#d4c4a8', '#888', 1.5);
+      for (let i=1; i<4; i++) line(ctx, -w/2+2, -h/2 + h*i/4, w/2-2, -h/2 + h*i/4, '#a89878', 1);
+      for (let i=0; i<6; i++) {
+        const x = -w/2 + 4 + i*(w-8)/6;
+        line(ctx, x, -h/2+2, x, h/2-2, '#c0b090', 0.5);
+      }
+    }},
+    { id:'cubicle', label:'Cubicle', cat:'furniture', w:40, h:40, extrude3D:{h:5,color:'#c5bba8'}, draw(ctx,w,h){
+      line(ctx, -w/2, -h/2, w/2, -h/2, '#777', 3.5);
+      line(ctx, -w/2, -h/2, -w/2, h/2, '#777', 3.5);
+      line(ctx, w/2, -h/2, w/2, h/2, '#777', 3.5);
+      rect(ctx, -w*0.35, -h*0.15, w*0.7, h*0.3, '#e8dfd0', '#aaa', 0.75, 1);
+    }},
+    { id:'file-cab', label:'File Cab Tall', cat:'furniture', w:16, h:20, extrude3D:{h:5,color:'#d1d5db'}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#d0d0d0', '#888', 1.5, 1);
+      for (let i=0; i<4; i++) {
+        const dy = -h/2 + h*i/4 + h/8;
+        rect(ctx, -w/2+2, dy-h*0.08, w-4, h*0.16, 'transparent', '#aaa', 0.5, 1);
+        line(ctx, -2, dy, 2, dy, '#888', 1.5);
+      }
+    }},
+    { id:'file-lateral', label:'Lateral File', cat:'furniture', w:32, h:14, extrude3D:{h:3,color:'#d1d5db'}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#d0d0d0', '#888', 1.5, 1);
+      for (let i=0; i<2; i++) {
+        const dy = -h/2 + h*i/2 + h/4;
+        rect(ctx, -w/2+2, dy-h*0.15, w-4, h*0.3, 'transparent', '#aaa', 0.5, 1);
+        line(ctx, -2, dy, 2, dy, '#888', 1.5);
+      }
+    }},
+    { id:'tv', label:'TV/Monitor', cat:'furniture', w:32, h:6, extrude3D:{h:2,color:'#1f1f1f'}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#1f2937', '#0f172a', 1, 1);
+      line(ctx, -w/2+2, h/2-2, w/2-2, h/2-2, C.cyan, 0.75);
+      textAt(ctx, 'TV', 0, -h/2-5, 7, '#555', true);
+    }},
+    { id:'fridge', label:'Refrigerator', cat:'furniture', w:28, h:30, extrude3D:{h:6,color:C.white}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#eee', '#888', 1.5, 2);
+      line(ctx, 0, -h/2+3, 0, h/2-3, '#bbb', 1);
+      line(ctx, 3, -h*0.2, 3, h*0.2, '#999', 2);
+      line(ctx, -3, -h*0.2, -3, h*0.2, '#999', 2);
+    }},
+    { id:'stove', label:'Stove/Range', cat:'furniture', w:28, h:28, extrude3D:{h:3,color:'#fff'}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#e5e7eb', '#6b7280', 1.5, 2);
+      // 4 burners
+      circle(ctx, -w*0.22, -h*0.22, 4, '#1f1f1f', '#4b5563', 0.75);
+      circle(ctx, w*0.22, -h*0.22, 4, '#1f1f1f', '#4b5563', 0.75);
+      circle(ctx, -w*0.22, h*0.22, 4, '#1f1f1f', '#4b5563', 0.75);
+      circle(ctx, w*0.22, h*0.22, 4, '#1f1f1f', '#4b5563', 0.75);
+    }},
+    { id:'sink', label:'Kitchen Sink', cat:'furniture', w:30, h:20, extrude3D:{h:1,color:C.metalLt}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#e5e7eb', '#6b7280', 1.5, 2);
+      rect(ctx, -w*0.35, -h*0.3, w*0.3, h*0.6, '#9ca3af', '#4b5563', 0.75, 2);
+      rect(ctx, w*0.05, -h*0.3, w*0.3, h*0.6, '#9ca3af', '#4b5563', 0.75, 2);
+      circle(ctx, 0, -h*0.4, 1.5, '#4b5563', null);
+    }},
+    { id:'dw', label:'Dishwasher', cat:'furniture', w:22, h:22, extrude3D:{h:3.5,color:C.white}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#e8e8e8', '#888', 1.5, 2);
+      rect(ctx, -w*0.4, -h*0.4, w*0.8, h*0.15, '#d0d0d0', '#aaa', 0.75, 1);
+      line(ctx, -w*0.2, -h*0.15, w*0.2, -h*0.15, '#999', 2);
+      textAt(ctx, 'DW', 0, h*0.15, 7, '#888', true);
+    }},
+    { id:'toilet', label:'Toilet', cat:'furniture', w:18, h:22, extrude3D:{h:1.4,color:C.white}, draw(ctx,w,h){
+      rect(ctx, -w*0.35, -h*0.5, w*0.7, h*0.35, '#fff', '#888', 1.5, 3);
+      ctx.fillStyle = '#fff'; ctx.strokeStyle = '#888'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.ellipse(0, h*0.05, w*0.4, h*0.45, 0, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(0, h*0.07, w*0.25, h*0.3, 0, 0, Math.PI*2); ctx.strokeStyle='#bbb'; ctx.lineWidth=0.75; ctx.stroke();
+    }},
+    { id:'tub', label:'Bathtub', cat:'furniture', w:45, h:25, extrude3D:{h:1.5,color:C.white}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#f0f8ff', '#888', 2, h*0.4);
+      rect(ctx, -w/2+4, -h/2+4, w-8, h-8, '#e0f0ff', '#aac8e8', 1, h*0.35);
+      circle(ctx, 0, h*0.3, 2, '#999', null);
+      circle(ctx, 0, -h*0.35, 3, '#ccc', '#999', 0.75);
+    }},
+    { id:'shower', label:'Shower', cat:'furniture', w:28, h:28, extrude3D:{h:7,color:'#e5e7eb'}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#e8f4fd', '#888', 1.5, 2);
+      circle(ctx, -w*0.3, -h*0.3, 3, '#ddd', '#999', 1);
+      for (let i=0; i<3; i++) for (let j=0; j<3; j++) {
+        circle(ctx, -w*0.18 + i*w*0.18, -h*0.18 + j*h*0.18, 0.8, '#a0d0f0', null);
+      }
+      circle(ctx, 0, 0, 2, '#999', null);
+    }},
+    { id:'bath-sink', label:'Bath Sink', cat:'furniture', w:22, h:15, extrude3D:{h:2.8,color:C.white}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#fff', '#888', 1.5, 3);
+      ctx.beginPath(); ctx.ellipse(0, h*0.1, w*0.35, h*0.3, 0, 0, Math.PI*2);
+      ctx.fillStyle = '#e5e7eb'; ctx.strokeStyle = '#999'; ctx.lineWidth = 0.75; ctx.fill(); ctx.stroke();
+      circle(ctx, 0, -h*0.3, 1.5, '#4b5563', null);
+    }},
+  ];
+
+  // ========== MERCANTILE ==========
+  const mercantile = [
+    { id:'clothes-rack', label:'Clothes Rack', cat:'mercantile', w:60, h:18, extrude3D:{h:6,color:C.metal}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#fef3c7', '#f59e0b', 1, 1);
+      // Hangers
+      for (let i=0; i<6; i++) {
+        const x = -w/2 + (w/7)*(i+1);
+        line(ctx, x-3, -h*0.25, x+3, -h*0.25, '#999', 0.75);
+        line(ctx, x, -h*0.25, x, h*0.25, '#555', 1.5);
+      }
+    }},
+    { id:'display-case', label:'Display Case', cat:'mercantile', w:40, h:20, extrude3D:{h:3.5,color:C.glass}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, C.glass, C.glassEdge, 1.5, 1);
+      line(ctx, -w/2+3, 0, w/2-3, 0, C.glassEdge, 0.5);
+      for (let i=1; i<3; i++) line(ctx, -w/2+(w/3)*i, -h/2+2, -w/2+(w/3)*i, h/2-2, C.glassEdge, 0.5);
+    }},
+    { id:'shelf-aisle', label:'Shelving Aisle', cat:'mercantile', w:90, h:14, extrude3D:{h:7,color:C.metalLt}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#d1d5db', '#6b7280', 1, 1);
+      // Vertical dividers
+      for (let i=1; i<8; i++) line(ctx, -w/2 + (w/8)*i, -h/2, -w/2 + (w/8)*i, h/2, '#9ca3af', 0.5);
+      line(ctx, -w/2, 0, w/2, 0, '#6b7280', 0.5);
+    }},
+    { id:'checkout', label:'Checkout Counter', cat:'mercantile', w:50, h:22, extrude3D:{h:3.5,color:C.woodLt}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#d4c4a8', '#78543c', 1.5, 2);
+      rect(ctx, w*0.1, -h*0.3, w*0.15, h*0.2, '#1f1f1f', '#000', 0.75);
+      textAt(ctx, 'CHECKOUT', 0, h*0.25, 6, '#78543c', true);
+    }},
+    { id:'register', label:'Cash Register', cat:'mercantile', w:16, h:14, extrude3D:{h:2,color:'#d1d5db'}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#d0d0d0', '#888', 1.5, 2);
+      rect(ctx, -w*0.3, -h*0.3, w*0.6, h*0.25, '#1f1f1f', '#555', 0.75, 1);
+      rect(ctx, -w*0.4, h*0.05, w*0.8, h*0.3, '#bbb', '#999', 0.75);
+      textAt(ctx, '$', 0, h*0.22, 6, '#666', true);
+    }},
+    { id:'cart-corral', label:'Cart Corral', cat:'mercantile', w:50, h:30, extrude3D:{h:2.5,color:C.metalLt}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, 'transparent', '#6b7280', 2);
+      // Carts
+      for (let i=0; i<4; i++) {
+        rect(ctx, -w*0.4 + i*w*0.22, -h*0.1, w*0.18, h*0.35, '#e5e7eb', '#9ca3af', 0.75, 1);
+      }
+    }},
+    { id:'freezer', label:'Freezer Case', cat:'mercantile', w:60, h:22, extrude3D:{h:3,color:C.cyan}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, C.glass, '#67e8f9', 1.5, 2);
+      ctx.setLineDash([4, 3]);
+      line(ctx, -w/2+3, -h*0.1, w/2-3, -h*0.1, '#0891b2', 0.75);
+      ctx.setLineDash([]);
+      textAt(ctx, 'FREEZER', 0, h*0.2, 7, '#0891b2', true);
+    }},
+    { id:'cooler', label:'Walk-in Cooler', cat:'mercantile', w:60, h:50, extrude3D:{h:9,color:C.metalLt}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#e5e7eb', '#6b7280', 2, 2);
+      rect(ctx, -w*0.45, -h*0.45, w*0.9, h*0.9, 'transparent', '#9ca3af', 0.75, 1);
+      textAt(ctx, 'COOLER', 0, 0, 9, '#4b5563', true);
+    }},
+    { id:'storage', label:'Storage Room', cat:'mercantile', w:55, h:45, extrude3D:{h:9,color:'#c5bba8'}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#fef9c3', '#ca8a04', 1.5, 2);
+      textAt(ctx, 'STORAGE', 0, 0, 10, '#713f12', true);
+    }},
+  ];
+
+  // ========== ADA ==========
+  const ada = [
+    { id:'handicap', label:'Handicap Sym', cat:'ada', w:22, h:22, draw(ctx,w,h){
+      circle(ctx, 0, 0, w*0.48, C.blue, '#1e3a8a', 1.5);
+      // Stick figure on wheel
+      ctx.fillStyle = '#fff';
+      circle(ctx, 0, -w*0.15, 2.5, '#fff', null);
+      ctx.fillRect(-1.5, -w*0.08, 3, w*0.25);
+      circle(ctx, 0, w*0.22, w*0.18, 'transparent', '#fff', 2);
+    }},
+    { id:'ada-park', label:'ADA Parking', cat:'ada', w:30, h:22, extrude3D:{h:0.1,color:C.blue}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, C.blue, '#1e3a8a', 1.5, 2);
+      circle(ctx, 0, -h*0.1, h*0.2, 'transparent', '#fff', 1.5);
+      textAt(ctx, 'ADA', 0, h*0.3, 6, '#fff', true);
+    }},
+    { id:'ada-ramp', label:'Wheelchair Ramp', cat:'ada', w:40, h:22, extrude3D:{h:0.5,color:'#a78bfa'}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#a78bfa', '#6d28d9', 1.5, 2);
+      for (let i=0; i<5; i++) line(ctx, -w*0.4 + i*w*0.2, -h*0.3, -w*0.4 + i*w*0.2, h*0.3, '#6d28d9', 0.75);
+      textAt(ctx, 'RAMP', 0, 0, 7, '#fff', true);
+    }},
+    { id:'ada-restroom', label:'ADA Restroom', cat:'ada', w:24, h:22, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, C.blue, '#1e3a8a', 1.5, 2);
+      textAt(ctx, '♿', 0, 0, 12, '#fff', true);
+    }},
+    { id:'ada-elev', label:'ADA Elevator', cat:'ada', w:24, h:26, extrude3D:{h:10,color:'#d1d5db'}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#eff6ff', C.blue, 1.5, 2);
+      line(ctx, 0, -h/2+2, 0, h/2-2, '#bfdbfe', 1);
+      textAt(ctx, '♿', 0, -h*0.18, 8, C.blue, true);
+      textAt(ctx, 'ELEV', 0, h*0.2, 6, C.blue, true);
+    }},
+    { id:'auto-door', label:'Auto Door', cat:'ada', w:36, h:10, draw(ctx,w,h){
+      line(ctx, -w/2, 0, w/2, 0, '#fff', 4);
+      line(ctx, -w/2, 0, w/2, 0, C.blue, 1.5);
+      // Sensor indicator
+      circle(ctx, 0, -h*0.3, 1.5, C.blue, '#fff', 0.5);
+      textAt(ctx, 'AUTO', 0, h*0.5, 5, C.blue, true);
+    }},
+  ];
+
+  // ========== OBSTRUCTIONS ==========
+  const obstructions = [
+    { id:'tree', label:'Tree', cat:'obstructions', w:30, h:30, extrude3D:{h:16,color:C.green}, draw(ctx,w,h){
+      // Canopy layers
+      circle(ctx, 0, 0, w*0.48, '#86efac', '#166534', 1);
+      circle(ctx, -w*0.15, -w*0.1, w*0.3, '#4ade80', null);
+      circle(ctx, w*0.15, -w*0.05, w*0.28, '#22c55e', null);
+      circle(ctx, 0, w*0.12, w*0.25, '#16a34a', null);
+      // Trunk
+      circle(ctx, 0, 0, w*0.08, C.woodDk, '#422006', 0.5);
+    }},
+    { id:'shrub', label:'Shrub/Bush', cat:'obstructions', w:18, h:18, extrude3D:{h:3.5,color:C.green}, draw(ctx,w,h){
+      circle(ctx, -w*0.2, 0, w*0.3, '#86efac', '#166534', 0.75);
+      circle(ctx, w*0.2, -w*0.08, w*0.28, '#22c55e', '#166534', 0.75);
+      circle(ctx, 0, w*0.15, w*0.28, '#4ade80', '#166534', 0.75);
+    }},
+    { id:'powerline', label:'Power Lines', cat:'obstructions', w:50, h:14, draw(ctx,w,h){
+      // Pole
+      rect(ctx, -w*0.04, -h/2, w*0.08, h, C.woodDk, '#422006', 0.75);
+      // Crossarm
+      line(ctx, -w*0.3, -h*0.3, w*0.3, -h*0.3, '#6b7280', 1.5);
+      // Wires
+      for (let i=0; i<3; i++) {
+        ctx.strokeStyle = '#1f1f1f'; ctx.lineWidth = 0.5;
+        ctx.beginPath(); ctx.moveTo(-w/2, -h*0.3 + i*3); ctx.quadraticCurveTo(0, h*0.1 + i*3, w/2, -h*0.3 + i*3); ctx.stroke();
+      }
+      textAt(ctx, '⚡', 0, h*0.25, 8, C.amber);
+    }},
+    { id:'gas-line', label:'Gas Line', cat:'obstructions', w:60, h:6, draw(ctx,w,h){
+      line(ctx, -w/2, 0, w/2, 0, '#fbbf24', 3);
+      ctx.setLineDash([6, 3]);
+      line(ctx, -w/2, 0, w/2, 0, '#92400e', 1);
+      ctx.setLineDash([]);
+      textAt(ctx, 'GAS', 0, -h-1, 6, '#92400e', true);
+    }},
+    { id:'water-line', label:'Water Line', cat:'obstructions', w:60, h:6, draw(ctx,w,h){
+      line(ctx, -w/2, 0, w/2, 0, C.blueLt, 3);
+      ctx.setLineDash([6, 3]);
+      line(ctx, -w/2, 0, w/2, 0, '#1e40af', 1);
+      ctx.setLineDash([]);
+      textAt(ctx, 'H2O', 0, -h-1, 6, '#1e40af', true);
+    }},
+    { id:'fence', label:'Fence', cat:'obstructions', w:50, h:6, extrude3D:{h:6,color:C.wood}, draw(ctx,w,h){
+      line(ctx, -w/2, 0, w/2, 0, C.woodDk, 2);
+      for (let i=0; i<11; i++) {
+        const x = -w/2 + (w/10)*i;
+        line(ctx, x, -3, x, 3, C.woodDk, 0.75);
+      }
+    }},
+    { id:'bollard', label:'Bollard', cat:'obstructions', w:12, h:12, extrude3D:{h:4,color:'#fbbf24'}, draw(ctx,w,h){
+      circle(ctx, 0, 0, w*0.4, '#fbbf24', '#b45309', 1.5);
+      circle(ctx, 0, 0, w*0.25, '#fef3c7', null);
+    }},
+    { id:'limited', label:'Limited Access', cat:'obstructions', w:28, h:16, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#fef08a', '#ca8a04', 1.5, 2);
+      textAt(ctx, '!', 0, 0, 12, '#854d0e', true);
+      textAt(ctx, 'LIMITED', 0, h*0.35, 5, '#854d0e', true);
+    }},
+    { id:'no-access', label:'No Access', cat:'obstructions', w:20, h:20, draw(ctx,w,h){
+      circle(ctx, 0, 0, w*0.45, '#fff', C.fire, 2);
+      line(ctx, -w*0.3, -w*0.3, w*0.3, w*0.3, C.fire, 2.5);
+    }},
+    { id:'overhead', label:'Overhead Obst', cat:'obstructions', w:30, h:14, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#fde68a', '#ca8a04', 1.5, 2);
+      textAt(ctx, '↕', 0, -h*0.1, 10, '#854d0e', true);
+      textAt(ctx, 'HEIGHT', 0, h*0.3, 5, '#854d0e', true);
+    }},
+  ];
+
+  // ========== MECHANICAL ==========
+  const mechanical = [
+    { id:'vehicle-lift', label:'Vehicle Lift', cat:'mechanical', w:70, h:22, extrude3D:{h:0.5,color:C.metalDk}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h*0.1, w, h*0.2, '#6b7280', '#1f2937', 1.5);
+      rect(ctx, -w*0.35, -h/2, w*0.05, h, '#4b5563', '#000', 1);
+      rect(ctx, w*0.3, -h/2, w*0.05, h, '#4b5563', '#000', 1);
+      textAt(ctx, 'LIFT', 0, h*0.3, 7, '#1f2937', true);
+    }},
+    { id:'tool-bench', label:'Tool Bench', cat:'mechanical', w:55, h:22, extrude3D:{h:3,color:C.wood}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#a78160', '#78543c', 1.5);
+      for (let i=0; i<6; i++) {
+        rect(ctx, -w*0.4 + i*w*0.15, -h*0.35, w*0.1, h*0.15, '#555', '#000', 0.5);
+      }
+      rect(ctx, -w*0.4, h*0.1, w*0.8, h*0.25, '#78543c', null);
+    }},
+    { id:'compressor', label:'Air Compressor', cat:'mechanical', w:30, h:20, extrude3D:{h:3.5,color:C.fire}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h*0.15, w, h*0.45, C.fire, C.fireDk, 1.5, 2);
+      // Tank
+      ctx.beginPath(); ctx.ellipse(0, h*0.25, w*0.35, h*0.18, 0, 0, Math.PI*2);
+      ctx.fillStyle = C.fire; ctx.strokeStyle = C.fireDk; ctx.lineWidth = 1.5; ctx.fill(); ctx.stroke();
+      // Motor
+      rect(ctx, -w*0.15, -h*0.4, w*0.3, h*0.2, '#1f2937', '#000', 0.75, 1);
+    }},
+    { id:'welder', label:'Welding Station', cat:'mechanical', w:28, h:30, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, C.amber, '#92400e', 1.5, 2);
+      textAt(ctx, '⚡', 0, -h*0.1, 14, '#fff', true);
+      textAt(ctx, 'WELD', 0, h*0.3, 6, '#fff', true);
+    }},
+    { id:'paint-booth', label:'Paint Booth', cat:'mechanical', w:60, h:50, extrude3D:{h:9,color:'#a855f7'}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#f3e8ff', '#7c3aed', 2, 2);
+      // Door line
+      line(ctx, -w*0.4, h*0.45, w*0.4, h*0.45, '#7c3aed', 1.5);
+      textAt(ctx, 'PAINT', 0, 0, 10, '#6d28d9', true);
+      textAt(ctx, 'BOOTH', 0, h*0.2, 8, '#6d28d9', true);
+    }},
+    { id:'oil-pit', label:'Oil Change Pit', cat:'mechanical', w:60, h:22, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#1f2937', '#000', 2, 1);
+      ctx.setLineDash([3, 2]);
+      rect(ctx, -w*0.45, -h*0.4, w*0.9, h*0.8, 'transparent', C.amber, 1);
+      ctx.setLineDash([]);
+      textAt(ctx, 'OIL PIT', 0, 0, 8, C.amber, true);
+    }},
+    { id:'conveyor', label:'Conveyor', cat:'mechanical', w:80, h:14, extrude3D:{h:3,color:C.metalDk}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#4b5563', '#1f2937', 1.5, 1);
+      ctx.setLineDash([4, 3]);
+      line(ctx, -w/2+3, 0, w/2-3, 0, '#fbbf24', 1);
+      ctx.setLineDash([]);
+      for (let i=0; i<2; i++) {
+        circle(ctx, -w/2+6 + i*(w-12), 0, h*0.3, '#1f2937', '#000', 0.75);
+      }
+    }},
+    { id:'forklift', label:'Forklift Area', cat:'mechanical', w:40, h:24, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#fef3c7', C.amber, 1.5, 2);
+      textAt(ctx, '🛠', 0, 0, 10);
+      textAt(ctx, 'FORKLIFT', 0, h*0.3, 6, '#854d0e', true);
+    }},
+    { id:'crane', label:'Overhead Crane', cat:'mechanical', w:70, h:10, extrude3D:{h:14,color:C.metalDk}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#4b5563', '#000', 1.5);
+      for (let i=0; i<7; i++) line(ctx, -w*0.4 + i*w*0.13, -h*0.4, -w*0.4 + i*w*0.13, h*0.4, '#1f2937', 0.75);
+      textAt(ctx, 'CRANE', 0, 0, 6, '#fff', true);
+    }},
+    { id:'machine', label:'Machinery', cat:'mechanical', w:38, h:30, extrude3D:{h:5,color:C.metalDk}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#6b7280', '#1f2937', 1.5, 2);
+      rect(ctx, -w*0.35, -h*0.35, w*0.7, h*0.3, '#1f2937', '#000', 0.75, 1);
+      circle(ctx, -w*0.25, h*0.15, 3, '#fbbf24', null);
+      circle(ctx, w*0.25, h*0.15, 3, '#16a34a', null);
+    }},
+    { id:'pallet', label:'Pallet Rack', cat:'mechanical', w:45, h:22, extrude3D:{h:12,color:C.metalDk}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#d4c4a8', C.woodDk, 1.5, 1);
+      // 6 pallets in grid
+      for (let r=0; r<2; r++) for (let c=0; c<3; c++) {
+        rect(ctx, -w*0.4 + c*w*0.3, -h*0.35 + r*h*0.4, w*0.22, h*0.3, '#a78160', C.woodDk, 0.5);
+      }
+    }},
+    { id:'loading', label:'Loading Dock', cat:'mechanical', w:45, h:20, extrude3D:{h:3.5,color:C.metalDk}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#6b7280', '#1f2937', 2, 1);
+      // Dock edge
+      line(ctx, -w/2, -h*0.3, w/2, -h*0.3, '#fbbf24', 2);
+      ctx.setLineDash([4, 3]);
+      line(ctx, -w/2, 0, w/2, 0, '#fbbf24', 0.75);
+      ctx.setLineDash([]);
+      textAt(ctx, 'DOCK', 0, h*0.25, 7, '#fbbf24', true);
+    }},
+  ];
+
+  // ========== ASSEMBLY ==========
+  const assembly = [
+    { id:'pew', label:'Pew/Seating', cat:'assembly', w:60, h:12, extrude3D:{h:1.8,color:C.wood}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, C.woodLt, C.woodDk, 1.5, 1);
+      // Seat + back split
+      line(ctx, -w/2+3, -h*0.15, w/2-3, -h*0.15, C.woodDk, 1);
+    }},
+    { id:'altar', label:'Altar', cat:'assembly', w:40, h:20, extrude3D:{h:3.5,color:C.wood}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#fde68a', C.woodDk, 1.5, 2);
+      rect(ctx, -w*0.35, -h*0.35, w*0.7, h*0.2, '#fef9c3', C.woodDk, 0.75);
+      textAt(ctx, 'ALTAR', 0, h*0.2, 8, '#78350f', true);
+    }},
+    { id:'pulpit', label:'Pulpit', cat:'assembly', w:20, h:18, extrude3D:{h:4,color:C.wood}, draw(ctx,w,h){
+      ctx.beginPath();
+      ctx.moveTo(-w/2, h/2);
+      ctx.lineTo(w/2, h/2);
+      ctx.lineTo(w*0.3, -h/2);
+      ctx.lineTo(-w*0.3, -h/2);
+      ctx.closePath();
+      ctx.fillStyle = C.wood; ctx.strokeStyle = C.woodDk; ctx.lineWidth = 1.5;
+      ctx.fill(); ctx.stroke();
+      textAt(ctx, 'P', 0, 0, 9, '#fff', true);
+    }},
+    { id:'baptistry', label:'Baptistry', cat:'assembly', w:32, h:28, extrude3D:{h:3.5,color:C.blueLt}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, C.blueLt, '#1e40af', 2, 3);
+      ctx.beginPath(); ctx.ellipse(0, 0, w*0.35, h*0.35, 0, 0, Math.PI*2);
+      ctx.fillStyle = '#bfdbfe'; ctx.fill();
+      textAt(ctx, '~', 0, 0, 14, '#1e40af', true);
+    }},
+    { id:'choir', label:'Choir Loft', cat:'assembly', w:50, h:30, extrude3D:{h:3,color:C.wood}, draw(ctx,w,h){
+      ctx.beginPath();
+      ctx.arc(0, h*0.2, w*0.45, Math.PI*1.15, Math.PI*1.85);
+      ctx.lineTo(-w*0.35, h*0.35);
+      ctx.lineTo(w*0.35, h*0.35);
+      ctx.closePath();
+      ctx.fillStyle = C.woodLt; ctx.strokeStyle = C.woodDk; ctx.lineWidth = 1.5;
+      ctx.fill(); ctx.stroke();
+      textAt(ctx, 'CHOIR', 0, h*0.15, 8, '#78350f', true);
+    }},
+    { id:'organ', label:'Organ/Piano', cat:'assembly', w:40, h:20, extrude3D:{h:4.5,color:'#111'}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#1f2937', '#000', 1.5, 2);
+      rect(ctx, -w*0.4, -h*0.2, w*0.8, h*0.15, '#fff', '#000', 0.5);
+      for (let i=0; i<12; i++) line(ctx, -w*0.4 + i*w*0.067, -h*0.2, -w*0.4 + i*w*0.067, -h*0.05, '#000', 0.5);
+      // Black keys
+      for (let i=0; i<8; i++) if (i%7!==2 && i%7!==6) rect(ctx, -w*0.4 + i*w*0.1 - w*0.02, -h*0.2, w*0.04, h*0.08, '#000', null);
+    }},
+    { id:'seat-row', label:'Seating Row', cat:'assembly', w:50, h:10, extrude3D:{h:2.5,color:C.fabricDk}, draw(ctx,w,h){
+      for (let i=0; i<7; i++) {
+        circle(ctx, -w*0.43 + i*w*0.145, 0, w*0.055, '#f5f0e8', '#666', 0.75);
+      }
+    }},
+    { id:'stage', label:'Stage', cat:'assembly', w:70, h:30, extrude3D:{h:3.5,color:C.woodDk}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#78350f', '#422006', 2, 1);
+      for (let i=0; i<6; i++) line(ctx, -w/2, -h/2 + h*i/6, w/2, -h/2 + h*i/6, '#422006', 0.5);
+      textAt(ctx, 'STAGE', 0, 0, 12, '#fde68a', true);
+    }},
+    { id:'bleachers', label:'Bleachers', cat:'assembly', w:60, h:30, extrude3D:{h:8,color:C.metalLt}, draw(ctx,w,h){
+      for (let i=0; i<5; i++) {
+        rect(ctx, -w/2, -h/2 + i*h/5, w, h/5-0.5, i%2?'#e5e7eb':'#d1d5db', '#6b7280', 0.5);
+      }
+    }},
+    { id:'concession', label:'Concession', cat:'assembly', w:40, h:22, extrude3D:{h:7,color:C.orange}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#fed7aa', '#c2410c', 1.5, 2);
+      // Awning stripes
+      for (let i=0; i<6; i++) rect(ctx, -w/2 + i*w/6, -h/2, w/6, h*0.2, i%2?'#fff':'#dc2626', null);
+      textAt(ctx, 'CONCESSIONS', 0, h*0.2, 6, '#7c2d12', true);
+    }},
+    { id:'ticket', label:'Ticket Booth', cat:'assembly', w:22, h:22, extrude3D:{h:7,color:C.orange}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#fef3c7', '#ca8a04', 1.5, 2);
+      rect(ctx, -w*0.35, -h*0.15, w*0.7, h*0.15, '#1f1f1f', null, 0);
+      textAt(ctx, 'TIX', 0, h*0.25, 6, '#854d0e', true);
+    }},
+  ];
+
+  // ========== HAZMAT ==========
+  const hazmat = [
+    { id:'nfpa704', label:'NFPA 704', cat:'hazmat', w:30, h:30, draw(ctx,w,h){
+      // Diamond
+      ctx.save(); ctx.rotate(Math.PI/4);
+      rect(ctx, -w*0.32, -w*0.32, w*0.64, w*0.64, '#fff', '#000', 1);
+      // 4 quadrants
+      rect(ctx, -w*0.32, -w*0.32, w*0.32, w*0.32, C.blue, null); // health
+      rect(ctx, 0, -w*0.32, w*0.32, w*0.32, C.fire, null);        // fire
+      rect(ctx, 0, 0, w*0.32, w*0.32, '#fbbf24', null);           // reactivity
+      rect(ctx, -w*0.32, 0, w*0.32, w*0.32, '#fff', null);        // special
+      ctx.restore();
+      textAt(ctx, 'H', -w*0.2, -w*0.05, 6, '#fff', true);
+      textAt(ctx, 'F', 0, -w*0.23, 6, '#fff', true);
+      textAt(ctx, 'R', w*0.2, -w*0.05, 6, '#fff', true);
+      textAt(ctx, 'W', 0, w*0.13, 6, '#000', true);
+    }},
+    { id:'hazmat-store', label:'Hazmat Storage', cat:'hazmat', w:36, h:30, extrude3D:{h:7,color:C.amber}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#fef3c7', '#ca8a04', 2, 2);
+      textAt(ctx, '☣', 0, -h*0.1, 14, '#7c2d12', true);
+      textAt(ctx, 'HAZMAT', 0, h*0.3, 7, '#7c2d12', true);
+    }},
+    { id:'fuel-tank', label:'Fuel Tank', cat:'hazmat', w:40, h:18, extrude3D:{h:6,color:C.metalDk}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#6b7280', '#1f2937', 2, h/2);
+      // End caps
+      circle(ctx, -w/2+3, 0, h/2-2, '#9ca3af', '#1f2937', 1);
+      circle(ctx, w/2-3, 0, h/2-2, '#9ca3af', '#1f2937', 1);
+      textAt(ctx, 'FUEL', 0, 0, 7, '#fff', true);
+    }},
+    { id:'propane', label:'Propane Tank', cat:'hazmat', w:28, h:18, extrude3D:{h:5,color:C.fire}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, C.fire, C.fireDk, 2, h/2);
+      circle(ctx, -w/2+3, 0, h/2-2, '#fca5a5', C.fireDk, 1);
+      circle(ctx, w/2-3, 0, h/2-2, '#fca5a5', C.fireDk, 1);
+      textAt(ctx, 'LPG', 0, 0, 8, '#fff', true);
+    }},
+  ];
+
+  // ========== COMPASS ==========
+  const compass = [
+    { id:'compass-rose', label:'Compass Rose', cat:'compass', w:36, h:36, draw(ctx,w,h){
+      circle(ctx, 0, 0, w*0.48, '#fff', '#1f2937', 1);
+      // NSEW arms
+      ctx.fillStyle = '#1f2937';
+      ctx.beginPath(); ctx.moveTo(0, -w*0.45); ctx.lineTo(-w*0.1, 0); ctx.lineTo(w*0.1, 0); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#9ca3af';
+      ctx.beginPath(); ctx.moveTo(0, w*0.45); ctx.lineTo(-w*0.1, 0); ctx.lineTo(w*0.1, 0); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(-w*0.45, 0); ctx.lineTo(0, -w*0.1); ctx.lineTo(0, w*0.1); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(w*0.45, 0); ctx.lineTo(0, -w*0.1); ctx.lineTo(0, w*0.1); ctx.closePath(); ctx.fill();
+      textAt(ctx, 'N', 0, -w*0.35, 7, '#fff', true);
+    }},
+    { id:'north-arrow', label:'North Arrow', cat:'compass', w:20, h:32, draw(ctx,w,h){
+      ctx.fillStyle = '#1f2937';
+      ctx.beginPath();
+      ctx.moveTo(0, -h/2);
+      ctx.lineTo(-w*0.35, h*0.3);
+      ctx.lineTo(0, h*0.1);
+      ctx.lineTo(w*0.35, h*0.3);
+      ctx.closePath(); ctx.fill();
+      textAt(ctx, 'N', 0, h*0.38, 9, '#1f2937', true);
+    }},
+    { id:'north-simple', label:'Simple N', cat:'compass', w:18, h:22, draw(ctx,w,h){
+      ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, h/2);
+      ctx.lineTo(0, -h*0.3);
+      ctx.moveTo(-w*0.35, -h*0.2);
+      ctx.lineTo(0, -h*0.3);
+      ctx.lineTo(w*0.35, -h*0.2);
+      ctx.stroke();
+      textAt(ctx, 'N', 0, -h*0.4, 8, '#1f2937', true);
+    }},
+  ];
+
+  // ========== OTHER ==========
+  const other = [
+    { id:'dumpster', label:'Dumpster', cat:'other', w:32, h:22, extrude3D:{h:4,color:C.metalDk}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#6b7280', '#1f2937', 2, 2);
+      line(ctx, -w/2+3, -h*0.2, w/2-3, -h*0.2, '#4b5563', 1.5);
+      textAt(ctx, 'DUMP', 0, h*0.15, 8, '#fff', true);
+    }},
+    { id:'restroom', label:'Restroom', cat:'other', w:24, h:22, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#e0e7ff', '#4338ca', 1.5, 2);
+      textAt(ctx, 'WC', 0, 0, 10, '#4338ca', true);
+    }},
+    { id:'office', label:'Office', cat:'other', w:40, h:30, extrude3D:{h:9,color:'#c5bba8'}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#fef3c7', '#ca8a04', 1.5, 2);
+      textAt(ctx, 'OFFICE', 0, 0, 10, '#713f12', true);
+    }},
+    { id:'breakroom', label:'Break Room', cat:'other', w:42, h:32, extrude3D:{h:9,color:'#c5bba8'}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#dbeafe', '#1d4ed8', 1.5, 2);
+      textAt(ctx, 'BREAK', 0, -h*0.1, 9, '#1e40af', true);
+      textAt(ctx, 'ROOM', 0, h*0.15, 9, '#1e40af', true);
+    }},
+    { id:'server-room', label:'Server Room', cat:'other', w:40, h:30, extrude3D:{h:9,color:'#1f2937'}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#1f2937', '#000', 1.5, 2);
+      for (let i=0; i<8; i++) rect(ctx, -w*0.4 + (i%4)*w*0.2, -h*0.35 + Math.floor(i/4)*h*0.3, w*0.15, h*0.2, '#374151', '#4b5563', 0.5);
+      textAt(ctx, 'SERVERS', 0, h*0.3, 7, C.green, true);
+    }},
+    { id:'mech-room', label:'Mech Room', cat:'other', w:38, h:30, extrude3D:{h:9,color:'#6b7280'}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#f3f4f6', '#374151', 1.5, 2);
+      circle(ctx, 0, 0, h*0.25, 'transparent', '#4b5563', 1);
+      textAt(ctx, '⚙', 0, 0, 14);
+      textAt(ctx, 'MECH', 0, h*0.35, 7, '#374151', true);
+    }},
+    { id:'pool', label:'Pool', cat:'other', w:60, h:32, extrude3D:{h:0.5,color:C.blueLt}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, C.glass, '#0891b2', 2, 6);
+      rect(ctx, -w*0.45, -h*0.4, w*0.9, h*0.8, '#67e8f9', '#0e7490', 1, 5);
+      // Ripples
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 0.5;
+      for (let i=0; i<3; i++) {
+        ctx.beginPath(); ctx.arc(-w*0.2 + i*w*0.2, -h*0.1, 4 + i, 0, Math.PI*2); ctx.stroke();
+      }
+      textAt(ctx, 'POOL', 0, h*0.25, 8, '#0e7490', true);
+    }},
+  ];
+
+  // Combine
+  const all = [
+    ...fire, ...doors, ...access, ...utilities, ...furniture, ...mercantile,
+    ...ada, ...obstructions, ...mechanical, ...assembly, ...hazmat, ...compass, ...other
+  ];
+  const byId = {};
+  all.forEach(s => byId[s.id] = s);
+
+  // Category metadata
+  const CATEGORIES = [
+    { id: 'fire',         label: '🔥 Fire Protection' },
+    { id: 'doors',        label: '🚪 Doors & Windows' },
+    { id: 'access',       label: '🪜 Access' },
+    { id: 'utilities',    label: '⚡ Utilities' },
+    { id: 'furniture',    label: '🛋️ Furniture' },
+    { id: 'mercantile',   label: '🏪 Mercantile' },
+    { id: 'ada',          label: '♿ ADA' },
+    { id: 'obstructions', label: '⚠️ Obstructions' },
+    { id: 'mechanical',   label: '🔧 Mechanical' },
+    { id: 'assembly',     label: '⛪ Assembly' },
+    { id: 'hazmat',       label: '☢️ Hazmat' },
+    { id: 'compass',      label: '🧭 Compass' },
+    { id: 'other',        label: '📍 Other' },
+  ];
+
+  return { all, byId, CATEGORIES };
+})();
+// ============================================================================
+// Floor Plan Editor v3 — symbol library + wall/text/measure + Three.js 3D
+// ============================================================================
 
 (function() {
 'use strict';
 
-// ---------- Marker types (fire service semiotics) ----------
-const MARKER_TYPES = [
-  { id: 'fdc',             label: 'FDC',         icon: '🚒', color: '#dc2626', abbr: 'FDC' },
-  { id: 'knox_box',        label: 'Knox Box',    icon: '🔑', color: '#f59e0b', abbr: 'KX'  },
-  { id: 'fire_hydrant',    label: 'Hydrant',     icon: '⛲', color: '#1e40af', abbr: 'HY'  },
-  { id: 'sprinkler_riser', label: 'Spr Riser',   icon: '💧', color: '#0891b2', abbr: 'SR'  },
-  { id: 'fire_alarm_panel',label: 'FA Panel',    icon: '🚨', color: '#b91c1c', abbr: 'FAP' },
-  { id: 'gas_shutoff',     label: 'Gas Shutoff', icon: '🔥', color: '#eab308', abbr: 'GAS' },
-  { id: 'electric_panel',  label: 'Elec Panel',  icon: '⚡', color: '#a855f7', abbr: 'ELEC'},
-  { id: 'water_shutoff',   label: 'Water Off',   icon: '🚰', color: '#0ea5e9', abbr: 'H2O' },
-  { id: 'exit',            label: 'Exit',        icon: '🚪', color: '#16a34a', abbr: 'EXIT'},
-  { id: 'stairs',          label: 'Stairs',      icon: '🪜', color: '#64748b', abbr: 'STR' },
-  { id: 'elevator',        label: 'Elevator',    icon: '🛗', color: '#475569', abbr: 'ELV' },
-  { id: 'hazmat',          label: 'Hazmat',      icon: '☣️', color: '#7c2d12', abbr: 'HAZ' },
-];
-
-// ---------- State ----------
 const state = {
-  data: null,      // floor_plan_data object
+  data: null,
   view: { zoom: 1, panX: 0, panY: 0, width: 0, height: 0 },
-  tool: 'select', // select | pan | marker | delete
-  selectedMarkerType: 'fdc',
-  selected: null, // { kind: 'wall'|'door'|'window'|'object'|'marker', index: N }
-  visibleLayers: { walls: true, doors: true, windows: true, objects: true, markers: true, grid: true },
+  tool: 'select',  // select | pan | wall | text | measure | place | delete
+  selectedSymbolId: null,  // for Place tool
+  selected: null,
+  drawing: null,   // mid-wall / mid-measure creation state
+  visibleLayers: { walls:true, doors:true, windows:true, objects:true, symbols:true, texts:true, measurements:true, grid:true },
   threeD: false,
-  scanMeta: null,  // { scan_id, captured_by, scan_date, department, ... }
-  drag: null,      // active drag
+  threeDView: { rotate: 45, tilt: 45, wallH: 10 },
+  scanMeta: null,
+  drag: null,
   dpr: window.devicePixelRatio || 1,
+  undoStack: [], redoStack: [],
 };
 
-// ---------- DOM refs ----------
 const stage = document.getElementById('stage');
 const wrap  = document.getElementById('canvas-wrap');
 const canvas = document.getElementById('fp-canvas');
 const ctx = canvas.getContext('2d');
+const threeWrap = document.getElementById('threed-wrap');
+const threeCanvas = document.getElementById('three-canvas');
 const emptyState = document.getElementById('empty-state');
 const statusEl = document.getElementById('status');
 const editPanel = document.getElementById('edit-panel');
 const layersPanel = document.getElementById('layers');
-const markerPalette = document.getElementById('marker-palette');
+const threeDControls = document.getElementById('threeD-controls');
 const toast = document.getElementById('toast');
+const textOverlay = document.getElementById('text-input-overlay');
 
-// ---------- Helpers ----------
 function showToast(msg, kind) {
   toast.textContent = msg;
   toast.className = 'fp-toast show' + (kind ? ' ' + kind : '');
-  setTimeout(() => toast.className = 'fp-toast', 2500);
+  setTimeout(() => toast.className = 'fp-toast', 2200);
 }
 function degToRad(d) { return d * Math.PI / 180; }
-function dist(x1, y1, x2, y2) { return Math.hypot(x2-x1, y2-y1); }
+function dist(x1,y1,x2,y2){ return Math.hypot(x2-x1, y2-y1); }
+function uid(prefix){ return (prefix||'') + Date.now().toString(36) + Math.random().toString(36).substr(2, 4); }
 
-// ---------- Data persistence ----------
+// ---------- Data ----------
 function emptyData() {
   return {
     canvas_width: 1000, canvas_height: 700, scale_px_per_ft: 12,
-    walls: [], doors: [], windows: [], objects: [], markers: []
+    walls: [], doors: [], windows: [], objects: [],
+    symbols: [], texts: [], measurements: []
   };
 }
 function loadFromStorage() {
@@ -352,95 +1286,95 @@ function loadFromStorage() {
     const raw = localStorage.getItem('preFirePlan');
     if (!raw) return null;
     const plan = JSON.parse(raw);
-    if (plan.floor_plan_data) return plan.floor_plan_data;
-    return null;
+    const d = plan.floor_plan_data;
+    if (!d) return null;
+    // Ensure all arrays exist (back-compat)
+    d.symbols ??= []; d.texts ??= []; d.measurements ??= [];
+    return d;
   } catch (e) { return null; }
 }
 function saveToStorage() {
   if (!state.data) return;
   let plan = {};
   try { plan = JSON.parse(localStorage.getItem('preFirePlan') || '{}'); } catch (e) {}
+  state.data.savedAt = new Date().toISOString();
   plan.floor_plan_data = state.data;
-  plan.floor_plan_data.savedAt = new Date().toISOString();
   localStorage.setItem('preFirePlan', JSON.stringify(plan));
 }
 
-// ---------- Capture import ----------
+function pushUndo() {
+  if (!state.data) return;
+  state.undoStack.push(JSON.stringify(state.data));
+  if (state.undoStack.length > 30) state.undoStack.shift();
+  state.redoStack = [];
+}
+function undo() {
+  if (!state.undoStack.length) return;
+  state.redoStack.push(JSON.stringify(state.data));
+  state.data = JSON.parse(state.undoStack.pop());
+  state.selected = null; hideEditPanel();
+  updateCounts(); draw(); saveToStorage();
+}
+function redo() {
+  if (!state.redoStack.length) return;
+  state.undoStack.push(JSON.stringify(state.data));
+  state.data = JSON.parse(state.redoStack.pop());
+  state.selected = null; hideEditPanel();
+  updateCounts(); draw(); saveToStorage();
+}
+
+// ---------- Capture ingest ----------
 function ingestJobPayload(job) {
-  const layout = (job && job.ai_form_data && job.ai_form_data.layout) || null;
-  if (!layout || !layout.walls) {
-    showToast('No layout data in that capture', 'err');
-    return false;
-  }
+  const layout = job?.ai_form_data?.layout;
+  if (!layout || !Array.isArray(layout.walls)) { showToast('No layout in capture', 'err'); return false; }
+  pushUndo();
   const data = {
     canvas_width:    layout.canvas_width  || 1000,
     canvas_height:   layout.canvas_height || 700,
     scale_px_per_ft: layout.scale_px_per_ft || 12,
-    walls:   (layout.walls   || []).slice(),
-    doors:   (layout.doors   || []).slice(),
-    windows: (layout.windows || []).slice(),
-    objects: (layout.objects || []).slice(),
-    markers: []
+    walls:   (layout.walls   || []).map(w => ({ ...w })),
+    doors:   (layout.doors   || []).map(d => ({ ...d })),
+    windows: (layout.windows || []).map(w => ({ ...w })),
+    objects: (layout.objects || []).map(o => ({ ...o })),
+    symbols: [], texts: [], measurements: []
   };
-  // Preserve any ai_features (markers placed at capture time) as real markers
+  // Markers from capture → symbols list
   if (Array.isArray(job.ai_features)) {
-    const sc = data.scale_px_per_ft;
-    job.ai_features.forEach((f, i) => {
-      // f.x/y could be in either ft or px — guess: if magnitude < canvas_width/scale, it's ft
-      let x = typeof f.x === 'number' ? f.x : 0;
-      let y = typeof f.y === 'number' ? f.y : 0;
-      // We emit markers in ai_features using canvas px coords already in the worker
-      data.markers.push({
-        id: 'm_' + Date.now() + '_' + i,
-        type: f.category || f.name || 'marker',
-        x: x, y: y,
-        label: f.name || f.category || '',
-        note: f.note || ''
+    job.ai_features.forEach((f) => {
+      data.symbols.push({
+        id: uid('s_'), symbolId: f.category || 'other',
+        x: f.x || 0, y: f.y || 0, angle: 0, note: f.note || '', label: f.name || ''
       });
     });
   }
   state.data = data;
   state.scanMeta = {
-    scan_id: job.id,
-    captured_by: job.captured_by,
-    scan_date: job.created_at,
-    department: job.department,
-    building_name: job.building_name,
-    marker_count: data.markers.length
+    scan_id: job.id, department: job.department,
+    building_name: job.building_name, scan_date: job.created_at
   };
-  updateMeta();
-  updateCounts();
-  hideEmpty();
-  fitToView();
-  draw();
+  updateMeta(); updateCounts(); hideEmpty(); fitToView(); draw();
   return true;
 }
-
 async function loadLatestCapture() {
-  // Hostname-aware: CFD on fdtraining, PCFD on preplans.pcfdmembers
-  const host = window.location.hostname;
+  const host = location.hostname;
   const dept = host.includes('pcfdmembers') ? 'PCFD' : 'CFD';
   try {
     const listRes = await fetch(`/api/jobs?dept=${dept}&limit=1`, { cache: 'no-store' });
     if (!listRes.ok) throw new Error('HTTP ' + listRes.status);
     const list = await listRes.json();
     const jobs = list.jobs || [];
-    if (!jobs.length) { showToast('No captures found for ' + dept, 'err'); return; }
-    const jobId = jobs[0].id;
-    const jobRes = await fetch(`/api/jobs/${jobId}`, { cache: 'no-store' });
+    if (!jobs.length) { showToast('No captures found', 'err'); return; }
+    const jobRes = await fetch(`/api/jobs/${jobs[0].id}`, { cache: 'no-store' });
     if (!jobRes.ok) throw new Error('HTTP ' + jobRes.status);
-    const jobData = await jobRes.json();
-    const job = jobData.job || jobData;
-    if (ingestJobPayload(job)) {
-      showToast(`Loaded: ${job.building_name || job.id}`, 'ok');
+    const j = await jobRes.json();
+    if (ingestJobPayload(j.job || j)) {
+      showToast('Loaded: ' + (jobs[0].building_name || jobs[0].id), 'ok');
       saveToStorage();
     }
-  } catch (e) {
-    showToast('Load failed: ' + (e.message || e), 'err');
-  }
+  } catch (e) { showToast('Load failed: ' + (e.message || e), 'err'); }
 }
 
-// ---------- View transforms ----------
+// ---------- View ----------
 function resizeCanvas() {
   const rect = wrap.getBoundingClientRect();
   state.view.width = rect.width;
@@ -449,29 +1383,26 @@ function resizeCanvas() {
   canvas.height = Math.floor(rect.height * state.dpr);
   canvas.style.width  = rect.width  + 'px';
   canvas.style.height = rect.height + 'px';
+  threeCanvas.width  = rect.width  * state.dpr;
+  threeCanvas.height = rect.height * state.dpr;
+  if (state.threeD && threeState.renderer) {
+    threeState.renderer.setSize(rect.width, rect.height, false);
+    threeState.camera.aspect = rect.width / rect.height;
+    threeState.camera.updateProjectionMatrix();
+  }
   draw();
 }
-
 function dataToScreen(x, y) {
-  return {
-    sx: x * state.view.zoom + state.view.panX,
-    sy: y * state.view.zoom + state.view.panY
-  };
+  return { sx: x * state.view.zoom + state.view.panX, sy: y * state.view.zoom + state.view.panY };
 }
 function screenToData(sx, sy) {
-  return {
-    x: (sx - state.view.panX) / state.view.zoom,
-    y: (sy - state.view.panY) / state.view.zoom
-  };
+  return { x: (sx - state.view.panX) / state.view.zoom, y: (sy - state.view.panY) / state.view.zoom };
 }
-
 function fitToView() {
   if (!state.data) return;
-  const padding = 40;
-  const cw = state.data.canvas_width;
-  const ch = state.data.canvas_height;
-  const zx = (state.view.width - padding*2) / cw;
-  const zy = (state.view.height - padding*2) / ch;
+  const pad = 40;
+  const cw = state.data.canvas_width, ch = state.data.canvas_height;
+  const zx = (state.view.width - pad*2) / cw, zy = (state.view.height - pad*2) / ch;
   state.view.zoom = Math.min(zx, zy, 2.0);
   state.view.panX = (state.view.width - cw * state.view.zoom) / 2;
   state.view.panY = (state.view.height - ch * state.view.zoom) / 2;
@@ -479,307 +1410,419 @@ function fitToView() {
 }
 
 // ---------- Draw ----------
-function clearCanvas() {
+function draw() {
   ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
   ctx.clearRect(0, 0, state.view.width, state.view.height);
-}
-
-function draw() {
-  clearCanvas();
   if (!state.data) { updateStatus(); return; }
-  const d = state.data;
 
-  // Apply pan+zoom
   ctx.save();
-  ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
   ctx.translate(state.view.panX, state.view.panY);
   ctx.scale(state.view.zoom, state.view.zoom);
 
-  // Draw order: objects (floor) → walls → windows → doors → markers (top)
-  if (state.visibleLayers.objects) d.objects.forEach((o, i) => drawObject(o, isSelected('object', i)));
-  if (state.visibleLayers.walls)   d.walls.forEach((w, i) => drawWall(w, isSelected('wall', i)));
-  if (state.visibleLayers.windows) d.windows.forEach((w, i) => drawWindow(w, isSelected('window', i)));
-  if (state.visibleLayers.doors)   d.doors.forEach((dr, i) => drawDoor(dr, isSelected('door', i)));
-  if (state.visibleLayers.markers) d.markers.forEach((m, i) => drawMarker(m, isSelected('marker', i)));
+  const d = state.data;
+  const VL = state.visibleLayers;
+
+  if (VL.objects) d.objects.forEach((o, i) => drawObject(o, selEq('object', i)));
+  if (VL.walls)   d.walls.forEach((w, i) => drawWall(w, selEq('wall', i)));
+  if (VL.windows) d.windows.forEach((w, i) => drawWindow(w, selEq('window', i)));
+  if (VL.doors)   d.doors.forEach((dr, i) => drawDoor(dr, selEq('door', i)));
+  if (VL.symbols) d.symbols.forEach((s, i) => drawSymbol(s, selEq('symbol', i)));
+  if (VL.texts)   d.texts.forEach((t, i) => drawText(t, selEq('text', i)));
+  if (VL.measurements) d.measurements.forEach((m, i) => drawMeasure(m, selEq('measurement', i)));
+
+  // Drawing-in-progress
+  if (state.drawing) drawInProgress(state.drawing);
 
   ctx.restore();
   updateStatus();
 }
-
-function isSelected(kind, index) {
-  return state.selected && state.selected.kind === kind && state.selected.index === index;
-}
+function selEq(k, i) { return state.selected && state.selected.kind === k && state.selected.index === i; }
 
 function drawWall(w, sel) {
   ctx.beginPath();
   ctx.moveTo(w.x1, w.y1);
   ctx.lineTo(w.x2, w.y2);
-  ctx.lineWidth = sel ? 6 / state.view.zoom : 4 / state.view.zoom;
+  ctx.lineWidth = (sel ? 6 : 4) / state.view.zoom;
   ctx.strokeStyle = sel ? '#fbbf24' : '#0f172a';
   ctx.lineCap = 'square';
   ctx.stroke();
 }
-
 function drawDoor(d, sel) {
   const cx = d.x, cy = d.y;
   const w = d.width || 30;
   const a = degToRad(d.angle || 0);
-  const dx = Math.cos(a) * w / 2;
-  const dy = Math.sin(a) * w / 2;
-  // Opening — break in wall
+  const dx = Math.cos(a) * w/2, dy = Math.sin(a) * w/2;
   ctx.save();
-  ctx.lineWidth = 8 / state.view.zoom;
-  ctx.strokeStyle = '#fff';
-  ctx.beginPath();
-  ctx.moveTo(cx - dx, cy - dy);
-  ctx.lineTo(cx + dx, cy + dy);
-  ctx.stroke();
-  // Door swing arc (single door = quarter circle, double = two arcs, rollup = dashed)
+  ctx.lineWidth = 8 / state.view.zoom; ctx.strokeStyle = '#fff';
+  ctx.beginPath(); ctx.moveTo(cx-dx,cy-dy); ctx.lineTo(cx+dx,cy+dy); ctx.stroke();
   ctx.lineWidth = (sel ? 3 : 1.5) / state.view.zoom;
   ctx.strokeStyle = sel ? '#fbbf24' : '#ea580c';
   if (d.type === 'rollup') {
     ctx.setLineDash([4/state.view.zoom, 3/state.view.zoom]);
-    ctx.beginPath();
-    ctx.moveTo(cx - dx, cy - dy);
-    ctx.lineTo(cx + dx, cy + dy);
-    ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx-dx,cy-dy); ctx.lineTo(cx+dx,cy+dy); ctx.stroke();
     ctx.setLineDash([]);
   } else if (d.type === 'double') {
-    // Two arcs from each end, meeting in middle
-    ctx.beginPath();
-    ctx.arc(cx - dx, cy - dy, w/2, a, a + Math.PI/2);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(cx + dx, cy + dy, w/2, a + Math.PI, a + Math.PI + Math.PI/2);
-    ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx-dx, cy-dy, w/2, a, a + Math.PI/2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx+dx, cy+dy, w/2, a+Math.PI, a+Math.PI+Math.PI/2); ctx.stroke();
   } else {
-    // Single — arc from one endpoint
-    ctx.beginPath();
-    ctx.arc(cx - dx, cy - dy, w, a, a + Math.PI/2);
-    ctx.stroke();
-    // Line from hinge to opposite end (shows door leaf when closed)
-    ctx.beginPath();
-    ctx.moveTo(cx - dx, cy - dy);
-    ctx.lineTo(cx + dx, cy + dy);
-    ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx-dx, cy-dy, w, a, a + Math.PI/2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx-dx,cy-dy); ctx.lineTo(cx+dx,cy+dy); ctx.stroke();
   }
   ctx.restore();
 }
-
 function drawWindow(w, sel) {
-  const cx = w.x, cy = w.y;
-  const width = w.width || 30;
+  const cx = w.x, cy = w.y, width = w.width || 30;
   const a = degToRad(w.angle || 0);
-  const dx = Math.cos(a) * width / 2;
-  const dy = Math.sin(a) * width / 2;
-  // Break the wall
-  ctx.save();
-  ctx.lineWidth = 8 / state.view.zoom;
-  ctx.strokeStyle = '#fff';
-  ctx.beginPath();
-  ctx.moveTo(cx - dx, cy - dy);
-  ctx.lineTo(cx + dx, cy + dy);
-  ctx.stroke();
-  // Triple line glyph for window (classic floor plan symbol)
-  ctx.lineWidth = (sel ? 3 : 1.5) / state.view.zoom;
-  ctx.strokeStyle = sel ? '#fbbf24' : '#0ea5e9';
+  const dx = Math.cos(a)*width/2, dy = Math.sin(a)*width/2;
   const perp = { x: -Math.sin(a), y: Math.cos(a) };
   const off = 3 / state.view.zoom;
+  ctx.save();
+  ctx.lineWidth = 8 / state.view.zoom; ctx.strokeStyle = '#fff';
+  ctx.beginPath(); ctx.moveTo(cx-dx,cy-dy); ctx.lineTo(cx+dx,cy+dy); ctx.stroke();
+  ctx.lineWidth = (sel ? 3 : 1.5) / state.view.zoom;
+  ctx.strokeStyle = sel ? '#fbbf24' : '#0ea5e9';
   [-off, 0, off].forEach(o => {
     ctx.beginPath();
-    ctx.moveTo(cx - dx + perp.x * o, cy - dy + perp.y * o);
-    ctx.lineTo(cx + dx + perp.x * o, cy + dy + perp.y * o);
+    ctx.moveTo(cx-dx + perp.x*o, cy-dy + perp.y*o);
+    ctx.lineTo(cx+dx + perp.x*o, cy+dy + perp.y*o);
     ctx.stroke();
   });
   ctx.restore();
 }
-
 function drawObject(o, sel) {
-  const cx = o.x, cy = o.y;
-  const w = o.width || 20;
-  const h = o.depth || 20;
-  const a = degToRad(o.angle || 0);
   ctx.save();
-  ctx.translate(cx, cy);
-  ctx.rotate(a);
+  ctx.translate(o.x, o.y); ctx.rotate(degToRad(o.angle || 0));
   ctx.fillStyle = sel ? 'rgba(251,191,36,0.4)' : 'rgba(124,58,237,0.18)';
   ctx.strokeStyle = sel ? '#fbbf24' : '#7c3aed';
   ctx.lineWidth = (sel ? 2 : 1) / state.view.zoom;
-  ctx.fillRect(-w/2, -h/2, w, h);
-  ctx.strokeRect(-w/2, -h/2, w, h);
-  // Label (upright, small)
+  ctx.fillRect(-o.width/2, -o.depth/2, o.width, o.depth);
+  ctx.strokeRect(-o.width/2, -o.depth/2, o.width, o.depth);
   if (o.label && state.view.zoom > 0.25) {
-    ctx.rotate(-a);
+    ctx.rotate(-degToRad(o.angle || 0));
     ctx.fillStyle = sel ? '#78350f' : '#5b21b6';
-    ctx.font = (11 / state.view.zoom) + 'px system-ui, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
+    ctx.font = (11 / state.view.zoom) + 'px system-ui';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText(o.label, 0, 0);
   }
   ctx.restore();
 }
-
-function drawMarker(m, sel) {
-  const meta = MARKER_TYPES.find(t => t.id === m.type) || { color: '#dc2626', abbr: 'M' };
-  const r = sel ? 14 / state.view.zoom : 12 / state.view.zoom;
-  // Shadow
+function drawSymbol(s, sel) {
+  const def = SYMBOLS.byId[s.symbolId];
+  if (!def) return;
   ctx.save();
-  ctx.shadowColor = 'rgba(0,0,0,0.3)';
-  ctx.shadowBlur = 4;
-  ctx.shadowOffsetY = 2;
-  ctx.fillStyle = sel ? '#fbbf24' : meta.color;
-  ctx.beginPath();
-  ctx.arc(m.x, m.y, r, 0, 2*Math.PI);
-  ctx.fill();
+  ctx.translate(s.x, s.y); ctx.rotate(degToRad(s.angle || 0));
+  if (sel) {
+    // Selection ring
+    ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 3 / state.view.zoom;
+    const r = Math.max(def.w, def.h) * 0.7;
+    ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI*2); ctx.stroke();
+  }
+  def.draw(ctx, def.w, def.h);
+  if (s.label && state.view.zoom > 0.3) {
+    ctx.fillStyle = '#1f2937';
+    ctx.font = (10/state.view.zoom)+'px system-ui'; ctx.textAlign='center'; ctx.textBaseline='top';
+    ctx.fillText(s.label, 0, def.h/2 + 3);
+  }
   ctx.restore();
-  // Ring
-  ctx.strokeStyle = '#fff';
-  ctx.lineWidth = 2.5 / state.view.zoom;
-  ctx.stroke();
-  // Abbreviation
+}
+function drawText(t, sel) {
+  ctx.save();
+  ctx.font = (t.size || 16) + 'px ' + (t.font || 'system-ui, sans-serif');
+  ctx.fillStyle = sel ? '#b45309' : (t.color || '#1f2937');
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText(t.text, t.x, t.y);
+  if (sel) {
+    const m = ctx.measureText(t.text);
+    const w = m.width, h = (t.size || 16) * 1.2;
+    ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 2 / state.view.zoom;
+    ctx.setLineDash([4/state.view.zoom, 2/state.view.zoom]);
+    ctx.strokeRect(t.x - 2, t.y - 2, w + 4, h + 4);
+    ctx.setLineDash([]);
+  }
+  ctx.restore();
+}
+function drawMeasure(m, sel) {
+  ctx.save();
+  const len = dist(m.x1, m.y1, m.x2, m.y2);
+  ctx.strokeStyle = sel ? '#b45309' : '#eab308';
+  ctx.lineWidth = 2 / state.view.zoom;
+  ctx.beginPath(); ctx.moveTo(m.x1, m.y1); ctx.lineTo(m.x2, m.y2); ctx.stroke();
+  // End caps (perpendicular ticks)
+  const a = Math.atan2(m.y2-m.y1, m.x2-m.x1);
+  const tick = 6 / state.view.zoom;
+  for (const [x,y] of [[m.x1,m.y1],[m.x2,m.y2]]) {
+    ctx.beginPath();
+    ctx.moveTo(x + tick*Math.cos(a+Math.PI/2), y + tick*Math.sin(a+Math.PI/2));
+    ctx.lineTo(x + tick*Math.cos(a-Math.PI/2), y + tick*Math.sin(a-Math.PI/2));
+    ctx.stroke();
+  }
+  // Label
+  const mx = (m.x1+m.x2)/2, my = (m.y1+m.y2)/2;
+  const sf = state.data?.scale_px_per_ft || 12;
+  const ft = (len / sf).toFixed(1) + ' ft';
   ctx.fillStyle = '#fff';
-  ctx.font = 'bold ' + (r * 0.85) + 'px system-ui, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(meta.abbr.slice(0, 3), m.x, m.y);
+  ctx.font = 'bold ' + (11/state.view.zoom) + 'px system-ui';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const tw = ctx.measureText(ft).width;
+  ctx.fillStyle = sel ? '#b45309' : '#eab308';
+  ctx.fillRect(mx - tw/2 - 4/state.view.zoom, my - 8/state.view.zoom, tw + 8/state.view.zoom, 16/state.view.zoom);
+  ctx.fillStyle = '#fff';
+  ctx.fillText(ft, mx, my);
+  ctx.restore();
+}
+function drawInProgress(d) {
+  if (d.kind === 'wall') {
+    ctx.strokeStyle = 'rgba(15,23,42,0.6)'; ctx.lineWidth = 4 / state.view.zoom;
+    ctx.setLineDash([6/state.view.zoom, 3/state.view.zoom]);
+    ctx.beginPath(); ctx.moveTo(d.x1, d.y1); ctx.lineTo(d.x2, d.y2); ctx.stroke();
+    ctx.setLineDash([]);
+  } else if (d.kind === 'measure') {
+    ctx.strokeStyle = '#eab308'; ctx.lineWidth = 2 / state.view.zoom;
+    ctx.setLineDash([5/state.view.zoom, 3/state.view.zoom]);
+    ctx.beginPath(); ctx.moveTo(d.x1, d.y1); ctx.lineTo(d.x2, d.y2); ctx.stroke();
+    ctx.setLineDash([]);
+  }
 }
 
-// ---------- Hit testing ----------
+// ---------- Hit test ----------
+function pointToSeg(px,py,x1,y1,x2,y2) {
+  const dx = x2-x1, dy = y2-y1;
+  const L2 = dx*dx+dy*dy;
+  if (L2===0) return dist(px,py,x1,y1);
+  let t = ((px-x1)*dx + (py-y1)*dy) / L2;
+  t = Math.max(0, Math.min(1, t));
+  return dist(px, py, x1 + t*dx, y1 + t*dy);
+}
 function hitTest(sx, sy) {
   if (!state.data) return null;
   const {x, y} = screenToData(sx, sy);
   const tol = 8 / state.view.zoom;
-  const d = state.data;
+  const d = state.data, VL = state.visibleLayers;
 
-  // Check markers first (drawn on top)
-  if (state.visibleLayers.markers) {
-    for (let i = d.markers.length - 1; i >= 0; i--) {
-      const m = d.markers[i];
-      if (dist(x, y, m.x, m.y) < 14 / state.view.zoom + tol) return { kind: 'marker', index: i };
-    }
+  if (VL.symbols) for (let i = d.symbols.length-1; i >= 0; i--) {
+    const s = d.symbols[i], def = SYMBOLS.byId[s.symbolId];
+    if (!def) continue;
+    const dx = x - s.x, dy = y - s.y;
+    const r = Math.max(def.w, def.h)/2 + tol;
+    if (dx*dx + dy*dy < r*r) return { kind: 'symbol', index: i };
   }
-  // Doors (small circles around door center)
-  if (state.visibleLayers.doors) {
-    for (let i = d.doors.length - 1; i >= 0; i--) {
-      const dr = d.doors[i];
-      const r = Math.max(dr.width / 2 + tol, tol * 2.5);
-      if (dist(x, y, dr.x, dr.y) < r) return { kind: 'door', index: i };
-    }
+  if (VL.texts) for (let i = d.texts.length-1; i >= 0; i--) {
+    const t = d.texts[i];
+    ctx.font = (t.size||16) + 'px ' + (t.font||'system-ui');
+    const w = ctx.measureText(t.text).width, h = (t.size||16)*1.2;
+    if (x >= t.x-2 && x <= t.x+w+2 && y >= t.y-2 && y <= t.y+h+2) return { kind: 'text', index: i };
   }
-  // Windows
-  if (state.visibleLayers.windows) {
-    for (let i = d.windows.length - 1; i >= 0; i--) {
-      const w = d.windows[i];
-      const r = Math.max(w.width / 2 + tol, tol * 2.5);
-      if (dist(x, y, w.x, w.y) < r) return { kind: 'window', index: i };
-    }
+  if (VL.measurements) for (let i = d.measurements.length-1; i >= 0; i--) {
+    const m = d.measurements[i];
+    if (pointToSeg(x,y,m.x1,m.y1,m.x2,m.y2) < tol + 3/state.view.zoom) return { kind: 'measurement', index: i };
   }
-  // Objects (rotated rect)
-  if (state.visibleLayers.objects) {
-    for (let i = d.objects.length - 1; i >= 0; i--) {
-      const o = d.objects[i];
-      const a = -degToRad(o.angle || 0);
-      const dx = x - o.x, dy = y - o.y;
-      const lx = dx * Math.cos(a) - dy * Math.sin(a);
-      const ly = dx * Math.sin(a) + dy * Math.cos(a);
-      if (Math.abs(lx) < o.width/2 + tol && Math.abs(ly) < o.depth/2 + tol) {
-        return { kind: 'object', index: i };
-      }
-    }
+  if (VL.doors) for (let i = d.doors.length-1; i >= 0; i--) {
+    const dr = d.doors[i];
+    const r = Math.max(dr.width/2 + tol, tol*2.5);
+    if (dist(x,y,dr.x,dr.y) < r) return { kind: 'door', index: i };
   }
-  // Walls (line segment hit test)
-  if (state.visibleLayers.walls) {
-    for (let i = d.walls.length - 1; i >= 0; i--) {
-      const w = d.walls[i];
-      if (pointToSegmentDist(x, y, w.x1, w.y1, w.x2, w.y2) < tol + 3/state.view.zoom) {
-        return { kind: 'wall', index: i };
-      }
-    }
+  if (VL.windows) for (let i = d.windows.length-1; i >= 0; i--) {
+    const w = d.windows[i];
+    const r = Math.max(w.width/2 + tol, tol*2.5);
+    if (dist(x,y,w.x,w.y) < r) return { kind: 'window', index: i };
+  }
+  if (VL.objects) for (let i = d.objects.length-1; i >= 0; i--) {
+    const o = d.objects[i];
+    const a = -degToRad(o.angle || 0);
+    const dx = x - o.x, dy = y - o.y;
+    const lx = dx*Math.cos(a) - dy*Math.sin(a);
+    const ly = dx*Math.sin(a) + dy*Math.cos(a);
+    if (Math.abs(lx) < o.width/2 + tol && Math.abs(ly) < o.depth/2 + tol) return { kind: 'object', index: i };
+  }
+  if (VL.walls) for (let i = d.walls.length-1; i >= 0; i--) {
+    const w = d.walls[i];
+    if (pointToSeg(x,y,w.x1,w.y1,w.x2,w.y2) < tol + 3/state.view.zoom) return { kind: 'wall', index: i };
   }
   return null;
 }
 
-function pointToSegmentDist(px, py, x1, y1, x2, y2) {
-  const dx = x2 - x1, dy = y2 - y1;
-  const lenSq = dx*dx + dy*dy;
-  if (lenSq === 0) return dist(px, py, x1, y1);
-  let t = ((px - x1) * dx + (py - y1) * dy) / lenSq;
-  t = Math.max(0, Math.min(1, t));
-  return dist(px, py, x1 + t*dx, y1 + t*dy);
+// ---------- Element helpers ----------
+function getList(kind) { return state.data?.[kind + 's']; }
+function getElem(hit) { if (!hit) return null; return getList(hit.kind)?.[hit.index]; }
+
+function elemPos(hit) {
+  const e = getElem(hit);
+  if (!e) return {x:0, y:0};
+  if (hit.kind === 'wall')        return { x:(e.x1+e.x2)/2, y:(e.y1+e.y2)/2 };
+  if (hit.kind === 'measurement') return { x:(e.x1+e.x2)/2, y:(e.y1+e.y2)/2 };
+  return { x:e.x, y:e.y };
+}
+function setElemPos(hit, x, y) {
+  const e = getElem(hit);
+  if (!e) return;
+  if (hit.kind === 'wall' || hit.kind === 'measurement') {
+    const cx = (e.x1+e.x2)/2, cy = (e.y1+e.y2)/2;
+    const dx = x - cx, dy = y - cy;
+    e.x1 += dx; e.x2 += dx; e.y1 += dy; e.y2 += dy;
+  } else {
+    e.x = x; e.y = y;
+  }
+}
+function deleteElement(hit) {
+  const arr = getList(hit.kind);
+  if (!arr) return;
+  pushUndo();
+  arr.splice(hit.index, 1);
+  state.selected = null; hideEditPanel();
+  updateCounts(); saveToStorage(); draw();
 }
 
-// ---------- Interactions ----------
+// ---------- Edit panel ----------
+function showEditPanel(hit) {
+  const e = getElem(hit); if (!e) return;
+  const title = hit.kind[0].toUpperCase() + hit.kind.slice(1) + ' #' + (hit.index + 1);
+  document.getElementById('ep-title').textContent = title;
+  const sf = state.data.scale_px_per_ft || 12;
+  let sub = '';
+  if (hit.kind === 'wall')          sub = `Length: ${(dist(e.x1,e.y1,e.x2,e.y2)/sf).toFixed(1)} ft`;
+  else if (hit.kind === 'door' || hit.kind === 'window') sub = `Width: ${(e.width/sf).toFixed(1)} ft`;
+  else if (hit.kind === 'object')   sub = `${(e.width/sf).toFixed(1)} × ${(e.depth/sf).toFixed(1)} ft${e.label ? ' · '+e.label : ''}`;
+  else if (hit.kind === 'symbol')   sub = SYMBOLS.byId[e.symbolId]?.label || e.symbolId;
+  else if (hit.kind === 'text')     sub = `${(e.size||16)}px text`;
+  else if (hit.kind === 'measurement') sub = `${(dist(e.x1,e.y1,e.x2,e.y2)/sf).toFixed(1)} ft`;
+  document.getElementById('ep-sub').textContent = sub;
+
+  const body = document.getElementById('ep-body');
+  body.innerHTML = '';
+
+  function mkLabel(txt) { const l = document.createElement('label'); l.textContent = txt; return l; }
+  function mkInput(val, onchange, type) {
+    const i = document.createElement('input'); i.type = type || 'text'; i.value = val || '';
+    i.oninput = (ev) => onchange(ev.target.value);
+    i.onchange = () => { saveToStorage(); draw(); };
+    return i;
+  }
+
+  if (hit.kind === 'door') {
+    const g = document.createElement('div'); g.className = 'door-type-group';
+    ['single','double','rollup'].forEach(t => {
+      const b = document.createElement('button');
+      b.className = 'fp-btn sm' + (e.type === t ? ' active' : '');
+      b.textContent = t;
+      b.onclick = () => { pushUndo(); e.type = t; saveToStorage(); showEditPanel(hit); draw(); };
+      g.appendChild(b);
+    });
+    body.appendChild(mkLabel('Type:')); body.appendChild(g);
+    body.appendChild(mkLabel('Angle:')); body.appendChild(mkInput(e.angle, v => { pushUndo(); e.angle = parseFloat(v)||0; draw(); }, 'number'));
+  } else if (hit.kind === 'object') {
+    body.appendChild(mkLabel('Label:')); body.appendChild(mkInput(e.label, v => { pushUndo(); e.label = v; draw(); }));
+    body.appendChild(mkLabel('Angle:')); body.appendChild(mkInput(e.angle, v => { pushUndo(); e.angle = parseFloat(v)||0; draw(); }, 'number'));
+  } else if (hit.kind === 'symbol') {
+    body.appendChild(mkLabel('Note:')); body.appendChild(mkInput(e.note, v => { pushUndo(); e.note = v; }));
+    body.appendChild(mkLabel('Angle:'));
+    body.appendChild(mkInput(e.angle, v => { pushUndo(); e.angle = parseFloat(v)||0; draw(); }, 'number'));
+    // Quick 90° rotate
+    const rot = document.createElement('button'); rot.className = 'fp-btn sm'; rot.textContent = '↻ 90°';
+    rot.onclick = () => { pushUndo(); e.angle = ((e.angle || 0) + 90) % 360; saveToStorage(); draw(); showEditPanel(hit); };
+    body.appendChild(rot);
+  } else if (hit.kind === 'text') {
+    body.appendChild(mkLabel('Text:')); body.appendChild(mkInput(e.text, v => { pushUndo(); e.text = v; draw(); }));
+    body.appendChild(mkLabel('Size:')); body.appendChild(mkInput(e.size || 16, v => { pushUndo(); e.size = parseInt(v)||16; draw(); }, 'number'));
+  } else {
+    body.innerHTML = '<span style="color:var(--muted); font-size:11px;">Drag to move, Delete to remove.</span>';
+  }
+  editPanel.classList.add('open');
+}
+function hideEditPanel() { editPanel.classList.remove('open'); }
+
+// ---------- Tools ----------
 function setTool(t) {
   state.tool = t;
-  document.querySelectorAll('.fp-toolbar .fp-btn[data-tool]').forEach(el => {
+  document.querySelectorAll('[data-tool]').forEach(el => {
     el.classList.toggle('active', el.dataset.tool === t);
   });
-  // Show/hide marker palette
-  markerPalette.classList.toggle('open', t === 'marker');
-  // Cursor hint
-  wrap.style.cursor = t === 'pan' ? 'grab' : t === 'delete' ? 'crosshair' : 'default';
-  // Deselect if switching away from select
-  if (t !== 'select') { state.selected = null; hideEditPanel(); draw(); }
-}
-
-function selectElement(hit) {
-  state.selected = hit;
-  if (hit) {
-    showEditPanel(hit);
-  } else {
-    hideEditPanel();
-  }
+  wrap.style.cursor =
+    t === 'pan' ? 'grab' :
+    t === 'delete' ? 'crosshair' :
+    t === 'place' ? 'copy' :
+    t === 'wall' || t === 'measure' || t === 'text' ? 'crosshair' :
+    'default';
+  if (t !== 'select') { state.selected = null; hideEditPanel(); }
+  state.drawing = null;
+  textOverlay.classList.remove('open');
   draw();
 }
+function selectSymbol(id) {
+  state.selectedSymbolId = id;
+  document.querySelectorAll('.fp-sym-chip').forEach(c => {
+    c.classList.toggle('active', c.dataset.symbolId === id);
+  });
+  document.getElementById('tool-place').disabled = !id;
+  if (id) setTool('place');
+}
 
-// Pointer events (unified touch + mouse)
-let lastPinchDist = 0;
+// ---------- Pointer handling ----------
 let pointerCache = new Map();
+let lastPinchDist = 0;
 
 wrap.addEventListener('pointerdown', (e) => {
   wrap.setPointerCapture(e.pointerId);
   pointerCache.set(e.pointerId, { x: e.clientX, y: e.clientY });
   if (pointerCache.size === 2) {
-    // Pinch start
     const pts = Array.from(pointerCache.values());
     lastPinchDist = dist(pts[0].x, pts[0].y, pts[1].x, pts[1].y);
     state.drag = { kind: 'pinch' };
     return;
   }
   const rect = wrap.getBoundingClientRect();
-  const sx = e.clientX - rect.left;
-  const sy = e.clientY - rect.top;
-
-  if (state.tool === 'marker') {
-    // Place marker at tap
-    const {x, y} = screenToData(sx, sy);
-    placeMarkerAt(x, y);
-    return;
-  }
+  const sx = e.clientX - rect.left, sy = e.clientY - rect.top;
+  const dpt = screenToData(sx, sy);
 
   if (state.tool === 'delete') {
     const hit = hitTest(sx, sy);
-    if (hit) {
-      deleteElement(hit);
-      showToast('Deleted ' + hit.kind, 'ok');
-    }
+    if (hit) { deleteElement(hit); showToast('Deleted '+hit.kind, 'ok'); }
     return;
   }
-
-  // Select or pan
+  if (state.tool === 'place') {
+    if (!state.selectedSymbolId) { showToast('Pick a symbol first', 'err'); return; }
+    if (!state.data) state.data = emptyData();
+    pushUndo();
+    state.data.symbols.push({
+      id: uid('s_'), symbolId: state.selectedSymbolId,
+      x: dpt.x, y: dpt.y, angle: 0, note: '', label: ''
+    });
+    updateCounts(); saveToStorage(); hideEmpty(); draw();
+    showToast('Symbol placed', 'ok');
+    return;
+  }
+  if (state.tool === 'wall') {
+    if (!state.data) state.data = emptyData();
+    state.drawing = { kind: 'wall', x1: dpt.x, y1: dpt.y, x2: dpt.x, y2: dpt.y };
+    hideEmpty();
+    return;
+  }
+  if (state.tool === 'measure') {
+    if (!state.data) state.data = emptyData();
+    state.drawing = { kind: 'measure', x1: dpt.x, y1: dpt.y, x2: dpt.x, y2: dpt.y };
+    hideEmpty();
+    return;
+  }
+  if (state.tool === 'text') {
+    // Open text-input overlay at that spot
+    textOverlay.style.left = (sx + 10) + 'px';
+    textOverlay.style.top = (sy + 10) + 'px';
+    textOverlay.classList.add('open');
+    const ti = document.getElementById('text-input');
+    ti.value = ''; ti.focus();
+    textOverlay.dataset.x = dpt.x; textOverlay.dataset.y = dpt.y;
+    return;
+  }
   if (state.tool === 'select') {
     const hit = hitTest(sx, sy);
     if (hit) {
-      selectElement(hit);
-      state.drag = { kind: 'move', hit, startSX: sx, startSY: sy,
-                     origX: getElemX(hit), origY: getElemY(hit), moved: false };
+      state.selected = hit; showEditPanel(hit);
+      const p = elemPos(hit);
+      state.drag = { kind: 'move', hit, startSX: sx, startSY: sy, origX: p.x, origY: p.y, moved: false };
     } else {
-      // Empty area tap → deselect + start pan
-      state.selected = null;
-      hideEditPanel();
+      state.selected = null; hideEditPanel();
       state.drag = { kind: 'pan', startX: sx - state.view.panX, startY: sy - state.view.panY };
-      draw();
     }
+    draw();
   } else if (state.tool === 'pan') {
     state.drag = { kind: 'pan', startX: sx - state.view.panX, startY: sy - state.view.panY };
   }
@@ -789,22 +1832,26 @@ wrap.addEventListener('pointermove', (e) => {
   if (!pointerCache.has(e.pointerId)) return;
   pointerCache.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
-  if (state.drag && state.drag.kind === 'pinch' && pointerCache.size === 2) {
+  if (state.drag?.kind === 'pinch' && pointerCache.size === 2) {
     const pts = Array.from(pointerCache.values());
-    const newDist = dist(pts[0].x, pts[0].y, pts[1].x, pts[1].y);
-    const cx = (pts[0].x + pts[1].x) / 2;
-    const cy = (pts[0].y + pts[1].y) / 2;
+    const nd = dist(pts[0].x, pts[0].y, pts[1].x, pts[1].y);
+    const cx = (pts[0].x + pts[1].x)/2, cy = (pts[0].y + pts[1].y)/2;
     const rect = wrap.getBoundingClientRect();
-    zoomAt(cx - rect.left, cy - rect.top, newDist / lastPinchDist);
-    lastPinchDist = newDist;
+    zoomAt(cx - rect.left, cy - rect.top, nd / lastPinchDist);
+    lastPinchDist = nd;
     return;
   }
-
-  if (!state.drag || pointerCache.size > 1) return;
+  if (pointerCache.size > 1) return;
   const rect = wrap.getBoundingClientRect();
-  const sx = e.clientX - rect.left;
-  const sy = e.clientY - rect.top;
+  const sx = e.clientX - rect.left, sy = e.clientY - rect.top;
+  const dpt = screenToData(sx, sy);
 
+  if (state.drawing) {
+    state.drawing.x2 = dpt.x; state.drawing.y2 = dpt.y;
+    draw();
+    return;
+  }
+  if (!state.drag) return;
   if (state.drag.kind === 'pan') {
     state.view.panX = sx - state.drag.startX;
     state.view.panY = sy - state.drag.startY;
@@ -812,7 +1859,10 @@ wrap.addEventListener('pointermove', (e) => {
   } else if (state.drag.kind === 'move') {
     const dx = (sx - state.drag.startSX) / state.view.zoom;
     const dy = (sy - state.drag.startSY) / state.view.zoom;
-    if (Math.hypot(dx, dy) > 2) state.drag.moved = true;
+    if (Math.hypot(dx, dy) > 2) {
+      if (!state.drag.moved) pushUndo();
+      state.drag.moved = true;
+    }
     setElemPos(state.drag.hit, state.drag.origX + dx, state.drag.origY + dy);
     draw();
   }
@@ -822,7 +1872,19 @@ function endPointer(e) {
   if (pointerCache.has(e.pointerId)) pointerCache.delete(e.pointerId);
   if (pointerCache.size < 2) lastPinchDist = 0;
   if (pointerCache.size === 0) {
-    if (state.drag && state.drag.kind === 'move' && state.drag.moved) saveToStorage();
+    // Finish wall / measure draw
+    if (state.drawing) {
+      const d = state.drawing;
+      if (dist(d.x1,d.y1,d.x2,d.y2) > 5) {
+        pushUndo();
+        if (d.kind === 'wall') state.data.walls.push({ x1:d.x1,y1:d.y1,x2:d.x2,y2:d.y2 });
+        else if (d.kind === 'measure') state.data.measurements.push({ id: uid('m_'), x1:d.x1,y1:d.y1,x2:d.x2,y2:d.y2 });
+        updateCounts(); saveToStorage();
+      }
+      state.drawing = null;
+      draw();
+    }
+    if (state.drag?.kind === 'move' && state.drag.moved) saveToStorage();
     state.drag = null;
   }
 }
@@ -830,147 +1892,56 @@ wrap.addEventListener('pointerup', endPointer);
 wrap.addEventListener('pointercancel', endPointer);
 wrap.addEventListener('pointerleave', endPointer);
 
-// Mouse wheel zoom
 wrap.addEventListener('wheel', (e) => {
   e.preventDefault();
   const rect = wrap.getBoundingClientRect();
-  const sx = e.clientX - rect.left;
-  const sy = e.clientY - rect.top;
-  const factor = e.deltaY < 0 ? 1.15 : 1/1.15;
-  zoomAt(sx, sy, factor);
+  const sx = e.clientX - rect.left, sy = e.clientY - rect.top;
+  zoomAt(sx, sy, e.deltaY < 0 ? 1.15 : 1/1.15);
 }, { passive: false });
 
 function zoomAt(sx, sy, factor) {
-  const newZoom = Math.max(0.1, Math.min(8, state.view.zoom * factor));
-  const actual = newZoom / state.view.zoom;
-  // Keep the point under cursor fixed
+  const nz = Math.max(0.1, Math.min(8, state.view.zoom * factor));
+  const actual = nz / state.view.zoom;
   state.view.panX = sx - (sx - state.view.panX) * actual;
   state.view.panY = sy - (sy - state.view.panY) * actual;
-  state.view.zoom = newZoom;
-  draw();
+  state.view.zoom = nz; draw();
 }
 
-// ---------- Element helpers ----------
-function getElem(hit) {
-  if (!hit || !state.data) return null;
-  const arr = state.data[hit.kind + 's'];
-  return arr && arr[hit.index];
-}
-function getElemX(hit) {
-  const e = getElem(hit);
-  if (!e) return 0;
-  return hit.kind === 'wall' ? (e.x1 + e.x2) / 2 : e.x;
-}
-function getElemY(hit) {
-  const e = getElem(hit);
-  if (!e) return 0;
-  return hit.kind === 'wall' ? (e.y1 + e.y2) / 2 : e.y;
-}
-function setElemPos(hit, x, y) {
-  const e = getElem(hit);
-  if (!e) return;
-  if (hit.kind === 'wall') {
-    const cx = (e.x1 + e.x2) / 2, cy = (e.y1 + e.y2) / 2;
-    const dx = x - cx, dy = y - cy;
-    e.x1 += dx; e.x2 += dx; e.y1 += dy; e.y2 += dy;
-  } else {
-    e.x = x; e.y = y;
-  }
-}
-
-function deleteElement(hit) {
-  const arr = state.data[hit.kind + 's'];
-  if (!arr) return;
-  arr.splice(hit.index, 1);
-  state.selected = null;
-  hideEditPanel();
-  updateCounts();
-  saveToStorage();
-  draw();
-}
-
-function placeMarkerAt(x, y) {
-  const meta = MARKER_TYPES.find(t => t.id === state.selectedMarkerType);
-  if (!state.data) state.data = emptyData();
-  state.data.markers.push({
-    id: 'm_' + Date.now(),
-    type: state.selectedMarkerType,
-    x: x, y: y,
-    label: meta ? meta.label : state.selectedMarkerType,
-    note: ''
+// ---------- Text overlay ----------
+document.getElementById('text-confirm').addEventListener('click', () => {
+  const v = document.getElementById('text-input').value.trim();
+  if (!v) { textOverlay.classList.remove('open'); return; }
+  pushUndo();
+  state.data.texts.push({
+    id: uid('t_'), text: v,
+    x: parseFloat(textOverlay.dataset.x), y: parseFloat(textOverlay.dataset.y),
+    size: 16, color: '#1f2937'
   });
-  updateCounts();
-  saveToStorage();
+  updateCounts(); saveToStorage();
+  textOverlay.classList.remove('open');
+  setTool('select');
   draw();
-  showToast('Marker placed', 'ok');
-  // Stay in marker mode for chain placement — user has to switch back to select manually
-}
-
-// ---------- Edit panel ----------
-function showEditPanel(hit) {
-  const e = getElem(hit);
-  if (!e) return;
-  document.getElementById('ep-title').textContent = hit.kind[0].toUpperCase() + hit.kind.slice(1) + ' #' + (hit.index + 1);
-  let sub = '';
-  const sf = state.data.scale_px_per_ft || 12;
-  if (hit.kind === 'wall')   sub = `Length: ${(dist(e.x1, e.y1, e.x2, e.y2) / sf).toFixed(1)} ft`;
-  else if (hit.kind === 'door' || hit.kind === 'window') sub = `Width: ${(e.width / sf).toFixed(1)} ft`;
-  else if (hit.kind === 'object') sub = `${(e.width / sf).toFixed(1)} × ${(e.depth / sf).toFixed(1)} ft${e.label ? ' · ' + e.label : ''}`;
-  else if (hit.kind === 'marker') sub = (MARKER_TYPES.find(t => t.id === e.type) || {}).label || e.type;
-  document.getElementById('ep-sub').textContent = sub;
-
-  // Body (type-specific edits)
-  const body = document.getElementById('ep-body');
-  body.innerHTML = '';
-  if (hit.kind === 'door') {
-    const group = document.createElement('div');
-    group.className = 'door-type-group';
-    ['single', 'double', 'rollup'].forEach(t => {
-      const btn = document.createElement('button');
-      btn.className = 'fp-btn sm' + (e.type === t ? ' active' : '');
-      btn.textContent = t;
-      btn.onclick = () => { e.type = t; saveToStorage(); showEditPanel(hit); draw(); };
-      group.appendChild(btn);
-    });
-    const lbl = document.createElement('label'); lbl.textContent = 'Type:';
-    body.appendChild(lbl); body.appendChild(group);
-  } else if (hit.kind === 'object') {
-    const lbl = document.createElement('label'); lbl.textContent = 'Label:';
-    const input = document.createElement('input'); input.type = 'text'; input.value = e.label || '';
-    input.oninput = () => { e.label = input.value; };
-    input.onchange = () => { saveToStorage(); draw(); };
-    body.appendChild(lbl); body.appendChild(input);
-  } else if (hit.kind === 'marker') {
-    const lblN = document.createElement('label'); lblN.textContent = 'Note:';
-    const inp = document.createElement('input'); inp.type = 'text'; inp.value = e.note || '';
-    inp.oninput = () => { e.note = inp.value; };
-    inp.onchange = () => { saveToStorage(); };
-    body.appendChild(lblN); body.appendChild(inp);
-  } else {
-    body.innerHTML = '<span style="color:var(--muted); font-size:12px;">Drag to reposition, or click Delete to remove.</span>';
-  }
-  editPanel.classList.add('open');
-}
-function hideEditPanel() { editPanel.classList.remove('open'); }
-
-document.getElementById('ep-delete').addEventListener('click', () => {
-  if (state.selected) {
-    deleteElement(state.selected);
-    showToast('Deleted', 'ok');
-  }
 });
-document.getElementById('ep-close').addEventListener('click', () => {
-  state.selected = null; hideEditPanel(); draw();
+document.getElementById('text-cancel').addEventListener('click', () => {
+  textOverlay.classList.remove('open');
+});
+document.getElementById('text-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('text-confirm').click();
+  if (e.key === 'Escape') textOverlay.classList.remove('open');
 });
 
 // ---------- UI wiring ----------
 document.querySelectorAll('[data-tool]').forEach(el => {
   el.addEventListener('click', () => setTool(el.dataset.tool));
 });
+document.getElementById('btn-undo').addEventListener('click', undo);
+document.getElementById('btn-redo').addEventListener('click', redo);
 document.getElementById('btn-3d').addEventListener('click', (e) => {
   state.threeD = !state.threeD;
-  wrap.classList.toggle('threed', state.threeD);
+  threeWrap.classList.toggle('on', state.threeD);
+  threeDControls.classList.toggle('open', state.threeD);
   e.currentTarget.classList.toggle('active', state.threeD);
+  if (state.threeD) initOrUpdateThreeD();
 });
 document.getElementById('btn-layers').addEventListener('click', (e) => {
   layersPanel.classList.toggle('open');
@@ -978,56 +1949,288 @@ document.getElementById('btn-layers').addEventListener('click', (e) => {
 });
 document.querySelectorAll('#layers input[data-layer]').forEach(cb => {
   cb.addEventListener('change', () => {
-    state.visibleLayers[cb.dataset.layer] = cb.checked;
+    if (cb.dataset.layer === 'grid') {
+      wrap.classList.toggle('hide-grid', !cb.checked);
+    } else {
+      state.visibleLayers[cb.dataset.layer] = cb.checked;
+    }
     draw();
   });
 });
-document.getElementById('btn-zoom-in').addEventListener('click', () => {
-  zoomAt(state.view.width/2, state.view.height/2, 1.25);
-});
-document.getElementById('btn-zoom-out').addEventListener('click', () => {
-  zoomAt(state.view.width/2, state.view.height/2, 1/1.25);
-});
+document.getElementById('btn-zoom-in').addEventListener('click', () => zoomAt(state.view.width/2, state.view.height/2, 1.25));
+document.getElementById('btn-zoom-out').addEventListener('click', () => zoomAt(state.view.width/2, state.view.height/2, 1/1.25));
 document.getElementById('btn-fit').addEventListener('click', fitToView);
 document.getElementById('btn-load-latest').addEventListener('click', loadLatestCapture);
-document.getElementById('btn-save').addEventListener('click', () => {
-  saveToStorage();
-  showToast('Saved to pre-plan', 'ok');
-});
+document.getElementById('btn-save').addEventListener('click', () => { saveToStorage(); showToast('Saved', 'ok'); });
 document.getElementById('btn-clear').addEventListener('click', () => {
   if (!state.data) return;
   if (confirm('Clear the entire floor plan? This cannot be undone.')) {
-    state.data = null;
-    state.selected = null;
-    state.scanMeta = null;
+    pushUndo();
+    state.data = null; state.selected = null; state.scanMeta = null;
     try {
       const plan = JSON.parse(localStorage.getItem('preFirePlan') || '{}');
       delete plan.floor_plan_data;
       localStorage.setItem('preFirePlan', JSON.stringify(plan));
     } catch(e){}
-    hideEditPanel();
-    showEmpty();
-    updateMeta();
-    updateCounts();
-    draw();
+    hideEditPanel(); showEmpty(); updateMeta(); updateCounts(); draw();
   }
 });
 
-// ---------- Marker palette ----------
-(function buildMarkerPalette() {
-  const grid = document.getElementById('marker-grid');
-  MARKER_TYPES.forEach(t => {
-    const chip = document.createElement('div');
-    chip.className = 'fp-marker-chip' + (t.id === state.selectedMarkerType ? ' active' : '');
-    chip.innerHTML = `<span class="chip-icon">${t.icon}</span><span>${t.label}</span>`;
-    chip.onclick = () => {
-      state.selectedMarkerType = t.id;
-      document.querySelectorAll('.fp-marker-chip').forEach(c => c.classList.remove('active'));
-      chip.classList.add('active');
-    };
-    grid.appendChild(chip);
+document.getElementById('ep-delete').addEventListener('click', () => {
+  if (state.selected) { deleteElement(state.selected); showToast('Deleted', 'ok'); }
+});
+document.getElementById('ep-close').addEventListener('click', () => {
+  state.selected = null; hideEditPanel(); draw();
+});
+
+// Three.js 3D controls
+document.getElementById('td-rotate').addEventListener('input', (e) => {
+  state.threeDView.rotate = parseFloat(e.target.value); updateThreeDCamera();
+});
+document.getElementById('td-tilt').addEventListener('input', (e) => {
+  state.threeDView.tilt = parseFloat(e.target.value); updateThreeDCamera();
+});
+document.getElementById('td-wall-h').addEventListener('input', (e) => {
+  state.threeDView.wallH = parseFloat(e.target.value); rebuildThreeDScene();
+});
+document.getElementById('td-reset').addEventListener('click', () => {
+  state.threeDView = { rotate: 45, tilt: 45, wallH: 10 };
+  document.getElementById('td-rotate').value = 45;
+  document.getElementById('td-tilt').value = 45;
+  document.getElementById('td-wall-h').value = 10;
+  updateThreeDCamera();
+});
+
+// ---------- Symbol palette ----------
+function buildPalette() {
+  const body = document.getElementById('sym-body');
+  body.innerHTML = '';
+  SYMBOLS.CATEGORIES.forEach(cat => {
+    const syms = SYMBOLS.all.filter(s => s.cat === cat.id);
+    if (!syms.length) return;
+    const catEl = document.createElement('div');
+    catEl.className = 'fp-cat';
+    const title = document.createElement('div');
+    title.className = 'fp-cat-title';
+    title.innerHTML = cat.label + ' <span class="caret">▼</span>';
+    title.onclick = () => catEl.classList.toggle('collapsed');
+    catEl.appendChild(title);
+    const grid = document.createElement('div');
+    grid.className = 'fp-cat-grid';
+    syms.forEach(sym => {
+      const chip = document.createElement('div');
+      chip.className = 'fp-sym-chip';
+      chip.dataset.symbolId = sym.id;
+      chip.title = sym.label;
+      // Build icon via an offscreen render
+      const iconCanvas = document.createElement('canvas');
+      iconCanvas.width = 40; iconCanvas.height = 40;
+      const ic = iconCanvas.getContext('2d');
+      ic.save(); ic.translate(20, 20);
+      const scale = Math.min(36/sym.w, 36/sym.h);
+      ic.scale(scale, scale);
+      try { sym.draw(ic, sym.w, sym.h); } catch(e) { /* ignore */ }
+      ic.restore();
+      chip.appendChild(iconCanvas);
+      const lbl = document.createElement('span'); lbl.textContent = sym.label;
+      chip.appendChild(lbl);
+      chip.onclick = () => selectSymbol(sym.id);
+      grid.appendChild(chip);
+    });
+    catEl.appendChild(grid);
+    body.appendChild(catEl);
   });
-})();
+}
+document.getElementById('sym-search').addEventListener('input', (e) => {
+  const q = e.target.value.toLowerCase().trim();
+  document.querySelectorAll('.fp-cat').forEach(cat => {
+    let anyVisible = false;
+    cat.querySelectorAll('.fp-sym-chip').forEach(chip => {
+      const id = chip.dataset.symbolId;
+      const sym = SYMBOLS.byId[id];
+      const match = !q || sym.label.toLowerCase().includes(q) || sym.id.includes(q);
+      chip.style.display = match ? '' : 'none';
+      if (match) anyVisible = true;
+    });
+    cat.style.display = anyVisible ? '' : 'none';
+    if (q && anyVisible) cat.classList.remove('collapsed');
+  });
+});
+
+// ---------- Three.js 3D ----------
+const threeState = {
+  scene: null, camera: null, renderer: null, group: null, isInit: false, rafId: null
+};
+function initOrUpdateThreeD() {
+  if (typeof THREE === 'undefined') { showToast('Three.js not loaded', 'err'); return; }
+  if (!threeState.isInit) initThreeD();
+  rebuildThreeDScene();
+  updateThreeDCamera();
+  startThreeDLoop();
+}
+function initThreeD() {
+  const rect = wrap.getBoundingClientRect();
+  threeState.scene = new THREE.Scene();
+  threeState.scene.background = new THREE.Color(0xeef2f7);
+  threeState.camera = new THREE.PerspectiveCamera(40, rect.width / rect.height, 0.1, 10000);
+  threeState.renderer = new THREE.WebGLRenderer({ canvas: threeCanvas, antialias: true });
+  threeState.renderer.setPixelRatio(state.dpr);
+  threeState.renderer.setSize(rect.width, rect.height, false);
+  // Lights
+  const amb = new THREE.AmbientLight(0xffffff, 0.6); threeState.scene.add(amb);
+  const dir = new THREE.DirectionalLight(0xffffff, 0.7);
+  dir.position.set(200, 400, 300); threeState.scene.add(dir);
+  const dir2 = new THREE.DirectionalLight(0xddeeff, 0.35);
+  dir2.position.set(-200, 200, -100); threeState.scene.add(dir2);
+  threeState.isInit = true;
+}
+function rebuildThreeDScene() {
+  if (!threeState.scene) return;
+  if (threeState.group) { threeState.scene.remove(threeState.group); threeState.group.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); }); }
+  threeState.group = new THREE.Group();
+  if (!state.data) { threeState.scene.add(threeState.group); return; }
+  const d = state.data;
+  const sf = d.scale_px_per_ft || 12;   // px per foot
+  const H = state.threeDView.wallH * sf; // wall height in same px units
+  const wallThick = 4;
+
+  // Ground
+  const gw = d.canvas_width + 200, gh = d.canvas_height + 200;
+  const ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(gw, gh),
+    new THREE.MeshLambertMaterial({ color: 0xf1f5f9 })
+  );
+  ground.rotation.x = -Math.PI/2;
+  ground.position.set(d.canvas_width/2, 0, d.canvas_height/2);
+  threeState.group.add(ground);
+  // Grid
+  const grid = new THREE.GridHelper(Math.max(gw, gh), 20, 0xcbd5e1, 0xe2e8f0);
+  grid.position.set(d.canvas_width/2, 0.1, d.canvas_height/2);
+  threeState.group.add(grid);
+
+  // Walls (extrude as boxes)
+  (d.walls || []).forEach(w => {
+    const len = dist(w.x1, w.y1, w.x2, w.y2);
+    if (len < 1) return;
+    const angle = Math.atan2(w.y2 - w.y1, w.x2 - w.x1);
+    const geo = new THREE.BoxGeometry(len, H, wallThick);
+    const mat = new THREE.MeshLambertMaterial({ color: 0xe5e7eb });
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set((w.x1+w.x2)/2, H/2, (w.y1+w.y2)/2);
+    m.rotation.y = -angle;
+    threeState.group.add(m);
+    // Wall top trim (dark)
+    const topGeo = new THREE.BoxGeometry(len, 2, wallThick+0.5);
+    const topMat = new THREE.MeshLambertMaterial({ color: 0x374151 });
+    const top = new THREE.Mesh(topGeo, topMat);
+    top.position.set((w.x1+w.x2)/2, H, (w.y1+w.y2)/2);
+    top.rotation.y = -angle;
+    threeState.group.add(top);
+  });
+
+  // Doors (opening = gap in wall, leaf as thin box)
+  (d.doors || []).forEach(dr => {
+    const w = dr.width || 30;
+    const a = degToRad(dr.angle || 0);
+    // Door leaf (thin plane standing up, 80% of wall height)
+    const geo = new THREE.BoxGeometry(w, H*0.8, 1.5);
+    const mat = new THREE.MeshLambertMaterial({ color: 0xea580c });
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(dr.x, H*0.4, dr.y);
+    m.rotation.y = -a;
+    threeState.group.add(m);
+  });
+
+  // Windows (glass)
+  (d.windows || []).forEach(wn => {
+    const w = wn.width || 30;
+    const a = degToRad(wn.angle || 0);
+    const geo = new THREE.BoxGeometry(w, H*0.4, 2);
+    const mat = new THREE.MeshPhongMaterial({ color: 0x0ea5e9, transparent: true, opacity: 0.5, shininess: 100 });
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(wn.x, H*0.55, wn.y);
+    m.rotation.y = -a;
+    threeState.group.add(m);
+  });
+
+  // Objects (furniture from RoomPlan) — extrude as boxes
+  (d.objects || []).forEach(o => {
+    const h = getObjectHeight(o);
+    const geo = new THREE.BoxGeometry(o.width, h, o.depth);
+    const mat = new THREE.MeshLambertMaterial({ color: getObjectColor(o) });
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(o.x, h/2, o.y);
+    m.rotation.y = -degToRad(o.angle || 0);
+    threeState.group.add(m);
+  });
+
+  // Symbols — extrude based on meta.extrude3D if available
+  (d.symbols || []).forEach(s => {
+    const def = SYMBOLS.byId[s.symbolId]; if (!def) return;
+    const ex = def.extrude3D;
+    if (!ex) {
+      // Fallback: small platform
+      const geo = new THREE.BoxGeometry(def.w, 3, def.h);
+      const mat = new THREE.MeshLambertMaterial({ color: 0xdc2626 });
+      const m = new THREE.Mesh(geo, mat);
+      m.position.set(s.x, 1.5, s.y);
+      m.rotation.y = -degToRad(s.angle || 0);
+      threeState.group.add(m);
+      return;
+    }
+    const h3d = ex.h * sf;  // height in feet → px
+    const geo = new THREE.BoxGeometry(def.w, h3d, def.h);
+    const mat = new THREE.MeshLambertMaterial({ color: new THREE.Color(ex.color) });
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(s.x, h3d/2, s.y);
+    m.rotation.y = -degToRad(s.angle || 0);
+    threeState.group.add(m);
+  });
+
+  threeState.scene.add(threeState.group);
+}
+function getObjectHeight(o) {
+  const h = {
+    television: 15, sofa: 36, chair: 36, table: 30, storage: 72,
+    bed: 18, stove: 36, refrigerator: 72, toilet: 16, bathtub: 18,
+    dishwasher: 34, oven: 34, sink: 34, washer: 38, fireplace: 48
+  };
+  const key = (o.category || '').toLowerCase();
+  return (h[key] || 30);
+}
+function getObjectColor(o) {
+  const colors = {
+    television: 0x1f2937, sofa: 0xa78160, chair: 0x78543c,
+    table: 0xa78160, storage: 0x6b7280, bed: 0xd4c4a8,
+    stove: 0xe5e7eb, refrigerator: 0xf5f5f5, toilet: 0xffffff,
+    bathtub: 0xf0f8ff, sink: 0xe5e7eb, dishwasher: 0xf5f5f5, oven: 0x4b5563,
+    washer: 0xf0f9ff, fireplace: 0x7c2d12
+  };
+  const key = (o.category || '').toLowerCase();
+  return colors[key] || 0x9ca3af;
+}
+function updateThreeDCamera() {
+  if (!threeState.camera || !state.data) return;
+  const d = state.data;
+  const cx = d.canvas_width/2, cz = d.canvas_height/2;
+  const dist = Math.max(d.canvas_width, d.canvas_height) * 1.2;
+  const tilt = degToRad(state.threeDView.tilt);
+  const rot = degToRad(state.threeDView.rotate);
+  threeState.camera.position.set(
+    cx + dist * Math.cos(tilt) * Math.sin(rot),
+    dist * Math.sin(tilt),
+    cz + dist * Math.cos(tilt) * Math.cos(rot)
+  );
+  threeState.camera.lookAt(cx, 0, cz);
+}
+function startThreeDLoop() {
+  function loop() {
+    if (!state.threeD) return;
+    threeState.renderer.render(threeState.scene, threeState.camera);
+    threeState.rafId = requestAnimationFrame(loop);
+  }
+  if (!threeState.rafId) loop();
+}
 
 // ---------- UI updates ----------
 function updateMeta() {
@@ -1036,48 +2239,50 @@ function updateMeta() {
     const dt = state.scanMeta.scan_date ? new Date(state.scanMeta.scan_date).toLocaleString() : '';
     el.textContent = [state.scanMeta.department, state.scanMeta.building_name, dt].filter(Boolean).join(' · ');
   } else {
-    el.textContent = state.data ? 'Loaded from local storage' : 'No capture loaded';
+    el.textContent = state.data ? 'Working from saved plan' : 'No capture loaded';
   }
 }
 function updateCounts() {
   const d = state.data || emptyData();
-  document.getElementById('ct-walls').textContent   = (d.walls || []).length;
-  document.getElementById('ct-doors').textContent   = (d.doors || []).length;
-  document.getElementById('ct-windows').textContent = (d.windows || []).length;
-  document.getElementById('ct-objects').textContent = (d.objects || []).length;
-  document.getElementById('ct-markers').textContent = (d.markers || []).length;
+  ['walls','doors','windows','objects','symbols','texts','measurements'].forEach(k => {
+    document.getElementById('ct-' + k).textContent = (d[k] || []).length;
+  });
 }
 function updateStatus() {
   const z = (state.view.zoom * 100).toFixed(0);
-  const tool = state.tool;
-  statusEl.textContent = `Tool: ${tool} · Zoom: ${z}% · Pan: (${state.view.panX.toFixed(0)}, ${state.view.panY.toFixed(0)})`;
+  statusEl.textContent = `${state.tool} · zoom ${z}%` + (state.selectedSymbolId ? ' · ' + SYMBOLS.byId[state.selectedSymbolId].label : '');
 }
 function showEmpty() { emptyState.classList.remove('hidden'); }
 function hideEmpty() { emptyState.classList.add('hidden'); }
 
 // ---------- Init ----------
 function init() {
+  buildPalette();
   resizeCanvas();
   window.addEventListener('resize', resizeCanvas);
-
   const saved = loadFromStorage();
-  if (saved && (saved.walls || []).length) {
-    state.data = saved;
-    hideEmpty();
-    fitToView();
+  if (saved && ((saved.walls||[]).length || (saved.symbols||[]).length || (saved.texts||[]).length)) {
+    state.data = saved; hideEmpty(); fitToView();
   } else {
     showEmpty();
   }
-  updateMeta();
-  updateCounts();
-  draw();
+  updateMeta(); updateCounts(); draw();
+  // Keyboard shortcuts
+  window.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo(); }
+    else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'Z'))) { e.preventDefault(); redo(); }
+    else if (e.key === 'Delete' || e.key === 'Backspace') { if (state.selected) { deleteElement(state.selected); showToast('Deleted', 'ok'); }}
+    else if (e.key === 'v') setTool('select');
+    else if (e.key === 'w') setTool('wall');
+    else if (e.key === 't') setTool('text');
+    else if (e.key === 'm') setTool('measure');
+    else if (e.key === 'Escape') { state.selected = null; hideEditPanel(); state.drawing = null; draw(); }
+  });
 }
 init();
 
-// Expose a tiny API for debugging
-window.FP = { state, draw, fitToView, loadLatestCapture };
+window.FP = { state, draw, fitToView, loadLatestCapture, SYMBOLS };
 
 })();
-</script>
-</body>
-</html>
+</script></body></html>
