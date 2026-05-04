@@ -341,24 +341,24 @@
         <div class="career-login-card">
             <h3>🔺 Career Portal Sign In</h3>
             <p>Access your career path, task books, training requests, roster, and SOPs.</p>
-            <form class="career-login-form" id="careerLoginForm" onsubmit="careerLogin(event)">
-                <div>
-                    <label for="cl-email">Department Email</label>
-                    <input type="email" id="cl-email" placeholder="you@centervillefd.com" required autocomplete="email"/>
+            <form id="careerLoginForm" onsubmit="careerLogin(event)" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+                <div style="flex:2;min-width:200px">
+                    <label for="cl-email" style="display:block;font-size:.7rem;letter-spacing:1px;text-transform:uppercase;color:#8e9198;margin-bottom:5px">Department Email</label>
+                    <input type="email" id="cl-email" placeholder="you@centervillefd.com" required autocomplete="email"
+                        style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:5px;padding:10px 12px;color:#e8e8e8;font-size:.9rem;font-family:inherit;outline:none;"/>
+                </div>
+                <div style="flex:1;min-width:100px;max-width:160px">
+                    <label for="cl-pin" style="display:block;font-size:.7rem;letter-spacing:1px;text-transform:uppercase;color:#8e9198;margin-bottom:5px">PIN</label>
+                    <input type="password" id="cl-pin" placeholder="••••" maxlength="12" required autocomplete="current-password"
+                        style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:5px;padding:10px 12px;color:#e8e8e8;font-size:.9rem;font-family:inherit;outline:none;"/>
                 </div>
                 <div>
-                    <label for="cl-pin">PIN</label>
-                    <input type="password" id="cl-pin" placeholder="••••" maxlength="12" required autocomplete="current-password"/>
-                </div>
-                <div>
-                    <label>&nbsp;</label>
-                    <button class="career-login-btn" type="submit">Sign In →</button>
+                    <button type="submit" style="padding:10px 22px;background:#c41e3a;color:#fff;border:none;border-radius:5px;font-family:'Oswald',sans-serif;font-size:.9rem;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;white-space:nowrap;">Sign In →</button>
                 </div>
             </form>
-            <div class="career-login-error" id="clError">Invalid email or PIN. Try again.</div>
-            <div class="career-login-links">
-                <a href="https://career.fdtraining.org">Open full portal</a> &nbsp;·&nbsp;
-                Contact your Training Sergeant for access.
+            <div id="clError" style="color:#f87171;font-size:.78rem;margin-top:8px;display:none">Invalid email or PIN. Try again.</div>
+            <div style="margin-top:10px;font-size:.75rem;color:#8e9198">
+                <a href="https://career.fdtraining.org" style="color:#c41e3a;text-decoration:none">Open full portal</a> &nbsp;·&nbsp; Contact your Training Sergeant for access.
             </div>
         </div>
 
