@@ -337,18 +337,31 @@
     </div>
 
 
-        <div class="card">
-            <div class="card-header">
-                <div class="card-icon">🪜</div>
-                <div class="card-meta">
-                    <span class="card-type">Career Development</span>
-                    <span class="card-date">Live · 2026</span>
+
+        <div class="career-login-card">
+            <h3>🔺 Career Portal Sign In</h3>
+            <p>Access your career path, task books, training requests, roster, and SOPs.</p>
+            <form class="career-login-form" id="careerLoginForm" onsubmit="careerLogin(event)">
+                <div>
+                    <label for="cl-email">Department Email</label>
+                    <input type="email" id="cl-email" placeholder="you@centervillefd.com" required autocomplete="email"/>
                 </div>
+                <div>
+                    <label for="cl-pin">PIN</label>
+                    <input type="password" id="cl-pin" placeholder="••••" maxlength="12" required autocomplete="current-password"/>
+                </div>
+                <div>
+                    <label>&nbsp;</label>
+                    <button class="career-login-btn" type="submit">Sign In →</button>
+                </div>
+            </form>
+            <div class="career-login-error" id="clError">Invalid email or PIN. Try again.</div>
+            <div class="career-login-links">
+                <a href="https://career.fdtraining.org">Open full portal</a> &nbsp;·&nbsp;
+                Contact your Training Sergeant for access.
             </div>
-            <h3>Career Path & Task Books</h3>
-            <p>Rank ladder, promotion requirements, task book sign-offs, training requests, personnel roster, and SOP manual for all CFD members.</p>
-            <a href="https://career.fdtraining.org" class="card-link">Open Career Portal <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
         </div>
+
     <div class="section-label">Resources</div>
     <div class="grid">
 
@@ -411,6 +424,39 @@
     <div class="motto">Punctual · Valuable · Selfless</div>
     <div>Centerville Fire Department — Training Division</div>
 </footer>
+
+
+<script>
+async function careerLogin(e) {
+    e.preventDefault();
+    const email = document.getElementById('cl-email').value.trim().toLowerCase();
+    const pin   = document.getElementById('cl-pin').value.trim();
+    const errEl = document.getElementById('clError');
+    errEl.style.display = 'none';
+
+    // Hash the PIN with SHA-256 (same as career Worker)
+    const pinHash = Array.from(new Uint8Array(
+        await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pin))
+    )).map(b => b.toString(16).padStart(2,'0')).join('');
+
+    // POST to career.fdtraining.org/api/login-json
+    try {
+        const res = await fetch('https://career.fdtraining.org/api/login', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            credentials: 'include',
+            body: JSON.stringify({email, pin_hash: pinHash})
+        });
+        if (res.ok) {
+            window.location.href = 'https://career.fdtraining.org/';
+        } else {
+            errEl.style.display = 'block';
+        }
+    } catch {
+        errEl.style.display = 'block';
+    }
+}
+</script>
 
 </body>
 </html>
