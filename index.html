@@ -338,23 +338,30 @@
 
 
 
-        <div class="career-login-card">
-            <h3>🔺 Career Portal Sign In</h3>
-            <p>Access your career path, task books, training requests, roster, and SOPs.</p>
-            <form id="careerLoginForm" onsubmit="careerLogin(event)" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
-                <div style="flex:2;min-width:200px">
-                    <label for="cl-email" style="display:block;font-size:.7rem;letter-spacing:1px;text-transform:uppercase;color:#8e9198;margin-bottom:5px">Department Email</label>
+        <div class="section-label">Career Portal</div>
+    <div class="grid">
+        <div class="card" style="grid-column:span 2">
+            <span class="card-status active">Live</span>
+            <h3>🔺 Career Portal</h3>
+            <p>Sign in to access your career path, task books, training requests, roster, SOPs, and daily reports.</p>
+            <form id="careerLoginForm" onsubmit="careerLogin(event)" style="display:grid;grid-template-columns:1fr 120px auto;gap:8px;align-items:end;margin-top:12px">
+                <div>
+                    <div style="font-size:.68rem;letter-spacing:1px;text-transform:uppercase;color:#8e9198;margin-bottom:4px">Email</div>
                     <input type="email" id="cl-email" placeholder="you@centervillefd.com" required autocomplete="email"
-                        style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:5px;padding:10px 12px;color:#e8e8e8;font-size:.9rem;font-family:inherit;outline:none;"/>
-                </div>
-                <div style="flex:1;min-width:100px;max-width:160px">
-                    <label for="cl-pin" style="display:block;font-size:.7rem;letter-spacing:1px;text-transform:uppercase;color:#8e9198;margin-bottom:5px">PIN</label>
-                    <input type="password" id="cl-pin" placeholder="••••" maxlength="12" required autocomplete="current-password"
-                        style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:5px;padding:10px 12px;color:#e8e8e8;font-size:.9rem;font-family:inherit;outline:none;"/>
+                        style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:5px;padding:9px 11px;color:#e8e8e8;font-size:.85rem;font-family:inherit;outline:none;"/>
                 </div>
                 <div>
-                    <button type="submit" style="padding:10px 22px;background:#c41e3a;color:#fff;border:none;border-radius:5px;font-family:'Oswald',sans-serif;font-size:.9rem;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;white-space:nowrap;">Sign In →</button>
+                    <div style="font-size:.68rem;letter-spacing:1px;text-transform:uppercase;color:#8e9198;margin-bottom:4px">PIN</div>
+                    <input type="password" id="cl-pin" placeholder="••••" maxlength="12" required autocomplete="current-password"
+                        style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:5px;padding:9px 11px;color:#e8e8e8;font-size:.85rem;font-family:inherit;outline:none;"/>
                 </div>
+                <button type="submit" style="padding:9px 16px;background:#c41e3a;color:#fff;border:none;border-radius:5px;font-family:'Oswald',sans-serif;font-size:.82rem;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;white-space:nowrap">Sign In →</button>
+            </form>
+            <div id="clError" style="color:#f87171;font-size:.76rem;margin-top:6px;display:none">Invalid email or PIN.</div>
+            <a href="https://career.fdtraining.org" class="card-link" style="margin-top:10px">Open full portal <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+    </div>
+    </div>
             </form>
             <div id="clError" style="color:#f87171;font-size:.78rem;margin-top:8px;display:none">Invalid email or PIN. Try again.</div>
             <div style="margin-top:10px;font-size:.75rem;color:#8e9198">
