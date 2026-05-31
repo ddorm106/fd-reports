@@ -3012,5 +3012,21 @@ function init() {
 init();
 
 window.FP = { state, draw, fitToView, loadLatestCapture, SYMBOLS };
+
+// Auto-load a specific DivisionScan capture when opened with ?job=<id>
+(function(){
+  try {
+    var jid = new URLSearchParams(location.search).get('job');
+    if (!jid) return;
+    var run = function(){
+      fetch('/api/jobs/' + encodeURIComponent(jid), { cache: 'no-store' })
+        .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+        .then(function(j){ if (ingestJobPayload(j.job || j)) { saveToStorage(); showToast('Loaded capture', 'ok'); } })
+        .catch(function(e){ showToast('Auto-load failed: ' + (e.message || e), 'err'); });
+    };
+    if (document.readyState === 'complete') setTimeout(run, 300);
+    else window.addEventListener('load', function(){ setTimeout(run, 300); });
+  } catch(e) {}
+})();
 })();
 </script></body></html>
