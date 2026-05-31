@@ -99,6 +99,33 @@
         .sig-modal-btns button { padding: 8px 20px; border: none; border-radius: 6px; font-size: 0.9rem; font-weight: 600; cursor: pointer; font-family: inherit; }
         .sig-clear-btn { background: #ef5350; color: white; }
         .sig-done-btn { background: var(--cfd-blue); color: white; }
+        .rem-modal { display: none; position: fixed; inset: 0; z-index: 10000; background: rgba(0,0,0,0.78); padding: 20px; justify-content: center; align-items: center; overflow-y: auto; }
+        .rem-modal.show { display: flex; }
+        .rem-box { background: #fff; border-radius: 12px; width: 100%; max-width: 640px; box-shadow: 0 20px 60px rgba(0,0,0,.4); border-top: 6px solid var(--cfd-red); max-height: 92vh; display: flex; flex-direction: column; overflow: hidden; }
+        .rem-hdr { background: linear-gradient(135deg, #2c3e50 0%, #1a252f 100%); color: #fff; padding: 16px 22px; }
+        .rem-hdr h3 { font-family: 'IBM Plex Serif', serif; font-size: 1.15rem; font-weight: 700; color: #fff; margin: 0; letter-spacing: .5px; text-transform: uppercase; }
+        .rem-hdr .rem-sub { font-size: 0.82rem; color: var(--cfd-red-light); margin-top: 4px; font-weight: 600; }
+        .rem-body { padding: 18px 22px; overflow-y: auto; flex: 1; }
+        .rem-intro { background: #fff5f5; border: 1px solid #fecaca; border-left: 4px solid var(--cfd-red); padding: 12px 14px; border-radius: 6px; font-size: 0.88rem; color: var(--cfd-dark); margin-bottom: 14px; line-height: 1.45; }
+        .rem-list { list-style: none; padding: 0; margin: 0; }
+        .rem-item { display: flex; align-items: flex-start; gap: 12px; padding: 11px 12px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; background: #fafaf7; cursor: pointer; transition: all .15s; }
+        .rem-item:hover { background: #fff5f5; border-color: #fecaca; }
+        .rem-item.checked { background: #f0fdf4; border-color: #86efac; }
+        .rem-item input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; accent-color: var(--cfd-red); flex-shrink: 0; margin-top: 1px; }
+        .rem-item .rem-txt { font-size: 0.88rem; color: var(--text); line-height: 1.4; flex: 1; }
+        .rem-item .rem-txt b { color: var(--cfd-red); }
+        .rem-item.checked .rem-txt { color: #16a34a; }
+        .rem-item.checked .rem-txt b { color: #15803d; }
+        .rem-foot { padding: 14px 22px; background: #fafaf7; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+        .rem-progress { font-size: 0.82rem; color: var(--text-muted); font-weight: 600; }
+        .rem-progress.done { color: #16a34a; }
+        .rem-btns { display: flex; gap: 10px; }
+        .rem-btns button { padding: 11px 18px; border: none; border-radius: 6px; font-weight: 700; font-size: 0.85rem; cursor: pointer; font-family: inherit; transition: all .15s; }
+        .rem-btns .r-cancel { background: #eee; color: var(--text); }
+        .rem-btns .r-cancel:hover { background: #ddd; }
+        .rem-btns .r-go { background: var(--cfd-red); color: #fff; }
+        .rem-btns .r-go:hover:not(:disabled) { background: #7f1414; }
+        .rem-btns .r-go:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
         .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999; justify-content: center; align-items: center; }
         .overlay.show { display: flex; }
         .modal-box { background: white; border-radius: 12px; padding: 28px; max-width: 420px; width: 90%; text-align: center; }
@@ -266,6 +293,28 @@
 <div id="draftCodeModal" class="overlay"><div class="modal-box"><h3>Draft Saved to Cloud &#9729;</h3><p>Use this code on any device to resume:</p><div class="modal-code" id="draftCodeDisplay"></div><p style="font-size:0.8rem;color:#999;">Expires in 7 days</p><button class="modal-btn modal-btn-primary" onclick="navigator.clipboard.writeText(document.getElementById('draftCodeDisplay').textContent.trim());this.textContent='Copied!';setTimeout(()=>this.textContent='Copy Code',1500)">Copy Code</button><button class="modal-btn modal-btn-secondary" onclick="document.getElementById('draftCodeModal').classList.remove('show')">Close</button></div></div>
 <!-- RESUME MODAL -->
 <div id="resumeCodeModal" class="overlay"><div class="modal-box"><h3>Resume Draft</h3><p>Enter your 6-character code:</p><input type="text" id="resumeCodeInput" class="modal-input" maxlength="6" placeholder="ABC123"><p id="resumeError" style="color:var(--cfd-red);display:none;font-size:0.85rem;"></p><button class="modal-btn modal-btn-teal" id="resumeLoadBtn">Load Draft</button><button class="modal-btn modal-btn-secondary" onclick="document.getElementById('resumeCodeModal').classList.remove('show')">Cancel</button></div></div>
+<!-- REMINDER GATE MODAL -->
+<div id="reminderModal" class="rem-modal">
+  <div class="rem-box">
+    <div class="rem-hdr"><h3>Stop &mdash; Check Your Work</h3><div class="rem-sub">Tick every box to confirm. PDF will not generate until all 7 are checked.</div></div>
+    <div class="rem-body">
+      <div class="rem-intro"><b>Please check after yourself before downloading.</b> If anything below is not done, close this and fix it before you submit.</div>
+      <ul class="rem-list">
+        <li class="rem-item" data-rem="0"><input type="checkbox" id="rem0"><div class="rem-txt"><b>Time</b> is entered correctly &mdash; check <b>AM and PM</b>.</div></li>
+        <li class="rem-item" data-rem="1"><input type="checkbox" id="rem1"><div class="rem-txt"><b>Hours are whole numbers only &mdash; NO .5</b>. Use 3, 4, 8 &mdash; not 3.5.</div></li>
+        <li class="rem-item" data-rem="2"><input type="checkbox" id="rem2"><div class="rem-txt"><b>Description and objectives</b> are filled out correctly.</div></li>
+        <li class="rem-item" data-rem="3"><input type="checkbox" id="rem3"><div class="rem-txt"><b>All personnel participating have signed.</b></div></li>
+        <li class="rem-item" data-rem="4"><input type="checkbox" id="rem4"><div class="rem-txt"><b>Driver Training:</b> If personnel did NOT drive, they do <b>NOT</b> sign &mdash; they need an <b>Area Familiarization sign-in</b> instead.</div></li>
+        <li class="rem-item" data-rem="5"><input type="checkbox" id="rem5"><div class="rem-txt"><b>Facility training is 3 hours or more</b> AND held at the <b>training facility</b>.</div></li>
+        <li class="rem-item" data-rem="6"><input type="checkbox" id="rem6"><div class="rem-txt">Reviewed everything above. <b>Questions? Call Dorman BEFORE submitting.</b></div></li>
+      </ul>
+    </div>
+    <div class="rem-foot">
+      <div class="rem-progress" id="remProgress">0 of 7 confirmed</div>
+      <div class="rem-btns"><button type="button" class="r-cancel" id="remCancelBtn">Cancel &mdash; go fix it</button><button type="button" class="r-go" id="remGoBtn" disabled>Continue</button></div>
+    </div>
+  </div>
+</div>
 
 <script>
 // === STAFF DATA ===
@@ -484,8 +533,16 @@ async function generateTrainingReportPDF(){
     return{pdfBase64:pdf.output('datauristring').split(',')[1],filename};
 }
 
+// ==================== REMINDER GATE ====================
+let _remResolve=null,_remReject=null;
+function ensureReminderAcknowledged(){return new Promise((res,rej)=>{_remResolve=res;_remReject=rej;for(let i=0;i<7;i++){const cb=document.getElementById('rem'+i);if(cb){cb.checked=false;cb.parentElement.classList.remove('checked');}}_updateRemProgress();document.getElementById('reminderModal').classList.add('show');});}
+function _closeReminder(){document.getElementById('reminderModal').classList.remove('show');}
+function _updateRemProgress(){let n=0;for(let i=0;i<7;i++){if(document.getElementById('rem'+i)&&document.getElementById('rem'+i).checked)n++;}const p=document.getElementById('remProgress');if(p){p.textContent=n+' of 7 confirmed';p.classList.toggle('done',n===7);}const b=document.getElementById('remGoBtn');if(b)b.disabled=(n!==7);}
+function _wireReminderModal(){for(let i=0;i<7;i++){const li=document.querySelector('[data-rem="'+i+'"]');const cb=document.getElementById('rem'+i);if(!li||!cb)continue;li.addEventListener('click',(e)=>{if(e.target!==cb){cb.checked=!cb.checked;}li.classList.toggle('checked',cb.checked);_updateRemProgress();});cb.addEventListener('click',(e)=>{e.stopPropagation();li.classList.toggle('checked',cb.checked);_updateRemProgress();});}document.getElementById('remCancelBtn').addEventListener('click',()=>{_closeReminder();if(_remReject){_remReject(new Error('cancelled'));_remResolve=_remReject=null;}});document.getElementById('remGoBtn').addEventListener('click',()=>{let n=0;for(let i=0;i<7;i++){if(document.getElementById('rem'+i).checked)n++;}if(n!==7)return;_closeReminder();if(_remResolve){_remResolve();_remResolve=_remReject=null;}});}
+
 // ==================== EVENTS ====================
 document.addEventListener('DOMContentLoaded',()=>{
+    _wireReminderModal();
     const today=new Date();const ts=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
     if(!document.getElementById('start-date').value)document.getElementById('start-date').value=ts;
     document.getElementById('iso-category').addEventListener('change',function(){
@@ -503,8 +560,8 @@ document.addEventListener('DOMContentLoaded',()=>{
     document.getElementById('add-grading-point').addEventListener('click',addGradingRow);
     document.getElementById('add-equipment').addEventListener('click',addEquipmentRow);
     document.getElementById('save-report-btn').addEventListener('click',()=>{localStorage.setItem(FORM_STORAGE_KEY,JSON.stringify(collectFormData()));const b=document.getElementById('save-report-btn');b.innerHTML='&#10003; Saved!';b.style.background='#2e7d32';setTimeout(()=>{b.innerHTML='&#128190; Save';b.style.background='';},1500);});
-    document.getElementById('send-email-btn').addEventListener('click',async()=>{if(!validateForm())return;const btn=document.getElementById('send-email-btn');btn.disabled=true;btn.textContent='Sending...';try{const{pdfBase64,filename}=await generateTrainingReportPDF();const fd=collectFormData();const res=await fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({subject:(fd.trainingTitle||'Training Report')+' - '+formatDate(fd.startDate),html:'<h2>'+(fd.trainingTitle||'Training Report')+'</h2><p><strong>Date:</strong> '+formatDate(fd.startDate)+'</p><p><strong>Location:</strong> '+(fd.location||'N/A')+'</p><p><strong>ISO Category:</strong> '+(fd.isoCategory||'N/A')+'</p><p><strong>Hours:</strong> '+(fd.totalHours||'N/A')+'</p><p><strong>Shifts:</strong> '+(fd.selectedShifts||'None')+'</p><p><em>PDF attached.</em></p>',attachments:[{filename,content:pdfBase64}]})});const r=await res.json();if(r.success){alert('Emailed successfully!');if(confirm('Clear saved draft?'))localStorage.removeItem(FORM_STORAGE_KEY);}else alert('Failed: '+JSON.stringify(r.error));}catch(e){console.error(e);alert('Send failed.');}finally{btn.disabled=false;btn.innerHTML='&#9993; Email';}});
-    document.getElementById('print-preview-btn').addEventListener('click',async()=>{if(!validateForm())return;const btn=document.getElementById('print-preview-btn');btn.disabled=true;btn.textContent='Generating...';try{const{pdfBase64}=await generateTrainingReportPDF();const blob=new Blob([Uint8Array.from(atob(pdfBase64),c=>c.charCodeAt(0))],{type:'application/pdf'});const url=URL.createObjectURL(blob);const w=window.open(url,'_blank');if(w)w.onload=()=>w.print();else alert('Allow popups.');setTimeout(()=>URL.revokeObjectURL(url),30000);}catch(e){console.error(e);alert('PDF failed.');}btn.innerHTML='&#128196; PDF';btn.disabled=false;});
+    document.getElementById('send-email-btn').addEventListener('click',async()=>{try{await ensureReminderAcknowledged();}catch(e){return;}if(!validateForm())return;const btn=document.getElementById('send-email-btn');btn.disabled=true;btn.textContent='Sending...';try{const{pdfBase64,filename}=await generateTrainingReportPDF();const fd=collectFormData();const res=await fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({subject:(fd.trainingTitle||'Training Report')+' - '+formatDate(fd.startDate),html:'<h2>'+(fd.trainingTitle||'Training Report')+'</h2><p><strong>Date:</strong> '+formatDate(fd.startDate)+'</p><p><strong>Location:</strong> '+(fd.location||'N/A')+'</p><p><strong>ISO Category:</strong> '+(fd.isoCategory||'N/A')+'</p><p><strong>Hours:</strong> '+(fd.totalHours||'N/A')+'</p><p><strong>Shifts:</strong> '+(fd.selectedShifts||'None')+'</p><p><em>PDF attached.</em></p>',attachments:[{filename,content:pdfBase64}]})});const r=await res.json();if(r.success){alert('Emailed successfully!');if(confirm('Clear saved draft?'))localStorage.removeItem(FORM_STORAGE_KEY);}else alert('Failed: '+JSON.stringify(r.error));}catch(e){console.error(e);alert('Send failed.');}finally{btn.disabled=false;btn.innerHTML='&#9993; Email';}});
+    document.getElementById('print-preview-btn').addEventListener('click',async()=>{try{await ensureReminderAcknowledged();}catch(e){return;}if(!validateForm())return;const btn=document.getElementById('print-preview-btn');btn.disabled=true;btn.textContent='Generating...';try{const{pdfBase64}=await generateTrainingReportPDF();const blob=new Blob([Uint8Array.from(atob(pdfBase64),c=>c.charCodeAt(0))],{type:'application/pdf'});const url=URL.createObjectURL(blob);const w=window.open(url,'_blank');if(w)w.onload=()=>w.print();else alert('Allow popups.');setTimeout(()=>URL.revokeObjectURL(url),30000);}catch(e){console.error(e);alert('PDF failed.');}btn.innerHTML='&#128196; PDF';btn.disabled=false;});
     document.getElementById('clear-form-btn').addEventListener('click',()=>{if(confirm('Clear the entire form?')){localStorage.removeItem(FORM_STORAGE_KEY);location.reload();}});
     document.getElementById('cloud-save-btn').addEventListener('click',async()=>{const d=collectFormData();if(!d.trainingTitle){alert('Enter a title first.');return;}const ex=localStorage.getItem('cfdCloudCode')||undefined;try{const r=await(await fetch('/api/save-draft',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:d,code:ex})})).json();if(r.success){localStorage.setItem('cfdCloudCode',r.code);document.getElementById('draftCodeDisplay').textContent=r.code;document.getElementById('draftCodeModal').classList.add('show');}else alert('Cloud save failed.');}catch(e){alert('Cloud save failed.');}});
     document.getElementById('cloud-resume-btn').addEventListener('click',()=>{document.getElementById('resumeCodeModal').classList.add('show');setTimeout(()=>document.getElementById('resumeCodeInput').focus(),100);});
