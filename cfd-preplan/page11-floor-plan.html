@@ -312,6 +312,7 @@
                     <label class="fp-layer-row"><input type="checkbox" data-layer="texts" checked><span class="swatch" style="background:#475569;"></span>Text<span class="count" id="ct-texts">0</span></label>
                     <label class="fp-layer-row"><input type="checkbox" data-layer="measurements" checked><span class="swatch" style="background:#eab308;"></span>Measures<span class="count" id="ct-measurements">0</span></label>
                     <label class="fp-layer-row"><input type="checkbox" data-layer="freehand" checked><span class="swatch" style="background:#0f172a;"></span>Freehand<span class="count" id="ct-freehand">0</span></label>
+                    <label class="fp-layer-row"><input type="checkbox" data-layer="legend" checked><span class="swatch" style="background:#1e3a5f;"></span>Legend</label>
                 </div>
 
                 <div class="fp-panel" id="view-controls">
@@ -1299,7 +1300,7 @@ const state = {
   selectedSymbolId: null,
   selected: null,
   drawing: null,
-  visibleLayers: { walls:true, doors:true, windows:true, objects:true, symbols:true, texts:true, measurements:true, freehand:true },
+  visibleLayers: { walls:true, doors:true, windows:true, objects:true, symbols:true, texts:true, measurements:true, freehand:true, legend:true },
   threeD: false,
   threeDView: { rotate: 45, tilt: 45, wallH: 10, showFurniture: true },
   scanMeta: null,
@@ -1591,7 +1592,29 @@ function draw() {
   if (state.drawing) drawInProgress(state.drawing);
 
   ctx.restore();
+  drawLegend();
   updateStatus();
+}
+function drawLegend(){
+  if(state.visibleLayers && state.visibleLayers.legend===false) return;
+  if(!state.data) return;
+  var seen={}, ids=[];
+  (state.data.symbols||[]).forEach(function(s){ if(SYMBOLS.byId[s.symbolId] && !seen[s.symbolId]){ seen[s.symbolId]=1; ids.push(s.symbolId); } });
+  if(!ids.length) return;
+  var pad=10, rowH=20, icon=14, boxW=160, x=8, y=8, bh=pad+16+ids.length*rowH+4;
+  ctx.save();
+  ctx.fillStyle='rgba(255,255,255,0.93)'; ctx.strokeStyle='#94a3b8'; ctx.lineWidth=1;
+  ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(x,y,boxW,bh,8); else ctx.rect(x,y,boxW,bh); ctx.fill(); ctx.stroke();
+  ctx.fillStyle='#1e3a5f'; ctx.font='bold 11px system-ui,sans-serif'; ctx.textAlign='left'; ctx.textBaseline='middle';
+  ctx.fillText('LEGEND', x+pad, y+pad+4);
+  var ry=y+pad+20;
+  ids.forEach(function(id){
+    var def=SYMBOLS.byId[id];
+    ctx.save(); ctx.translate(x+pad+icon/2, ry); var sc=icon/Math.max(def.w,def.h); ctx.scale(sc,sc); try{ def.draw(ctx, def.w, def.h); }catch(e){} ctx.restore();
+    ctx.fillStyle='#334155'; ctx.font='10px system-ui,sans-serif'; ctx.textBaseline='middle';
+    ctx.fillText(def.label||id, x+pad+icon+8, ry); ry+=rowH;
+  });
+  ctx.restore();
 }
 function selEq(k, i) { return state.selected && state.selected.kind === k && state.selected.index === i; }
 
@@ -2271,7 +2294,7 @@ wrap.addEventListener('pointermove', (e) => {
 
 function endPointer(e) {
   if (pointerCache.has(e.pointerId)) pointerCache.delete(e.pointerId);
-  if (pointerCache.size < 2) { lastPinchDist = 0; lastPinchAngle = 0; }
+  if (pointerCache.size < 2) { lastPinchDist = 0; lastPinchAngle = 0; persistRotation(); }
   if (pointerCache.size === 0) {
     if (state.drawing) {
       const d = state.drawing;
@@ -2395,20 +2418,22 @@ rotSlider.addEventListener('input', (e) => {
   rotVal.textContent = Math.round(state.view.rotation) + '°';
   draw();
 });
+rotSlider.addEventListener('change', persistRotation);
 document.getElementById('vc-snap').addEventListener('click', () => {
   state.view.rotation = Math.round(state.view.rotation / 90) * 90;
-  updateRotationUI(); draw();
+  updateRotationUI(); draw(); persistRotation();
 });
 document.getElementById('vc-north').addEventListener('click', () => {
   if (!state.scanMeta?.compass_heading) { showToast('No compass heading in scan', 'err'); return; }
   // Compass heading is degrees clockwise from north. We want north = up.
   state.view.rotation = -state.scanMeta.compass_heading;
-  updateRotationUI(); draw();
+  updateRotationUI(); draw(); persistRotation();
   showToast('Aligned to compass north', 'ok');
 });
 document.getElementById('vc-reset').addEventListener('click', () => {
-  state.view.rotation = 0; updateRotationUI(); draw();
+  state.view.rotation = 0; updateRotationUI(); draw(); persistRotation();
 });
+function persistRotation(){ if(state.data){ state.data.view_rotation = state.view.rotation; saveToStorage(); } }
 function updateRotationUI() {
   rotSlider.value = state.view.rotation;
   rotVal.textContent = Math.round(state.view.rotation) + '°';
@@ -3023,6 +3048,7 @@ function init() {
   const saved = loadFromStorage();
   if (saved && ((saved.walls||[]).length || (saved.symbols||[]).length || (saved.texts||[]).length || (saved.freehand||[]).length)) {
     state.data = saved;
+    if (saved.view_rotation != null) state.view.rotation = saved.view_rotation;
     // If we have a saved _scan_meta, populate
     try {
       const plan = JSON.parse(localStorage.getItem('preFirePlan') || '{}');
@@ -3032,7 +3058,7 @@ function init() {
   } else {
     showEmpty();
   }
-  updateMeta(); updateCounts(); draw();
+  updateMeta(); updateCounts(); updateRotationUI(); draw();
 
   window.addEventListener('keydown', (e) => {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
