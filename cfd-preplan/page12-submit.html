@@ -507,6 +507,35 @@ function addPlanPages(pdfObj,data){
     });
 }
 
+function addPhotoPages(pdfObj,data){
+    var planId=(data.business_name||'')+'|'+(data.address||'');
+    return fetch('/api/preplan/photos?plan_id='+encodeURIComponent(planId)).then(function(r){return r.json()}).then(function(res){
+        var photos=(res&&res.photos)||[];
+        if(!photos.length)return;
+        function loadImg(p){return new Promise(function(resolve){var img=new Image();img.onload=function(){resolve({img:img,meta:p})};img.onerror=function(){resolve(null)};img.src='/api/preplan/photos/'+p.id+'/image';});}
+        return Promise.all(photos.map(loadImg)).then(function(loaded){
+            loaded=loaded.filter(Boolean);
+            if(!loaded.length)return;
+            var doc=pdfObj.doc,M=pdfObj.M,pw=pdfObj.pw,H=279.4;
+            doc.addPage();var y=M;
+            doc.setFillColor(30,58,95);doc.rect(M,y,pw,8,'F');
+            doc.setTextColor(255);doc.setFontSize(11);doc.setFont('helvetica','bold');
+            doc.text('Site Photos ('+loaded.length+')',M+3,y+5.5);doc.setTextColor(0);y+=12;
+            var cols=2,gap=6,cellW=(pw-gap)/cols,boxH=52,capH=7,cellH=boxH+capH+4,col=0;
+            loaded.forEach(function(it){
+                if(y+cellH>H-M){doc.addPage();y=M;col=0;}
+                var x=M+col*(cellW+gap);
+                var ar=(it.img.width/it.img.height)||1.33,dw=cellW,dh=dw/ar;
+                if(dh>boxH){dh=boxH;dw=dh*ar;}
+                try{doc.addImage(it.img,'JPEG',x,y,dw,dh);}catch(e){try{doc.addImage(it.img,'PNG',x,y,dw,dh);}catch(e2){}}
+                var cap=((it.meta.page?it.meta.page+' · ':'')+(it.meta.caption||it.meta.category||'')).trim();
+                if(cap){doc.setFontSize(7);doc.setTextColor(90);doc.text(doc.splitTextToSize(cap,cellW),x,y+boxH+4);doc.setTextColor(0);}
+                col++;if(col>=cols){col=0;y+=cellH;}
+            });
+        });
+    }).catch(function(e){console.error('photo pdf error',e)});
+}
+
 function generatePDF(){
     var btn=document.getElementById('pdfBtn');
     if(btn){btn.disabled=true;btn.textContent='⏳ Generating...';}
@@ -514,7 +543,7 @@ function generatePDF(){
     if(!data.business_name){showToast('Fill in the business name first','error');if(btn){btn.disabled=false;btn.textContent='📄 Generate PDF Report';}return}
 
     var pdfObj=buildPDFDoc(data);
-    addPlanPages(pdfObj,data).then(function(){
+    addPlanPages(pdfObj,data).then(function(){return addPhotoPages(pdfObj,data);}).then(function(){
         pdfObj.addFooters();
         pdfObj.doc.save((data.business_name||'preplan').replace(/[^a-zA-Z0-9]/g,'-')+'-preplan.pdf');
         showToast('PDF downloaded!','success');
