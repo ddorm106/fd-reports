@@ -280,6 +280,7 @@
           <span class="fp-sep"></span>
           <button class="fp-tbtn primary" id="btn-load-latest">⬇ Load Latest</button>
           <button class="fp-tbtn accent" id="btn-save">💾 Save</button>
+          <button class="fp-tbtn" id="btn-scan">📐 Scan</button>
           <button class="fp-tbtn sm" id="btn-clear">Clear</button>
         </div>
 
@@ -1350,6 +1351,19 @@ function loadFromStorage() {
     return d;
   } catch (e) { return null; }
 }
+function ppPlanId(){ try { return new URLSearchParams(location.search).get('plan_id') || ''; } catch(e){ return ''; } }
+function ppDept(){ return (location.host.indexOf('pcfdmembers') >= 0) ? 'PCFD' : 'CFD'; }
+function ppSyncToRecord(){
+  var pid = ppPlanId();
+  if (!pid || !state.data) return;
+  var scanId = (state.scanMeta && (state.scanMeta.scan_id || state.scanMeta.job_id)) || (function(){ try { return new URLSearchParams(location.search).get('job') || ''; } catch(e){ return ''; } })();
+  fetch('/api/preplans/' + encodeURIComponent(pid) + '/floorplan', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ floor_plan_data: state.data, scan_id: scanId })
+  }).then(function(r){ return r.json(); })
+    .then(function(j){ showToast((j && j.success) ? 'Saved to pre-plan record' : ('Record save failed: ' + ((j && j.error) || '?')), (j && j.success) ? 'ok' : 'err'); })
+    .catch(function(e){ showToast('Record save failed: ' + (e.message || e), 'err'); });
+}
 function saveToStorage() {
   if (!state.data) return;
   let plan = {};
@@ -2327,7 +2341,8 @@ document.getElementById('btn-zoom-in').addEventListener('click', () => zoomAt(st
 document.getElementById('btn-zoom-out').addEventListener('click', () => zoomAt(state.view.width/2, state.view.height/2, 1/1.25));
 document.getElementById('btn-fit').addEventListener('click', fitToView);
 document.getElementById('btn-load-latest').addEventListener('click', loadLatestCapture);
-document.getElementById('btn-save').addEventListener('click', () => { saveToStorage(); showToast('Saved', 'ok'); });
+document.getElementById('btn-save').addEventListener('click', () => { saveToStorage(); ppSyncToRecord(); showToast('Saved', 'ok'); });
+(function(){ var _sb = document.getElementById('btn-scan'); if (_sb) _sb.addEventListener('click', function(){ window.location.href = 'divisionscan://scan?plan_id=' + encodeURIComponent(ppPlanId()) + '&dept=' + ppDept() + '&return=page11'; }); })();
 document.getElementById('btn-clear').addEventListener('click', () => {
   if (!state.data) return;
   if (confirm('Clear entire floor plan? Cannot be undone.')) {
