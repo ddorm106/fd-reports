@@ -1660,10 +1660,23 @@ function drawWallHighlight(w) {
 }
 
 // Door gap — cleared white quad in wall (matches iOS). Runs BEFORE door symbol
+function findNearestWallAngle(x, y){
+  const W = (state.data && state.data.walls) || [];
+  let bestAngle = 0, bestDist = Infinity;
+  for (const wall of W) {
+    const wx = wall.x2 - wall.x1, wy = wall.y2 - wall.y1;
+    const wl = Math.hypot(wx, wy); if (wl <= 0) continue;
+    const t = Math.max(0, Math.min(1, ((x - wall.x1)*wx + (y - wall.y1)*wy) / (wl*wl)));
+    const px = wall.x1 + t*wx, py = wall.y1 + t*wy;
+    const dd = Math.hypot(x - px, y - py);
+    if (dd < bestDist) { bestDist = dd; bestAngle = Math.atan2(wy, wx); }
+  }
+  return bestAngle;
+}
 function drawDoorGap(d, sel) {
   const cx = d.x, cy = d.y;
   const w = d.width || 30;
-  const a = degToRad(d.angle || 0);
+  const a = d.angle ? degToRad(d.angle) : findNearestWallAngle(d.x, d.y);
   const cosA = Math.cos(a), sinA = Math.sin(a);
   const half = w / 2;
   const WALL_HALF = 4;
@@ -1682,7 +1695,7 @@ function drawDoorGap(d, sel) {
 function drawDoorSymbol(d, sel) {
   const cx = d.x, cy = d.y;
   const w = d.width || 30;
-  const a = degToRad(d.angle || 0);
+  const a = d.angle ? degToRad(d.angle) : findNearestWallAngle(d.x, d.y);
   const cosA = Math.cos(a), sinA = Math.sin(a);
   ctx.save();
   if (d.type === 'rollup') {
@@ -1755,7 +1768,7 @@ function drawDoorSymbol(d, sel) {
 function drawWindowGap(w, sel) {
   const cx = w.x, cy = w.y;
   const width = w.width || 30;
-  const a = degToRad(w.angle || 0);
+  const a = w.angle ? degToRad(w.angle) : findNearestWallAngle(w.x, w.y);
   const cosA = Math.cos(a), sinA = Math.sin(a);
   const half = width/2;
   const WALL_HALF = 4;
@@ -1774,7 +1787,7 @@ function drawWindowGap(w, sel) {
 function drawWindowSymbol(w, sel) {
   const cx = w.x, cy = w.y;
   const width = w.width || 30;
-  const a = degToRad(w.angle || 0);
+  const a = w.angle ? degToRad(w.angle) : findNearestWallAngle(w.x, w.y);
   const cosA = Math.cos(a), sinA = Math.sin(a);
   const half = width/2;
   const p1x = cx - half*cosA, p1y = cy - half*sinA;
