@@ -1792,13 +1792,14 @@ function drawSymbol(s, sel) {
   ctx.save();
   ctx.translate(s.x, s.y);
   ctx.rotate(degToRad(s.angle || 0));
+  const _sc = s.scale || 1;
   if (sel) {
     ctx.strokeStyle = COL.symbolRing;
     ctx.lineWidth = 3 / state.view.zoom;
-    const r = Math.max(def.w, def.h) * 0.7;
+    const r = Math.max(def.w, def.h) * 0.7 * _sc;
     ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI*2); ctx.stroke();
   }
-  def.draw(ctx, def.w, def.h);
+  ctx.save(); ctx.scale(_sc, _sc); def.draw(ctx, def.w, def.h); ctx.restore();
   if (s.label && state.view.zoom > 0.3) {
     // Labels upright regardless of symbol + view rotation
     ctx.rotate(-degToRad(s.angle || 0));
@@ -1806,7 +1807,7 @@ function drawSymbol(s, sel) {
     ctx.fillStyle = '#1f2937';
     ctx.font = (9 / state.view.zoom) + 'px "Source Sans Pro", system-ui';
     ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-    ctx.fillText(s.label, 0, def.h/2 + 3);
+    ctx.fillText(s.label, 0, def.h/2 * (s.scale||1) + 3);
   }
   ctx.restore();
 }
@@ -2014,6 +2015,15 @@ function showEditPanel(hit) {
     i.onchange = () => { saveToStorage(); draw(); };
     return i;
   };
+  const mkSlider = (val, min, max, step, fmt, onInput) => {
+    const w2 = document.createElement('div'); w2.style.cssText='display:flex;align-items:center;gap:6px;';
+    const i = document.createElement('input'); i.type='range'; i.min=min; i.max=max; i.step=step; i.value=val; i.style.flex='1';
+    const out = document.createElement('span'); out.style.cssText='min-width:48px;text-align:right;font-size:0.8rem;color:var(--navy-blue);font-variant-numeric:tabular-nums;'; out.textContent=fmt(val);
+    i.oninput=(ev)=>{ const v=parseFloat(ev.target.value); out.textContent=fmt(v); onInput(v); };
+    i.onchange=()=>{ saveToStorage(); };
+    w2.appendChild(i); w2.appendChild(out); return w2;
+  };
+  const dupBtn = () => { const b=document.createElement('button'); b.className='fp-tbtn sm'; b.style.marginTop='4px'; b.textContent='⧉ Duplicate'; b.onclick=()=>duplicateSelected(); return b; };
 
   if (hit.kind === 'door') {
     const g = document.createElement('div'); g.className = 'door-type-group';
@@ -2025,7 +2035,7 @@ function showEditPanel(hit) {
       g.appendChild(b);
     });
     body.appendChild(mkLabel('Type:')); body.appendChild(g);
-    body.appendChild(mkLabel('Angle:')); body.appendChild(mkInput(e.angle, v => { pushUndo(); e.angle = parseFloat(v)||0; draw(); }, 'number'));
+    body.appendChild(mkLabel('Angle:')); body.appendChild(mkSlider(e.angle||0, 0, 360, 1, v=>Math.round(v)+'°', v=>{ pushUndo(); e.angle=v; draw(); }));
   } else if (hit.kind === 'object') {
     // Label — make it prominent since RoomPlan frequently misclassifies
     // (desk scanned as dresser, recliner as sofa, etc.)
@@ -2064,10 +2074,11 @@ function showEditPanel(hit) {
     body.appendChild(catWrap);
 
     body.appendChild(mkLabel('Angle:'));
-    body.appendChild(mkInput(e.angle, v => { pushUndo(); e.angle = parseFloat(v)||0; draw(); }, 'number'));
+    body.appendChild(mkSlider(e.angle||0, 0, 360, 1, v=>Math.round(v)+'°', v=>{ pushUndo(); e.angle=v; draw(); }));
   } else if (hit.kind === 'symbol') {
     body.appendChild(mkLabel('Note:')); body.appendChild(mkInput(e.note, v => { pushUndo(); e.note = v; }));
-    body.appendChild(mkLabel('Angle:')); body.appendChild(mkInput(e.angle, v => { pushUndo(); e.angle = parseFloat(v)||0; draw(); }, 'number'));
+    body.appendChild(mkLabel('Size:')); body.appendChild(mkSlider(e.scale||1, 0.4, 3, 0.1, v=>v.toFixed(1)+'×', v=>{ pushUndo(); e.scale=v; draw(); }));
+    body.appendChild(mkLabel('Angle:')); body.appendChild(mkSlider(e.angle||0, 0, 360, 1, v=>Math.round(v)+'°', v=>{ pushUndo(); e.angle=v; draw(); }));
     const rot = document.createElement('button'); rot.className = 'fp-tbtn sm'; rot.textContent = '↻ 90°';
     rot.onclick = () => { pushUndo(); e.angle = ((e.angle || 0) + 90) % 360; saveToStorage(); draw(); showEditPanel(hit); };
     body.appendChild(rot);
@@ -2083,9 +2094,17 @@ function showEditPanel(hit) {
   } else {
     body.innerHTML = '<span style="color:var(--slate-500); font-size:0.7rem;">Drag to move, Delete to remove.</span>';
   }
+  if (hit && hit.kind) body.appendChild(dupBtn());
   editPanel.classList.add('open');
 }
 function hideEditPanel() { editPanel.classList.remove('open'); }
+
+// ---------- Copy / Paste / Duplicate ----------
+function _planArr(k){ return state.data ? state.data[k==='freehand'?'freehand':k+'s'] : null; }
+function _cloneEl(el, k){ var c=JSON.parse(JSON.stringify(el)); var O=14; if(c.id) c.id=uid((k[0]||'x')+'_'); if('x1' in c){c.x1+=O;c.y1+=O;c.x2+=O;c.y2+=O;} else if('x' in c){c.x+=O;c.y+=O;} if(Array.isArray(c.points)) c.points=c.points.map(function(p){return {x:p.x+O,y:p.y+O};}); return c; }
+function duplicateSelected(){ if(!state.selected) return; var k=state.selected.kind; var arr=_planArr(k); if(!arr||!arr[state.selected.index]) return; pushUndo(); arr.push(_cloneEl(arr[state.selected.index],k)); state.selected={kind:k,index:arr.length-1}; setTool('select'); updateCounts(); saveToStorage(); draw(); showEditPanel(state.selected); showToast('Duplicated','ok'); }
+function copySelected(){ if(!state.selected) return; var k=state.selected.kind; var arr=_planArr(k); if(!arr||!arr[state.selected.index]) return; window._clip={kind:k, el:JSON.parse(JSON.stringify(arr[state.selected.index]))}; showToast('Copied','ok'); }
+function pasteClip(){ if(!window._clip||!state.data) return; var k=window._clip.kind; var arr=_planArr(k); if(!arr) return; pushUndo(); arr.push(_cloneEl(window._clip.el,k)); state.selected={kind:k,index:arr.length-1}; setTool('select'); updateCounts(); saveToStorage(); draw(); showEditPanel(state.selected); showToast('Pasted','ok'); }
 
 // ---------- Tools ----------
 function setTool(t) {
@@ -2146,8 +2165,11 @@ wrap.addEventListener('pointerdown', (e) => {
       id: uid('s_'), symbolId: state.selectedSymbolId,
       x: dpt.x, y: dpt.y, angle: 0, note: '', label: ''
     });
-    updateCounts(); saveToStorage(); hideEmpty(); draw();
-    showToast('Placed', 'ok');
+    updateCounts(); saveToStorage(); hideEmpty();
+    setTool('select');
+    state.selected = { kind: 'symbol', index: state.data.symbols.length - 1 };
+    showEditPanel(state.selected); draw();
+    showToast('Placed — back to Select', 'ok');
     return;
   }
   if (state.tool === 'wall') {
@@ -3016,6 +3038,9 @@ function init() {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
     if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo(); }
     else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'Z'))) { e.preventDefault(); redo(); }
+    else if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'C')) { e.preventDefault(); copySelected(); }
+    else if ((e.ctrlKey || e.metaKey) && (e.key === 'v' || e.key === 'V')) { e.preventDefault(); pasteClip(); }
+    else if ((e.ctrlKey || e.metaKey) && (e.key === 'd' || e.key === 'D')) { e.preventDefault(); duplicateSelected(); }
     else if (e.key === 'Delete' || e.key === 'Backspace') { if (state.selected) { deleteElement(state.selected); showToast('Deleted', 'ok'); }}
     else if (e.key === 'v') setTool('select');
     else if (e.key === 'w') setTool('wall');
