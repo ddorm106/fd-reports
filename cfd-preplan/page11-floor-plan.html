@@ -1351,7 +1351,7 @@ function loadFromStorage() {
     return d;
   } catch (e) { return null; }
 }
-function ppPlanId(){ try { return new URLSearchParams(location.search).get('plan_id') || ''; } catch(e){ return ''; } }
+function ppPlanId(){ try { var u = new URLSearchParams(location.search).get('plan_id'); if (u) return u; var p = JSON.parse(localStorage.getItem('preFirePlan')||'{}'); return p._edit_id || ''; } catch(e){ return ''; } }
 function ppDept(){ return (location.host.indexOf('pcfdmembers') >= 0) ? 'PCFD' : 'CFD'; }
 function ppSyncToRecord(){
   var pid = ppPlanId();
@@ -2342,7 +2342,7 @@ document.getElementById('btn-zoom-out').addEventListener('click', () => zoomAt(s
 document.getElementById('btn-fit').addEventListener('click', fitToView);
 document.getElementById('btn-load-latest').addEventListener('click', loadLatestCapture);
 document.getElementById('btn-save').addEventListener('click', () => { saveToStorage(); ppSyncToRecord(); showToast('Saved', 'ok'); });
-(function(){ var _sb = document.getElementById('btn-scan'); if (_sb) _sb.addEventListener('click', function(){ window.location.href = 'divisionscan://scan?plan_id=' + encodeURIComponent(ppPlanId()) + '&dept=' + ppDept() + '&return=page11'; }); })();
+(function(){ var _sb = document.getElementById('btn-scan'); if (_sb) _sb.addEventListener('click', function(){ var p={}; try{p=JSON.parse(localStorage.getItem('preFirePlan')||'{}');}catch(e){} window.location.href = 'divisionscan://scan?plan_id=' + encodeURIComponent(ppPlanId()) + '&dept=' + ppDept() + '&name=' + encodeURIComponent(p.business_name||'') + '&addr=' + encodeURIComponent(p.address||'') + '&return=page11'; }); })();
 document.getElementById('btn-clear').addEventListener('click', () => {
   if (!state.data) return;
   if (confirm('Clear entire floor plan? Cannot be undone.')) {
