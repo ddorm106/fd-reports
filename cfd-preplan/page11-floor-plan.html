@@ -1359,7 +1359,7 @@ function ppSyncToRecord(){
   var scanId = (state.scanMeta && (state.scanMeta.scan_id || state.scanMeta.job_id)) || (function(){ try { return new URLSearchParams(location.search).get('job') || ''; } catch(e){ return ''; } })();
   fetch('/api/preplans/' + encodeURIComponent(pid) + '/floorplan', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ floor_plan_data: state.data, scan_id: scanId })
+    body: JSON.stringify({ floor_plan_data: state.data, scan_id: scanId, floor_plan_image: (function(){ try { draw(); return canvas.toDataURL('image/jpeg',0.72); } catch(e){ return null; } })() })
   }).then(function(r){ return r.json(); })
     .then(function(j){ showToast((j && j.success) ? 'Saved to pre-plan record' : ('Record save failed: ' + ((j && j.error) || '?')), (j && j.success) ? 'ok' : 'err'); })
     .catch(function(e){ showToast('Record save failed: ' + (e.message || e), 'err'); });
@@ -1370,6 +1370,7 @@ function saveToStorage() {
   try { plan = JSON.parse(localStorage.getItem('preFirePlan') || '{}'); } catch (e) {}
   state.data.savedAt = new Date().toISOString();
   plan.floor_plan_data = state.data;
+  try { draw(); plan.floor_plan_image = canvas.toDataURL('image/jpeg', 0.72); } catch(e) {}
   localStorage.setItem('preFirePlan', JSON.stringify(plan));
 }
 function pushUndo() {
