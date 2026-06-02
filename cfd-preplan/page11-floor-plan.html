@@ -1920,6 +1920,26 @@ var OBJ_CAT = {
 };
 function hexA(hex, a){ var n = parseInt(hex.slice(1),16); return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')'; }
 
+// Map object categories to page 11's built-in vector symbol art (clean line
+// drawings, like the app) instead of emoji. Unmapped categories fall back to
+// the glyph/emoji path below.
+var OBJ_SYM = {
+  chair:'chair', office_chair:'chair', stool:'chair', booth:'sofa', sofa:'sofa', bed:'bed',
+  table:'table', round_table:'table', desk:'desk', counter:'counter', countertop:'counter',
+  prep_table:'counter', storage:'storage', shelving:'bookshelf', parts_rack:'bookshelf',
+  display_case:'counter', stove:'stove', oven:'stove', refrigerator:'fridge', dishwasher:'dw',
+  sink:'sink', lavatory:'sink', walk_in:'cooler', freezer_case:'freezer',
+  toilet:'toilet', urinal:'toilet', bathtub:'tub', shower:'shower',
+  checkout:'checkout', checkout_counter:'checkout', television:'tv', computer:'tv',
+  panel:'elec', transformer:'elec', alarm_panel:'facp', fdc:'fdc', hydrant:'hydrant',
+  fire_ext:'extinguisher', knox_box:'knox', stairs:'stairs', elevator:'elevator', roof_access:'roof',
+  hvac:'hvac', ac_return:'hvac', ac_outdoor:'hvac', air_handler:'hvac', generator:'gen',
+  compressor:'compressor', welding:'welder', conveyor:'conveyor', machine:'machine', pallet:'pallet',
+  sprinkler_riser:'sprinkler', standpipe:'standpipe', exit_sign:'exit', no_access:'limited',
+  ada:'handicap', ada_parking:'handicap', ada_ramp:'handicap', tree:'tree', shrub:'shrub',
+  bollard:'bollard', propane:'propane'
+};
+
 function drawObjGlyph(id, w, d, color){
   var hw=w/2, hd=d/2; ctx.strokeStyle=color; ctx.fillStyle=color;
   ctx.lineWidth=Math.max(0.6, 1.4/state.view.zoom); ctx.lineJoin='round';
@@ -1953,27 +1973,35 @@ function drawObject(o, sel) {
   var g = cat.g;
   ctx.save();
   ctx.translate(o.x, o.y); ctx.rotate(degToRad(o.angle || 0));
-  // Box only for the selection highlight, or for objects that have no symbol.
+  var symId = OBJ_SYM[o.category];
+  var hasArt = symId && SYMBOLS.byId[symId];
+  // Box only for selection, or for objects with neither vector art nor a glyph.
   if (sel) {
     ctx.fillStyle = 'rgba(251,191,36,0.42)'; ctx.strokeStyle = COL.selection;
     ctx.lineWidth = 2 / state.view.zoom;
     ctx.fillRect(-w/2, -dp/2, w, dp); ctx.strokeRect(-w/2, -dp/2, w, dp);
-  } else if (!g) {
+  } else if (!hasArt && !g) {
     ctx.fillStyle = hexA(cat.c, 0.12); ctx.strokeStyle = cat.c;
     ctx.lineWidth = 1.2 / state.view.zoom;
     ctx.fillRect(-w/2, -dp/2, w, dp); ctx.strokeRect(-w/2, -dp/2, w, dp);
   }
-  // Symbol
-  var sz = Math.min(w, dp) * 0.6;
-  if (g && sz >= 8 && state.view.zoom > 0.2) {
-    if (g.charAt(0) === '@') {
-      drawObjGlyph(g.slice(1), w, dp, cat.c);
-    } else {
-      ctx.save();
-      ctx.rotate(-degToRad(o.angle || 0)); ctx.rotate(-degToRad(state.view.rotation));
-      ctx.font = sz + 'px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.fillText(g, 0, 0);
-      ctx.restore();
+  // Symbol — prefer page 11's built-in vector art (clean, like the app); else glyph/emoji.
+  if (hasArt && Math.min(w, dp) >= 6 && state.view.zoom > 0.12) {
+    var def = SYMBOLS.byId[symId];
+    var fit = Math.min(w / def.w, dp / def.h);
+    ctx.save(); ctx.scale(fit, fit); try { def.draw(ctx, def.w, def.h); } catch(e){} ctx.restore();
+  } else {
+    var sz = Math.min(w, dp) * 0.6;
+    if (g && sz >= 8 && state.view.zoom > 0.2) {
+      if (g.charAt(0) === '@') {
+        drawObjGlyph(g.slice(1), w, dp, cat.c);
+      } else {
+        ctx.save();
+        ctx.rotate(-degToRad(o.angle || 0)); ctx.rotate(-degToRad(state.view.rotation));
+        ctx.font = sz + 'px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText(g, 0, 0);
+        ctx.restore();
+      }
     }
   }
   // Label (upright)
@@ -1991,20 +2019,28 @@ function drawObject(o, sel) {
 function drawSides(sides){
   // If the upload didn't carry side labels, derive A/B/C/D from the floor-plan
   // bounding box: A=front(bottom), B=left, C=rear(top), D=right.
-  if(!sides || !sides.length){
-    var ws=(state.data&&state.data.walls)||[]; if(!ws.length) return;
+  // First time (or old saved plan with none): seed 4 movable labels from the
+  // floor-plan bounds and STORE them in state.data.sides so they can be dragged
+  // and are saved. A=front(bottom), B=left, C=rear(top), D=right — drag to taste.
+  if((!sides || !sides.length) && state.data){
+    var ws=state.data.walls||[]; if(!ws.length) return;
     var minX=1e9,minY=1e9,maxX=-1e9,maxY=-1e9;
     ws.forEach(function(w){ if(typeof w.x1!=='number')return; minX=Math.min(minX,w.x1,w.x2); maxX=Math.max(maxX,w.x1,w.x2); minY=Math.min(minY,w.y1,w.y2); maxY=Math.max(maxY,w.y1,w.y2); });
     if(minX>maxX) return;
-    var cx=(minX+maxX)/2, cy=(minY+maxY)/2, pad=20;
-    sides=[{label:'A',x:cx,y:maxY+pad},{label:'B',x:minX-pad,y:cy},{label:'C',x:cx,y:minY-pad},{label:'D',x:maxX+pad,y:cy}];
+    var cx=(minX+maxX)/2, cy=(minY+maxY)/2, pad=22;
+    state.data.sides=[{label:'A',x:cx,y:maxY+pad},{label:'B',x:minX-pad,y:cy},{label:'C',x:cx,y:minY-pad},{label:'D',x:maxX+pad,y:cy}];
+    sides=state.data.sides;
   }
+  if(!sides || !sides.length) return;
+  var selSide = (state.selected && state.selected.kind==='side') ? state.selected.index : -1;
   ctx.save(); ctx.font='bold 13px system-ui,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-  sides.forEach(function(s){
+  sides.forEach(function(s,i){
+    if(typeof s.x!=='number') return;
     ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(-degToRad(state.view.rotation));
     var t='SIDE '+s.label, tw=ctx.measureText(t).width;
-    ctx.fillStyle='rgba(255,255,255,0.85)';
-    if(ctx.roundRect){ ctx.beginPath(); ctx.roundRect(-tw/2-5,-10,tw+10,20,4); ctx.fill(); } else { ctx.fillRect(-tw/2-5,-10,tw+10,20); }
+    ctx.fillStyle = (i===selSide) ? 'rgba(251,191,36,0.55)' : 'rgba(255,255,255,0.85)';
+    if(ctx.roundRect){ ctx.beginPath(); ctx.roundRect(-tw/2-5,-10,tw+10,20,4); ctx.fill(); if(i===selSide){ ctx.strokeStyle=COL.selection; ctx.lineWidth=2; ctx.stroke(); } }
+    else { ctx.fillRect(-tw/2-5,-10,tw+10,20); }
     ctx.fillStyle='#b91c1c'; ctx.fillText(t,0,0);
     ctx.restore();
   });
@@ -2157,6 +2193,12 @@ function hitTest(sx, sy) {
   const {x, y} = screenToData(sx, sy);
   const tol = 8 / state.view.zoom;
   const d = state.data, VL = state.visibleLayers;
+
+  // Side labels (A/B/C/D) — small movable drag handles, checked first
+  if (d.sides) for (let i=d.sides.length-1; i>=0; i--) {
+    const s = d.sides[i];
+    if (typeof s.x === 'number' && Math.abs(x - s.x) < 26 && Math.abs(y - s.y) < 14) return { kind:'side', index:i };
+  }
 
   if (VL.symbols) for (let i=d.symbols.length-1; i>=0; i--) {
     const s = d.symbols[i], def = SYMBOLS.byId[s.symbolId];
