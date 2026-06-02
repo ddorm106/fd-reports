@@ -1648,8 +1648,8 @@ function draw() {
   if (VL.texts)   d.texts.forEach((t, i) => drawText(t, selEq('text', i)));
   if (VL.measurements) d.measurements.forEach((m, i) => drawMeasure(m, selEq('measurement', i)));
   if (VL.freehand)     d.freehand.forEach((f, i) => drawFreehand(f, selEq('freehand', i)));
-  if (VL.measurements !== false) drawWallDimensions(d.walls);
-  drawSides(d.sides);
+  try { if (VL.measurements !== false) drawWallDimensions(d.walls); } catch(e){}
+  try { drawSides(d.sides); } catch(e){}
 
   // Walls overlay selection highlight
   if (VL.walls && state.selected && state.selected.kind === 'wall') {
@@ -1895,9 +1895,9 @@ var OBJ_CAT = {
   fireplace:{c:OC.saf,g:'🔥'}, text:{c:OC.note,g:''},
   machine:{c:OC.ind,g:'⚙️'}, conveyor:{c:OC.ind,g:'↔'}, compressor:{c:OC.ind,g:'💨'},
   generator:{c:OC.ind,g:'⚡'}, transformer:{c:OC.ele,g:'⚡'}, boiler:{c:OC.ind,g:'🔥'},
-  pump:{c:OC.ind,g:'💧'}, storage_tank:{c:OC.ind,g:'🛢'}, pallet:{c:OC.ind,g:'📦'}, hazmat:{c:OC.saf,g:'☣️'},
-  hvac:{c:OC.mec,g:'🌀'}, ac_return:{c:OC.mec,g:'🌀'}, ac_outdoor:{c:OC.mec,g:'🌀'},
-  air_handler:{c:OC.mec,g:'🌀'}, furnace:{c:OC.mec,g:'🔥'}, chiller:{c:OC.mec,g:'❄️'},
+  pump:{c:OC.ind,g:'💧'}, storage_tank:{c:OC.ind,g:'🛢'}, pallet:{c:OC.ind,g:'📦'}, hazmat:{c:OC.saf,g:'@nfpa'},
+  hvac:{c:OC.mec,g:'❄️'}, ac_return:{c:OC.mec,g:'❄️'}, ac_outdoor:{c:OC.mec,g:'❄️'},
+  air_handler:{c:OC.mec,g:'❄️'}, furnace:{c:OC.mec,g:'🔥'}, chiller:{c:OC.mec,g:'❄️'},
   condenser:{c:OC.mec,g:'❄️'}, duct:{c:OC.mec,g:''}, exhaust_fan:{c:OC.mec,g:'🌀'},
   vehicle_lift:{c:OC.ind,g:'🚗'}, workbench:{c:OC.ind,g:'🔧'}, tool_cabinet:{c:OC.ind,g:'🧰'},
   welding:{c:OC.saf,g:'🔥'}, parts_rack:{c:OC.ind,g:''}, tire_rack:{c:OC.ind,g:'⭕'},
@@ -1905,7 +1905,7 @@ var OBJ_CAT = {
   water_meter:{c:OC.plu,g:''}, main_disconnect:{c:OC.ele,g:'⚡'}, sprinkler_riser:{c:OC.saf,g:'💧'},
   standpipe:{c:OC.saf,g:'💧'}, floor_drain:{c:OC.plu,g:''},
   gen_shutoff:{c:OC.ele,g:'🛑'}, fuel_shutoff:{c:OC.uti,g:'🛑'}, co2:{c:OC.saf,g:''}, propane:{c:OC.uti,g:'🔥'},
-  hazmat_cabinet:{c:OC.saf,g:'☣️'}, nfpa704:{c:OC.saf,g:'@nfpa'},
+  hazmat_cabinet:{c:OC.saf,g:'@nfpa'}, nfpa704:{c:OC.saf,g:'@nfpa'},
   fire_door:{c:OC.saf,g:''}, bifold_door:{c:OC.app,g:''}, apparatus_door:{c:OC.app,g:''},
   roof_access:{c:OC.ele,g:''}, attic_access:{c:OC.ele,g:''},
   exit_sign:{c:OC.exg,g:'🚪'}, no_access:{c:OC.saf,g:'🚫'}, ada:{c:OC.plu,g:'♿'},
@@ -1950,15 +1950,21 @@ function drawObject(o, sel) {
   if (o.category === 'text') { drawObjText(o, sel); return; }
   var cat = OBJ_CAT[o.category] || { c:'#777', g:'' };
   var w = o.width || 20, dp = o.depth || 20;
+  var g = cat.g;
   ctx.save();
   ctx.translate(o.x, o.y); ctx.rotate(degToRad(o.angle || 0));
-  ctx.fillStyle = sel ? 'rgba(251,191,36,0.42)' : hexA(cat.c, 0.12);
-  ctx.strokeStyle = sel ? COL.selection : cat.c;
-  ctx.lineWidth = (sel ? 2 : 1.2) / state.view.zoom;
-  ctx.fillRect(-w/2, -dp/2, w, dp);
-  ctx.strokeRect(-w/2, -dp/2, w, dp);
+  // Box only for the selection highlight, or for objects that have no symbol.
+  if (sel) {
+    ctx.fillStyle = 'rgba(251,191,36,0.42)'; ctx.strokeStyle = COL.selection;
+    ctx.lineWidth = 2 / state.view.zoom;
+    ctx.fillRect(-w/2, -dp/2, w, dp); ctx.strokeRect(-w/2, -dp/2, w, dp);
+  } else if (!g) {
+    ctx.fillStyle = hexA(cat.c, 0.12); ctx.strokeStyle = cat.c;
+    ctx.lineWidth = 1.2 / state.view.zoom;
+    ctx.fillRect(-w/2, -dp/2, w, dp); ctx.strokeRect(-w/2, -dp/2, w, dp);
+  }
   // Symbol
-  var g = cat.g, sz = Math.min(w, dp) * 0.6;
+  var sz = Math.min(w, dp) * 0.6;
   if (g && sz >= 8 && state.view.zoom > 0.2) {
     if (g.charAt(0) === '@') {
       drawObjGlyph(g.slice(1), w, dp, cat.c);
@@ -1983,7 +1989,16 @@ function drawObject(o, sel) {
 
 // Fireground A/B/C/D side labels (from layout.sides)
 function drawSides(sides){
-  if(!sides || !sides.length) return;
+  // If the upload didn't carry side labels, derive A/B/C/D from the floor-plan
+  // bounding box: A=front(bottom), B=left, C=rear(top), D=right.
+  if(!sides || !sides.length){
+    var ws=(state.data&&state.data.walls)||[]; if(!ws.length) return;
+    var minX=1e9,minY=1e9,maxX=-1e9,maxY=-1e9;
+    ws.forEach(function(w){ if(typeof w.x1!=='number')return; minX=Math.min(minX,w.x1,w.x2); maxX=Math.max(maxX,w.x1,w.x2); minY=Math.min(minY,w.y1,w.y2); maxY=Math.max(maxY,w.y1,w.y2); });
+    if(minX>maxX) return;
+    var cx=(minX+maxX)/2, cy=(minY+maxY)/2, pad=20;
+    sides=[{label:'A',x:cx,y:maxY+pad},{label:'B',x:minX-pad,y:cy},{label:'C',x:cx,y:minY-pad},{label:'D',x:maxX+pad,y:cy}];
+  }
   ctx.save(); ctx.font='bold 13px system-ui,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
   sides.forEach(function(s){
     ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(-degToRad(state.view.rotation));
