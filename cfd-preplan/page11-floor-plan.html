@@ -1733,12 +1733,14 @@ function drawDoorSymbol(d, sel) {
     ctx.beginPath(); ctx.arc(hL_x, hL_y, 2/state.view.zoom, 0, Math.PI*2); ctx.fill();
     ctx.beginPath(); ctx.arc(hR_x, hR_y, 2/state.view.zoom, 0, Math.PI*2); ctx.fill();
   } else {
-    // Single door — hinge at one end, swings 90° outward (iOS default)
-    const hx = cx - w/2*cosA, hy = cy - w/2*sinA;
-    const swingA = a + Math.PI/2;
+    // Single door — hinge at chosen end, swings to chosen side (left/right)
+    const atEnd = (d.hinge === 'end');
+    const hx = cx + (atEnd ? 1 : -1) * w/2 * cosA, hy = cy + (atEnd ? 1 : -1) * w/2 * sinA;
+    const closedDir = atEnd ? (a + Math.PI) : a;
+    const swingSign = (d.swing === -1) ? -1 : 1;
+    const swingA = closedDir + swingSign * Math.PI/2;
     const px_ = hx + w*Math.cos(swingA);
     const py_ = hy + w*Math.sin(swingA);
-    const arcEx = hx + w*cosA, arcEy = hy + w*sinA;
     // Panel
     ctx.strokeStyle = COL.doorLeaf;
     ctx.lineWidth = 1.8 / state.view.zoom;
@@ -1748,7 +1750,7 @@ function drawDoorSymbol(d, sel) {
     ctx.lineWidth = 0.9 / state.view.zoom;
     ctx.setLineDash([4/state.view.zoom, 2/state.view.zoom]);
     ctx.beginPath();
-    ctx.arc(hx, hy, w, a, a + Math.PI/2);
+    ctx.arc(hx, hy, w, closedDir, swingA, swingSign < 0);
     ctx.stroke();
     ctx.setLineDash([]);
     // Hinge dot
@@ -2079,6 +2081,16 @@ function showEditPanel(hit) {
     });
     body.appendChild(mkLabel('Type:')); body.appendChild(g);
     body.appendChild(mkLabel('Angle:')); body.appendChild(mkSlider(e.angle||0, 0, 360, 1, v=>Math.round(v)+'°', v=>{ pushUndo(); e.angle=v; draw(); }));
+    if (e.type !== 'rollup') {
+      body.appendChild(mkLabel('Swing:'));
+      const swingRow = document.createElement('div'); swingRow.className = 'door-type-group';
+      const fh = document.createElement('button'); fh.className='fp-tbtn sm'; fh.textContent='⇄ Hinge';
+      fh.onclick=()=>{ pushUndo(); e.hinge = (e.hinge==='end')?'start':'end'; saveToStorage(); draw(); };
+      const fs = document.createElement('button'); fs.className='fp-tbtn sm'; fs.textContent='↕ Swing';
+      fs.onclick=()=>{ pushUndo(); e.swing = (e.swing===-1)?1:-1; saveToStorage(); draw(); };
+      swingRow.appendChild(fh); swingRow.appendChild(fs);
+      body.appendChild(swingRow);
+    }
   } else if (hit.kind === 'object') {
     // Label — make it prominent since RoomPlan frequently misclassifies
     // (desk scanned as dresser, recliner as sofa, etc.)
