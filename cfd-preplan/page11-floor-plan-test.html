@@ -1991,20 +1991,28 @@ function drawObject(o, sel) {
 function drawSides(sides){
   // If the upload didn't carry side labels, derive A/B/C/D from the floor-plan
   // bounding box: A=front(bottom), B=left, C=rear(top), D=right.
-  if(!sides || !sides.length){
-    var ws=(state.data&&state.data.walls)||[]; if(!ws.length) return;
+  // First time (or old saved plan with none): seed 4 movable labels from the
+  // floor-plan bounds and STORE them in state.data.sides so they can be dragged
+  // and are saved. A=front(bottom), B=left, C=rear(top), D=right — drag to taste.
+  if((!sides || !sides.length) && state.data){
+    var ws=state.data.walls||[]; if(!ws.length) return;
     var minX=1e9,minY=1e9,maxX=-1e9,maxY=-1e9;
     ws.forEach(function(w){ if(typeof w.x1!=='number')return; minX=Math.min(minX,w.x1,w.x2); maxX=Math.max(maxX,w.x1,w.x2); minY=Math.min(minY,w.y1,w.y2); maxY=Math.max(maxY,w.y1,w.y2); });
     if(minX>maxX) return;
-    var cx=(minX+maxX)/2, cy=(minY+maxY)/2, pad=20;
-    sides=[{label:'A',x:cx,y:maxY+pad},{label:'B',x:minX-pad,y:cy},{label:'C',x:cx,y:minY-pad},{label:'D',x:maxX+pad,y:cy}];
+    var cx=(minX+maxX)/2, cy=(minY+maxY)/2, pad=22;
+    state.data.sides=[{label:'A',x:cx,y:maxY+pad},{label:'B',x:minX-pad,y:cy},{label:'C',x:cx,y:minY-pad},{label:'D',x:maxX+pad,y:cy}];
+    sides=state.data.sides;
   }
+  if(!sides || !sides.length) return;
+  var selSide = (state.selected && state.selected.kind==='side') ? state.selected.index : -1;
   ctx.save(); ctx.font='bold 13px system-ui,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-  sides.forEach(function(s){
+  sides.forEach(function(s,i){
+    if(typeof s.x!=='number') return;
     ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(-degToRad(state.view.rotation));
     var t='SIDE '+s.label, tw=ctx.measureText(t).width;
-    ctx.fillStyle='rgba(255,255,255,0.85)';
-    if(ctx.roundRect){ ctx.beginPath(); ctx.roundRect(-tw/2-5,-10,tw+10,20,4); ctx.fill(); } else { ctx.fillRect(-tw/2-5,-10,tw+10,20); }
+    ctx.fillStyle = (i===selSide) ? 'rgba(251,191,36,0.55)' : 'rgba(255,255,255,0.85)';
+    if(ctx.roundRect){ ctx.beginPath(); ctx.roundRect(-tw/2-5,-10,tw+10,20,4); ctx.fill(); if(i===selSide){ ctx.strokeStyle=COL.selection; ctx.lineWidth=2; ctx.stroke(); } }
+    else { ctx.fillRect(-tw/2-5,-10,tw+10,20); }
     ctx.fillStyle='#b91c1c'; ctx.fillText(t,0,0);
     ctx.restore();
   });
@@ -2157,6 +2165,12 @@ function hitTest(sx, sy) {
   const {x, y} = screenToData(sx, sy);
   const tol = 8 / state.view.zoom;
   const d = state.data, VL = state.visibleLayers;
+
+  // Side labels (A/B/C/D) — small movable drag handles, checked first
+  if (d.sides) for (let i=d.sides.length-1; i>=0; i--) {
+    const s = d.sides[i];
+    if (typeof s.x === 'number' && Math.abs(x - s.x) < 26 && Math.abs(y - s.y) < 14) return { kind:'side', index:i };
+  }
 
   if (VL.symbols) for (let i=d.symbols.length-1; i>=0; i--) {
     const s = d.symbols[i], def = SYMBOLS.byId[s.symbolId];
