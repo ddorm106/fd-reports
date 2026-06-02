@@ -1462,7 +1462,7 @@ function ingestJobPayload(job) {
   const scanJson = job;
   const layout = (scanJson && scanJson.ai_form_data && scanJson.ai_form_data.layout) || null;
 
-  let walls=[], doors=[], windows=[], objects=[], measurements=[];
+  let walls=[], doors=[], windows=[], objects=[], measurements=[], sides=[];
   let canvasW = 1000, canvasH = 700;
   const SCALE = 12, PADDING = 80;
 
@@ -1474,6 +1474,7 @@ function ingestJobPayload(job) {
     windows = (layout.windows || []).map(w => ({ ...w }));
     objects = (layout.objects || []).map(o => ({ ...o }));
     measurements = (layout.measurements || []).map(m => ({ ...m, id: m.id || uid('m_') }));
+    sides = (layout.sides || []).map(s => ({ ...s }));
   } else if (Array.isArray(scanJson.walls) && scanJson.walls.length) {
     // iOS-native feet + radians
     const allXs=[], allYs=[];
@@ -1535,7 +1536,7 @@ function ingestJobPayload(job) {
       x: f.x || 0, y: f.y || 0, angle: 0,
       note: f.note || '', label: f.name || ''
     })) : [],
-    texts: [], measurements, freehand: []
+    texts: [], measurements, sides, freehand: []
   };
   state.scanMeta = {
     scan_id: job.id, department: job.department,
@@ -1647,6 +1648,8 @@ function draw() {
   if (VL.texts)   d.texts.forEach((t, i) => drawText(t, selEq('text', i)));
   if (VL.measurements) d.measurements.forEach((m, i) => drawMeasure(m, selEq('measurement', i)));
   if (VL.freehand)     d.freehand.forEach((f, i) => drawFreehand(f, selEq('freehand', i)));
+  if (VL.measurements !== false) drawWallDimensions(d.walls);
+  drawSides(d.sides);
 
   // Walls overlay selection highlight
   if (VL.walls && state.selected && state.selected.kind === 'wall') {
@@ -1870,23 +1873,141 @@ function drawWindowSymbol(w, sel) {
   }
 }
 
+// Object catalog mirrored from the DivisionScan app (category -> color + glyph).
+// Glyphs prefixed with '@' are custom canvas drawings; others are emoji.
+var OC = { fur:'#8C6638', app:'#66737F', plu:'#2E80CC', com:'#218C8C', saf:'#CC3833',
+  ele:'#E69E1A', ind:'#59616B', mec:'#4D809E', uti:'#8C7326', obs:'#80808C',
+  note:'#263361', exg:'#268C47', veh:'#4D5973', site:'#408C4D', eng:'#EBB81A' };
+var OBJ_CAT = {
+  chair:{c:OC.fur,g:'🪑'}, office_chair:{c:OC.fur,g:'🪑'}, stool:{c:OC.fur,g:'🪑'},
+  booth:{c:OC.fur,g:'🛋'}, sofa:{c:OC.fur,g:'🛋'}, bed:{c:OC.fur,g:'🛏'},
+  table:{c:OC.fur,g:''}, round_table:{c:OC.fur,g:''}, desk:{c:OC.fur,g:'💻'}, storage:{c:OC.fur,g:''},
+  stove:{c:OC.app,g:'@range'}, oven:{c:OC.app,g:''}, refrigerator:{c:OC.app,g:'🧊'},
+  dishwasher:{c:OC.app,g:''}, sink:{c:OC.plu,g:'@sink'}, prep_table:{c:OC.com,g:''},
+  counter:{c:OC.com,g:''}, hood:{c:OC.app,g:'🌀'}, walk_in:{c:OC.plu,g:'❄️'}, freezer_case:{c:OC.plu,g:'❄️'},
+  toilet:{c:OC.plu,g:'@toilet'}, urinal:{c:OC.plu,g:'@toilet'}, lavatory:{c:OC.plu,g:'@sink'},
+  bathtub:{c:OC.plu,g:'🛁'}, shower:{c:OC.plu,g:'🚿'},
+  shelving:{c:OC.com,g:''}, display_case:{c:OC.com,g:''}, checkout:{c:OC.com,g:'🛒'},
+  vending:{c:OC.app,g:'🥤'}, television:{c:OC.app,g:'📺'}, washerDryer:{c:OC.app,g:''},
+  panel:{c:OC.ele,g:'@panel'}, alarm_panel:{c:OC.saf,g:'@panel'}, water_heater:{c:OC.app,g:'🛢'},
+  fdc:{c:OC.saf,g:'@fdc'}, hydrant:{c:OC.saf,g:'@hydrant'}, fire_ext:{c:OC.saf,g:'🧯'},
+  knox_box:{c:OC.ele,g:'@panel'}, stairs:{c:OC.app,g:'@stairs'}, elevator:{c:OC.app,g:'🛗'},
+  fireplace:{c:OC.saf,g:'🔥'}, text:{c:OC.note,g:''},
+  machine:{c:OC.ind,g:'⚙️'}, conveyor:{c:OC.ind,g:'↔'}, compressor:{c:OC.ind,g:'💨'},
+  generator:{c:OC.ind,g:'⚡'}, transformer:{c:OC.ele,g:'⚡'}, boiler:{c:OC.ind,g:'🔥'},
+  pump:{c:OC.ind,g:'💧'}, storage_tank:{c:OC.ind,g:'🛢'}, pallet:{c:OC.ind,g:'📦'}, hazmat:{c:OC.saf,g:'☣️'},
+  hvac:{c:OC.mec,g:'🌀'}, ac_return:{c:OC.mec,g:'🌀'}, ac_outdoor:{c:OC.mec,g:'🌀'},
+  air_handler:{c:OC.mec,g:'🌀'}, furnace:{c:OC.mec,g:'🔥'}, chiller:{c:OC.mec,g:'❄️'},
+  condenser:{c:OC.mec,g:'❄️'}, duct:{c:OC.mec,g:''}, exhaust_fan:{c:OC.mec,g:'🌀'},
+  vehicle_lift:{c:OC.ind,g:'🚗'}, workbench:{c:OC.ind,g:'🔧'}, tool_cabinet:{c:OC.ind,g:'🧰'},
+  welding:{c:OC.saf,g:'🔥'}, parts_rack:{c:OC.ind,g:''}, tire_rack:{c:OC.ind,g:'⭕'},
+  water_shutoff:{c:OC.plu,g:'🛑'}, gas_shutoff:{c:OC.uti,g:'🛑'}, gas_meter:{c:OC.uti,g:''},
+  water_meter:{c:OC.plu,g:''}, main_disconnect:{c:OC.ele,g:'⚡'}, sprinkler_riser:{c:OC.saf,g:'💧'},
+  standpipe:{c:OC.saf,g:'💧'}, floor_drain:{c:OC.plu,g:''},
+  gen_shutoff:{c:OC.ele,g:'🛑'}, fuel_shutoff:{c:OC.uti,g:'🛑'}, co2:{c:OC.saf,g:''}, propane:{c:OC.uti,g:'🔥'},
+  hazmat_cabinet:{c:OC.saf,g:'☣️'}, nfpa704:{c:OC.saf,g:'@nfpa'},
+  fire_door:{c:OC.saf,g:''}, bifold_door:{c:OC.app,g:''}, apparatus_door:{c:OC.app,g:''},
+  roof_access:{c:OC.ele,g:''}, attic_access:{c:OC.ele,g:''},
+  exit_sign:{c:OC.exg,g:'🚪'}, no_access:{c:OC.saf,g:'🚫'}, ada:{c:OC.plu,g:'♿'},
+  vehicle:{c:OC.veh,g:'🚗'}, box_truck:{c:OC.veh,g:'🚚'}, fire_apparatus:{c:OC.saf,g:'🚒'},
+  ambulance:{c:OC.saf,g:'🚑'}, police:{c:OC.veh,g:'🚓'}, bus:{c:OC.veh,g:'🚌'},
+  parking:{c:OC.obs,g:'🅿'}, ada_parking:{c:OC.plu,g:'♿'}, ada_ramp:{c:OC.plu,g:'♿'},
+  tree:{c:OC.site,g:'🌳'}, shrub:{c:OC.site,g:'🌿'},
+  solar_panel:{c:OC.eng,g:'☀'}, solar_battery:{c:OC.eng,g:'🔋'},
+  computer:{c:OC.app,g:'💻'}, countertop:{c:OC.com,g:''}, checkout_counter:{c:OC.com,g:'🛒'},
+  column:{c:OC.obs,g:''}, round_column:{c:OC.obs,g:''}, beam:{c:OC.obs,g:''},
+  partition:{c:OC.obs,g:''}, planter:{c:OC.site,g:'🪴'}, bollard:{c:OC.obs,g:''}, railing:{c:OC.obs,g:''}
+};
+function hexA(hex, a){ var n = parseInt(hex.slice(1),16); return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')'; }
+
+function drawObjGlyph(id, w, d, color){
+  var hw=w/2, hd=d/2; ctx.strokeStyle=color; ctx.fillStyle=color;
+  ctx.lineWidth=Math.max(0.6, 1.4/state.view.zoom); ctx.lineJoin='round';
+  if(id==='toilet'){ ctx.strokeRect(-hw*0.5,-hd,hw,hd*0.5); ctx.beginPath(); ctx.ellipse(0,hd*0.1,hw*0.55,hd*0.6,0,0,Math.PI*2); ctx.stroke(); }
+  else if(id==='sink'){ ctx.strokeRect(-hw*0.8,-hd*0.7,hw*1.6,hd*1.4); ctx.beginPath(); ctx.arc(0,0,2,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.moveTo(0,-hd*0.7); ctx.lineTo(0,-hd); ctx.stroke(); }
+  else if(id==='stairs'){ for(var i=0;i<=5;i++){ var yy=-hd+i/5*d; ctx.beginPath(); ctx.moveTo(-hw,yy); ctx.lineTo(hw,yy); ctx.stroke(); } ctx.beginPath(); ctx.moveTo(0,hd*0.7); ctx.lineTo(0,-hd*0.7); ctx.stroke(); }
+  else if(id==='panel'){ ctx.strokeRect(-hw*0.8,-hd*0.9,hw*1.6,hd*1.8); for(var j=0;j<3;j++){ var y2=-hd*0.5+j*hd*0.5; ctx.beginPath(); ctx.moveTo(-hw*0.5,y2); ctx.lineTo(hw*0.5,y2); ctx.stroke(); } }
+  else if(id==='hydrant'){ ctx.strokeRect(-hw*0.3,-hd*0.6,hw*0.6,hd*1.2); ctx.beginPath(); ctx.ellipse(0,-hd*0.7,hw*0.25,hd*0.2,0,0,Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.moveTo(-hw*0.3,0); ctx.lineTo(-hw*0.55,0); ctx.moveTo(hw*0.3,0); ctx.lineTo(hw*0.55,0); ctx.stroke(); }
+  else if(id==='range'){ ctx.strokeRect(-hw*0.9,-hd*0.9,hw*1.8,hd*1.8); [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(function(s){ ctx.beginPath(); ctx.arc(s[0]*hw*0.4,s[1]*hd*0.4,Math.min(hw,hd)*0.18,0,Math.PI*2); ctx.stroke(); }); }
+  else if(id==='fdc'){ ctx.beginPath(); ctx.arc(0,0,Math.min(hw,hd)*0.7,0,Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.arc(-hw*0.25,0,hw*0.16,0,Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.arc(hw*0.25,0,hw*0.16,0,Math.PI*2); ctx.stroke(); }
+  else if(id==='nfpa'){ ctx.beginPath(); ctx.moveTo(0,-hd); ctx.lineTo(hw,0); ctx.lineTo(0,hd); ctx.lineTo(-hw,0); ctx.closePath(); ctx.stroke(); ctx.beginPath(); ctx.moveTo(-hw,0); ctx.lineTo(hw,0); ctx.moveTo(0,-hd); ctx.lineTo(0,hd); ctx.stroke(); }
+}
+
+function drawObjText(o, sel){
+  ctx.save(); ctx.translate(o.x, o.y); ctx.rotate(-degToRad(state.view.rotation));
+  var label = o.label || 'Note';
+  ctx.font = 'bold ' + (11/state.view.zoom) + 'px "Source Sans Pro", system-ui';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  var tw = ctx.measureText(label).width, pad = 4/state.view.zoom, h = 13/state.view.zoom;
+  ctx.fillStyle = 'rgba(255,243,153,0.92)'; ctx.strokeStyle = sel ? COL.selection : '#cca60f'; ctx.lineWidth = 1/state.view.zoom;
+  if(ctx.roundRect){ ctx.beginPath(); ctx.roundRect(-tw/2-pad,-h/2-pad,tw+pad*2,h+pad*2,3/state.view.zoom); ctx.fill(); ctx.stroke(); }
+  else { ctx.fillRect(-tw/2-pad,-h/2-pad,tw+pad*2,h+pad*2); }
+  ctx.fillStyle = '#1a2550'; ctx.fillText(label, 0, 0);
+  ctx.restore();
+}
+
 function drawObject(o, sel) {
+  if (o.category === 'text') { drawObjText(o, sel); return; }
+  var cat = OBJ_CAT[o.category] || { c:'#777', g:'' };
+  var w = o.width || 20, dp = o.depth || 20;
   ctx.save();
   ctx.translate(o.x, o.y); ctx.rotate(degToRad(o.angle || 0));
-  ctx.fillStyle = sel ? 'rgba(251,191,36,0.45)' : COL.objectFill;
-  ctx.strokeStyle = sel ? COL.selection : COL.object;
-  ctx.lineWidth = (sel ? 2 : 1) / state.view.zoom;
-  ctx.fillRect(-o.width/2, -o.depth/2, o.width, o.depth);
-  ctx.strokeRect(-o.width/2, -o.depth/2, o.width, o.depth);
-  if (o.label && state.view.zoom > 0.25) {
-    ctx.rotate(-degToRad(o.angle || 0));
-    // Also un-rotate the view rotation so labels stay upright
-    ctx.rotate(-degToRad(state.view.rotation));
-    ctx.fillStyle = sel ? '#78350f' : '#5b21b6';
-    ctx.font = (10 / state.view.zoom) + 'px "Source Sans Pro", system-ui';
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(o.label, 0, 0);
+  ctx.fillStyle = sel ? 'rgba(251,191,36,0.42)' : hexA(cat.c, 0.12);
+  ctx.strokeStyle = sel ? COL.selection : cat.c;
+  ctx.lineWidth = (sel ? 2 : 1.2) / state.view.zoom;
+  ctx.fillRect(-w/2, -dp/2, w, dp);
+  ctx.strokeRect(-w/2, -dp/2, w, dp);
+  // Symbol
+  var g = cat.g, sz = Math.min(w, dp) * 0.6;
+  if (g && sz >= 8 && state.view.zoom > 0.2) {
+    if (g.charAt(0) === '@') {
+      drawObjGlyph(g.slice(1), w, dp, cat.c);
+    } else {
+      ctx.save();
+      ctx.rotate(-degToRad(o.angle || 0)); ctx.rotate(-degToRad(state.view.rotation));
+      ctx.font = sz + 'px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(g, 0, 0);
+      ctx.restore();
+    }
   }
+  // Label (upright)
+  if (o.label && state.view.zoom > 0.25) {
+    ctx.rotate(-degToRad(o.angle || 0)); ctx.rotate(-degToRad(state.view.rotation));
+    ctx.fillStyle = sel ? '#78350f' : '#374151';
+    ctx.font = (10 / state.view.zoom) + 'px "Source Sans Pro", system-ui';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText(o.label, 0, dp/2 + 2);
+  }
+  ctx.restore();
+}
+
+// Fireground A/B/C/D side labels (from layout.sides)
+function drawSides(sides){
+  if(!sides || !sides.length) return;
+  ctx.save(); ctx.font='bold 13px system-ui,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  sides.forEach(function(s){
+    ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(-degToRad(state.view.rotation));
+    var t='SIDE '+s.label, tw=ctx.measureText(t).width;
+    ctx.fillStyle='rgba(255,255,255,0.85)';
+    if(ctx.roundRect){ ctx.beginPath(); ctx.roundRect(-tw/2-5,-10,tw+10,20,4); ctx.fill(); } else { ctx.fillRect(-tw/2-5,-10,tw+10,20); }
+    ctx.fillStyle='#b91c1c'; ctx.fillText(t,0,0);
+    ctx.restore();
+  });
+  ctx.restore();
+}
+
+// Auto length labels on every wall (transferred "measurements")
+function drawWallDimensions(walls){
+  if(!walls) return;
+  var sf = (state.data && state.data.scale_px_per_ft) || 12;
+  ctx.save(); ctx.font='9px system-ui,monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  walls.forEach(function(w){
+    var dx=w.x2-w.x1, dy=w.y2-w.y1, len=Math.hypot(dx,dy); if(len<8) return;
+    var lbl=(len/sf).toFixed(1)+"'", mx=(w.x1+w.x2)/2, my=(w.y1+w.y2)/2, nx=-dy/len, ny=dx/len, off=10;
+    ctx.save(); ctx.translate(mx+nx*off, my+ny*off); ctx.rotate(-degToRad(state.view.rotation));
+    var tw=ctx.measureText(lbl).width; ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.fillRect(-tw/2-2,-7,tw+4,14);
+    ctx.fillStyle='#3040a0'; ctx.fillText(lbl,0,0); ctx.restore();
+  });
   ctx.restore();
 }
 
