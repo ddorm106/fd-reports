@@ -1916,6 +1916,7 @@ function drawText(t, sel) {
   // Text always upright — rotate canvas back by -view.rotation around text anchor
   ctx.translate(t.x, t.y);
   ctx.rotate(-degToRad(state.view.rotation));
+  ctx.rotate(degToRad(t.angle || 0));
   ctx.font = (t.size || 14) + 'px ' + (t.font || '"Source Sans Pro", system-ui');
   ctx.fillStyle = sel ? '#b45309' : COL.text;
   ctx.textAlign = 'left'; ctx.textBaseline = 'top';
@@ -2193,7 +2194,8 @@ function showEditPanel(hit) {
     body.appendChild(rot);
   } else if (hit.kind === 'text') {
     body.appendChild(mkLabel('Text:')); body.appendChild(mkInput(e.text, v => { pushUndo(); e.text = v; draw(); }));
-    body.appendChild(mkLabel('Size:')); body.appendChild(mkInput(e.size || 14, v => { pushUndo(); e.size = parseInt(v)||14; draw(); }, 'number'));
+    body.appendChild(mkLabel('Size:')); body.appendChild(mkSlider(e.size || 14, 8, 72, 1, v=>Math.round(v)+'px', v=>{ pushUndo(); e.size=Math.round(v); draw(); }));
+    body.appendChild(mkLabel('Angle:')); body.appendChild(mkSlider(e.angle || 0, 0, 360, 1, v=>Math.round(v)+'°', v=>{ pushUndo(); e.angle=v; draw(); }));
   } else if (hit.kind === 'freehand') {
     body.appendChild(mkLabel('Width:')); body.appendChild(mkInput(e.width || 2, v => { pushUndo(); e.width = parseFloat(v)||2; draw(); }, 'number'));
     body.appendChild(mkLabel('Color:'));
