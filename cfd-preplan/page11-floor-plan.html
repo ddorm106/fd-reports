@@ -833,6 +833,11 @@ const SYMBOLS = (function(){
 
   // ========== MERCANTILE ==========
   const mercantile = [
+    { id:'counter', label:'Countertop', cat:'mercantile', w:40, h:14, extrude3D:{h:3.5,color:'#a78160'}, draw(ctx,w,h){
+      rect(ctx, -w/2, -h/2, w, h, '#d4c4a8', '#78543c', 1.5, 2);
+      rect(ctx, -w/2, -h/2, w, h*0.34, '#efe7d8', '#78543c', 1, 2);
+      textAt(ctx, 'COUNTER', 0, h*0.14, 5, '#78543c', true);
+    }},
     { id:'standup-oven', label:'Stand-up Oven', cat:'mercantile', w:24, h:30, extrude3D:{h:16,color:'#6b7280'}, draw(ctx,w,h){
       rect(ctx, -w/2, -h/2, w, h, '#cbd5e1', '#475569', 1.5, 3);
       rect(ctx, -w*0.4, -h*0.42, w*0.8, h*0.5, '#6b7280', '#374151', 1, 2);
