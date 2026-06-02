@@ -2027,7 +2027,13 @@ function hitTest(sx, sy) {
     const t = d.texts[i];
     ctx.font = (t.size||14) + 'px ' + (t.font||'"Source Sans Pro", system-ui');
     const tw = ctx.measureText(t.text).width, th = (t.size||14)*1.2;
-    if (x>=t.x-2 && x<=t.x+tw+2 && y>=t.y-2 && y<=t.y+th+2) return { kind:'text', index:i };
+    // map the hit point into the text's local frame (text draws rotated by t.angle - view.rotation)
+    const ta = degToRad(state.view.rotation - (t.angle||0));
+    const tc = Math.cos(ta), ts = Math.sin(ta);
+    const tdx = x - t.x, tdy = y - t.y;
+    const lx = tdx*tc - tdy*ts, ly = tdx*ts + tdy*tc;
+    const pad = tol + 4/state.view.zoom;
+    if (lx >= -pad && lx <= tw+pad && ly >= -pad && ly <= th+pad) return { kind:'text', index:i };
   }
   if (VL.measurements) for (let i=d.measurements.length-1; i>=0; i--) {
     const m = d.measurements[i];
