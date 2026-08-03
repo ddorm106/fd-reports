@@ -1418,6 +1418,29 @@ function ppDept(){ return (location.host.indexOf('pcfdmembers') >= 0) ? 'PCFD' :
 function ppSyncToRecord(){
   var pid = ppPlanId();
   if (!pid || !state.data) return;
+  // Make sure this record is actually the building on screen before writing a
+  // floor plan onto it. _edit_id survives in localStorage after a plan is
+  // loaded, so starting a different building without clearing it filed one
+  // building's drawing under another — a Crunch Fitness plan landed on top of
+  // Belk's and looked, from the form, exactly like the drawing had vanished.
+  var localName = '';
+  try { localName = (JSON.parse(localStorage.getItem('preFirePlan')||'{}').business_name || '').trim(); } catch(e){}
+  fetch('/api/preplans/' + encodeURIComponent(pid), { cache: 'no-store' })
+    .then(function(r){ return r.json(); })
+    .then(function(j){
+      var rec = j && (j.record || j.data) || {};
+      var recName = (rec.business_name || '').trim();
+      if (localName && recName && localName.toLowerCase() !== recName.toLowerCase()) {
+        showToast('Not saved — this plan is "' + localName + '" but that record is "' +
+                  recName + '". Open the right plan first.', 'err');
+        return;
+      }
+      ppSyncToRecordConfirmed(pid);
+    })
+    .catch(function(){ ppSyncToRecordConfirmed(pid); });
+}
+function ppSyncToRecordConfirmed(pid){
+  if (!pid || !state.data) return;
   var scanId = (state.scanMeta && (state.scanMeta.scan_id || state.scanMeta.job_id)) || (function(){ try { return new URLSearchParams(location.search).get('job') || ''; } catch(e){ return ''; } })();
   fetch('/api/preplans/' + encodeURIComponent(pid) + '/floorplan', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
