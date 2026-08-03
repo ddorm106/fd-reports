@@ -367,8 +367,8 @@
         </div>
 
         <div class="nav-buttons">
-            <button type="button" class="btn-secondary" onclick="window.location.href='page10-site-plan.html'">← Previous</button>
-            <button type="button" class="btn-primary" onclick="window.location.href='page12-submit.html'">Next →</button>
+            <button type="button" class="btn-secondary" onclick="ppSaveBeforeLeaving();window.location.href='page10-site-plan.html'">← Previous</button>
+            <button type="button" class="btn-primary" onclick="ppSaveBeforeLeaving();window.location.href='page12-submit.html'">Next →</button>
         </div>
     </div>
 </div>
@@ -1432,9 +1432,25 @@ function saveToStorage() {
   try { plan = JSON.parse(localStorage.getItem('preFirePlan') || '{}'); } catch (e) {}
   state.data.savedAt = new Date().toISOString();
   plan.floor_plan_data = state.data;
+  // Kept alongside the drawing because the load path reads it back, and
+  // nothing else was writing it.
+  if (state.scanMeta) plan._scan_meta = state.scanMeta;
   try { draw(); plan.floor_plan_image = canvas.toDataURL('image/jpeg', 0.72); } catch(e) {}
   localStorage.setItem('preFirePlan', JSON.stringify(plan));
 }
+// The floor plan only ever persisted when an edit happened to call
+// saveToStorage. A plan that was imported from a scan and then left alone —
+// exactly what happens when you load a DivisionScan drawing and press Next —
+// was never written down. Anything that ends the page saves first.
+function ppSaveBeforeLeaving() {
+  try { if (state && state.data) saveToStorage(); } catch (e) {}
+}
+window.addEventListener('beforeunload', ppSaveBeforeLeaving);
+window.addEventListener('pagehide', ppSaveBeforeLeaving);
+document.addEventListener('visibilitychange', function () {
+  if (document.hidden) ppSaveBeforeLeaving();
+});
+
 function pushUndo() {
   if (!state.data) return;
   state.undoStack.push(JSON.stringify(state.data));
@@ -1546,6 +1562,10 @@ function ingestJobPayload(job) {
     compass_heading: job.compassHeading
   };
   updateMeta(); updateCounts(); hideEmpty(); fitToView(); draw();
+  // Write it down immediately. An imported scan used to live only in memory
+  // until some later edit happened to save it, so loading a drawing and
+  // pressing Next lost the whole thing.
+  saveToStorage();
   return true;
 }
 async function loadLatestCapture() {

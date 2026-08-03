@@ -73,7 +73,9 @@
 var canvas,currentTool='select';
 function initCanvas(bgUrl){
     canvas=new fabric.Canvas('site-canvas',{preserveObjectStacking:true,backgroundColor:'white'});
-    if(bgUrl){fabric.Image.fromURL(bgUrl,function(img){img.scaleToWidth(canvas.width);img.set({selectable:false,evented:false,isBg:true});canvas.add(img);canvas.sendToBack(img);canvas.renderAll()})}
+    // Save once the uploaded image is actually on the canvas. Without this an
+    // upload alone was never persisted — only later annotations were.
+    if(bgUrl){fabric.Image.fromURL(bgUrl,function(img){img.scaleToWidth(canvas.width);img.set({selectable:false,evented:false,isBg:true});canvas.add(img);canvas.sendToBack(img);canvas.renderAll();saveSiteNow()})}
     canvas.on('mouse:down',function(o){
         if(currentTool==='text'&&o.pointer){var t=prompt('Enter text:');if(t)canvas.add(new fabric.IText(t,{left:o.pointer.x,top:o.pointer.y,fontSize:14,fill:document.getElementById('siteColor').value,fontFamily:'Arial'}))}
         if(currentTool==='label'&&o.pointer){var t=prompt('Label:');if(t){var g=new fabric.Group([new fabric.Rect({width:t.length*8+16,height:22,fill:document.getElementById('siteColor').value,rx:4,ry:4,originX:'center',originY:'center'}),new fabric.Text(t,{fontSize:12,fill:'#fff',fontWeight:'bold',originX:'center',originY:'center'})],{left:o.pointer.x,top:o.pointer.y});canvas.add(g)}}
@@ -104,7 +106,10 @@ function saveSite(){
   if(__siteSaveTimer)clearTimeout(__siteSaveTimer);
   __siteSaveTimer=setTimeout(saveSiteNow,800);
 }
-function flushSiteSave(){ if(__siteSaveTimer){clearTimeout(__siteSaveTimer);saveSiteNow();} }
+// Always save, whether or not a debounce is pending. Making this conditional
+// meant that uploading an image and pressing Next saved nothing at all —
+// an upload fires no object:modified, so no timer was ever set.
+function flushSiteSave(){ if(__siteSaveTimer){clearTimeout(__siteSaveTimer);__siteSaveTimer=null;} saveSiteNow(); }
 window.addEventListener('beforeunload',flushSiteSave);
 window.addEventListener('pagehide',flushSiteSave);
 document.addEventListener('visibilitychange',function(){if(document.hidden)flushSiteSave()});
