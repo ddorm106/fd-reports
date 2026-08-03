@@ -22,16 +22,14 @@
 
     var KEY = 'preFirePlan';
     var PREFIX = 'preFirePlan.blob.';
+    var INDEX = 'preFirePlan.blobindex';
 
-    // Everything here is large, rarely changes, and is never edited by typing
-    // in a form field.
-    var BLOBS = [
-        'floor_plan_image',
-        'floor_plan_image_2',
-        'floor_plan_image_3',
-        'site_plan_data',
-        'floor_plan_data'
-    ];
+    // Anything this big gets its own key. Sizing the rule rather than naming
+    // the fields means a blob added later — another floor's image, a second
+    // site plan render — is handled without anyone remembering to list it.
+    // The first version of this listed field names and promptly missed
+    // site_plan_image, which put megabytes straight back into the hot key.
+    var BLOB_MIN = 4096;
 
     var _get = localStorage.getItem.bind(localStorage);
     var _set = localStorage.setItem.bind(localStorage);
@@ -41,6 +39,12 @@
     function readCore() {
         try { return JSON.parse(_get(KEY) || '{}'); } catch (e) { return {}; }
     }
+
+    /** Names of the values currently living in their own keys. */
+    function blobIndex() {
+        try { return JSON.parse(_get(INDEX) || '[]'); } catch (e) { return []; }
+    }
+    function setBlobIndex(list) { _set(INDEX, JSON.stringify(list)); }
 
     function readBlob(k) {
         var raw = _get(PREFIX + k);
@@ -68,12 +72,43 @@
     function mergedJSON() {
         if (mergedCache !== null) return mergedCache;
         var o = readCore();
-        for (var i = 0; i < BLOBS.length; i++) {
-            var v = readBlob(BLOBS[i]);
-            if (v !== undefined) o[BLOBS[i]] = v;
+        var idx = blobIndex();
+        for (var i = 0; i < idx.length; i++) {
+            var v = readBlob(idx[i]);
+            if (v !== undefined) o[idx[i]] = v;
         }
         mergedCache = JSON.stringify(o);
         return mergedCache;
+    }
+
+    /**
+     * Splits a whole-plan object: anything large moves to its own key, and any
+     * blob no longer present is dropped. Callers that hand us the full plan
+     * (an image upload, a canvas save) rely on both halves of that — removing
+     * a floor plan image has to actually stick.
+     */
+    function writeWholePlan(o) {
+        var previous = blobIndex();
+        var nowBlobs = [];
+
+        for (var k in o) {
+            if (!Object.prototype.hasOwnProperty.call(o, k)) continue;
+            var v = o[k];
+            if (v === null || v === undefined) continue;
+            var approx = (typeof v === 'string') ? v.length : JSON.stringify(v).length;
+            if (approx >= BLOB_MIN) {
+                writeBlob(k, v);
+                nowBlobs.push(k);
+                delete o[k];
+            }
+        }
+
+        for (var i = 0; i < previous.length; i++) {
+            if (nowBlobs.indexOf(previous[i]) === -1) _rm(PREFIX + previous[i]);
+        }
+
+        setBlobIndex(nowBlobs);
+        _set(KEY, JSON.stringify(o));
     }
 
     // ── One-time migration ──────────────────────────────────────────────────
@@ -81,18 +116,17 @@
     // so an existing Belk plan gets the speed-up without being re-entered.
     (function migrate() {
         var core = readCore();
-        var moved = 0;
-        for (var i = 0; i < BLOBS.length; i++) {
-            var k = BLOBS[i];
-            if (core[k] !== undefined && core[k] !== null) {
-                writeBlob(k, core[k]);
-                delete core[k];
-                moved++;
-            }
+        var big = 0;
+        for (var k in core) {
+            if (!Object.prototype.hasOwnProperty.call(core, k)) continue;
+            var v = core[k];
+            if (v === null || v === undefined) continue;
+            var approx = (typeof v === 'string') ? v.length : JSON.stringify(v).length;
+            if (approx >= BLOB_MIN) big++;
         }
-        if (moved) {
-            _set(KEY, JSON.stringify(core));
-            console.log('[preplan] moved ' + moved + ' large item(s) out of the hot save path');
+        if (big) {
+            writeWholePlan(core);
+            console.log('[preplan] moved ' + big + ' large item(s) out of the hot save path');
         }
     })();
 
@@ -101,38 +135,23 @@
         return k === KEY ? mergedJSON() : _get(k);
     };
 
+    // Every write that comes through here carries the whole plan — that is what
+    // getItem handed the caller. So it is always split and reconciled. The
+    // typing path does not come through here; it uses __preplanWriteCore.
     localStorage.setItem = function (k, v) {
         if (k !== KEY) return _set(k, v);
         invalidate();
-
-        // Fast path: the form-field saves that happen while typing carry no
-        // blobs, so there is nothing to split and nothing to parse.
-        var hasBlob = false;
-        if (typeof v === 'string') {
-            for (var i = 0; i < BLOBS.length; i++) {
-                if (v.indexOf('"' + BLOBS[i] + '"') !== -1) { hasBlob = true; break; }
-            }
-        } else {
-            hasBlob = true;
-        }
-        if (!hasBlob) return _set(KEY, v);
-
         var o;
         try { o = JSON.parse(v); } catch (e) { return _set(KEY, v); }
-        for (var j = 0; j < BLOBS.length; j++) {
-            var bk = BLOBS[j];
-            if (Object.prototype.hasOwnProperty.call(o, bk)) {
-                writeBlob(bk, o[bk]);
-                delete o[bk];
-            }
-        }
-        _set(KEY, JSON.stringify(o));
+        writeWholePlan(o);
     };
 
     localStorage.removeItem = function (k) {
         if (k === KEY) {
             invalidate();
-            for (var i = 0; i < BLOBS.length; i++) _rm(PREFIX + BLOBS[i]);
+            var idx = blobIndex();
+            for (var i = 0; i < idx.length; i++) _rm(PREFIX + idx[i]);
+            _rm(INDEX);
         }
         return _rm(k);
     };
