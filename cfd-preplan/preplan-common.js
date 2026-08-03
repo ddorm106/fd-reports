@@ -25,7 +25,11 @@ function loadFormData(form) {
     });
 }
 function saveFormData(form) {
-    var data = getSavedData();
+    // Read and write only the small part of the plan. preplan-storage.js keeps
+    // the floor plan and site plan images in their own keys, so typing never
+    // reassembles or re-serialises megabytes of base64.
+    var fast = !!window.__preplanReadCore;
+    var data = fast ? window.__preplanReadCore() : getSavedData();
     Array.from(form.elements).forEach(function(el) {
         if (!el.name) return;
         if (el.type === 'radio') { if (el.checked) data[el.name] = el.value; }
@@ -36,7 +40,7 @@ function saveFormData(form) {
         }
         else data[el.name] = el.value;
     });
-    saveAllData(data);
+    if (fast) window.__preplanWriteCore(data); else saveAllData(data);
 }
 // ─── Auto-save ──────────────────────────────────────────────────────────────
 // The whole plan lives in one localStorage key. On a big building that key
