@@ -38,8 +38,49 @@ function saveFormData(form) {
     });
     saveAllData(data);
 }
-function autoSave(form) {
-    form.addEventListener('input', function(){ saveFormData(form) });
-    form.addEventListener('change', function(){ saveFormData(form) });
+// ─── Auto-save ──────────────────────────────────────────────────────────────
+// The whole plan lives in one localStorage key. On a big building that key
+// holds the floor plan vectors plus base64 floor plan and site plan images —
+// several megabytes. Saving on every keystroke meant parsing all of it,
+// re-serialising all of it, and doing a synchronous localStorage write, per
+// character. On a large plan that locks the page up while typing.
+//
+// Writes are now coalesced. Nothing is saved less reliably: a pending write is
+// flushed on change, on navigation, when the tab is hidden, and before unload.
+var __saveTimer = null;
+var __pendingForm = null;
+var SAVE_DEBOUNCE_MS = 600;
+
+function flushPendingSave() {
+    if (__saveTimer) { clearTimeout(__saveTimer); __saveTimer = null; }
+    if (!__pendingForm) return;
+    var form = __pendingForm;
+    __pendingForm = null;
+    saveFormData(form);
 }
-function navigate(url, form) { if(form) saveFormData(form); window.location.href = url; }
+
+function queueSave(form) {
+    __pendingForm = form;
+    if (__saveTimer) clearTimeout(__saveTimer);
+    __saveTimer = setTimeout(flushPendingSave, SAVE_DEBOUNCE_MS);
+}
+
+function autoSave(form) {
+    form.addEventListener('input', function(){ queueSave(form) });
+    // `change` fires once per pick, and marks the end of typing in a field, so
+    // it is cheap enough to write straight away.
+    form.addEventListener('change', function(){ __pendingForm = form; flushPendingSave(); });
+}
+
+// Anything that can end the page's life has to take the pending write with it.
+window.addEventListener('beforeunload', flushPendingSave);
+window.addEventListener('pagehide', flushPendingSave);
+document.addEventListener('visibilitychange', function(){
+    if (document.hidden) flushPendingSave();
+});
+
+function navigate(url, form) {
+    if (form) __pendingForm = form;
+    flushPendingSave();
+    window.location.href = url;
+}
