@@ -171,24 +171,12 @@
         if (!isEmpty(local)) push(true);
     }
 
-    // Every write to the plan schedules a push. preplan-storage.js is already
-    // in place underneath, so this sees whole plans including the blobs.
-    var _set = localStorage.setItem.bind(localStorage);
-    localStorage.setItem = function (k, v) {
-        var r = _set(k, v);
-        if (k === KEY && booted) push(false);
-        return r;
-    };
-    // The typing path writes through the storage module's core writer, which
-    // bypasses setItem, so it is hooked too.
-    if (window.__preplanWriteCore) {
-        var _core = window.__preplanWriteCore;
-        window.__preplanWriteCore = function (o) {
-            var r = _core(o);
-            if (booted) push(false);
-            return r;
-        };
-    }
+    // Every write to the plan schedules a push. The storage module notifies
+    // us rather than us wrapping localStorage a second time — layering two
+    // wrappers on Storage was fragile and one of them silently stopped
+    // working, which is how large values appeared to vanish.
+    window.__preplanWriteListeners = window.__preplanWriteListeners || [];
+    window.__preplanWriteListeners.push(function () { if (booted) push(false); });
 
     // Leaving the page must not lose the last few seconds of work.
     function flush() {

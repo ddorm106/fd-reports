@@ -31,9 +31,19 @@
     // site_plan_image, which put megabytes straight back into the hot key.
     var BLOB_MIN = 4096;
 
-    var _get = localStorage.getItem.bind(localStorage);
-    var _set = localStorage.setItem.bind(localStorage);
-    var _rm  = localStorage.removeItem.bind(localStorage);
+    // Patch Storage.prototype, not the localStorage instance.
+    //
+    // `localStorage.getItem = fn` is not a reliable way to override the
+    // method: Storage treats property assignment as a key/value write, so on
+    // some loads it created an entry literally named "getItem" and left the
+    // native method in place. The merge then silently did nothing and every
+    // large value looked like it had vanished — which is exactly how this
+    // behaved, working on one page load and not the next.
+    var proto = Storage.prototype;
+    var _rawGet = proto.getItem, _rawSet = proto.setItem, _rawRm = proto.removeItem;
+    var _get = function (k) { return _rawGet.call(localStorage, k); };
+    var _set = function (k, v) { return _rawSet.call(localStorage, k, v); };
+    var _rm  = function (k) { return _rawRm.call(localStorage, k); };
 
     /** The small part only — no blobs. This is what the hot path touches. */
     function readCore() {
@@ -196,29 +206,39 @@
     })();
 
     // ── Compatibility shim ──────────────────────────────────────────────────
-    localStorage.getItem = function (k) {
-        return k === KEY ? mergedJSON() : _get(k);
+    // Anything that writes the plan can notify listeners (cloud sync uses this)
+    // without having to wrap localStorage itself a second time.
+    window.__preplanWriteListeners = window.__preplanWriteListeners || [];
+    function notifyWrite() {
+        var ls = window.__preplanWriteListeners;
+        for (var i = 0; i < ls.length; i++) { try { ls[i](); } catch (e) {} }
+    }
+
+    proto.getItem = function (k) {
+        if (this === localStorage && k === KEY) return mergedJSON();
+        return _rawGet.call(this, k);
     };
 
     // Every write that comes through here carries the whole plan — that is what
     // getItem handed the caller. So it is always split and reconciled. The
     // typing path does not come through here; it uses __preplanWriteCore.
-    localStorage.setItem = function (k, v) {
-        if (k !== KEY) return _set(k, v);
+    proto.setItem = function (k, v) {
+        if (this !== localStorage || k !== KEY) return _rawSet.call(this, k, v);
         invalidate();
         var o;
-        try { o = JSON.parse(v); } catch (e) { return _set(KEY, v); }
+        try { o = JSON.parse(v); } catch (e) { _set(KEY, v); notifyWrite(); return; }
         writeWholePlan(o);
+        notifyWrite();
     };
 
-    localStorage.removeItem = function (k) {
-        if (k === KEY) {
+    proto.removeItem = function (k) {
+        if (this === localStorage && k === KEY) {
             invalidate();
             var idx = blobIndex();
             for (var i = 0; i < idx.length; i++) _rm(PREFIX + idx[i]);
             _rm(INDEX);
         }
-        return _rm(k);
+        return _rawRm.call(this, k);
     };
 
     // Used by the auto-save fast path so typing never reassembles the blobs.
@@ -226,5 +246,6 @@
     window.__preplanWriteCore = function (obj) {
         invalidate();
         _set(KEY, JSON.stringify(obj));
+        notifyWrite();
     };
 })();
