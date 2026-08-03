@@ -155,14 +155,19 @@
         for (var j = 0; j < previous.length; j++) {
             var pk = previous[j];
             if (nowBlobs.indexOf(pk) !== -1) continue;
-            var explicitlyCleared =
-                Object.prototype.hasOwnProperty.call(o, pk) &&
-                (o[pk] === null || o[pk] === undefined || o[pk] === '');
-            if (explicitlyCleared) {
+
+            if (Object.prototype.hasOwnProperty.call(o, pk)) {
+                // The caller supplied a value for this key, so the old blob is
+                // stale whatever the new value is. Drop it: either the key was
+                // cleared, or the new value is small enough to sit inline —
+                // and a leftover blob would shadow it on the next read, which
+                // would quietly resurrect an old drawing over a new one.
                 _rm(PREFIX + pk);
-                delete o[pk];
+                var v2 = o[pk];
+                if (v2 === null || v2 === undefined || v2 === '') delete o[pk];
             } else {
-                // Keep it, and keep it listed, so reads still return it.
+                // Not mentioned in this write. That means unchanged, not
+                // deleted — partial writes must not destroy a floor plan.
                 nowBlobs.push(pk);
             }
         }
