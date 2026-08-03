@@ -1445,6 +1445,11 @@ function saveToStorage() {
 function ppSaveBeforeLeaving() {
   try { if (state && state.data) saveToStorage(); } catch (e) {}
 }
+// This page's script runs inside a wrapper, so a plain declaration is not
+// global — and the nav buttons call it from an inline onclick, which resolves
+// against the global scope. Without this the buttons throw and navigation
+// stops dead.
+window.ppSaveBeforeLeaving = ppSaveBeforeLeaving;
 window.addEventListener('beforeunload', ppSaveBeforeLeaving);
 window.addEventListener('pagehide', ppSaveBeforeLeaving);
 document.addEventListener('visibilitychange', function () {
