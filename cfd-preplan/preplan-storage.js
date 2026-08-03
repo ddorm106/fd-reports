@@ -52,16 +52,38 @@
         try { return JSON.parse(raw); } catch (e) { return raw; }
     }
 
+    /**
+     * Stores one value in its own key. Returns true only when the value is
+     * verifiably in storage.
+     *
+     * This must never report success it cannot back up. An earlier version
+     * swallowed the quota error and the caller went on to delete the value
+     * from the plan — which turned "could not move this image" into "this
+     * image is gone". Nothing is removed from the plan unless this says true.
+     */
     function writeBlob(k, val) {
-        if (val === undefined || val === null) { _rm(PREFIX + k); return; }
+        if (val === undefined || val === null) { _rm(PREFIX + k); return false; }
+        var s;
+        try { s = JSON.stringify(val); } catch (e) { return false; }
         try {
-            _set(PREFIX + k, JSON.stringify(val));
+            _set(PREFIX + k, s);
         } catch (e) {
-            // Quota is the realistic failure here. Say so rather than dying
-            // silently and leaving someone to find the image missing later.
-            console.error('[preplan] could not store ' + k + ':', e);
-            if (window.showToast) showToast('Storage full — ' + k + ' was not saved', 'error');
+            console.error('[preplan] could not store ' + k + ' (' +
+                          Math.round(s.length / 1024) + ' KB):', e && e.name);
+            if (window.showToast) {
+                showToast('Storage full — ' + k + ' kept in place, not moved', 'error');
+            }
+            return false;
         }
+        // Confirm it actually landed. Some browsers fail a write quietly when
+        // storage is under pressure.
+        var back = _get(PREFIX + k);
+        if (back === null || back.length !== s.length) {
+            console.error('[preplan] ' + k + ' did not persist; leaving it in the plan');
+            _rm(PREFIX + k);
+            return false;
+        }
+        return true;
     }
 
     // Merged reads are cached, because a plan with two floor plan images is
@@ -91,20 +113,41 @@
         var previous = blobIndex();
         var nowBlobs = [];
 
+        // Measure once — JSON.stringify on a megabyte value is not free.
+        var sized = [];
         for (var k in o) {
             if (!Object.prototype.hasOwnProperty.call(o, k)) continue;
             var v = o[k];
             if (v === null || v === undefined) continue;
             var approx = (typeof v === 'string') ? v.length : JSON.stringify(v).length;
-            if (approx >= BLOB_MIN) {
-                writeBlob(k, v);
-                nowBlobs.push(k);
-                delete o[k];
+            if (approx >= BLOB_MIN) sized.push({ k: k, n: approx });
+        }
+        // Biggest first: each one that moves frees space for the next, which
+        // matters because the plan is still holding the old copy meanwhile.
+        sized.sort(function (a, b) { return b.n - a.n; });
+
+        for (var i = 0; i < sized.length; i++) {
+            var key = sized[i].k;
+            var val = o[key];
+            if (!writeBlob(key, val)) continue;   // failed — leave it in the plan
+
+            nowBlobs.push(key);
+            delete o[key];
+            // Shrink the main key straight away so the duplicate copy stops
+            // occupying quota before the next blob is written.
+            try {
+                _set(KEY, JSON.stringify(o));
+            } catch (e) {
+                // Could not shrink; put it back so the plan stays whole and
+                // give the blob key back rather than leaving an orphan.
+                o[key] = val;
+                nowBlobs.pop();
+                _rm(PREFIX + key);
             }
         }
 
-        for (var i = 0; i < previous.length; i++) {
-            if (nowBlobs.indexOf(previous[i]) === -1) _rm(PREFIX + previous[i]);
+        for (var j = 0; j < previous.length; j++) {
+            if (nowBlobs.indexOf(previous[j]) === -1) _rm(PREFIX + previous[j]);
         }
 
         setBlobIndex(nowBlobs);
