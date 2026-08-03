@@ -1760,6 +1760,19 @@ function drawDoorSymbol(d, sel) {
   const a = d.angle ? degToRad(d.angle) : findNearestWallAngle(d.x, d.y);
   const cosA = Math.cos(a), sinA = Math.sin(a);
   ctx.save();
+  if (d.type === 'entryway' || d.type === 'opening') {
+    // An open doorway with no leaf — a cased opening, an arch, the gap
+    // between a sales floor and a vestibule. drawDoorGap has already cut the
+    // wall, so there is nothing more to draw. Showing a swing panel here
+    // would put a door on the plan that isn't there.
+    if (sel) {
+      ctx.strokeStyle = COL.selection;
+      ctx.lineWidth = 2 / state.view.zoom;
+      ctx.beginPath(); ctx.arc(cx, cy, w/2 + 4/state.view.zoom, 0, Math.PI*2); ctx.stroke();
+    }
+    ctx.restore();
+    return;
+  }
   if (d.type === 'rollup') {
     ctx.strokeStyle = COL.doorRoll;
     ctx.lineWidth = 2.5 / state.view.zoom;
