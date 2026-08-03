@@ -146,8 +146,25 @@
             }
         }
 
+        // A key that simply is not in this write means "unchanged", NOT
+        // "delete". Pages here write a partial plan all the time — built from
+        // a stale read, or from a subset — and treating those omissions as
+        // deletions destroyed the floor plan and the site plan repeatedly.
+        // Removing a value now requires saying so explicitly, by writing it
+        // as null.
         for (var j = 0; j < previous.length; j++) {
-            if (nowBlobs.indexOf(previous[j]) === -1) _rm(PREFIX + previous[j]);
+            var pk = previous[j];
+            if (nowBlobs.indexOf(pk) !== -1) continue;
+            var explicitlyCleared =
+                Object.prototype.hasOwnProperty.call(o, pk) &&
+                (o[pk] === null || o[pk] === undefined || o[pk] === '');
+            if (explicitlyCleared) {
+                _rm(PREFIX + pk);
+                delete o[pk];
+            } else {
+                // Keep it, and keep it listed, so reads still return it.
+                nowBlobs.push(pk);
+            }
         }
 
         setBlobIndex(nowBlobs);
