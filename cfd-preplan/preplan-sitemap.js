@@ -1,22 +1,25 @@
 /* ===========================================================================
- * preplan-sitemap.js — the site plan as a real map, not a screenshot
+ * preplan-sitemap.js — the site plan
  *
- * Page 10 has been a Fabric canvas over an uploaded aerial screenshot. That
- * works, but nothing on it has coordinates: a marker is pixels on somebody's
- * screengrab, so it cannot be checked against a hydrant record, cannot move
- * with a corrected address, and cannot be handed to anything else.
+ * Page 10 used to be an upload box and a Fabric canvas over whatever aerial
+ * screenshot somebody happened to grab. It worked, but nothing on it had
+ * coordinates: a marker was pixels on a screengrab, so it could not be checked
+ * against a hydrant record, could not move with a corrected address, and could
+ * not be handed to anything else.
  *
- * This is the HCFD idea, and it is a good one. A live satellite map, tap to
- * drop a categorised marker, and the hydrant database drawn on top. Every
- * marker carries a real lat/lng.
+ * This replaces it. A live satellite map, tap to drop a categorised marker,
+ * and the hydrant database drawn on top. Every marker carries a real lat/lng.
  *
  * The 400-hydrant table already has flow GPM, available fire flow at 20 psi,
  * NFPA colour class and out-of-service flags, so the overlay is not decorative
- * - it answers "what will that one give me" without leaving the page.
+ * — it answers "what will that one actually give me" without leaving the page.
  *
- * The uploaded-screenshot path is untouched and still saves to
- * site_plan_image. This is an addition, not a replacement: an aerial with the
- * building outlined by hand is still the right answer for some sites.
+ * WHAT PRINTS. Whatever is on screen is what lands in the PDF and the Book.
+ * The map is composed to a flat JPEG (tiles, hydrants, markers, north arrow,
+ * scale bar, legend) and stored as site_map_image, re-rendered a beat after
+ * every pan, zoom or marker change. That is why the tiles come through
+ * /api/maptile/ on our own origin: a canvas that has drawn a cross-origin tile
+ * is tainted, and toDataURL() throws.
  * ======================================================================== */
 
 (function () {
@@ -48,22 +51,32 @@
 
   var LEAFLET_CSS = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css';
   var LEAFLET_JS  = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';
+  var SAT_URL    = '/api/maptile/sat/{z}/{x}/{y}';
+  var STREET_URL = '/api/maptile/street/{z}/{x}/{y}';
+  var MAX_NATIVE = 19;
 
-  var map, satLayer, streetLayer, markerLayer, hydrantLayer;
+  var map, satLayer, streetLayer, markerLayer, hydrantLayer, hereLayer;
   var picked = null, usingSat = true, showHyd = true, hydrants = null;
+  var renderTimer = null, rendering = false, renderAgain = false;
 
   // ------------------------------------------------------------ plan access
   function readPlan() {
     try { return JSON.parse(localStorage.getItem('preFirePlan') || '{}') || {}; }
     catch (e) { return {}; }
   }
-  function markers() { return readPlan().site_markers || []; }
-  function writeMarkers(list) {
+  function writePlan(mutate) {
     try {
       var d = readPlan();
-      if (list && list.length) d.site_markers = list; else delete d.site_markers;
+      mutate(d);
       localStorage.setItem('preFirePlan', JSON.stringify(d));
-    } catch (e) {}
+      return true;
+    } catch (e) { return false; }
+  }
+  function markers() { return readPlan().site_markers || []; }
+  function writeMarkers(list) {
+    writePlan(function (d) {
+      if (list && list.length) d.site_markers = list; else delete d.site_markers;
+    });
   }
   function planLatLng() {
     var d = readPlan();
@@ -86,6 +99,19 @@
     document.head.appendChild(l);
   }
 
+  // ------------------------------------------------------------ projection
+  // Plain Web Mercator in world pixels. Leaflet has this internally but the
+  // composer must work with an explicit zoom that is not the display zoom.
+  function project(lat, lng, z) {
+    var s = 256 * Math.pow(2, z);
+    var sn = Math.sin(lat * Math.PI / 180);
+    sn = Math.max(-0.9999, Math.min(0.9999, sn));
+    return {
+      x: (lng + 180) / 360 * s,
+      y: (0.5 - Math.log((1 + sn) / (1 - sn)) / (4 * Math.PI)) * s
+    };
+  }
+
   // ------------------------------------------------------------------ draw
   function pinIcon(c) {
     return L.divIcon({
@@ -104,31 +130,40 @@
       var mk = L.marker([m.lat, m.lng], { icon: pinIcon({ t: c.t, c: c.c, label: m.label || c.label }) });
       mk.on('click', function () {
         if (confirm('Remove this ' + (m.label || c.label) + ' marker?')) {
-          var list = markers(); list.splice(i, 1); writeMarkers(list); drawMarkers(); refreshCount();
+          var list = markers(); list.splice(i, 1); writeMarkers(list);
+          drawMarkers(); refreshCount(); scheduleRender();
         }
       });
       markerLayer.addLayer(mk);
     });
   }
 
+  function hydColour(h) {
+    if (String(h.out_of_service) === '1') return '#7f1d1d';
+    return h.color === 'Blue' ? '#2563eb' : h.color === 'Green' ? '#16a34a'
+         : h.color === 'Orange' ? '#ea580c' : h.color === 'Red' ? '#dc2626' : '#64748b';
+  }
+
+  // Only what is actually near the building; 400 pins over a whole county is
+  // noise, not information.
+  function nearbyHydrants() {
+    if (!hydrants) return [];
+    var here = planLatLng();
+    return hydrants.filter(function (h) {
+      if (!h.latitude || !h.longitude) return false;
+      if (!here) return true;
+      var dx = (h.longitude - here[1]) * 288200, dy = (h.latitude - here[0]) * 364000; // rough ft
+      return Math.sqrt(dx * dx + dy * dy) <= 2000;
+    });
+  }
+
   function drawHydrants() {
     if (!hydrantLayer || !hydrants) return;
     hydrantLayer.clearLayers();
-    var here = planLatLng();
-    hydrants.forEach(function (h) {
-      if (!h.latitude || !h.longitude) return;
-      // Only what is actually near the building; 400 pins over a whole county
-      // is noise, not information.
-      if (here) {
-        var dx = (h.longitude - here[1]) * 288200, dy = (h.latitude - here[0]) * 364000; // rough ft
-        if (Math.sqrt(dx * dx + dy * dy) > 2000) return;
-      }
+    nearbyHydrants().forEach(function (h) {
       var oos = String(h.out_of_service) === '1';
-      var col = oos ? '#7f1d1d'
-              : (h.color === 'Blue' ? '#2563eb' : h.color === 'Green' ? '#16a34a'
-              : h.color === 'Orange' ? '#ea580c' : h.color === 'Red' ? '#dc2626' : '#64748b');
       var mk = L.circleMarker([h.latitude, h.longitude], {
-        radius: 7, color: '#fff', weight: 2, fillColor: col, fillOpacity: 1
+        radius: 7, color: '#fff', weight: 2, fillColor: hydColour(h), fillOpacity: 1
       });
       mk.bindPopup(
         '<b>Hydrant ' + (h.hydrant_id || h.id) + '</b><br>' +
@@ -148,6 +183,227 @@
       el.textContent = n ? n + ' marker' + (n === 1 ? '' : 's') + ' placed' : 'No markers yet';
     }
   }
+  function status(msg, warn) {
+    var el = document.getElementById('smStat');
+    if (!el) return;
+    el.textContent = msg || '';
+    el.style.color = warn ? '#b3252b' : '#166534';
+  }
+
+  // ============================================================== composer
+  // Turn the current view into a flat JPEG for the PDF and the Book.
+  function loadTile(url) {
+    return new Promise(function (res) {
+      var im = new Image();
+      im.onload = function () { res(im); };
+      im.onerror = function () { res(null); };
+      im.src = url;                    // same origin: canvas stays untainted
+    });
+  }
+
+  function composeImage() {
+    if (!map || typeof L === 'undefined') return Promise.resolve(null);
+    var box = document.getElementById('smMap');
+    if (!box) return Promise.resolve(null);
+    var bw = box.clientWidth || 900, bh = box.clientHeight || 560;
+    var dz = map.getZoom();
+    var z = Math.min(MAX_NATIVE, Math.round(dz));
+    var f = Math.pow(2, z - dz);                 // css px -> world px at z
+    var outW = Math.round(bw * f), outH = Math.round(bh * f);
+    if (outW < 40 || outH < 40) return Promise.resolve(null);
+
+    var c = map.getCenter();
+    var ctr = project(c.lat, c.lng, z);
+    var tl = { x: ctr.x - outW / 2, y: ctr.y - outH / 2 };
+
+    // A cap so the stored JPEG stays sane; both axes scale together so the
+    // framing on screen is exactly the framing that prints.
+    var k = Math.min(1, 1600 / outW, 1150 / outH);
+    var finW = Math.max(1, Math.round(outW * k)), finH = Math.max(1, Math.round(outH * k));
+
+    var world = 256 * Math.pow(2, z);
+    var x0 = Math.floor(tl.x / 256), x1 = Math.floor((tl.x + outW - 1) / 256);
+    var y0 = Math.floor(tl.y / 256), y1 = Math.floor((tl.y + outH - 1) / 256);
+    var base = (usingSat ? SAT_URL : STREET_URL);
+    var jobs = [];
+    for (var tx = x0; tx <= x1; tx++) {
+      for (var ty = y0; ty <= y1; ty++) {
+        if (ty < 0 || ty >= Math.pow(2, z)) continue;
+        var wx = ((tx % Math.pow(2, z)) + Math.pow(2, z)) % Math.pow(2, z);
+        jobs.push({
+          url: base.replace('{z}', z).replace('{x}', wx).replace('{y}', ty),
+          dx: tx * 256 - tl.x, dy: ty * 256 - tl.y
+        });
+      }
+    }
+    if (jobs.length > 240) return Promise.resolve(null);   // absurd extent
+
+    var tileCv = document.createElement('canvas');
+    tileCv.width = outW; tileCv.height = outH;
+    var tctx = tileCv.getContext('2d');
+    tctx.fillStyle = '#1a1a1e'; tctx.fillRect(0, 0, outW, outH);
+
+    return Promise.all(jobs.map(function (j) {
+      return loadTile(j.url).then(function (im) { if (im) tctx.drawImage(im, j.dx, j.dy, 256, 256); });
+    })).then(function () {
+      var cv = document.createElement('canvas');
+      cv.width = finW; cv.height = finH;
+      var g = cv.getContext('2d');
+      g.drawImage(tileCv, 0, 0, finW, finH);
+      // world px -> final canvas px
+      function P(lat, lng) {
+        var p = project(lat, lng, z);
+        return { x: (p.x - tl.x) * k, y: (p.y - tl.y) * k };
+      }
+      var S = Math.max(0.72, Math.min(1.5, finW / 1100));   // overlay scale
+
+      // hydrants first, they sit under everything
+      nearbyHydrants().forEach(function (h) {
+        var p = P(h.latitude, h.longitude);
+        if (p.x < -20 || p.y < -20 || p.x > finW + 20 || p.y > finH + 20) return;
+        var r = 7 * S;
+        g.beginPath(); g.arc(p.x, p.y, r, 0, Math.PI * 2);
+        g.fillStyle = hydColour(h); g.fill();
+        g.lineWidth = 2 * S; g.strokeStyle = '#fff'; g.stroke();
+        if (h.aff_20psi) {
+          var t = h.aff_20psi + '';
+          g.font = '700 ' + Math.round(10 * S) + 'px system-ui, sans-serif';
+          var w = g.measureText(t).width + 6 * S;
+          g.fillStyle = 'rgba(0,0,0,.72)';
+          g.fillRect(p.x - w / 2, p.y + r + 2 * S, w, 13 * S);
+          g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle';
+          g.fillText(t, p.x, p.y + r + 8.5 * S);
+        }
+      });
+
+      // the building
+      var here = planLatLng();
+      if (here) {
+        var hp = P(here[0], here[1]);
+        g.beginPath(); g.arc(hp.x, hp.y, 10 * S, 0, Math.PI * 2);
+        g.fillStyle = '#1e3a5f'; g.fill();
+        g.lineWidth = 3 * S; g.strokeStyle = '#fff'; g.stroke();
+      }
+
+      // markers
+      var used = {};
+      markers().forEach(function (m) {
+        var cc = cat(m.k); used[cc.k] = cc;
+        var p = P(m.lat, m.lng);
+        if (p.x < -40 || p.y < -40 || p.x > finW + 40 || p.y > finH + 40) return;
+        var r = 15 * S;
+        g.beginPath(); g.arc(p.x, p.y, r, 0, Math.PI * 2);
+        g.fillStyle = cc.c; g.fill();
+        g.lineWidth = 2.5 * S; g.strokeStyle = '#fff'; g.stroke();
+        g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle';
+        g.font = '700 ' + Math.round((cc.t.length > 1 ? 12 : 16) * S) + 'px system-ui, sans-serif';
+        g.fillText(cc.t, p.x, p.y + 0.5 * S);
+        var lab = (m.label || cc.label);
+        g.font = '700 ' + Math.round(11 * S) + 'px system-ui, sans-serif';
+        var lw = g.measureText(lab).width + 8 * S;
+        g.fillStyle = 'rgba(0,0,0,.78)';
+        g.fillRect(p.x - lw / 2, p.y + r + 3 * S, lw, 15 * S);
+        g.fillStyle = '#fff';
+        g.fillText(lab, p.x, p.y + r + 10.5 * S);
+      });
+
+      // scale bar — a map in a report without one is a picture
+      var mpp = 156543.03392 * Math.cos(c.lat * Math.PI / 180) / Math.pow(2, z) / k;
+      var fpp = mpp * 3.28084;
+      var want = [25, 50, 100, 200, 300, 500, 800, 1000, 2000];
+      var ft = want[0], px = 0;
+      for (var wi = 0; wi < want.length; wi++) {
+        var q = want[wi] / fpp;
+        if (q >= 70 * S && q <= finW * 0.42) { ft = want[wi]; px = q; break; }
+        if (q < 70 * S) { ft = want[wi]; px = q; }
+      }
+      if (px > 4) {
+        var bx = 12 * S, by = finH - 16 * S;
+        g.fillStyle = 'rgba(0,0,0,.62)';
+        g.fillRect(bx - 6 * S, by - 20 * S, px + 12 * S, 30 * S);
+        g.strokeStyle = '#fff'; g.lineWidth = 3 * S;
+        g.beginPath(); g.moveTo(bx, by); g.lineTo(bx + px, by); g.stroke();
+        g.beginPath(); g.moveTo(bx, by - 5 * S); g.lineTo(bx, by + 5 * S);
+        g.moveTo(bx + px, by - 5 * S); g.lineTo(bx + px, by + 5 * S); g.stroke();
+        g.fillStyle = '#fff'; g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+        g.font = '700 ' + Math.round(11 * S) + 'px system-ui, sans-serif';
+        g.fillText(ft + ' ft', bx, by - 7 * S);
+      }
+
+      // north arrow
+      var nx = finW - 26 * S, ny = 26 * S;
+      g.fillStyle = 'rgba(0,0,0,.62)';
+      g.beginPath(); g.arc(nx, ny, 19 * S, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#fff';
+      g.beginPath();
+      g.moveTo(nx, ny - 13 * S); g.lineTo(nx + 6 * S, ny + 4 * S);
+      g.lineTo(nx, ny + 1 * S); g.lineTo(nx - 6 * S, ny + 4 * S);
+      g.closePath(); g.fill();
+      g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.font = '700 ' + Math.round(10 * S) + 'px system-ui, sans-serif';
+      g.fillText('N', nx, ny + 11 * S);
+
+      // legend — only the symbols actually on this map
+      var keys = Object.keys(used);
+      if (keys.length) {
+        var lh = 17 * S, pad = 8 * S;
+        g.font = '600 ' + Math.round(11 * S) + 'px system-ui, sans-serif';
+        var wmax = 0;
+        keys.forEach(function (kk) { wmax = Math.max(wmax, g.measureText(used[kk].label).width); });
+        var boxW2 = wmax + 34 * S, boxH2 = keys.length * lh + pad * 2;
+        var lx = 12 * S, ly = 12 * S;
+        g.fillStyle = 'rgba(0,0,0,.66)';
+        g.fillRect(lx, ly, boxW2, boxH2);
+        keys.forEach(function (kk, i) {
+          var cc = used[kk], yy = ly + pad + i * lh + lh / 2;
+          g.beginPath(); g.arc(lx + pad + 7 * S, yy, 7 * S, 0, Math.PI * 2);
+          g.fillStyle = cc.c; g.fill();
+          g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle';
+          g.font = '700 ' + Math.round((cc.t.length > 1 ? 7 : 9) * S) + 'px system-ui, sans-serif';
+          g.fillText(cc.t, lx + pad + 7 * S, yy + 0.5 * S);
+          g.textAlign = 'left';
+          g.font = '600 ' + Math.round(11 * S) + 'px system-ui, sans-serif';
+          g.fillText(cc.label, lx + pad + 19 * S, yy);
+        });
+      }
+
+      try { return cv.toDataURL('image/jpeg', 0.82); }
+      catch (e) { console.warn('site map compose blocked', e); return null; }
+    });
+  }
+
+  function renderNow() {
+    if (rendering) { renderAgain = true; return Promise.resolve(); }
+    rendering = true;
+    status('Updating the report image…');
+    return composeImage().then(function (url) {
+      rendering = false;
+      if (!url) { status('Could not build the report image from this view.', true); return; }
+      var c = map.getCenter();
+      var ok = writePlan(function (d) {
+        d.site_map_image = url;
+        d.site_map_view = { lat: c.lat, lng: c.lng, zoom: map.getZoom(), sat: usingSat };
+        d.site_map_saved_at = new Date().toISOString();
+      });
+      status(ok ? 'This view is what prints ✓'
+                : 'Out of browser storage — the map image was not saved.', !ok);
+      if (renderAgain) { renderAgain = false; scheduleRender(400); }
+    }).catch(function (e) {
+      rendering = false;
+      status('Could not build the report image.', true);
+      console.error('site map render', e);
+    });
+  }
+
+  function scheduleRender(ms) {
+    if (renderTimer) clearTimeout(renderTimer);
+    renderTimer = setTimeout(function () { renderTimer = null; renderNow(); }, ms || 1400);
+  }
+  function flush() {
+    if (renderTimer) { clearTimeout(renderTimer); renderTimer = null; }
+    // Best effort on the way out; a pending compose is async and may not land.
+    if (!rendering) renderNow();
+  }
 
   // -------------------------------------------------------------------- UI
   function palette() {
@@ -162,9 +418,10 @@
     box.className = 'preplan-section';
     box.id = 'smBox';
     box.innerHTML =
-      '<h3 class="section-title">Site map &mdash; tap to place what crews need to find</h3>' +
-      '<div class="info-tip">Every marker here carries a real position, so it can be checked against the hydrant records and reused. ' +
-      'The uploaded aerial below still works and is unaffected.</div>' +
+      '<h3 class="section-title">10. Site Plan</h3>' +
+      '<div class="info-tip">Tap a symbol, then tap the map where it is. Every marker carries a real ' +
+      'position, so it can be checked against the hydrant records. <b>Whatever you leave on screen is ' +
+      'what prints in the PDF and the Book</b> — pan and zoom until the framing is right.</div>' +
       '<div id="smTools">' +
         '<button type="button" class="btn-secondary" id="smLayer">\u{1F6F0} Satellite</button>' +
         '<button type="button" class="btn-secondary" id="smHyd">\u{1F6B0} Hydrants on</button>' +
@@ -173,7 +430,8 @@
       '</div>' +
       '<div id="smPal">' + palette() + '</div>' +
       '<div id="smHint">Pick a symbol above, then tap the map.</div>' +
-      '<div id="smMap"></div>';
+      '<div id="smMap"></div>' +
+      '<div id="smStat"></div>';
     host.insertBefore(box, host.firstChild);
   }
 
@@ -192,11 +450,13 @@
       if (usingSat) { map.removeLayer(streetLayer); satLayer.addTo(map); }
       else { map.removeLayer(satLayer); streetLayer.addTo(map); }
       this.textContent = usingSat ? '\u{1F6F0} Satellite' : '\u{1F5FA} Street';
+      scheduleRender();
     });
     document.getElementById('smHyd').addEventListener('click', function () {
       showHyd = !showHyd;
       if (showHyd) hydrantLayer.addTo(map); else map.removeLayer(hydrantLayer);
       this.textContent = showHyd ? '\u{1F6B0} Hydrants on' : '\u{1F6B0} Hydrants off';
+      scheduleRender();
     });
     document.getElementById('smHere').addEventListener('click', function () {
       var p = planLatLng();
@@ -206,22 +466,24 @@
   }
 
   function initMap() {
+    var saved = readPlan().site_map_view;
     var here = planLatLng() || [32.6285, -83.6899];   // Centerville
-    map = L.map('smMap', { zoomControl: true }).setView(here, planLatLng() ? 19 : 14);
+    var start = (saved && isFinite(saved.lat) && isFinite(saved.lng)) ? [saved.lat, saved.lng] : here;
+    var startZ = (saved && isFinite(saved.zoom)) ? saved.zoom : (planLatLng() ? 19 : 14);
+    if (saved && saved.sat === false) usingSat = false;
 
-    satLayer = L.tileLayer(
-      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-      { maxZoom: 21, maxNativeZoom: 19, attribution: 'Esri' });
-    streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-      { maxZoom: 21, maxNativeZoom: 19, attribution: '© OpenStreetMap' });
-    satLayer.addTo(map);
+    map = L.map('smMap', { zoomControl: true }).setView(start, startZ);
 
-    markerLayer = L.layerGroup().addTo(map);
+    satLayer    = L.tileLayer(SAT_URL,    { maxZoom: 21, maxNativeZoom: MAX_NATIVE, attribution: 'Esri World Imagery' });
+    streetLayer = L.tileLayer(STREET_URL, { maxZoom: 21, maxNativeZoom: MAX_NATIVE, attribution: '© OpenStreetMap' });
+    (usingSat ? satLayer : streetLayer).addTo(map);
+
+    markerLayer  = L.layerGroup().addTo(map);
     hydrantLayer = L.layerGroup().addTo(map);
 
     if (planLatLng()) {
-      L.circleMarker(here, { radius: 9, color: '#fff', weight: 3, fillColor: '#1e3a5f', fillOpacity: 1 })
-        .bindTooltip('This building', { permanent: false }).addTo(map);
+      hereLayer = L.circleMarker(here, { radius: 9, color: '#fff', weight: 3, fillColor: '#1e3a5f', fillOpacity: 1 })
+        .bindTooltip('This building').addTo(map);
     }
 
     map.on('click', function (e) {
@@ -229,12 +491,13 @@
         document.getElementById('smHint').textContent = 'Pick a symbol first, then tap the map.';
         return;
       }
-      var label = prompt('Label for this ' + cat(picked).label + ' (optional)', '') ;
+      var label = prompt('Label for this ' + cat(picked).label + ' (optional)', '');
+      if (label === null) return;
       var list = markers();
-      list.push({ k: picked, lat: e.latlng.lat, lng: e.latlng.lng,
-                  label: (label || '').trim() || null });
-      writeMarkers(list); drawMarkers(); refreshCount();
+      list.push({ k: picked, lat: e.latlng.lat, lng: e.latlng.lng, label: (label || '').trim() || null });
+      writeMarkers(list); drawMarkers(); refreshCount(); scheduleRender();
     });
+    map.on('moveend zoomend', function () { scheduleRender(); });
 
     drawMarkers(); refreshCount();
 
@@ -242,7 +505,8 @@
       .then(function (j) {
         hydrants = Array.isArray(j) ? j : (j.hydrants || j.results || j.data || []);
         drawHydrants();
-      }).catch(function () {});
+        scheduleRender(900);
+      }).catch(function () { scheduleRender(900); });
   }
 
   function style() {
@@ -260,6 +524,7 @@
       '.sm-cat .d{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;',
       ' justify-content:center;font-size:11px;font-weight:700;color:#fff}',
       '#smHint{font:600 12px system-ui,sans-serif;color:#64748b;margin-top:8px}',
+      '#smStat{font:600 12px system-ui,sans-serif;color:#166534;margin-top:8px;min-height:16px}',
       '.sm-pin{width:30px;height:30px;border-radius:50%;border:2.5px solid #fff;display:flex;',
       ' align-items:center;justify-content:center;font:700 15px system-ui,sans-serif;color:#fff;',
       ' box-shadow:0 1px 4px rgba(0,0,0,.5)}',
@@ -271,22 +536,27 @@
   }
 
   function boot() {
-    var host = document.querySelector('.page-wrapper') || document.querySelector('.container');
-    if (!host || !document.getElementById('uploadSection')) return;   // page 10 only
+    var host = document.getElementById('siteMapHost');
+    if (!host) return;                                  // page 10 only
     style();
     build(host);
     loadCss(LEAFLET_CSS);
     loadScript(LEAFLET_JS).then(function () { initMap(); wire(); })
       .catch(function (e) {
-        document.getElementById('smMap').innerHTML =
-          '<div style="padding:24px;text-align:center;color:#64748b">Map could not load. ' +
-          'The aerial upload below still works.</div>';
+        var m = document.getElementById('smMap');
+        if (m) m.innerHTML = '<div style="padding:24px;text-align:center;color:#64748b">' +
+          'Map could not load. Check the connection and reload this page.</div>';
         console.error(e);
       });
+    window.addEventListener('pagehide', flush);
+    window.addEventListener('beforeunload', flush);
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
 
-  window.PreplanSiteMap = { CATS: CATS, markers: markers };
+  window.PreplanSiteMap = {
+    CATS: CATS, cat: cat, markers: markers,
+    render: renderNow, flush: flush, compose: composeImage
+  };
 })();

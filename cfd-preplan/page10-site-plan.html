@@ -11,15 +11,9 @@
 <script src="preplan-flow.js"></script>
 <script src="preplan-layout.js"></script>
 <script src="preplan-sitemap.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
 <style>
-.canvas-wrapper{border:2px solid var(--slate-300);border-radius:var(--radius-md);overflow:hidden;margin:12px 0;background:#fff}
-.site-toolbar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
-.site-toolbar button{padding:8px 12px;border:2px solid var(--slate-300);border-radius:var(--radius-md);background:var(--white);cursor:pointer;font-size:0.85rem;font-weight:600;transition:all var(--transition-fast)}
-.site-toolbar button:hover{border-color:var(--navy-blue);background:var(--slate-50)}
-.site-toolbar button.active{background:var(--navy-blue);color:white;border-color:var(--navy-blue)}
-.upload-area{border:2px dashed var(--slate-300);border-radius:var(--radius-lg);padding:var(--spacing-xl);text-align:center;cursor:pointer;transition:all var(--transition-fast);margin-bottom:var(--spacing-lg)}
-.upload-area:hover{border-color:var(--navy-blue);background:var(--slate-50)}
+#legacySite{margin-top:18px;border:1px solid var(--slate-300);border-radius:var(--radius-md);padding:12px;background:var(--slate-50)}
+#legacySite img{max-width:240px;border-radius:6px;border:1px solid var(--slate-300);display:block;margin:8px 0}
 </style>
   <link rel="stylesheet" href="preplan-layout.css">
 </head>
@@ -35,39 +29,23 @@
         <div class="progress-indicator">Page 10 of 12: Site Plan</div>
         <div class="progress-bar-container"><div class="progress-bar" style="width:83.33%"></div></div>
 
-        <h3 class="section-title">10. Site Plan</h3>
-        <div class="info-tip">Upload a satellite image or screenshot of the building site, then annotate with labels, access points, and hazards.</div>
+        <!-- The site map builds itself in here. It replaced the upload-a-screenshot
+             box: markers on a screengrab have no coordinates and cannot be checked
+             against anything. -->
+        <div id="siteMapHost"></div>
 
-        <div id="uploadSection">
-            <div class="upload-area" onclick="document.getElementById('siteImg').click()">
-                <p style="font-size:48px;margin-bottom:8px">🗺️</p>
-                <p style="font-size:1.1rem;font-weight:700;color:var(--navy-blue)">Upload Site Image</p>
-                <p style="font-size:0.85rem;color:var(--slate-500)">Satellite view, aerial photo, or sketch</p>
-                <input type="file" id="siteImg" accept="image/*" style="display:none">
-            </div>
-            <div style="text-align:center"><button class="btn-secondary" onclick="startBlank()">Or Start Blank Canvas</button></div>
-        </div>
-
-        <div id="annotSection" class="hidden">
-            <div class="site-toolbar">
-                <button class="active" data-tool="select">🔍 Select</button>
-                <button data-tool="draw">✏️ Draw</button>
-                <button data-tool="text">Aa Text</button>
-                <button data-tool="label">🏷️ Label</button>
-                <button onclick="deleteSelected()">🗑️ Delete</button>
-                <input type="color" id="siteColor" value="#ff0000" style="width:32px;height:32px;border:1px solid var(--slate-300);border-radius:var(--radius-sm)">
-            </div>
-            <div class="canvas-wrapper"><canvas id="site-canvas" width="900" height="550"></canvas></div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
-                <button class="btn-secondary" onclick="document.getElementById('siteImg2').click()">📷 New Image</button>
-                <button class="btn-secondary" onclick="exportPng()">💾 Export PNG</button>
-                <input type="file" id="siteImg2" accept="image/*" style="display:none">
-            </div>
+        <!-- Only shown when a plan still carries an aerial from the old page. -->
+        <div id="legacySite" class="hidden">
+            <div style="font-weight:700;color:var(--navy-blue)">Aerial from the old site plan page</div>
+            <div style="font-size:0.85rem;color:var(--slate-500)">Kept so nothing is lost. The site map above is
+                what the report uses now; this only prints if no site map has been made.</div>
+            <img id="legacySiteImg" alt="Previous site plan">
+            <button type="button" class="btn-secondary" onclick="dropLegacy()">Remove it</button>
         </div>
 
         <div class="nav-buttons">
-            <button type="button" class="btn-secondary" onclick="flushSiteSave();window.location.href='page9-hazardous-materials.html'">← Previous</button>
-            <button type="button" class="btn-primary" onclick="flushSiteSave();window.location.href='page11-floor-plan.html'">Next →</button>
+            <button type="button" class="btn-secondary" onclick="leave('page9-hazardous-materials.html')">← Previous</button>
+            <button type="button" class="btn-primary" onclick="leave('page11-floor-plan.html')">Next →</button>
         </div>
     </div>
 </div>
@@ -76,54 +54,35 @@
     <p>© 2026 City of Centerville Fire Department</p>
 </footer>
 <script>
-var canvas,currentTool='select';
-function initCanvas(bgUrl){
-    canvas=new fabric.Canvas('site-canvas',{preserveObjectStacking:true,backgroundColor:'white'});
-    // Save once the uploaded image is actually on the canvas. Without this an
-    // upload alone was never persisted — only later annotations were.
-    if(bgUrl){fabric.Image.fromURL(bgUrl,function(img){img.scaleToWidth(canvas.width);img.set({selectable:false,evented:false,isBg:true});canvas.add(img);canvas.sendToBack(img);canvas.renderAll();saveSiteNow()})}
-    canvas.on('mouse:down',function(o){
-        if(currentTool==='text'&&o.pointer){var t=prompt('Enter text:');if(t)canvas.add(new fabric.IText(t,{left:o.pointer.x,top:o.pointer.y,fontSize:14,fill:document.getElementById('siteColor').value,fontFamily:'Arial'}))}
-        if(currentTool==='label'&&o.pointer){var t=prompt('Label:');if(t){var g=new fabric.Group([new fabric.Rect({width:t.length*8+16,height:22,fill:document.getElementById('siteColor').value,rx:4,ry:4,originX:'center',originY:'center'}),new fabric.Text(t,{fontSize:12,fill:'#fff',fontWeight:'bold',originX:'center',originY:'center'})],{left:o.pointer.x,top:o.pointer.y});canvas.add(g)}}
-    });
-    canvas.on('object:modified',function(){saveSite()});
-    canvas.on('path:created',function(){saveSite()});
+// Leaving the page composes the map one last time, so what is on screen is what
+// the report carries. It is async, so give it a moment before navigating.
+function leave(href){
+    try{
+        if(window.PreplanSiteMap&&window.PreplanSiteMap.render){
+            window.PreplanSiteMap.render().then(function(){location.href=href})
+                .catch(function(){location.href=href});
+            setTimeout(function(){location.href=href},2500);   // never trap anyone here
+            return;
+        }
+    }catch(e){}
+    location.href=href;
 }
-document.querySelectorAll('.site-toolbar button[data-tool]').forEach(function(b){b.onclick=function(){document.querySelectorAll('.site-toolbar button[data-tool]').forEach(function(x){x.classList.remove('active')});b.classList.add('active');currentTool=b.dataset.tool;canvas.isDrawingMode=currentTool==='draw';if(canvas.isDrawingMode){canvas.freeDrawingBrush.color=document.getElementById('siteColor').value;canvas.freeDrawingBrush.width=3}canvas.selection=currentTool==='select'}});
-function deleteSelected(){var s=canvas.getActiveObjects();s.forEach(function(o){if(!o.isBg)canvas.remove(o)});canvas.discardActiveObject();canvas.renderAll();saveSite()}
-function compressImg(dataUrl,cb){var img=new Image();img.onload=function(){var MAX=1500,w=img.width,hh=img.height,s=Math.min(1,MAX/Math.max(w,hh));var cw=Math.round(w*s),ch=Math.round(hh*s);var c=document.createElement('canvas');c.width=cw;c.height=ch;c.getContext('2d').drawImage(img,0,0,cw,ch);try{cb(c.toDataURL('image/jpeg',0.72))}catch(e){cb(dataUrl)}};img.onerror=function(){cb(dataUrl)};img.src=dataUrl;}
-function exportPng(){var a=document.createElement('a');a.download='site-plan.png';a.href=canvas.toDataURL({format:'png',quality:1});a.click()}
-// Saving the site plan is expensive: it serialises the Fabric canvas (which
-// embeds the aerial) and re-renders the whole canvas to a second JPEG. Doing
-// that on every stroke locked the page up once a real aerial was loaded, so
-// saves are coalesced. Anything that can end the page flushes first.
-var __siteSaveTimer=null;
-function saveSiteNow(){
-  __siteSaveTimer=null;
-  if(!canvas)return;
-  var d=JSON.parse(localStorage.getItem('preFirePlan')||'{}');
-  var j=canvas.toJSON(['isBg']);
-  j.viewportTransform=canvas.viewportTransform.slice();
-  d.site_plan_data=JSON.stringify(j);
-  try{d.site_plan_image=canvas.toDataURL({format:'jpeg',quality:0.72})}catch(e){}
-  localStorage.setItem('preFirePlan',JSON.stringify(d));
+(function(){
+    var d={};try{d=JSON.parse(localStorage.getItem('preFirePlan')||'{}')}catch(e){}
+    if(d.site_plan_image){
+        document.getElementById('legacySiteImg').src=d.site_plan_image;
+        document.getElementById('legacySite').classList.remove('hidden');
+    }
+})();
+function dropLegacy(){
+    if(!confirm('Remove the old uploaded aerial from this plan?'))return;
+    try{
+        var d=JSON.parse(localStorage.getItem('preFirePlan')||'{}');
+        delete d.site_plan_image; delete d.site_plan_data;
+        localStorage.setItem('preFirePlan',JSON.stringify(d));
+    }catch(e){}
+    document.getElementById('legacySite').classList.add('hidden');
 }
-function saveSite(){
-  if(__siteSaveTimer)clearTimeout(__siteSaveTimer);
-  __siteSaveTimer=setTimeout(saveSiteNow,800);
-}
-// Always save, whether or not a debounce is pending. Making this conditional
-// meant that uploading an image and pressing Next saved nothing at all —
-// an upload fires no object:modified, so no timer was ever set.
-function flushSiteSave(){ if(__siteSaveTimer){clearTimeout(__siteSaveTimer);__siteSaveTimer=null;} saveSiteNow(); }
-window.addEventListener('beforeunload',flushSiteSave);
-window.addEventListener('pagehide',flushSiteSave);
-document.addEventListener('visibilitychange',function(){if(document.hidden)flushSiteSave()});
-function loadSite(){try{var d=JSON.parse(localStorage.getItem('preFirePlan')||'{}');if(d.site_plan_data){document.getElementById('uploadSection').classList.add('hidden');document.getElementById('annotSection').classList.remove('hidden');initCanvas(null);var parsed=JSON.parse(d.site_plan_data);var savedVpt=parsed.viewportTransform||null;canvas.loadFromJSON(d.site_plan_data,function(){if(savedVpt&&savedVpt.length===6){canvas.setViewportTransform(savedVpt)}canvas.renderAll();if(typeof updateZoomLabel==='function')updateZoomLabel()})}}catch(e){}}
-function startBlank(){document.getElementById('uploadSection').classList.add('hidden');document.getElementById('annotSection').classList.remove('hidden');initCanvas(null)}
-document.getElementById('siteImg').onchange=function(){if(this.files[0]){var r=new FileReader();r.onload=function(e){document.getElementById('uploadSection').classList.add('hidden');document.getElementById('annotSection').classList.remove('hidden');compressImg(e.target.result,initCanvas)};r.readAsDataURL(this.files[0])}};
-document.getElementById('siteImg2').onchange=function(){if(this.files[0]){var r=new FileReader();r.onload=function(e){var bg=canvas.getObjects().find(function(o){return o.isBg});if(bg)canvas.remove(bg);compressImg(e.target.result,function(durl){fabric.Image.fromURL(durl,function(img){img.scaleToWidth(canvas.width);img.set({selectable:false,evented:false,isBg:true});canvas.add(img);canvas.sendToBack(img);canvas.renderAll();saveSite()})})};r.readAsDataURL(this.files[0])}};
-window.addEventListener('load',loadSite);
 </script>
 </body>
 </html>
