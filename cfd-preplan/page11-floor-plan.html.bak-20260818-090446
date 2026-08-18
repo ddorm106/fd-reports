@@ -261,7 +261,6 @@
           <button class="fp-tbtn active" data-tool="select" title="Select, drag, edit">✋ Select</button>
           <button class="fp-tbtn" data-tool="pan" title="Pan">🖐 Pan</button>
           <button class="fp-tbtn" data-tool="wall" title="Draw walls">📏 Wall</button>
-          <button class="fp-tbtn" data-tool="room" title="Draw a 4-sided room">⬛ Room</button>
           <button class="fp-tbtn" data-tool="pen" title="Freehand draw">✏️ Pen</button>
           <button class="fp-tbtn" data-tool="text" title="Add text">Aa Text</button>
           <button class="fp-tbtn" data-tool="measure" title="Measure">📐 Measure</button>
@@ -1714,9 +1713,6 @@ function draw() {
   ctx.restore();
   drawLegend();
   updateStatus();
-  // Late overlay hook — fp-pro.js paints in-progress geometry and
-  // the sheet furniture (north arrow, scale bar, title block) here.
-  if (window.__FP_OVERLAY) { try { window.__FP_OVERLAY(); } catch (e) { console.warn('[fp] overlay', e); } }
 }
 function drawLegend(){
   if(state.visibleLayers && state.visibleLayers.legend===false) return;
@@ -2228,21 +2224,6 @@ function drawInProgress(d) {
     ctx.setLineDash([6/state.view.zoom, 3/state.view.zoom]);
     ctx.beginPath(); ctx.moveTo(d.x1, d.y1); ctx.lineTo(d.x2, d.y2); ctx.stroke();
     ctx.setLineDash([]);
-  } else if (d.kind === 'room') {
-    const rax=Math.min(d.x1,d.x2), ray=Math.min(d.y1,d.y2), rbx=Math.max(d.x1,d.x2), rby=Math.max(d.y1,d.y2);
-    const rsf = (state.data && state.data.scale_px_per_ft) || 12;
-    ctx.strokeStyle = 'rgba(45,45,45,0.6)';
-    ctx.lineWidth = 6 / state.view.zoom;
-    ctx.setLineDash([6/state.view.zoom, 3/state.view.zoom]);
-    ctx.strokeRect(rax, ray, rbx-rax, rby-ray);
-    ctx.setLineDash([]);
-    const rwft = (rbx-rax)/rsf, rhft = (rby-ray)/rsf;
-    if (rwft > 0.5 && rhft > 0.5) {
-      ctx.fillStyle = 'rgba(45,45,45,0.85)';
-      ctx.font = (13 / state.view.zoom) + 'px system-ui, sans-serif';
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(rwft.toFixed(1) + ' x ' + rhft.toFixed(1) + ' ft', (rax+rbx)/2, (ray+rby)/2);
-    }
   } else if (d.kind === 'measure') {
     ctx.strokeStyle = COL.measure;
     ctx.lineWidth = 2 / state.view.zoom;
@@ -2396,24 +2377,7 @@ function showEditPanel(hit) {
   };
   const dupBtn = () => { const b=document.createElement('button'); b.className='fp-tbtn sm'; b.style.marginTop='4px'; b.textContent='⧉ Duplicate'; b.onclick=()=>duplicateSelected(); return b; };
 
-  if (hit.kind === 'wall') {
-    body.appendChild(mkLabel('Length (ft):'));
-    const li = document.createElement('input');
-    li.type = 'number'; li.step = '0.1'; li.min = '0.1';
-    li.value = (dist(e.x1,e.y1,e.x2,e.y2)/sf).toFixed(1);
-    li.onchange = () => {
-      const nl = parseFloat(li.value);
-      const curLen = dist(e.x1,e.y1,e.x2,e.y2);
-      if (!isFinite(nl) || nl <= 0) { li.value = (curLen/sf).toFixed(1); return; }
-      pushUndo();
-      let ux = 1, uy = 0;
-      if (curLen > 0.0001) { ux = (e.x2-e.x1)/curLen; uy = (e.y2-e.y1)/curLen; }
-      e.x2 = e.x1 + ux*nl*sf; e.y2 = e.y1 + uy*nl*sf;
-      document.getElementById('ep-sub').textContent = 'Length: ' + nl.toFixed(1) + ' ft';
-      saveToStorage(); draw();
-    };
-    body.appendChild(li);
-  } else if (hit.kind === 'door') {
+  if (hit.kind === 'door') {
     const g = document.createElement('div'); g.className = 'door-type-group';
     ['single','double','rollup'].forEach(t => {
       const b = document.createElement('button');
@@ -2513,7 +2477,7 @@ function setTool(t) {
     t === 'pan' ? 'grab' :
     t === 'delete' ? 'crosshair' :
     t === 'place' ? 'copy' :
-    (t === 'wall' || t === 'room' || t === 'measure' || t === 'text' || t === 'pen') ? 'crosshair' :
+    (t === 'wall' || t === 'measure' || t === 'text' || t === 'pen') ? 'crosshair' :
     'default';
   if (t !== 'select') { state.selected = null; hideEditPanel(); }
   state.drawing = null;
@@ -2574,11 +2538,6 @@ wrap.addEventListener('pointerdown', (e) => {
   if (state.tool === 'wall') {
     if (!state.data) state.data = emptyData();
     state.drawing = { kind: 'wall', x1: dpt.x, y1: dpt.y, x2: dpt.x, y2: dpt.y };
-    hideEmpty(); return;
-  }
-  if (state.tool === 'room') {
-    if (!state.data) state.data = emptyData();
-    state.drawing = { kind: 'room', x1: dpt.x, y1: dpt.y, x2: dpt.x, y2: dpt.y };
     hideEmpty(); return;
   }
   if (state.tool === 'measure') {
@@ -2679,14 +2638,6 @@ function endPointer(e) {
       const d = state.drawing;
       if (d.kind === 'wall' && dist(d.x1,d.y1,d.x2,d.y2) > 5) {
         pushUndo(); state.data.walls.push({ x1:d.x1,y1:d.y1,x2:d.x2,y2:d.y2 });
-        updateCounts(); saveToStorage();
-      } else if (d.kind === 'room' && Math.abs(d.x2-d.x1) > 5 && Math.abs(d.y2-d.y1) > 5) {
-        pushUndo();
-        const rax=Math.min(d.x1,d.x2), ray=Math.min(d.y1,d.y2), rbx=Math.max(d.x1,d.x2), rby=Math.max(d.y1,d.y2);
-        state.data.walls.push({ x1:rax, y1:ray, x2:rbx, y2:ray });
-        state.data.walls.push({ x1:rbx, y1:ray, x2:rbx, y2:rby });
-        state.data.walls.push({ x1:rbx, y1:rby, x2:rax, y2:rby });
-        state.data.walls.push({ x1:rax, y1:rby, x2:rax, y2:ray });
         updateCounts(); saveToStorage();
       } else if (d.kind === 'measure' && dist(d.x1,d.y1,d.x2,d.y2) > 5) {
         pushUndo(); state.data.measurements.push({ id: uid('m_'), x1:d.x1,y1:d.y1,x2:d.x2,y2:d.y2 });
@@ -3465,10 +3416,7 @@ function init() {
 }
 init();
 
-window.FP = { state, draw, fitToView, loadLatestCapture, SYMBOLS,
-  wrap, canvas, ctx, emptyData, pushUndo, saveToStorage, updateCounts,
-  hideEmpty, showToast, setTool, screenToData, dataToScreen, degToRad, uid,
-  get tool(){ return state.tool; }, set tool(t){ state.tool = t; } };
+window.FP = { state, draw, fitToView, loadLatestCapture, SYMBOLS };
 
 // Auto-load a specific DivisionScan capture when opened with ?job=<id>
 (function(){
@@ -3486,6 +3434,4 @@ window.FP = { state, draw, fitToView, loadLatestCapture, SYMBOLS,
   } catch(e) {}
 })();
 })();
-</script>
-<script src="fp-pro.js"></script>
-</body></html>
+</script></body></html>
