@@ -3471,6 +3471,7 @@ init();
 window.FP = { state, draw, fitToView, loadLatestCapture, SYMBOLS,
   wrap, canvas, ctx, emptyData, pushUndo, saveToStorage, updateCounts,
   hideEmpty, showToast, setTool, screenToData, dataToScreen, degToRad, uid,
+  selectSymbol, fitToView, hitTest, deleteElement, showEditPanel,
   get tool(){ return state.tool; }, set tool(t){ state.tool = t; } };
 
 // Auto-load a specific DivisionScan capture when opened with ?job=<id>
@@ -3491,4 +3492,5 @@ window.FP = { state, draw, fitToView, loadLatestCapture, SYMBOLS,
 })();
 </script>
 <script src="fp-pro.js"></script>
+<script src="fp-markers.js"></script>
 </body></html>
