@@ -88,6 +88,25 @@
     });
   }
 
+  /**
+   * Park a copy on the server under a FRESH code and return it.
+   *
+   * The JSON download alone is not a safety net: a programmatic download can be
+   * blocked outright, and when it is, the user finds out only after their plan
+   * is gone. A server copy is verifiable before anything is destroyed, and the
+   * code can be read back off the screen.
+   */
+  function parkBackup(p) {
+    return fetch('/api/save-draft', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data: p })      // no code => the server mints one
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (j) { return (j && j.success && j.code) ? j.code : null; })
+      .catch(function () { return null; });
+  }
+
   /** Blank the server draft so ?plan=<code> cannot resurrect the plan. */
   function clearServerDraft(code) {
     if (!code) return Promise.resolve();
@@ -114,12 +133,36 @@
 
     if (!confirm(msg)) return;
 
-    if (n) downloadBackup(p);
+    // Back up BEFORE destroying anything, and prove it landed. If it did not,
+    // the user gets to decide whether to go ahead blind rather than finding out
+    // afterwards.
+    if (n) {
+      downloadBackup(p);                       // best effort; may be blocked
+      parkBackup(p).then(function (code) {
+        if (!code) {
+          if (!confirm('The cloud backup FAILED and the file download may have been ' +
+                       'blocked by the browser.\n\nClear the plan anyway? There may be ' +
+                       'no copy left.')) return;
+        } else {
+          alert('Backed up as plan code ' + code + '\n\nWrite this down. To bring the ' +
+                'plan back, open:\n' + location.origin + location.pathname + '?plan=' + code);
+        }
+        doWipe(code);
+      });
+      return;
+    }
+    doWipe(null);
+  }
+
+  function doWipe(backupCode) {
+    var code = '';
+    try { code = (JSON.parse(localStorage.getItem('preFirePlanCloud') || '{}') || {}).code || ''; } catch (e) {}
 
     // Mark the wipe as deliberate, and leave the mark set ACROSS the reload.
     // ppPersist() cannot tell a reset from corruption, so the next load
     // re-checks that the plan really is gone before dropping the flag.
     try { sessionStorage.setItem('__preplanResetting', '1'); } catch (e) {}
+    try { if (backupCode) sessionStorage.setItem('__preplanBackupCode', backupCode); } catch (e) {}
     try { window.__preplanResetting = true; } catch (e) {}
 
     // Clear local storage FIRST and synchronously. If the tab is closed part
@@ -164,6 +207,32 @@
       return;
     }
     try { sessionStorage.removeItem('__preplanResetting'); } catch (e) {}
+
+    var bc;
+    try { bc = sessionStorage.getItem('__preplanBackupCode'); } catch (e) {}
+    if (bc) {
+      try { sessionStorage.removeItem('__preplanBackupCode'); } catch (e) {}
+      showBackupBanner(bc);
+    }
+  }
+
+  /** Persistent, dismissible note of where the cleared plan went. */
+  function showBackupBanner(code) {
+    var d = document.createElement('div');
+    d.style.cssText =
+      'position:fixed;left:50%;transform:translateX(-50%);top:12px;z-index:10000;max-width:92vw;' +
+      'background:#1e3a5f;color:#fff;padding:12px 16px;border-radius:12px;' +
+      'font:600 13px system-ui,-apple-system,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.3);' +
+      'display:flex;gap:12px;align-items:center;';
+    d.innerHTML = '<span>Plan cleared. The old one is saved as code <b>' + code +
+                  '</b> &mdash; open <code>?plan=' + code + '</code> to bring it back.</span>';
+    var b = document.createElement('button');
+    b.textContent = 'OK';
+    b.style.cssText = 'border:0;background:#fff;color:#1e3a5f;font-weight:700;padding:8px 14px;' +
+                      'border-radius:8px;cursor:pointer;min-height:36px;';
+    b.onclick = function () { d.remove(); };
+    d.appendChild(b);
+    document.body.appendChild(d);
   }
 
   window.ppResetPlan = resetPlan;
