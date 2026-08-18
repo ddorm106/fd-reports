@@ -473,7 +473,81 @@ function renderV4Floorplan(d,pdfW,pdfH){
         for(var i=1;i<f.points.length;i++) ctx.lineTo(f.points[i].x,f.points[i].y);
         ctx.stroke();
     });
+    // Sheet furniture. The editor draws a north arrow, graphic scale bar and
+    // title block, but the PDF is what actually reaches the incident commander,
+    // so it needs them too — a floor plan with no scale and no north is a
+    // picture, not a document you can work off.
+    ctx.setTransform(1,0,0,1,0,0);
+    try { fpSheetFurniture(ctx, d, pdfW, pdfH, scale); }
+    catch(e){ /* never let sheet furniture cost us the whole plan */ }
+
     try{ return el.toDataURL('image/png',1); } catch(e){ return null; }
+}
+
+/**
+ * North arrow, graphic scale bar and title block, drawn in page space.
+ * `scale` is canvas-units-per-pdf-pixel from the caller, so the scale bar can
+ * be worked back to real feet.
+ */
+function fpSheetFurniture(ctx, d, W, H, scale){
+    var plan = {};
+    try { plan = JSON.parse(localStorage.getItem('preFirePlan')||'{}')||{}; } catch(e){}
+
+    // ---- north arrow, top right
+    var nx = W - 46, ny = 46;
+    ctx.fillStyle = '#111827';
+    ctx.beginPath();
+    ctx.moveTo(nx, ny-20); ctx.lineTo(nx+8, ny+11); ctx.lineTo(nx, ny+6); ctx.lineTo(nx-8, ny+11);
+    ctx.closePath(); ctx.fill();
+    ctx.font = 'bold 12px "Source Sans Pro",system-ui';
+    ctx.textAlign='center'; ctx.textBaseline='top';
+    ctx.fillText('N', nx, ny+14);
+
+    // ---- graphic scale bar, bottom left
+    var pxPerFt = (d.scale_px_per_ft||12) * scale;
+    if (pxPerFt > 0.02) {
+        var nice=[1,2,5,10,20,25,50,100,200,250,500,1000], want=150/pxPerFt, ft=nice[nice.length-1];
+        for(var i=0;i<nice.length;i++){ if(nice[i]>=want){ ft=nice[i]; break; } }
+        var barPx = ft*pxPerFt, bx=22, by=H-30;
+        ctx.fillStyle='rgba(255,255,255,0.9)';
+        ctx.fillRect(bx-8, by-22, barPx+66, 36);
+        for(var s2=0;s2<4;s2++){
+            ctx.fillStyle = (s2%2===0)?'#111827':'#ffffff';
+            ctx.fillRect(bx + s2*(barPx/4), by-6, barPx/4, 6);
+        }
+        ctx.strokeStyle='#111827'; ctx.lineWidth=1; ctx.strokeRect(bx, by-6, barPx, 6);
+        ctx.fillStyle='#111827'; ctx.font='600 10px "Source Sans Pro",system-ui';
+        ctx.textAlign='left'; ctx.textBaseline='top';
+        ctx.fillText('0', bx-2, by+2);
+        ctx.fillText(ft+' ft', bx+barPx-8, by+2);
+        ctx.textBaseline='bottom'; ctx.fillText('SCALE', bx, by-9);
+    }
+
+    // ---- title block, bottom right
+    var lines=[];
+    if(plan.business_name) lines.push(plan.business_name);
+    if(plan.address) lines.push(plan.address);
+    var meta=[];
+    if(plan.pfp_number) meta.push('PFP '+plan.pfp_number);
+    if(plan.plan_date) meta.push('Tour '+plan.plan_date);
+    if(plan.pre_plan_conducted_by) meta.push(plan.pre_plan_conducted_by);
+    if(meta.length) lines.push(meta.join('   \u2022   '));
+    if(!lines.length) return;
+
+    var maxW=0;
+    for(var L=0;L<lines.length;L++){
+        ctx.font=(L===0?'bold 13px ':'600 11px ')+'"Source Sans Pro",system-ui';
+        maxW=Math.max(maxW, ctx.measureText(lines[L]).width);
+    }
+    var boxW=maxW+22, boxH=18+lines.length*15, tx=W-boxW-16, ty=H-boxH-16;
+    ctx.fillStyle='rgba(255,255,255,0.94)'; ctx.strokeStyle='#111827'; ctx.lineWidth=1;
+    ctx.fillRect(tx,ty,boxW,boxH); ctx.strokeRect(tx,ty,boxW,boxH);
+    ctx.textAlign='left'; ctx.textBaseline='top';
+    for(var m2=0;m2<lines.length;m2++){
+        ctx.font=(m2===0?'bold 13px ':'600 11px ')+'"Source Sans Pro",system-ui';
+        ctx.fillStyle=(m2===0)?'#111827':'#4b5563';
+        ctx.fillText(lines[m2], tx+11, ty+9+m2*15);
+    }
 }
 
 function addPlanPages(pdfObj,data){
