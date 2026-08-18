@@ -129,20 +129,24 @@
   function rewireNav(idx) {
     var wrap = document.querySelector('.nav-buttons');
     if (!wrap) return;
-    var prev = FLOW[idx - 1], next = FLOW[idx + 1];
+    var next = FLOW[idx + 1];
 
+    // ONE navigation system, not two.
+    //
+    // The step strip and a Previous/Next pair were doing the same job twice,
+    // and on an iPad that reads as two different ways to move which is worse
+    // than either alone. The strip stays because it is the thing that answers
+    // "where am I and how much is left", and it can jump. The bottom bar keeps
+    // only the forward action, which is the one thing the strip is bad at:
+    // continuing without having to find and aim at the next chip.
+    //
+    // Previous is gone deliberately. The strip goes back, and so does the
+    // iPad's edge swipe.
     wrap.innerHTML = '';
-    var back = document.createElement('button');
-    back.type = 'button';
-    back.className = 'btn-secondary';
-    back.textContent = prev ? '← ' + prev.title : '← Overview';
-    back.addEventListener('click', function () { go(prev ? prev.file : 'preplan-index.html'); });
-    wrap.appendChild(back);
-
     var fwd = document.createElement('button');
     fwd.type = 'button';
-    fwd.className = 'btn-primary';
-    fwd.textContent = next ? next.title + ' →' : 'Overview →';
+    fwd.className = 'btn-primary pp-next';
+    fwd.textContent = next ? 'Next: ' + next.title + '  \u2192' : 'Finish  \u2192';
     fwd.addEventListener('click', function () { go(next ? next.file : 'preplan-index.html'); });
     wrap.appendChild(fwd);
   }
@@ -196,6 +200,8 @@
       '   -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);}',
       ' .nav-buttons button{flex:1;}',
       '}',
+      '.pp-next{width:100%;font-weight:700;}',
+      '@media (pointer:coarse){ .pp-next{min-height:54px !important;font-size:17px !important;} }',
       '@media print{#pp-stepbar{display:none !important;}}'
     ].join('');
     document.head.appendChild(css);

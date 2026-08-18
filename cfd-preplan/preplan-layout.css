@@ -1,0 +1,216 @@
+/* ===========================================================================
+ * preplan-layout.css — one layout system for all 13 pre-plan pages
+ *
+ * The pages were built one at a time and drifted: different spacing, different
+ * field sizes, headings that look like body text, follow-up questions that sit
+ * at the same visual level as the question that triggered them. On a desk with
+ * a mouse that reads as untidy. On an iPad in an apparatus bay it reads as
+ * "which of these am I supposed to fill in".
+ *
+ * Nothing here changes a field id, a calculator, a card toggle or the
+ * auto-save. It is presentation only, applied through the class vocabulary the
+ * pages already share, so all 13 move together and none of the logic is at
+ * risk.
+ *
+ * Decisions, and why:
+ *   - CARDS. Each section is a card with a real header, so a page reads as a
+ *     handful of topics rather than one long ribbon of inputs.
+ *   - TWO COLUMNS on a landscape iPad, ONE in portrait. Landscape is how the
+ *     thing is actually held on a truck, and 96 form-fields down a single
+ *     column is a lot of scrolling.
+ *   - FOLLOW-UPS ARE INDENTED AND RULED. A conditional-section is a
+ *     consequence of the answer above it and should look like one.
+ *   - FILLED FIELDS GO QUIET. Empty ones keep a visible left edge, so what is
+ *     left to do is findable by eye instead of by reading.
+ *   - 48px CONTROLS, 17px TEXT. Gloves, and daylight.
+ * ======================================================================== */
+
+:root {
+  --pp-ink: #0f172a;
+  --pp-muted: #64748b;
+  --pp-line: #dbe3ec;
+  --pp-card: #ffffff;
+  --pp-bg: #eef2f7;
+  --pp-navy: #1e3a5f;
+  --pp-accent: #b91c1c;
+  --pp-ok: #16a34a;
+  --pp-radius: 14px;
+}
+
+body { background: var(--pp-bg) !important; }
+
+.container, .page-wrapper {
+  max-width: 1180px !important;
+  margin: 0 auto !important;
+  padding: 0 16px 120px !important;
+}
+
+/* ---- section = card ---------------------------------------------------- */
+.preplan-section {
+  background: var(--pp-card);
+  border: 1px solid var(--pp-line);
+  border-radius: var(--pp-radius);
+  padding: 20px 20px 8px;
+  margin: 0 0 18px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, .04);
+}
+
+.section-title {
+  font: 700 13px/1.3 system-ui, -apple-system, sans-serif !important;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--pp-navy) !important;
+  margin: 0 0 16px !important;
+  padding: 0 0 10px !important;
+  border-bottom: 2px solid var(--pp-line);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* The page's own H3 heading is the page title, not a section: make it read
+   like one rather than competing with the cards under it. */
+.page-wrapper > .section-title,
+.container > .section-title {
+  font-size: 22px !important;
+  text-transform: none;
+  letter-spacing: 0;
+  border-bottom: 0;
+  color: var(--pp-ink) !important;
+  margin-bottom: 6px !important;
+}
+
+/* ---- fields ------------------------------------------------------------ */
+.form-row {
+  display: grid !important;
+  grid-template-columns: 1fr;
+  gap: 14px 18px;
+  margin-bottom: 4px !important;
+}
+@media (min-width: 820px) {
+  .form-row { grid-template-columns: 1fr 1fr; }
+  .form-row.pp-wide, .form-row:has(textarea) { grid-template-columns: 1fr; }
+}
+
+.form-field {
+  display: flex !important;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 14px !important;
+  padding-left: 10px;
+  border-left: 3px solid var(--pp-line);
+}
+.form-field.pp-filled { border-left-color: transparent; }
+
+.form-field > label,
+.form-field > .inline-label {
+  font: 600 12.5px/1.35 system-ui, -apple-system, sans-serif !important;
+  color: var(--pp-muted) !important;
+  letter-spacing: .01em;
+}
+
+.form-field input[type=text],
+.form-field input[type=tel],
+.form-field input[type=date],
+.form-field input[type=number],
+.form-field input[type=email],
+.form-field select,
+.form-field textarea,
+input[type=text], input[type=tel], input[type=date],
+input[type=number], input[type=email], select, textarea {
+  font: 400 17px/1.4 system-ui, -apple-system, sans-serif !important;
+  color: var(--pp-ink) !important;
+  background: #fff !important;
+  border: 1.5px solid var(--pp-line) !important;
+  border-radius: 10px !important;
+  padding: 12px 13px !important;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color .12s ease, box-shadow .12s ease;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none !important;
+  border-color: var(--pp-navy) !important;
+  box-shadow: 0 0 0 3px rgba(30, 58, 95, .13) !important;
+}
+textarea { min-height: 92px !important; resize: vertical; }
+
+/* ---- follow-up questions ---------------------------------------------- */
+.conditional-section {
+  margin: 2px 0 16px 12px !important;
+  padding: 14px 16px 2px !important;
+  background: #f6f9fc;
+  border-left: 3px solid var(--pp-navy);
+  border-radius: 0 10px 10px 0;
+}
+.conditional-section .form-field { border-left: 0; padding-left: 0; }
+
+/* ---- choice buttons ---------------------------------------------------- */
+.apparatus-buttons {
+  display: flex !important;
+  flex-wrap: wrap;
+  gap: 8px !important;
+}
+.apparatus-btn {
+  min-height: 48px !important;
+  padding: 11px 18px !important;
+  font: 600 15px system-ui, -apple-system, sans-serif !important;
+  border-radius: 10px !important;
+  border: 1.5px solid var(--pp-line) !important;
+  background: #fff !important;
+  color: var(--pp-ink) !important;
+}
+.apparatus-btn.active, .apparatus-btn.selected {
+  background: var(--pp-navy) !important;
+  border-color: var(--pp-navy) !important;
+  color: #fff !important;
+}
+
+/* ---- page completion --------------------------------------------------- */
+#pp-page-progress {
+  display: flex; align-items: center; gap: 10px;
+  margin: 0 0 18px; padding: 11px 14px;
+  background: #fff; border: 1px solid var(--pp-line);
+  border-radius: 10px;
+  font: 600 13px system-ui, -apple-system, sans-serif; color: var(--pp-muted);
+}
+#pp-page-progress .bar { flex: 1; height: 7px; background: #e6ecf3; border-radius: 999px; overflow: hidden; }
+#pp-page-progress .bar > i { display: block; height: 100%; background: var(--pp-ok); border-radius: 999px; transition: width .25s ease; }
+#pp-page-progress .n { color: var(--pp-ink); font-variant-numeric: tabular-nums; }
+
+/* ---- bottom action ----------------------------------------------------- */
+.nav-buttons {
+  position: sticky; bottom: 0; z-index: 800;
+  margin: 22px -16px 0; padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  background: rgba(238, 242, 247, .94);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  border-top: 1px solid var(--pp-line);
+}
+.btn-primary {
+  background: var(--pp-navy) !important; color: #fff !important;
+  border: 0 !important; border-radius: 11px !important;
+  font: 700 16px system-ui, -apple-system, sans-serif !important;
+  padding: 15px 22px !important; min-height: 52px !important;
+}
+.btn-secondary {
+  background: #fff !important; color: var(--pp-navy) !important;
+  border: 1.5px solid var(--pp-line) !important; border-radius: 11px !important;
+  font: 600 15px system-ui, -apple-system, sans-serif !important;
+  padding: 13px 20px !important; min-height: 48px !important;
+}
+
+/* ---- misc -------------------------------------------------------------- */
+.info-tip {
+  background: #f1f6fb !important; border-left: 3px solid var(--pp-navy) !important;
+  border-radius: 0 10px 10px 0 !important; padding: 12px 15px !important;
+  font: 400 13.5px/1.5 system-ui, sans-serif !important; color: #33445c !important;
+  margin: 0 0 18px !important;
+}
+.report-header { border-radius: var(--pp-radius); overflow: hidden; }
+.progress-indicator { display: none !important; }   /* superseded by the step strip */
+
+@media print {
+  .nav-buttons, #pp-page-progress, #pp-stepbar, #iso-pill { display: none !important; }
+  .preplan-section { break-inside: avoid; box-shadow: none; }
+  body { background: #fff !important; }
+}
