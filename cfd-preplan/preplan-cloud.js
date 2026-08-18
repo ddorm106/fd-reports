@@ -34,6 +34,18 @@
     function codeFromUrl() {
         try { return new URLSearchParams(location.search).get('plan'); } catch (e) { return null; }
     }
+    /// ?restore=CODE — pull a copy WITHOUT adopting the code.
+    ///
+    /// ?plan=CODE is for sharing one live plan between devices, so both ends
+    /// should push to the same code. Restoring a backup is the opposite: the
+    /// backup must stay exactly as it was. Using ?plan= for it is what
+    /// destroyed a backup on 2026-08-18 — the browser adopted the backup's
+    /// code as its sync target, and when the plan was later cleared the sync
+    /// pushed the empty state straight over it. A backup that the thing it is
+    /// backing up can overwrite is not a backup.
+    function restoreCodeFromUrl() {
+        try { return new URLSearchParams(location.search).get('restore'); } catch (e) { return null; }
+    }
     function currentCode() { return meta().code || codeFromUrl() || null; }
 
     function plan() {
@@ -127,13 +139,14 @@
     }
 
     // ── Pull ────────────────────────────────────────────────────────────────
-    function pull(code) {
+    function pull(code, opts) {
+        var adopt = !opts || opts.adoptCode !== false;
         return fetch(LOAD_URL + '?code=' + encodeURIComponent(code))
             .then(function (r) { return r.json(); })
             .then(function (j) {
                 if (!j || !j.success || !j.data) return false;
                 localStorage.setItem(KEY, JSON.stringify(j.data));
-                var m = meta(); m.code = code; m.savedAt = Date.now(); setMeta(m);
+                if (adopt) { var m = meta(); m.code = code; m.savedAt = Date.now(); setMeta(m); }
                 return true;
             })
             .catch(function () { return false; });
@@ -141,6 +154,25 @@
 
     // ── Boot ────────────────────────────────────────────────────────────────
     function init() {
+        // Restore first, and deliberately do not keep the code.
+        var restoreCode = restoreCodeFromUrl();
+        if (restoreCode) {
+            status('Restoring…');
+            pull(restoreCode, { adoptCode: false }).then(function (ok) {
+                booted = true;
+                if (ok) {
+                    status('Restored from ' + restoreCode, 'ok');
+                    // A fresh working code is minted on the next push, so the
+                    // backup is never written to again.
+                    try { localStorage.removeItem(META); } catch (e) {}
+                    location.replace(location.origin + location.pathname);
+                } else {
+                    status('Could not restore ' + restoreCode, 'err');
+                }
+            });
+            return;
+        }
+
         var urlCode = codeFromUrl();
         var local = plan();
 

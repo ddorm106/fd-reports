@@ -67,6 +67,11 @@
   }
 
   /** Every localStorage key this app writes, including the split-out blobs. */
+  /// Deliberately NOT matching the preFirePlan* pattern the wipe clears, so
+  /// the code of the last cleared plan survives the clearing. Losing the code
+  /// loses the backup as surely as deleting it.
+  var LAST_BACKUP_KEY = 'preplanLastClearedBackup';
+
   function planKeys() {
     var out = [KEY, KEY + '__prev', KEY + '.blobindex', 'preFirePlanCloud', 'ppCloudCode'];
     try {
@@ -144,8 +149,20 @@
                        'blocked by the browser.\n\nClear the plan anyway? There may be ' +
                        'no copy left.')) return;
         } else {
-          alert('Backed up as plan code ' + code + '\n\nWrite this down. To bring the ' +
-                'plan back, open:\n' + location.origin + location.pathname + '?plan=' + code);
+          // ?restore= not ?plan=. ?plan= makes the browser adopt the code as
+          // its live sync target, so the next clear would push an empty plan
+          // over this backup — which is exactly how a verified backup was
+          // destroyed on 2026-08-18.
+          var link = location.origin + location.pathname + '?restore=' + code;
+          try {
+            localStorage.setItem(LAST_BACKUP_KEY, JSON.stringify({
+              code: code, at: Date.now(),
+              name: p.business_name || '', fields: n
+            }));
+          } catch (e) {}
+          alert('Backed up as plan code ' + code + '\n\n' +
+                'The code is kept on this device and shown on the overview page, ' +
+                'so you do not have to write it down.\n\nTo bring the plan back:\n' + link);
         }
         doWipe(code);
       });
@@ -244,7 +261,44 @@
       els[i].addEventListener('click', function (e) { e.preventDefault(); resetPlan(); });
     }
   }
-  function boot() { wire(); verifyReset(); }
+  /// Show the last cleared plan's backup code on the overview page.
+  ///
+  /// A code delivered only in an alert during the wipe is a code nobody has by
+  /// the time they want it.
+  function showLastBackup() {
+    if (!document.getElementById('page-nav')) return;      // overview only
+    var raw;
+    try { raw = localStorage.getItem(LAST_BACKUP_KEY); } catch (e) { return; }
+    if (!raw) return;
+    var b;
+    try { b = JSON.parse(raw); } catch (e) { return; }
+    if (!b || !b.code) return;
+
+    var d = document.createElement('div');
+    d.style.cssText =
+      'max-width:820px;margin:0 auto 18px;padding:13px 16px;border-radius:12px;' +
+      'background:#f1f6fb;border-left:4px solid #1e3a5f;font:400 13.5px/1.5 system-ui,sans-serif;' +
+      'color:#33445c;display:flex;gap:12px;align-items:center;flex-wrap:wrap;';
+    d.innerHTML =
+      '<span>Last cleared plan' + (b.name ? ' (<b>' + String(b.name).replace(/[<>&]/g, '') + '</b>)' : '') +
+      ' is saved as code <b>' + b.code + '</b>' + (b.fields ? ' — ' + b.fields + ' fields' : '') + '.</span>';
+    var a = document.createElement('a');
+    a.href = location.origin + location.pathname + '?restore=' + encodeURIComponent(b.code);
+    a.textContent = 'Bring it back';
+    a.style.cssText = 'font-weight:700;color:#1e3a5f;';
+    d.appendChild(a);
+    var x = document.createElement('button');
+    x.textContent = 'Dismiss';
+    x.style.cssText = 'margin-left:auto;border:0;background:#fff;color:#1e3a5f;font-weight:600;' +
+                      'padding:8px 13px;border-radius:8px;cursor:pointer;';
+    x.onclick = function () { try { localStorage.removeItem(LAST_BACKUP_KEY); } catch (e) {} d.remove(); };
+    d.appendChild(x);
+
+    var nav = document.getElementById('page-nav');
+    nav.parentNode.insertBefore(d, nav);
+  }
+
+  function boot() { wire(); verifyReset(); showLastBackup(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
 })();
