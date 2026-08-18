@@ -201,42 +201,69 @@
     });
   }
 
+  // Work out what the picture has to cover. Whatever is on screen, PLUS every
+  // marker and the building, with room for the pin labels. A marker the crew
+  // placed but left just off the edge of the view would otherwise never reach
+  // the PDF, which is exactly the thing this is for.
+  function extentFor(z, bw, bh, dz, c) {
+    var f = Math.pow(2, z - dz);
+    var w = bw * f, h = bh * f;
+    var ctr = project(c.lat, c.lng, z);
+    var minX = ctr.x - w / 2, maxX = ctr.x + w / 2;
+    var minY = ctr.y - h / 2, maxY = ctr.y + h / 2;
+    var pts = [];
+    markers().forEach(function (m) {
+      if (isFinite(m.lat) && isFinite(m.lng)) pts.push(project(m.lat, m.lng, z));
+    });
+    var here = planLatLng();
+    if (here) pts.push(project(here[0], here[1], z));
+    var pad = 48;                      // pin radius plus its label
+    pts.forEach(function (pt) {
+      minX = Math.min(minX, pt.x - pad); maxX = Math.max(maxX, pt.x + pad);
+      minY = Math.min(minY, pt.y - pad); maxY = Math.max(maxY, pt.y + pad + 26);
+    });
+    var W = maxX - minX, H = maxY - minY;
+    // A letterbox strip prints as a sliver on a portrait page.
+    if (W / H > 1.75) { var nh = W / 1.75; minY -= (nh - H) / 2; H = nh; }
+    return { tl: { x: minX, y: minY }, w: Math.round(W), h: Math.round(H) };
+  }
+
   function composeImage() {
     if (!map || typeof L === 'undefined') return Promise.resolve(null);
     var box = document.getElementById('smMap');
     if (!box) return Promise.resolve(null);
     var bw = box.clientWidth || 900, bh = box.clientHeight || 560;
     var dz = map.getZoom();
-    var z = Math.min(MAX_NATIVE, Math.round(dz));
-    var f = Math.pow(2, z - dz);                 // css px -> world px at z
-    var outW = Math.round(bw * f), outH = Math.round(bh * f);
+    var c = map.getCenter();
+
+    // Back the zoom off until the whole extent is a sane number of tiles.
+    var z = Math.min(MAX_NATIVE, Math.round(dz)), ext = extentFor(z, bw, bh, dz, c);
+    while (z > 14 && (ext.w > 2800 || ext.h > 2800 ||
+                      Math.ceil(ext.w / 256 + 1) * Math.ceil(ext.h / 256 + 1) > 200)) {
+      z--; ext = extentFor(z, bw, bh, dz, c);
+    }
+    var outW = ext.w, outH = ext.h, tl = ext.tl;
     if (outW < 40 || outH < 40) return Promise.resolve(null);
 
-    var c = map.getCenter();
-    var ctr = project(c.lat, c.lng, z);
-    var tl = { x: ctr.x - outW / 2, y: ctr.y - outH / 2 };
-
-    // A cap so the stored JPEG stays sane; both axes scale together so the
-    // framing on screen is exactly the framing that prints.
-    var k = Math.min(1, 1600 / outW, 1150 / outH);
+    var k = Math.min(1, 1600 / outW, 1400 / outH);
     var finW = Math.max(1, Math.round(outW * k)), finH = Math.max(1, Math.round(outH * k));
 
-    var world = 256 * Math.pow(2, z);
+    var n = Math.pow(2, z);
     var x0 = Math.floor(tl.x / 256), x1 = Math.floor((tl.x + outW - 1) / 256);
     var y0 = Math.floor(tl.y / 256), y1 = Math.floor((tl.y + outH - 1) / 256);
     var base = (usingSat ? SAT_URL : STREET_URL);
     var jobs = [];
     for (var tx = x0; tx <= x1; tx++) {
       for (var ty = y0; ty <= y1; ty++) {
-        if (ty < 0 || ty >= Math.pow(2, z)) continue;
-        var wx = ((tx % Math.pow(2, z)) + Math.pow(2, z)) % Math.pow(2, z);
+        if (ty < 0 || ty >= n) continue;
+        var wx = ((tx % n) + n) % n;
         jobs.push({
           url: base.replace('{z}', z).replace('{x}', wx).replace('{y}', ty),
           dx: tx * 256 - tl.x, dy: ty * 256 - tl.y
         });
       }
     }
-    if (jobs.length > 240) return Promise.resolve(null);   // absurd extent
+    if (!jobs.length) return Promise.resolve(null);
 
     var tileCv = document.createElement('canvas');
     tileCv.width = outW; tileCv.height = outH;
@@ -250,19 +277,17 @@
       cv.width = finW; cv.height = finH;
       var g = cv.getContext('2d');
       g.drawImage(tileCv, 0, 0, finW, finH);
-      // world px -> final canvas px
       function P(lat, lng) {
-        var p = project(lat, lng, z);
-        return { x: (p.x - tl.x) * k, y: (p.y - tl.y) * k };
+        var pt = project(lat, lng, z);
+        return { x: (pt.x - tl.x) * k, y: (pt.y - tl.y) * k };
       }
-      var S = Math.max(0.72, Math.min(1.5, finW / 1100));   // overlay scale
+      var S = Math.max(0.72, Math.min(1.5, finW / 1100));
 
-      // hydrants first, they sit under everything
       nearbyHydrants().forEach(function (h) {
-        var p = P(h.latitude, h.longitude);
-        if (p.x < -20 || p.y < -20 || p.x > finW + 20 || p.y > finH + 20) return;
+        var pt = P(h.latitude, h.longitude);
+        if (pt.x < -20 || pt.y < -20 || pt.x > finW + 20 || pt.y > finH + 20) return;
         var r = 7 * S;
-        g.beginPath(); g.arc(p.x, p.y, r, 0, Math.PI * 2);
+        g.beginPath(); g.arc(pt.x, pt.y, r, 0, Math.PI * 2);
         g.fillStyle = hydColour(h); g.fill();
         g.lineWidth = 2 * S; g.strokeStyle = '#fff'; g.stroke();
         if (h.aff_20psi) {
@@ -270,13 +295,12 @@
           g.font = '700 ' + Math.round(10 * S) + 'px system-ui, sans-serif';
           var w = g.measureText(t).width + 6 * S;
           g.fillStyle = 'rgba(0,0,0,.72)';
-          g.fillRect(p.x - w / 2, p.y + r + 2 * S, w, 13 * S);
+          g.fillRect(pt.x - w / 2, pt.y + r + 2 * S, w, 13 * S);
           g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle';
-          g.fillText(t, p.x, p.y + r + 8.5 * S);
+          g.fillText(t, pt.x, pt.y + r + 8.5 * S);
         }
       });
 
-      // the building
       var here = planLatLng();
       if (here) {
         var hp = P(here[0], here[1]);
@@ -285,26 +309,24 @@
         g.lineWidth = 3 * S; g.strokeStyle = '#fff'; g.stroke();
       }
 
-      // markers
       var used = {};
       markers().forEach(function (m) {
         var cc = cat(m.k); used[cc.k] = cc;
-        var p = P(m.lat, m.lng);
-        if (p.x < -40 || p.y < -40 || p.x > finW + 40 || p.y > finH + 40) return;
+        var pt = P(m.lat, m.lng);
         var r = 15 * S;
-        g.beginPath(); g.arc(p.x, p.y, r, 0, Math.PI * 2);
+        g.beginPath(); g.arc(pt.x, pt.y, r, 0, Math.PI * 2);
         g.fillStyle = cc.c; g.fill();
         g.lineWidth = 2.5 * S; g.strokeStyle = '#fff'; g.stroke();
         g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle';
         g.font = '700 ' + Math.round((cc.t.length > 1 ? 12 : 16) * S) + 'px system-ui, sans-serif';
-        g.fillText(cc.t, p.x, p.y + 0.5 * S);
+        g.fillText(cc.t, pt.x, pt.y + 0.5 * S);
         var lab = (m.label || cc.label);
         g.font = '700 ' + Math.round(11 * S) + 'px system-ui, sans-serif';
         var lw = g.measureText(lab).width + 8 * S;
         g.fillStyle = 'rgba(0,0,0,.78)';
-        g.fillRect(p.x - lw / 2, p.y + r + 3 * S, lw, 15 * S);
+        g.fillRect(pt.x - lw / 2, pt.y + r + 3 * S, lw, 15 * S);
         g.fillStyle = '#fff';
-        g.fillText(lab, p.x, p.y + r + 10.5 * S);
+        g.fillText(lab, pt.x, pt.y + r + 10.5 * S);
       });
 
       // scale bar — a map in a report without one is a picture
@@ -330,7 +352,6 @@
         g.fillText(ft + ' ft', bx, by - 7 * S);
       }
 
-      // north arrow
       var nx = finW - 26 * S, ny = 26 * S;
       g.fillStyle = 'rgba(0,0,0,.62)';
       g.beginPath(); g.arc(nx, ny, 19 * S, 0, Math.PI * 2); g.fill();
@@ -343,27 +364,26 @@
       g.font = '700 ' + Math.round(10 * S) + 'px system-ui, sans-serif';
       g.fillText('N', nx, ny + 11 * S);
 
-      // legend — only the symbols actually on this map
       var keys = Object.keys(used);
       if (keys.length) {
-        var lh = 17 * S, pad = 8 * S;
+        var lh = 17 * S, pad2 = 8 * S;
         g.font = '600 ' + Math.round(11 * S) + 'px system-ui, sans-serif';
         var wmax = 0;
         keys.forEach(function (kk) { wmax = Math.max(wmax, g.measureText(used[kk].label).width); });
-        var boxW2 = wmax + 34 * S, boxH2 = keys.length * lh + pad * 2;
+        var boxW2 = wmax + 34 * S, boxH2 = keys.length * lh + pad2 * 2;
         var lx = 12 * S, ly = 12 * S;
         g.fillStyle = 'rgba(0,0,0,.66)';
         g.fillRect(lx, ly, boxW2, boxH2);
         keys.forEach(function (kk, i) {
-          var cc = used[kk], yy = ly + pad + i * lh + lh / 2;
-          g.beginPath(); g.arc(lx + pad + 7 * S, yy, 7 * S, 0, Math.PI * 2);
+          var cc = used[kk], yy = ly + pad2 + i * lh + lh / 2;
+          g.beginPath(); g.arc(lx + pad2 + 7 * S, yy, 7 * S, 0, Math.PI * 2);
           g.fillStyle = cc.c; g.fill();
           g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle';
           g.font = '700 ' + Math.round((cc.t.length > 1 ? 7 : 9) * S) + 'px system-ui, sans-serif';
-          g.fillText(cc.t, lx + pad + 7 * S, yy + 0.5 * S);
+          g.fillText(cc.t, lx + pad2 + 7 * S, yy + 0.5 * S);
           g.textAlign = 'left';
           g.font = '600 ' + Math.round(11 * S) + 'px system-ui, sans-serif';
-          g.fillText(cc.label, lx + pad + 19 * S, yy);
+          g.fillText(cc.label, lx + pad2 + 19 * S, yy);
         });
       }
 
@@ -385,7 +405,8 @@
         d.site_map_view = { lat: c.lat, lng: c.lng, zoom: map.getZoom(), sat: usingSat };
         d.site_map_saved_at = new Date().toISOString();
       });
-      status(ok ? 'This view is what prints ✓'
+      var n = markers().length;
+      status(ok ? ('This view is what prints ✓' + (n ? '  \u2014  all ' + n + ' marker' + (n === 1 ? '' : 's') + ' are in it' : ''))
                 : 'Out of browser storage — the map image was not saved.', !ok);
       if (renderAgain) { renderAgain = false; scheduleRender(400); }
     }).catch(function (e) {
@@ -426,6 +447,7 @@
         '<button type="button" class="btn-secondary" id="smLayer">\u{1F6F0} Satellite</button>' +
         '<button type="button" class="btn-secondary" id="smHyd">\u{1F6B0} Hydrants on</button>' +
         '<button type="button" class="btn-secondary" id="smHere">Centre on the building</button>' +
+        '<button type="button" class="btn-secondary" id="smFit">Fit everything</button>' +
         '<span id="smCount"></span>' +
       '</div>' +
       '<div id="smPal">' + palette() + '</div>' +
@@ -457,6 +479,14 @@
       if (showHyd) hydrantLayer.addTo(map); else map.removeLayer(hydrantLayer);
       this.textContent = showHyd ? '\u{1F6B0} Hydrants on' : '\u{1F6B0} Hydrants off';
       scheduleRender();
+    });
+    document.getElementById('smFit').addEventListener('click', function () {
+      var pts = markers().filter(function (m) { return isFinite(m.lat) && isFinite(m.lng); })
+                         .map(function (m) { return [m.lat, m.lng]; });
+      var here = planLatLng(); if (here) pts.push(here);
+      if (!pts.length) { alert('Nothing placed yet.'); return; }
+      if (pts.length === 1) { map.setView(pts[0], 19); return; }
+      map.fitBounds(L.latLngBounds(pts), { padding: [45, 45], maxZoom: 20 });
     });
     document.getElementById('smHere').addEventListener('click', function () {
       var p = planLatLng();
