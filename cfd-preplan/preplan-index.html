@@ -20,7 +20,7 @@
 
         <div style="display:flex;gap:12px;justify-content:center;margin-top:24px;flex-wrap:wrap">
             <a href="page1-location.html" class="btn-primary" style="font-size:1.1rem;padding:12px 32px">Start / Continue →</a>
-            <button class="btn-secondary" onclick="if(confirm('Clear ALL pre-plan data? This cannot be undone.')){localStorage.removeItem('preFirePlan');location.reload()}">🗑️ Reset All Data</button>
+            <button class="btn-secondary" data-preplan-reset type="button">🗑️ Reset All Data</button>
         </div>
 
         <div class="nav-buttons">
@@ -36,6 +36,7 @@
 <script src="preplan-storage.js"></script>
 <script src="preplan-cloud.js"></script>
 <script src="preplan-iso.js"></script>
+<script src="preplan-reset.js"></script>
 <script>
 var pages=[
     {num:1,title:'Location Information',desc:'Address, GPS, contact info',file:'page1-location.html',fields:['pfp_number','business_name','address','tax_id']},
