@@ -120,6 +120,18 @@
             <button class="fp-tbtn sm" id="vc-north" style="margin-top:4px;width:100%;">Auto-align (compass)</button>
             <button class="fp-tbtn sm" id="vc-reset" style="margin-top:4px;width:100%;">Reset</button>
             <hr>
+            <label class="fld">Rotate the drawing</label>
+            <div class="hint" style="margin-top:0">Turns the plan itself, not just the
+                view — so the report prints the way you see it. A scan that came in
+                sideways is fixed here. Undo works.</div>
+            <div class="fpx-northrow">
+                <button class="fp-tbtn sm" data-rotate="-90" title="Quarter turn anticlockwise">⟲ 90°</button>
+                <button class="fp-tbtn sm" data-rotate="90" title="Quarter turn clockwise">⟳ 90°</button>
+                <button class="fp-tbtn sm" data-rotate="180" title="Half turn">180°</button>
+                <button class="fp-tbtn sm" id="vc-rotate-any" title="Any angle">Other…</button>
+            </div>
+
+            <hr>
             <label class="fld">True north — <b id="north-readout">0°</b></label>
             <div class="hint" style="margin-top:0">Drag the arrow on the plan to point at
                 true north. Hold <kbd>Shift</kbd> for 15° steps.</div>

@@ -294,6 +294,105 @@
     return Math.round(t * 10) / 10;
   };
 
+
+  /* ---------------------------------------------------------------- rotate
+   *
+   * Rotate the DRAWING, not the view. A scan comes in at whatever heading the
+   * operator was walking, and the view-rotation slider only turns what is on
+   * screen — the PDF ignored it entirely, so the copy the IC carries came out
+   * at the scan's original orientation however the editor looked.
+   *
+   * Every floor turns together: they are the same building, and rotating one
+   * would put the second storey at right angles to the first.
+   *
+   * North comes with it. Rotating the building without rotating the bearing
+   * would leave an arrow that confidently points the wrong way, which is worse
+   * than no arrow. */
+  Doc.prototype.rotate = function (deg) {
+    var d = this.data;
+    var rad = deg * Math.PI / 180;
+    var cos = Math.cos(rad), sin = Math.sin(rad);
+
+    /* Turn about the centre of everything drawn, across all floors, so the
+     * storeys stay registered with each other. */
+    var pts = [];
+    d.floors.forEach(function (f) {
+      (f.walls || []).forEach(function (w) { pts.push({ x: w.x1, y: w.y1 }, { x: w.x2, y: w.y2 }); });
+      ['doors', 'windows', 'objects', 'symbols', 'texts', 'sides'].forEach(function (k) {
+        (f[k] || []).forEach(function (e) { if (typeof e.x === 'number') pts.push({ x: e.x, y: e.y }); });
+      });
+      (f.zones || []).forEach(function (z) { (z.poly || []).forEach(function (q) { pts.push(q); }); });
+    });
+    if (!pts.length) return false;
+    var b = G.bbox(pts);
+    var cx = (b.minX + b.maxX) / 2, cy = (b.minY + b.maxY) / 2;
+
+    function rot(x, y) {
+      var dx = x - cx, dy = y - cy;
+      return { x: cx + dx * cos - dy * sin, y: cy + dx * sin + dy * cos };
+    }
+    function movePoint(e) {
+      if (typeof e.x !== 'number' || typeof e.y !== 'number') return;
+      var r = rot(e.x, e.y); e.x = r.x; e.y = r.y;
+    }
+    function moveSeg(e) {
+      var a = rot(e.x1, e.y1), c = rot(e.x2, e.y2);
+      e.x1 = a.x; e.y1 = a.y; e.x2 = c.x; e.y2 = c.y;
+    }
+
+    var self = this;
+    d.floors.forEach(function (f) {
+      (f.walls || []).forEach(moveSeg);
+      (f.measurements || []).forEach(moveSeg);
+      /* Openings keep their wallId and t, so their position follows the wall
+       * automatically; only the cached x/y and angle kept for v4 readers need
+       * turning. */
+      ['doors', 'windows'].forEach(function (k) {
+        (f[k] || []).forEach(function (e) {
+          movePoint(e);
+          if (typeof e.angle === 'number') e.angle = (e.angle + deg) % 360;
+        });
+      });
+      ['objects', 'symbols'].forEach(function (k) {
+        (f[k] || []).forEach(function (e) {
+          movePoint(e);
+          if (typeof e.angle === 'number') e.angle = (e.angle + deg) % 360;
+        });
+      });
+      (f.texts || []).forEach(function (e) {
+        movePoint(e);
+        /* Labels stay upright deliberately — a plan you have to tilt your head
+         * to read is a plan nobody reads. */
+      });
+      (f.sides || []).forEach(movePoint);
+      (f.freehand || []).forEach(function (fh) {
+        fh.points = (fh.points || []).map(function (q) { return rot(q.x, q.y); });
+      });
+      (f.zones || []).forEach(function (z) {
+        z.poly = (z.poly || []).map(function (q) { return rot(q.x, q.y); });
+        self.recomputeZone(z);
+      });
+      if (f.underlay) {
+        var u = f.underlay;
+        var c2 = rot(u.x + u.w / 2, u.y + u.h / 2);
+        u.x = c2.x - u.w / 2;
+        u.y = c2.y - u.h / 2;
+        u.rot = ((u.rot || 0) + deg) % 360;
+      }
+    });
+
+    d.sheet = d.sheet || {};
+    d.sheet.north = (((d.sheet.north || 0) + deg) % 360 + 360) % 360;
+
+    /* A quarter turn makes a wide building tall. Swap the canvas so the drawing
+     * is not left hanging outside it. */
+    var q = ((Math.round(deg / 90) % 4) + 4) % 4;
+    if (q === 1 || q === 3) {
+      var t = d.canvas_width; d.canvas_width = d.canvas_height; d.canvas_height = t;
+    }
+    return true;
+  };
+
   /* --------------------------------------------------------------- legend */
 
   /* The legend is DERIVED, never stored as content — a stored legend goes stale

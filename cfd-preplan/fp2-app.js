@@ -577,6 +577,27 @@
     return true;
   }
 
+
+  /* Rotate the DRAWING. The view-rotation slider only turns what is on screen,
+   * and the PDF ignored it — so a scan that came in sideways printed sideways
+   * however the editor looked. This moves the geometry, which every consumer
+   * follows because there is nothing left to disagree about. */
+  function rotatePlan(deg) {
+    if (!doc) return;
+    doc.pushUndo();
+    if (!doc.rotate(deg)) { showToast('Nothing to rotate yet', 'err'); return; }
+    state.selected = null;
+    hideEditPanel(); hideZonePanel();
+    updateCounts(); updateAreaBar(); updateMeta();
+    var nd = $('vc-northdeg');
+    if (nd) nd.value = doc.data.sheet.north;
+    var nr = $('north-readout');
+    if (nr) nr.textContent = Math.round(doc.data.sheet.north) + '°';
+    saveToStorage({ withImage: false });
+    renderer.fitToView();
+    showToast('Rotated ' + deg + '° — north is now ' + Math.round(doc.data.sheet.north) + '°', 'ok');
+  }
+
   /* ================================================================ tools */
 
   function setTool(t) {
@@ -1989,6 +2010,20 @@
       var nl = $('north-readout');
       if (nl) nl.textContent = Math.round(doc.data.sheet.north) + '°';
       saveSoon(); draw();
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-rotate]'), function (b) {
+      b.addEventListener('click', function () {
+        rotatePlan(parseFloat(b.getAttribute('data-rotate')) || 0);
+      });
+    });
+    var rotAny = $('vc-rotate-any');
+    if (rotAny) rotAny.addEventListener('click', function () {
+      var v = prompt('Rotate the drawing by how many degrees?\n' +
+                     'Positive turns clockwise.', '90');
+      if (v === null) return;
+      var deg = parseFloat(v);
+      if (!isFinite(deg) || deg === 0) { showToast('That is not an angle', 'err'); return; }
+      rotatePlan(deg);
     });
     Array.prototype.forEach.call(document.querySelectorAll('[data-north]'), function (b) {
       b.addEventListener('click', function () {
