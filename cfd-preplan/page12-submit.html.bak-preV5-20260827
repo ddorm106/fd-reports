@@ -368,52 +368,6 @@ function renderCanvasToImage(jsonStr,w,h){
         }catch(e){resolve(null)}
     });
 }
-/**
- * Work out how many drawings a floor_plan_data actually holds, and hand each
- * back ready to render. Three shapes exist in the wild:
- *
- *   v5     { version:5, floors:[{name, walls, zones, ...}], walls:[...] }
- *           floors[] is authoritative; the top-level arrays are a mirror of the
- *           active floor kept for older readers (this one included).
- *   v4     { walls:[...], doors:[...], canvas_width, ... }   one storey, flat
- *   legacy { "1": {...}, "2": {...} }                        keyed by storey
- *
- * The previous version of this function assumed the legacy shape ALWAYS, so a
- * v4 or v5 plan produced one blank PDF page per top-level key — "Floor Plan -
- * Floor walls", "Floor Plan - Floor canvas_width" and so on.
- */
-function fpEachFloor(fp){
-    if(!fp||typeof fp!=='object') return [];
-
-    // v5: real storeys.
-    if(Array.isArray(fp.floors)&&fp.floors.length){
-        var multi=fp.floors.length>1;
-        return fp.floors.map(function(f,i){
-            var d={};
-            // Carry the document-level settings each floor is drawn against.
-            ['canvas_width','canvas_height','scale_px_per_ft','sheet','view_rotation'].forEach(function(k){
-                if(fp[k]!==undefined) d[k]=fp[k];
-            });
-            ['walls','doors','windows','objects','symbols','texts','measurements','freehand','zones','sides']
-                .forEach(function(k){ d[k]=f[k]||[]; });
-            return { label:'Floor Plan'+(multi?' - '+(f.name||('Floor '+(i+1))):''), data:d };
-        });
-    }
-
-    // v4: a single flat storey.
-    if(Array.isArray(fp.walls)||Array.isArray(fp.doors)||Array.isArray(fp.symbols)){
-        return [{ label:'Floor Plan', data:fp }];
-    }
-
-    // Legacy: numbered keys, each holding a plan.
-    var keys=Object.keys(fp).filter(function(k){ return fp[k]&&typeof fp[k]==='object'; })
-                            .sort(function(a,b){ return Number(a)-Number(b); });
-    if(!keys.length) return [];
-    return keys.map(function(k){
-        return { label:'Floor Plan'+(keys.length>1?' - Floor '+k:''), data:fp[k] };
-    });
-}
-
 function renderV4Floorplan(d,pdfW,pdfH){
     var cw=d.canvas_width||1000, ch=d.canvas_height||700;
     var el=document.createElement('canvas'); el.width=pdfW; el.height=pdfH;
@@ -423,22 +377,6 @@ function renderV4Floorplan(d,pdfW,pdfH){
     var tx=(pdfW-cw*scale)/2, ty=(pdfH-ch*scale)/2;
     ctx.translate(tx,ty); ctx.scale(scale,scale);
     var WH=3;
-
-    // Zones first, under everything: a filled area must never hide a wall,
-    // a door or a hydrant. Labels go on last, further down.
-    (d.zones||[]).forEach(function(z){
-        if(!z.poly||z.poly.length<3) return;
-        var hex=(z.color||'#3b82f6').slice(1);
-        var n=parseInt(hex,16);
-        var rgb=((n>>16)&255)+','+((n>>8)&255)+','+(n&255);
-        ctx.beginPath();
-        ctx.moveTo(z.poly[0].x,z.poly[0].y);
-        for(var i=1;i<z.poly.length;i++) ctx.lineTo(z.poly[i].x,z.poly[i].y);
-        ctx.closePath();
-        ctx.fillStyle='rgba('+rgb+',0.16)'; ctx.fill();
-        ctx.strokeStyle='rgba('+rgb+',0.65)'; ctx.lineWidth=1/scale; ctx.stroke();
-    });
-
     (d.objects||[]).forEach(function(o){
         ctx.save(); ctx.translate(o.x,o.y); ctx.rotate((o.angle||0)*Math.PI/180);
         ctx.fillStyle='rgba(124,58,237,0.18)'; ctx.strokeStyle='#7c3aed'; ctx.lineWidth=1/scale;
@@ -543,39 +481,6 @@ function renderV4Floorplan(d,pdfW,pdfH){
     // title block, but the PDF is what actually reaches the incident commander,
     // so it needs them too — a floor plan with no scale and no north is a
     // picture, not a document you can work off.
-    // Zone names and areas, over the geometry so a wall cannot cross the text.
-    (d.zones||[]).forEach(function(z){
-        if(!z.poly||z.poly.length<3) return;
-        if(!z.name && !z.area_sqft) return;
-        var cx=z.cx, cy=z.cy;
-        if(cx==null||cy==null){
-            var sx=0, sy=0;
-            z.poly.forEach(function(p){ sx+=p.x; sy+=p.y; });
-            cx=sx/z.poly.length; cy=sy/z.poly.length;
-        }
-        cx+=(z.label_dx||0); cy+=(z.label_dy||0);
-        var lines=[];
-        if(z.name) lines.push({t:z.name,s:13/scale,c:'#0f172a',b:true});
-        if(z.area_sqft) lines.push({t:Math.round(z.area_sqft).toLocaleString()+' sq ft',s:11/scale,c:'#334155',b:false});
-        var totalH=lines.reduce(function(t,l){return t+l.s*1.25;},0);
-        var maxW=0;
-        ctx.textAlign='center'; ctx.textBaseline='middle';
-        lines.forEach(function(l){
-            ctx.font=(l.b?'bold ':'')+l.s+'px "Source Sans Pro",system-ui';
-            maxW=Math.max(maxW,ctx.measureText(l.t).width);
-        });
-        var padX=6/scale, padY=4/scale;
-        ctx.fillStyle='rgba(255,255,255,0.74)';
-        ctx.fillRect(cx-maxW/2-padX, cy-totalH/2-padY, maxW+padX*2, totalH+padY*2);
-        var y=cy-totalH/2+lines[0].s*0.62;
-        lines.forEach(function(l){
-            ctx.font=(l.b?'bold ':'')+l.s+'px "Source Sans Pro",system-ui';
-            ctx.fillStyle=l.c;
-            ctx.fillText(l.t,cx,y);
-            y+=l.s*1.25;
-        });
-    });
-
     ctx.setTransform(1,0,0,1,0,0);
     try { fpSheetFurniture(ctx, d, pdfW, pdfH, scale); }
     catch(e){ /* never let sheet furniture cost us the whole plan */ }
@@ -658,11 +563,9 @@ function addPlanPages(pdfObj,data){
         var floorAll;
         try{floorAll=typeof data.floor_plan_data==='string'?JSON.parse(data.floor_plan_data):data.floor_plan_data}catch(e){floorAll=null}
         if(floorAll){
-            fpEachFloor(floorAll).forEach(function(fl){
-                planRenders.push({
-                    label: fl.label,
-                    promise: renderCanvasToImage(fl.data, 900, 600)
-                });
+            var fkeys=Object.keys(floorAll).sort(function(a,b){return Number(a)-Number(b)});
+            fkeys.forEach(function(fk){
+                planRenders.push({label:'Floor Plan'+(fkeys.length>1?' - Floor '+fk:''),promise:renderCanvasToImage(floorAll[fk],900,600)});
             });
         }
     }
