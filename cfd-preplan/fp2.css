@@ -365,7 +365,14 @@ body.fp-full.show-steps .fpx { top: 52px; }
 body.fp-full #fpUpWrap { display: none; }
 body.fp-full.show-sheets #fpUpWrap { display: block; }
 
-.fpx { position: fixed; inset: 0; display: flex; flex-direction: column;
+/* The Worker injects a fixed pre-plan form toolbar (Back / Sections / Saved /
+   Tools / Next) across the bottom of every pre-plan page at z-index 9999. It
+   does not exist when these pages are served locally, so it never showed up in
+   testing — it was sitting straight on top of the hint line. The shell ends
+   above it; the height is measured at runtime by the shell, because that bar
+   is not ours and may change. */
+.fpx { position: fixed; inset: 0; bottom: var(--pp-toolbar-h, 0px);
+  display: flex; flex-direction: column;
   background: var(--slate-100); z-index: 100; }
 
 /* ------------------------------------------------------------------ top bar */

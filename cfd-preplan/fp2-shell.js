@@ -90,6 +90,18 @@
     } catch (e) { /* the shell must never take the editor down with it */ }
   }
 
+
+  /* The pre-plan form toolbar is injected by the Worker, is position:fixed at
+   * z-index 9999, and owns the bottom ~56px of every pre-plan page. Measure it
+   * and hand the number to CSS so the shell can stop above it rather than be
+   * covered by it. Re-measured on resize because it reflows. */
+  function reserveToolbarSpace() {
+    var t = document.querySelector('.pp-toolbar');
+    var h = t ? Math.round(t.getBoundingClientRect().height) : 0;
+    document.documentElement.style.setProperty('--pp-toolbar-h', h + 'px');
+    return h;
+  }
+
   /* ---------------------------------------------------------------- boot */
 
   function init() {
@@ -168,6 +180,16 @@
 
     /* The canvas is sized from its wrapper, so a viewport change has to reach
      * it — orientation changes on an iPad otherwise leave it the old shape. */
+    /* The toolbar arrives via HTMLRewriter, so poll briefly for it. */
+    var tbTries = 0;
+    var tbTimer = setInterval(function () {
+      if (reserveToolbarSpace() > 0 || ++tbTries > 40) {
+        clearInterval(tbTimer);
+        window.dispatchEvent(new Event('resize'));   // re-fit into the new height
+      }
+    }, 120);
+    window.addEventListener('resize', reserveToolbarSpace);
+
     window.addEventListener('orientationchange', function () {
       setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 220);
     });

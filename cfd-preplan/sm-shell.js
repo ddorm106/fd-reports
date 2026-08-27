@@ -107,6 +107,18 @@
     });
   }
 
+
+  /* The pre-plan form toolbar is injected by the Worker, is position:fixed at
+   * z-index 9999, and owns the bottom ~56px of every pre-plan page. Measure it
+   * and hand the number to CSS so the shell can stop above it rather than be
+   * covered by it. Re-measured on resize because it reflows. */
+  function reserveToolbarSpace() {
+    var t = document.querySelector('.pp-toolbar');
+    var h = t ? Math.round(t.getBoundingClientRect().height) : 0;
+    document.documentElement.style.setProperty('--pp-toolbar-h', h + 'px');
+    return h;
+  }
+
   /* --------------------------------------------------------------- boot */
 
   function init() {
@@ -178,6 +190,12 @@
         });
       }
     }, 120);
+
+    var tbTries = 0;
+    var tbTimer = setInterval(function () {
+      if (reserveToolbarSpace() > 0 || ++tbTries > 40) clearInterval(tbTimer);
+    }, 120);
+    window.addEventListener('resize', reserveToolbarSpace);
 
     window.addEventListener('orientationchange', function () {
       setTimeout(nudgeMap, 220);
