@@ -774,6 +774,20 @@
     var pt = renderer.screenToData(p.sx, p.sy);
     var t = state.tool;
 
+    /* The north arrow is a control, whatever tool is live. Drag it round to
+     * point at true north — that is how you orient a plan on scene, not by
+     * typing a bearing into a panel three menus deep. */
+    if (state.northHit && doc.data.sheet && doc.data.sheet.show_north !== false) {
+      var nh = state.northHit;
+      if (Math.hypot(p.sx - nh.x, p.sy - nh.y) <= nh.r) {
+        doc.pushUndo();
+        state.draggingNorth = true;
+        drag = { mode: 'north' };
+        draw();
+        return;
+      }
+    }
+
     if (t === 'pan') { drag = { mode: 'pan', sx: p.sx, sy: p.sy, panX: state.view.panX, panY: state.view.panY }; return; }
 
     if (t === 'delete') {
@@ -955,6 +969,22 @@
       state.view.panY = dr.panY + (p.sy - dr.sy);
       return;
     }
+    if (dr.mode === 'north') {
+      var nh2 = state.northHit || { x: state.view.width - 46, y: 46 };
+      var ang = Math.atan2(p.sy - nh2.y, p.sx - nh2.x) * 180 / Math.PI + 90;
+      /* The arrow is drawn at sheet.north + view rotation, so back the view
+       * rotation out or north would drift every time the plan is turned. */
+      var bearing = ang - (state.view.rotation || 0);
+      while (bearing < 0) bearing += 360;
+      while (bearing >= 360) bearing -= 360;
+      if (e && e.shiftKey) bearing = Math.round(bearing / 15) * 15;   // 15 deg steps
+      doc.data.sheet.north = Math.round(bearing * 10) / 10;
+      var nd = $('vc-northdeg');
+      if (nd) nd.value = doc.data.sheet.north;
+      var nl = $('north-readout');
+      if (nl) nl.textContent = Math.round(doc.data.sheet.north) + '°';
+      return;
+    }
     if (dr.mode === 'move') {
       dr.el.x = dr.x0 + (pt.x - dr.start.x);
       dr.el.y = dr.y0 + (pt.y - dr.start.y);
@@ -1039,6 +1069,11 @@
     if (drag) {
       var mode = drag.mode;
       drag = null;
+      if (mode === 'north') {
+        state.draggingNorth = false;
+        commit('North set to ' + Math.round(doc.data.sheet.north) + '°');
+        return;
+      }
       if (mode !== 'pan') {
         if (mode === 'zone-move') renderFloors();
         commit();
@@ -1900,7 +1935,26 @@
     });
     $('vc-northdeg').addEventListener('change', function () {
       doc.data.sheet.north = parseFloat(this.value) || 0;
+      var nl = $('north-readout');
+      if (nl) nl.textContent = Math.round(doc.data.sheet.north) + '°';
       saveSoon(); draw();
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-north]'), function (b) {
+      b.addEventListener('click', function () {
+        doc.pushUndo();
+        var v = b.getAttribute('data-north');
+        if (v === 'scan') {
+          var h = doc.data.scan_meta && doc.data.scan_meta.compass_heading;
+          if (h == null) { showToast('No compass heading in this plan', 'err'); return; }
+          doc.data.sheet.north = ((h % 360) + 360) % 360;
+        } else {
+          doc.data.sheet.north = parseFloat(v) || 0;
+        }
+        $('vc-northdeg').value = doc.data.sheet.north;
+        var nl = $('north-readout');
+        if (nl) nl.textContent = Math.round(doc.data.sheet.north) + '°';
+        commit('North ' + Math.round(doc.data.sheet.north) + '°');
+      });
     });
     $('vc-shownorth').addEventListener('change', function () {
       doc.data.sheet.show_north = this.checked; saveSoon(); draw();
@@ -2072,6 +2126,8 @@
     $('vc-rotate').value = state.view.rotation;
     $('rot-val').textContent = Math.round(state.view.rotation) + '°';
     $('vc-northdeg').value = (doc.data.sheet && doc.data.sheet.north) || 0;
+    var nr0 = $('north-readout');
+    if (nr0) nr0.textContent = Math.round((doc.data.sheet && doc.data.sheet.north) || 0) + '°';
     $('vc-shownorth').checked = doc.data.sheet.show_north !== false;
     $('vc-showscale').checked = doc.data.sheet.show_scalebar !== false;
 

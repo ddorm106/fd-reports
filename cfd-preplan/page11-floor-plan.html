@@ -120,8 +120,18 @@
             <button class="fp-tbtn sm" id="vc-north" style="margin-top:4px;width:100%;">Auto-align (compass)</button>
             <button class="fp-tbtn sm" id="vc-reset" style="margin-top:4px;width:100%;">Reset</button>
             <hr>
-            <label class="fld">True north on the sheet (°)</label>
+            <label class="fld">True north — <b id="north-readout">0°</b></label>
+            <div class="hint" style="margin-top:0">Drag the arrow on the plan to point at
+                true north. Hold <kbd>Shift</kbd> for 15° steps.</div>
             <input type="number" id="vc-northdeg" step="1" min="-180" max="360">
+            <div class="fpx-northrow">
+                <button class="fp-tbtn sm" data-north="0" title="North at the top of the sheet">↑ Up</button>
+                <button class="fp-tbtn sm" data-north="90" title="North to the right">→ Right</button>
+                <button class="fp-tbtn sm" data-north="180" title="North at the bottom">↓ Down</button>
+                <button class="fp-tbtn sm" data-north="270" title="North to the left">← Left</button>
+            </div>
+            <button class="fp-tbtn sm" data-north="scan" style="width:100%;margin-top:4px"
+                    title="Use the compass heading recorded by DivisionScan">Use the scan's compass</button>
             <label class="fp-layer-row"><input type="checkbox" id="vc-shownorth" checked>Show north arrow</label>
             <label class="fp-layer-row"><input type="checkbox" id="vc-showscale" checked>Show scale bar</label>
         </div>

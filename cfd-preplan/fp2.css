@@ -619,3 +619,8 @@ body.sm-full .leaflet-left { left: 8px; }
 .sg-name { font-size: .78rem; font-weight: 700; color: var(--slate-800); margin-bottom: 5px;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fp-sym-chip.custom { border-color: #a78bfa; }
+
+/* North presets. Four buttons beat typing a bearing on a tablet in the rain. */
+.fpx-northrow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 5px; }
+.fpx-northrow .fp-tbtn { padding: 5px 2px; font-size: .7rem; }
+#north-readout { color: var(--navy-blue); font-variant-numeric: tabular-nums; }

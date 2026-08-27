@@ -1193,11 +1193,24 @@ function drawFreehand(f, sel) {
        * plan that will send a crew to the wrong side of the building. */
       if (sheet.show_north !== false) {
         var nx = state.view.width - 46, ny = 46;
+        /* Published so the pointer handler can let you grab the arrow itself.
+         * Typing a bearing into a panel is not how anyone orients a plan while
+         * standing in front of the building. */
+        state.northHit = { x: nx, y: ny, r: 26 };
         var north = degToRad((sheet.north || 0) + state.view.rotation);
         ctx.save();
         ctx.translate(nx, ny);
+        if (state.draggingNorth) {
+          ctx.beginPath();
+          ctx.arc(0, 0, 24, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(37,99,235,0.14)';
+          ctx.fill();
+          ctx.strokeStyle = '#2563eb';
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+        }
         ctx.rotate(north);
-        ctx.fillStyle = '#0f172a';
+        ctx.fillStyle = state.draggingNorth ? '#2563eb' : '#0f172a';
         ctx.beginPath();
         ctx.moveTo(0, -20); ctx.lineTo(7, 8); ctx.lineTo(0, 3); ctx.lineTo(-7, 8);
         ctx.closePath();
