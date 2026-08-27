@@ -2016,6 +2016,46 @@
         rotatePlan(parseFloat(b.getAttribute('data-rotate')) || 0);
       });
     });
+    /* The slider PREVIEWS with the view and commits ONE data rotation on
+     * release. Rotating the geometry on every input event would apply a few
+     * hundred transforms across a single drag and accumulate float drift in
+     * every wall — the drawing would come back subtly bent. */
+    var rotSlider = $('vc-rotate-plan');
+    if (rotSlider) {
+      var baseView = 0, previewing = false;
+      var readout = $('rotate-readout');
+
+      function previewAt(v) {
+        if (!previewing) { baseView = state.view.rotation || 0; previewing = true; }
+        state.view.rotation = baseView + v;
+        if (readout) readout.textContent = v + '°';
+        draw();
+      }
+
+      rotSlider.addEventListener('input', function () {
+        var v = parseInt(rotSlider.value, 10) || 0;
+        /* Square angles are what people actually want; make them easy to land
+         * on without hunting for the exact pixel. */
+        [-180, -90, 0, 90, 180].forEach(function (snap) {
+          if (Math.abs(v - snap) <= 4) v = snap;
+        });
+        rotSlider.value = String(v);
+        previewAt(v);
+      });
+
+      rotSlider.addEventListener('change', function () {
+        var v = parseInt(rotSlider.value, 10) || 0;
+        /* Put the view back before committing, or the preview offset would be
+         * added on top of the real rotation and double it. */
+        state.view.rotation = baseView;
+        previewing = false;
+        rotSlider.value = '0';
+        if (readout) readout.textContent = '0°';
+        if (v === 0) { draw(); return; }
+        rotatePlan(v);
+      });
+    }
+
     var rotAny = $('vc-rotate-any');
     if (rotAny) rotAny.addEventListener('click', function () {
       var v = prompt('Rotate the drawing by how many degrees?\n' +

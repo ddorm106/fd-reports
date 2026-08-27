@@ -128,8 +128,12 @@
                 <button class="fp-tbtn sm" data-rotate="-90" title="Quarter turn anticlockwise">⟲ 90°</button>
                 <button class="fp-tbtn sm" data-rotate="90" title="Quarter turn clockwise">⟳ 90°</button>
                 <button class="fp-tbtn sm" data-rotate="180" title="Half turn">180°</button>
-                <button class="fp-tbtn sm" id="vc-rotate-any" title="Any angle">Other…</button>
+                <button class="fp-tbtn sm" id="vc-rotate-any" title="Type an exact angle">Type…</button>
             </div>
+            <label class="fld" style="margin-top:7px">Nudge — <b id="rotate-readout">0°</b></label>
+            <input type="range" id="vc-rotate-plan" min="-180" max="180" step="1" value="0">
+            <div class="hint" style="margin-top:2px">Drag to preview, let go to apply. Snaps to
+                square angles as it passes them.</div>
 
             <hr>
             <label class="fld">True north — <b id="north-readout">0°</b></label>
