@@ -143,6 +143,13 @@
         (d[k] || []).forEach(function (e) { if (typeof e.x === 'number') pts.push({ x: e.x, y: e.y }); });
       });
       (d.zones || []).forEach(function (z) { (z.poly || []).forEach(function (p) { pts.push(p); }); });
+      /* Side labels are drawn OUTSIDE the walls, in plan units, so their box
+       * has to be part of the fit or A/B/C/D hang off the edges. */
+      (d.sides || []).forEach(function (sd) {
+        if (typeof sd.x !== 'number') return;
+        pts.push({ x: sd.x - 36, y: sd.y - 14 });
+        pts.push({ x: sd.x + 36, y: sd.y + 14 });
+      });
       if (d.underlay) {
         pts.push({ x: d.underlay.x, y: d.underlay.y });
         pts.push({ x: d.underlay.x + d.underlay.w, y: d.underlay.y + d.underlay.h });
@@ -151,10 +158,24 @@
       return G.bbox(pts);
     }
 
+    /* How much screen the legend will occupy, so fitToView can keep clear of it. */
+    function legendInset() {
+      var doc = getDoc();
+      if (!doc) return 0;
+      if (state.visibleLayers && state.visibleLayers.legend === false) return 0;
+      if (doc.data.legend && doc.data.legend.show === false) return 0;
+      var rows = doc.buildLegend(SYMBOLS.byId);
+      if (!rows.length) return 0;
+      /* Capped: on a narrow canvas a fixed 232px inset squeezed the drawing
+       * into a third of the width and left the rest empty. */
+      return Math.min(10 + 208 + 14, state.view.width * 0.24);
+    }
+
     function fitToView() {
       var d = state.data || buildViewModel();
       if (!d) return;
       var pad = 46;
+      var padLeft = pad + legendInset();
       var b = contentBounds();
       var minX, minY, w, h;
       if (b && (b.maxX - b.minX) > 4 && (b.maxY - b.minY) > 4) {
@@ -179,10 +200,14 @@
       var bx0 = Math.min.apply(null, rx), bx1 = Math.max.apply(null, rx);
       var by0 = Math.min.apply(null, ry), by1 = Math.max.apply(null, ry);
       var rw = Math.max(bx1 - bx0, 1), rh = Math.max(by1 - by0, 1);
-      var zx = (state.view.width - pad * 2) / rw;
+      /* Asymmetric: the left inset is whatever the legend is covering. On a
+       * narrow screen the legend would eat the whole canvas, so it is capped. */
+      var usableW = state.view.width - padLeft - pad;
+      if (usableW < state.view.width * 0.45) { padLeft = pad; usableW = state.view.width - pad * 2; }
+      var zx = usableW / rw;
       var zy = (state.view.height - pad * 2) / rh;
       state.view.zoom = Math.max(0.02, Math.min(zx, zy, 2.5));
-      state.view.panX = (state.view.width - rw * state.view.zoom) / 2 - bx0 * state.view.zoom;
+      state.view.panX = padLeft + (usableW - rw * state.view.zoom) / 2 - bx0 * state.view.zoom;
       state.view.panY = (state.view.height - rh * state.view.zoom) / 2 - by0 * state.view.zoom;
       draw();
     }
@@ -1169,7 +1194,9 @@ function drawFreehand(f, sel) {
             if (targets[i] * pxPerFt <= 190) feet = targets[i];
           }
           var barPx = feet * pxPerFt;
-          var bx = state.view.width - barPx - 18, by = state.view.height - 30;
+          /* Bottom CENTRE. The bottom-right corner belongs to the photo FAB and
+           * the ISO badge, and the scale bar was landing underneath both. */
+          var bx = (state.view.width - barPx) / 2, by = state.view.height - 26;
           ctx.fillStyle = 'rgba(255,255,255,0.85)';
           ctx.fillRect(bx - 8, by - 16, barPx + 16, 32);
           ctx.strokeStyle = '#0f172a';

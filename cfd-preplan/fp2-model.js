@@ -34,7 +34,10 @@
   var DEFAULT_LAYERS = {
     underlay: true, zones: true, walls: true, doors: true, windows: true,
     objects: true, symbols: true, texts: true, measurements: true,
-    freehand: true, dimensions: true, legend: true, grid: false
+    freehand: true, dimensions: true, grid: false,
+    /* Off by default: it is screen-only furniture that repeats the Layers
+     * panel, and it was costing a third of the canvas width in portrait. */
+    legend: false
   };
 
   function uid(prefix) {

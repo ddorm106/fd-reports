@@ -339,3 +339,186 @@
 
 #zone-panel     { right: 12px; top: 12px; width: 244px; }
 #underlay-panel { left: 12px; top: 12px; width: 262px; }
+
+/* ============================================================================
+ * v5.1 — FULL-SCREEN EDITOR
+ *
+ * The drawing was a small box inside a long form, under two toolbars holding
+ * about thirty buttons. "there is too much going on and im confused" — fair.
+ * Now: the canvas IS the page, nine tools on a rail, and everything else one
+ * tap away under a single ⋯ menu.
+ * ==========================================================================*/
+
+body.fp-full { overflow: hidden; height: 100%; }
+html:has(body.fp-full) { overflow: hidden; height: 100%; }
+
+/* The form chrome stays in the DOM for the shared scripts, off screen. */
+body.fp-full .fp-formchrome { position: absolute; left: -20000px; top: 0; width: 1px;
+  height: 1px; overflow: hidden; }
+/* The 12-page strip is hidden until asked for (⋯ > All 12 pages). */
+body.fp-full #pp-stepbar { display: none; }
+body.fp-full.show-steps #pp-stepbar { display: block; position: fixed; top: 0; left: 0;
+  right: 0; z-index: 300; }
+body.fp-full.show-steps .fpx { top: 52px; }
+/* The Worker's uploaded-sheet panel is redundant now that tracing is built in,
+   so it waits under ⋯ > Uploaded floor sheets instead of covering the plan. */
+body.fp-full #fpUpWrap { display: none; }
+body.fp-full.show-sheets #fpUpWrap { display: block; }
+
+.fpx { position: fixed; inset: 0; display: flex; flex-direction: column;
+  background: var(--slate-100); z-index: 100; }
+
+/* ------------------------------------------------------------------ top bar */
+.fpx-top { display: flex; align-items: center; gap: 6px; padding: 6px 8px;
+  padding-top: max(6px, env(safe-area-inset-top));
+  background: var(--navy-blue); color: #fff; flex: 0 0 auto; }
+.fpx-icon { width: 34px; height: 34px; border-radius: 8px; border: 1px solid rgba(255,255,255,.24);
+  background: rgba(255,255,255,.08); color: #fff; font-size: 1rem; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+.fpx-icon:hover { background: rgba(255,255,255,.2); }
+.fpx-btn { height: 34px; padding: 0 11px; border-radius: 8px; font-family: var(--font-body);
+  border: 1px solid rgba(255,255,255,.24); background: rgba(255,255,255,.08); color: #fff;
+  font-size: .8rem; font-weight: 600; cursor: pointer; white-space: nowrap; flex: 0 0 auto; }
+.fpx-btn:hover { background: rgba(255,255,255,.2); }
+.fpx-btn.accent { background: var(--amber-500); color: var(--slate-900); border-color: var(--amber-500); }
+.fpx-btn.primary { background: var(--fire-red); border-color: var(--fire-red); }
+.fpx-spacer { flex: 1 1 auto; }
+
+.fpx-floorbtn { display: flex; flex-direction: column; align-items: flex-start; gap: 0;
+  height: 36px; padding: 2px 10px; border-radius: 8px; cursor: pointer; flex: 0 0 auto;
+  border: 1px solid rgba(255,255,255,.24); background: rgba(255,255,255,.08); color: #fff;
+  font-family: var(--font-body); position: relative; }
+.fpx-floorbtn:hover { background: rgba(255,255,255,.2); }
+.fpx-floorbtn .nm { font-size: .78rem; font-weight: 700; line-height: 1.05;
+  max-width: 30vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fpx-floorbtn .fl { font-size: .64rem; opacity: .82; line-height: 1.05; }
+.fpx-floorbtn .cv { position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+  font-size: .6rem; opacity: .7; }
+
+/* Area readout. It replaced a whole toolbar row; keep it to the numbers. */
+.fpx-stat { display: flex; align-items: center; gap: 9px; font-size: .74rem;
+  color: rgba(255,255,255,.9); white-space: nowrap; overflow: hidden; }
+.fpx-stat b { font-size: .82rem; color: #fff; }
+.fpx-stat .sep { width: 1px; height: 13px; background: rgba(255,255,255,.28); }
+.fpx-stat button { height: 26px; padding: 0 8px; border-radius: 6px; cursor: pointer;
+  border: 1px solid rgba(255,255,255,.3); background: transparent; color: #fff;
+  font-size: .7rem; font-weight: 600; font-family: var(--font-body); }
+.fpx-stat button:hover { background: rgba(255,255,255,.18); }
+
+/* --------------------------------------------------------------- body + rail */
+.fpx-body { flex: 1 1 auto; display: flex; min-height: 0; }
+
+.fpx-rail { flex: 0 0 auto; width: 66px; display: flex; flex-direction: column; gap: 3px;
+  padding: 6px 5px; background: var(--white); border-right: 1px solid var(--slate-200);
+  overflow-y: auto; }
+.fpx-tool { width: 56px; min-height: 46px; border-radius: 9px; cursor: pointer;
+  border: 1px solid transparent; background: transparent; color: var(--slate-600);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+  font-family: var(--font-body); }
+.fpx-tool i { font-style: normal; font-size: 1.05rem; line-height: 1; }
+.fpx-tool b { font-size: .58rem; font-weight: 700; letter-spacing: .01em; }
+.fpx-tool:hover { background: var(--slate-100); }
+.fpx-tool.active { background: var(--navy-blue); color: #fff; border-color: var(--navy-blue); }
+.fpx-tool:disabled { opacity: .38; cursor: not-allowed; }
+.fpx-railsep { height: 1px; background: var(--slate-200); margin: 5px 6px; flex: 0 0 auto; }
+
+/* The stage fills whatever is left. This is the whole point of the change. */
+.fpx-body .fp-stage { flex: 1 1 auto; min-width: 0; height: auto; position: relative;
+  border: none; border-radius: 0; background: var(--slate-200); }
+
+.fpx-hint { flex: 0 0 auto; padding: 5px 12px; padding-bottom: max(5px, env(safe-area-inset-bottom));
+  background: var(--white); border-top: 1px solid var(--slate-200);
+  font-size: .72rem; color: var(--slate-500); min-height: 1.2em; }
+.fpx-hint kbd { background: var(--slate-100); border: 1px solid var(--slate-300);
+  border-bottom-width: 2px; border-radius: 3px; padding: 0 4px; font-size: .68rem; }
+
+/* ------------------------------------------------------------------- zoom */
+.fpx-zoom { position: absolute; left: 12px; bottom: 12px; z-index: 25; display: flex;
+  flex-direction: column; gap: 4px; }
+.fpx-zoom button { width: 38px; height: 34px; border-radius: 8px; cursor: pointer;
+  border: 1px solid var(--slate-300); background: rgba(255,255,255,.95);
+  color: var(--slate-700); font-size: .85rem; font-weight: 700; font-family: var(--font-body);
+  box-shadow: 0 2px 6px rgba(15,23,42,.12); }
+.fpx-zoom button:hover { border-color: var(--navy-blue); }
+
+/* ------------------------------------------------------------------ menus */
+.fpx-menu { position: fixed; z-index: 320; background: var(--white); min-width: 246px;
+  max-width: 320px; max-height: 76vh; overflow-y: auto; padding: 6px;
+  border: 1px solid var(--slate-300); border-radius: var(--radius-md);
+  box-shadow: 0 12px 34px rgba(15,23,42,.24); }
+.fpx-menu.hidden { display: none; }
+.fpx-menu-head { font-size: .62rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--slate-400); padding: 8px 8px 3px; }
+.fpx-menu-item { display: block; width: 100%; text-align: left; padding: 8px 9px;
+  border: none; background: transparent; border-radius: var(--radius-sm); cursor: pointer;
+  font-size: .82rem; color: var(--slate-800); font-family: var(--font-body); font-weight: 600; }
+.fpx-menu-item small { display: block; font-weight: 400; font-size: .68rem;
+  color: var(--slate-500); margin-top: 1px; }
+.fpx-menu-item:hover { background: var(--slate-100); }
+.fpx-menu-item.danger { color: #b91c1c; }
+.fpx-menu-item.active { background: #eff6ff; color: var(--navy-blue); }
+.fpx-menu-sep { height: 1px; background: var(--slate-200); margin: 5px 4px; }
+
+.fpx-scrim { position: fixed; inset: 0; z-index: 310; background: transparent; }
+.fpx-scrim.hidden { display: none; }
+
+/* ----------------------------------------------------------- symbol drawer */
+.fpx-drawer { position: fixed; right: 0; top: 0; bottom: 0; width: 300px; z-index: 330;
+  background: var(--white); border-left: 1px solid var(--slate-300);
+  box-shadow: -8px 0 26px rgba(15,23,42,.18); display: flex; flex-direction: column;
+  transform: translateX(105%); transition: transform .18s ease; }
+.fpx-drawer.open { transform: none; }
+.fpx-drawer-head { display: flex; align-items: center; gap: 6px; padding: 8px;
+  border-bottom: 1px solid var(--slate-200); flex: 0 0 auto; }
+.fpx-drawer-head .title { font-family: var(--font-display); font-size: .78rem;
+  font-weight: 700; color: var(--navy-blue); text-transform: uppercase; letter-spacing: .04em; }
+.fpx-drawer-head input { flex: 1 1 auto; min-width: 0; padding: 5px 8px;
+  border: 1px solid var(--slate-300); border-radius: var(--radius-sm); font-size: .8rem;
+  font-family: var(--font-body); }
+.fpx-drawer-head .fpx-icon { border-color: var(--slate-300); background: var(--white);
+  color: var(--slate-600); }
+.fpx-drawer .fp-cat-tabs { flex: 0 0 auto; padding: 6px 8px; border-bottom: 1px solid var(--slate-200);
+  overflow-x: auto; }
+.fpx-drawer .fp-palette-body { flex: 1 1 auto; overflow-y: auto; padding: 8px; }
+
+/* ------------------------------------------------- panel tweaks for the shell */
+.fpx .fp-panel { z-index: 40; }
+.fpx #edit-panel { bottom: 14px; left: 50%; transform: translateX(-50%);
+  width: min(520px, calc(100% - 28px)); top: auto; right: auto; }
+.fpx #edit-panel .ep-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.fpx #edit-panel .ep-grow { flex: 1; }
+.fpx #zone-panel { right: 12px; top: 12px; }
+.fpx #underlay-panel { left: 12px; top: 12px; bottom: auto; }
+.fpx #layers { top: 12px; right: 12px; }
+.fpx #view-controls, .fpx #threeD-controls { top: 12px; left: 12px; }
+.fpx #fp-nav-panel { left: 12px; top: 12px; bottom: auto; display: none; }
+.fpx.show-minimap #fp-nav-panel { display: block; }
+.fp-tbtn.danger, .fpx-menu-item.danger { color: #b91c1c; }
+#zp-area { font-size: 1.3rem; font-weight: 700; color: var(--navy-blue); }
+#zp-sub { margin-top: 0; }
+#imp-list { max-height: 190px; overflow: auto; margin-top: 6px; }
+.fp-panel hr { border: none; border-top: 1px solid var(--slate-200); margin: 9px 0; }
+
+/* Empty state, centred on a full-screen canvas. */
+.fpx .fp-empty { position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center; gap: 4px;
+  background: var(--slate-200); z-index: 15; }
+.fpx .fp-empty.hidden { display: none; }
+.fpx .fp-empty p { margin: 0 0 10px; font-size: .85rem; color: var(--slate-500); max-width: 30rem; }
+.fp-empty-acts { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+
+/* ------------------------------------------------------------------ narrow */
+@media (max-width: 760px) {
+  .fpx-body { flex-direction: column-reverse; }
+  .fpx-rail { width: auto; flex-direction: row; overflow-x: auto; overflow-y: hidden;
+    border-right: none; border-top: 1px solid var(--slate-200); padding: 5px 6px; }
+  .fpx-tool { width: 52px; min-height: 42px; flex: 0 0 auto; }
+  .fpx-railsep { width: 1px; height: auto; margin: 4px 5px; }
+  .fpx-stat { display: none; }
+  .fpx-drawer { width: 100%; }
+  .fpx-floorbtn .nm { max-width: 40vw; }
+}
+
+/* The top-bar stats degrade by dropping detail, never by clipping a word. */
+@media (max-width: 1150px) { .fpx-stat .sec { display: none; } }
+@media (max-width: 900px)  { .fpx-stat { max-width: 40vw; } }

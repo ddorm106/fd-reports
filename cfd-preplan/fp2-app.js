@@ -186,13 +186,15 @@
     var floorArea = doc.floorAreaSqFt();
     var bldg = doc.buildingAreaSqFt();
     var zones = (f.zones || []).length;
+    /* Primary first, then detail marked .sec — a narrow screen drops the detail
+     * instead of clipping a word in half. */
     var parts = [];
     parts.push('<span><b>' + fmtSqFt(floorArea) + '</b> on ' + escapeHTML(f.name) + '</span>');
     if (doc.data.floors.length > 1) {
-      parts.push('<span class="sep"></span><span>Building total <b>' + fmtSqFt(bldg) + '</b></span>');
+      parts.push('<span class="sep sec"></span><span class="sec">Building total <b>' + fmtSqFt(bldg) + '</b></span>');
     }
-    parts.push('<span class="sep"></span><span>' + zones + ' area' + (zones === 1 ? '' : 's') + '</span>');
-    parts.push('<span class="sep"></span><span>Scale ' +
+    parts.push('<span class="sep sec"></span><span class="sec">' + zones + ' area' + (zones === 1 ? '' : 's') + '</span>');
+    parts.push('<span class="sep sec"></span><span class="sec">Scale ' +
       (Math.round((doc.data.scale_px_per_ft || 12) * 10) / 10) + ' px/ft</span>');
     if (floorArea > 0) {
       parts.push('<span class="sep"></span><button class="fp-tbtn sm" id="area-to-p8">Use for fire flow →</button>');
@@ -238,6 +240,7 @@
     bits.push('editing ' + escapeHTML(f.name));
     if (f.underlay) bits.push('tracing an underlay' + (f.underlay.calibrated ? ' (scaled)' : ' — not scaled yet'));
     el.textContent = bits.join(' · ');
+    if (window.FPShell) window.FPShell.sync();
   }
 
   function showEmpty() { if (emptyState) emptyState.classList.remove('hidden'); }
@@ -298,6 +301,7 @@
       });
       host.appendChild(btn);
     });
+    if (window.FPShell) window.FPShell.sync();
   }
 
   function initFloorButtons() {
@@ -1780,6 +1784,10 @@
     refreshEmptyState();
     updateHint();
     renderer.fitToView();
+    requestAnimationFrame(function () {
+      resize();
+      renderer.fitToView();
+    });
 
     /* Save on the way out. A drawing that only lives in memory is a drawing
      * somebody is going to lose. */

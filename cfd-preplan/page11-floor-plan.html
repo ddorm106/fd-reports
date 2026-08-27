@@ -2,15 +2,19 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
 <title>Pre-Fire Plan: Floor Plan</title>
 <link rel="stylesheet" href="styles-preplan.css">
 <link rel="stylesheet" href="fp2.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <link rel="stylesheet" href="preplan-layout.css">
 </head>
-<body>
-<div class="page-wrapper">
+<body class="fp-full">
+
+<!-- The form chrome stays in the DOM because the shared scripts expect it
+     (preplan-flow rewrites .nav-buttons, and hides/reveals the step strip),
+     but on this page it is out of the way: the drawing is the page. -->
+<div class="page-wrapper fp-formchrome">
     <div class="container">
         <header class="report-header">
             <div class="header-top">
@@ -20,279 +24,271 @@
         </header>
         <div class="progress-indicator">Page 11 of 12: Floor Plan</div>
         <div class="progress-bar-container"><div class="progress-bar" style="width: 91.66%"></div></div>
-
         <h3 class="section-title">11. Floor Plan</h3>
-        <div id="fp-meta" style="color: var(--slate-500); font-size: 0.85rem; margin-bottom: 8px;">No floor plan yet</div>
-
-        <!-- Floors. A building with a second storey is two drawings, and the
-             old page could only ever hold one. -->
-        <div class="fp-floors" id="floors-bar">
-          <span class="fp-flabel">Floors</span>
-          <span id="floor-tabs" style="display:contents"></span>
-          <button class="fp-tbtn sm" id="btn-floor-add" title="Add a storey">＋ Add</button>
-          <button class="fp-tbtn sm" id="btn-floor-rename" title="Rename this storey">Rename</button>
-          <button class="fp-tbtn sm" id="btn-floor-dup" title="Copy this storey as a new one">Duplicate</button>
-          <button class="fp-tbtn sm" id="btn-floor-del" title="Delete this storey">Delete</button>
-        </div>
-
-        <div class="fp-toolbar">
-          <span class="fp-tgroup">
-            <span class="lbl">Edit</span>
-            <button class="fp-tbtn active" data-tool="select" title="Select and move things (V)">✋ Select</button>
-            <button class="fp-tbtn" data-tool="pan" title="Pan the view (H)">🖐 Pan</button>
-            <button class="fp-tbtn" data-tool="delete" title="Tap something to delete it (X)">🗑 Del</button>
-          </span>
-          <span class="fp-tgroup">
-            <span class="lbl">Build</span>
-            <button class="fp-tbtn" data-tool="chain" title="Draw a whole building corner to corner (B)">🔗 Building</button>
-            <button class="fp-tbtn" data-tool="wall" title="Draw one wall (W)">📏 Wall</button>
-            <button class="fp-tbtn" data-tool="room" title="Drag out a rectangular room (R)">⬛ Room</button>
-            <button class="fp-tbtn" data-tool="door" title="Click a wall to add a door (D)">🚪 Door</button>
-            <button class="fp-tbtn" data-tool="window" title="Click a wall to add a window (N)">▭ Window</button>
-          </span>
-          <span class="fp-tgroup">
-            <span class="lbl">Areas</span>
-            <button class="fp-tbtn" data-tool="zone" title="Click inside a room to name it and get its area (Z)">🟦 Zone</button>
-            <button class="fp-tbtn sm" id="btn-detect-rooms" title="Find every enclosed room at once">Detect rooms</button>
-          </span>
-          <span class="fp-tgroup">
-            <span class="lbl">Annotate</span>
-            <button class="fp-tbtn" data-tool="place" title="Place the selected symbol (P)" disabled>📍 Symbol</button>
-            <button class="fp-tbtn" data-tool="text" title="Add a label (T)">Aa Text</button>
-            <button class="fp-tbtn" data-tool="measure" title="Measure a distance (M)">📐 Measure</button>
-            <button class="fp-tbtn" data-tool="pen" title="Freehand (F)">✏️ Pen</button>
-          </span>
-          <span class="fp-tgroup">
-            <span class="lbl">Trace</span>
-            <button class="fp-tbtn" id="btn-underlay" title="Put a plan photo or PDF behind the drawing and trace it">▤ Underlay</button>
-          </span>
-        </div>
-
-        <div class="fp-toolbar">
-          <button class="fp-tbtn" id="btn-undo" title="Undo (Cmd/Ctrl+Z)">↶ Undo</button>
-          <button class="fp-tbtn" id="btn-redo" title="Redo (Cmd/Ctrl+Shift+Z)">↷ Redo</button>
-          <span class="fp-sep"></span>
-          <button class="fp-tbtn sm" id="btn-weld" title="Pull nearly-touching corners together so rooms read as closed">🔗 Weld corners</button>
-          <span class="fp-sep"></span>
-          <button class="fp-tbtn" id="btn-view" title="Rotate / orient">⟳ Orient</button>
-          <button class="fp-tbtn" id="btn-3d" title="Toggle the 3D view">📦 3D</button>
-          <button class="fp-tbtn" id="btn-layers" title="Show or hide layers">🎛 Layers</button>
-          <span class="fp-sep"></span>
-          <button class="fp-tbtn sm" id="btn-zoom-in">+</button>
-          <button class="fp-tbtn sm" id="btn-zoom-out">−</button>
-          <button class="fp-tbtn sm" id="btn-fit">Fit</button>
-          <span class="fp-sep"></span>
-          <button class="fp-tbtn primary" id="btn-import" title="Bring in a DivisionScan capture">⬇ Import scan</button>
-          <button class="fp-tbtn accent" id="btn-save">💾 Save</button>
-          <button class="fp-tbtn" id="btn-scan" title="Open DivisionScan on this iPad">📐 Scan</button>
-          <button class="fp-tbtn sm" id="btn-export" title="Download this drawing as a file">⬆ Export</button>
-          <button class="fp-tbtn sm" id="btn-clear">Clear</button>
-        </div>
-
-        <div class="fp-areabar" id="area-bar"></div>
-        <div class="fp-hintbar" id="hint-bar"></div>
-
-        <div class="fp-layout">
-            <div class="fp-stage" id="stage">
-                <div class="fp-canvas-wrap" id="canvas-wrap">
-                    <canvas id="fp-canvas"></canvas>
-                </div>
-                <div class="fp-3d-wrap" id="threed-wrap">
-                    <canvas id="three-canvas"></canvas>
-                </div>
-
-                <div class="fp-empty" id="empty-state">
-                    <div class="icon">📐</div>
-                    <h3>No floor plan yet</h3>
-                    <p style="margin: 0 0 10px; font-size: 0.85rem; color: var(--slate-500);">
-                        Start any of three ways — you do not need DivisionScan to draw a building.
-                    </p>
-                    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
-                        <button class="fp-tbtn primary" id="es-draw">✏️ Draw it here</button>
-                        <button class="fp-tbtn" id="es-trace">▤ Trace a plan photo</button>
-                        <button class="fp-tbtn" id="es-import">⬇ Import a scan</button>
-                    </div>
-                </div>
-
-                <!-- Layer visibility. The ids and data-layer names are part of a
-                     contract with fp-markers.js — do not rename them. -->
-                <div class="fp-panel hidden" id="layers">
-                    <span class="close" data-close="layers">✕</span>
-                    <h4>Layers</h4>
-                    <label class="fp-layer-row"><input type="checkbox" data-layer="underlay" checked><span class="swatch" style="background:#0ea5e9;"></span>Underlay</label>
-                    <label class="fp-layer-row"><input type="checkbox" data-layer="zones" checked><span class="swatch" style="background:#3b82f6;"></span>Zones<span class="count" id="ct-zones">0</span></label>
-                    <label class="fp-layer-row"><input type="checkbox" data-layer="walls" checked><span class="swatch" style="background:#2D2D2D;"></span>Walls<span class="count" id="ct-walls">0</span></label>
-                    <label class="fp-layer-row"><input type="checkbox" data-layer="doors" checked><span class="swatch" style="background:#C05020;"></span>Doors<span class="count" id="ct-doors">0</span></label>
-                    <label class="fp-layer-row"><input type="checkbox" data-layer="windows" checked><span class="swatch" style="background:#C8E0F0;"></span>Windows<span class="count" id="ct-windows">0</span></label>
-                    <label class="fp-layer-row"><input type="checkbox" data-layer="objects" checked><span class="swatch" style="background:#7c3aed;"></span>Objects<span class="count" id="ct-objects">0</span></label>
-                    <label class="fp-layer-row"><input type="checkbox" data-layer="symbols" checked><span class="swatch" style="background:#dc2626;"></span>Symbols<span class="count" id="ct-symbols">0</span></label>
-                    <label class="fp-layer-row"><input type="checkbox" data-layer="texts" checked><span class="swatch" style="background:#475569;"></span>Text<span class="count" id="ct-texts">0</span></label>
-                    <label class="fp-layer-row"><input type="checkbox" data-layer="measurements" checked><span class="swatch" style="background:#eab308;"></span>Measures<span class="count" id="ct-measurements">0</span></label>
-                    <label class="fp-layer-row"><input type="checkbox" data-layer="freehand" checked><span class="swatch" style="background:#0f172a;"></span>Freehand<span class="count" id="ct-freehand">0</span></label>
-                    <label class="fp-layer-row"><input type="checkbox" data-layer="dimensions" checked><span class="swatch" style="background:#64748b;"></span>Dimensions</label>
-                    <label class="fp-layer-row"><input type="checkbox" data-layer="grid"><span class="swatch" style="background:#dfe5ea;"></span>5 ft grid</label>
-                    <label class="fp-layer-row"><input type="checkbox" data-layer="legend" checked><span class="swatch" style="background:#1e3a5f;"></span>Legend</label>
-                </div>
-
-                <div class="fp-panel hidden" id="view-controls">
-                    <span class="close" data-close="view-controls">✕</span>
-                    <h4>Orient</h4>
-                    <label>Rotation: <span id="rot-val">0°</span></label>
-                    <input type="range" id="vc-rotate" min="-180" max="180" step="1" value="0">
-                    <button class="fp-tbtn sm" id="vc-snap" style="margin-top:6px;width:100%;">Snap to nearest 90°</button>
-                    <button class="fp-tbtn sm" id="vc-north" style="margin-top:4px;width:100%;">Auto-align (compass)</button>
-                    <button class="fp-tbtn sm" id="vc-reset" style="margin-top:4px;width:100%;">Reset</button>
-                    <hr style="margin:9px 0;border:none;border-top:1px solid var(--slate-200)">
-                    <label class="fld">True north on the sheet (°)</label>
-                    <input type="number" id="vc-northdeg" step="1" min="-180" max="360">
-                    <label class="fp-layer-row" style="margin-top:6px"><input type="checkbox" id="vc-shownorth" checked>Show north arrow</label>
-                    <label class="fp-layer-row"><input type="checkbox" id="vc-showscale" checked>Show scale bar</label>
-                </div>
-
-                <div class="fp-panel hidden" id="threeD-controls">
-                    <span class="close" data-close="threeD-controls">✕</span>
-                    <h4>3D</h4>
-                    <label>Rotate: <input type="range" id="td-rotate" min="0" max="360" step="1" value="45"></label>
-                    <label>Tilt: <input type="range" id="td-tilt" min="5" max="85" step="1" value="45"></label>
-                    <label>Wall height (ft): <input type="range" id="td-wall-h" min="6" max="30" step="1" value="9"></label>
-                    <label class="fp-layer-row"><input type="checkbox" id="td-furniture" checked>Show contents</label>
-                    <button class="fp-tbtn sm" id="td-reset" style="width:100%;margin-top:5px">Reset view</button>
-                </div>
-
-                <!-- Zone editor: name, use and colour for the clicked area. -->
-                <div class="fp-panel hidden" id="zone-panel">
-                    <span class="close" data-close="zone-panel">✕</span>
-                    <h4>Area</h4>
-                    <div id="zp-area" style="font-size:1.25rem;font-weight:700;color:var(--navy-blue);margin-bottom:2px">—</div>
-                    <div id="zp-sub" class="hint" style="margin-top:0">—</div>
-                    <label class="fld">Name</label>
-                    <input type="text" id="zp-name" placeholder="Sales floor, Stockroom, Apt 2B…">
-                    <label class="fld" style="margin-top:6px">Use</label>
-                    <select id="zp-use">
-                        <option value="">— not set —</option>
-                        <option>Sales / Retail</option>
-                        <option>Storage</option>
-                        <option>Office</option>
-                        <option>Assembly</option>
-                        <option>Kitchen</option>
-                        <option>Mechanical</option>
-                        <option>Electrical</option>
-                        <option>Sprinkler riser</option>
-                        <option>Hazmat storage</option>
-                        <option>Residential</option>
-                        <option>Corridor / Egress</option>
-                        <option>Stairwell</option>
-                        <option>Restroom</option>
-                        <option>Void / Concealed space</option>
-                    </select>
-                    <label class="fld" style="margin-top:6px">Colour</label>
-                    <div class="fp-swatches" id="zp-colors"></div>
-                    <label class="fp-layer-row"><input type="checkbox" id="zp-exclude">Leave out of the area total</label>
-                    <div class="row" style="margin-top:8px">
-                        <button class="fp-tbtn sm" id="zp-recompute" title="Re-solve this area from the walls as they are now">Re-solve</button>
-                        <button class="fp-tbtn sm" id="zp-delete" style="color:#b91c1c">Delete</button>
-                    </div>
-                </div>
-
-                <!-- Tracing underlay. -->
-                <div class="fp-panel hidden" id="underlay-panel">
-                    <span class="close" data-close="underlay-panel">✕</span>
-                    <h4>Trace a plan</h4>
-                    <div class="hint">Put a photo, screenshot or PDF of an existing plan behind the
-                        drawing, set its scale, then draw on top of it. The underlay is a reference —
-                        it never prints and it is not part of the plan data.</div>
-                    <div class="row">
-                        <button class="fp-tbtn sm" id="ul-pick">Choose file…</button>
-                        <button class="fp-tbtn sm" id="ul-remove" style="color:#b91c1c">Remove</button>
-                    </div>
-                    <input type="file" id="ul-file" accept="image/*,application/pdf,.pdf" style="display:none">
-                    <div id="ul-status" class="hint"></div>
-                    <label class="fld">Opacity</label>
-                    <input type="range" id="ul-opacity" min="5" max="100" step="5" value="55">
-                    <label class="fld" style="margin-top:6px">Rotate (°)</label>
-                    <input type="range" id="ul-rot" min="-180" max="180" step="0.5" value="0">
-                    <label class="fp-layer-row"><input type="checkbox" id="ul-lock">Lock it (stops accidental nudges)</label>
-                    <button class="fp-tbtn sm" id="ul-calibrate" style="width:100%;margin-top:6px">📏 Set scale from a known length</button>
-                    <div class="hint" id="ul-cal-status"></div>
-                </div>
-
-                <!-- Import chooser. -->
-                <div class="fp-panel hidden" id="import-panel">
-                    <span class="close" data-close="import-panel">✕</span>
-                    <h4>Import a DivisionScan capture</h4>
-                    <div id="imp-warnings"></div>
-                    <div class="fp-imp-opt" id="imp-latest">
-                        <b>⬇ Load the latest capture</b>
-                        <span>Pulls the most recent scan uploaded from the app.</span>
-                    </div>
-                    <div class="fp-imp-opt" id="imp-browse">
-                        <b>📂 Choose a capture from the server…</b>
-                        <span>Pick from recent scans by name and date.</span>
-                    </div>
-                    <div class="fp-imp-opt" id="imp-file">
-                        <b>📄 Upload a scan file</b>
-                        <span>A .json exported from DivisionScan. You can also drag it onto the drawing.</span>
-                    </div>
-                    <input type="file" id="imp-fileinput" accept=".json,application/json" style="display:none">
-                    <div id="imp-list" style="max-height:190px;overflow:auto;margin-top:6px"></div>
-                    <hr style="margin:9px 0;border:none;border-top:1px solid var(--slate-200)">
-                    <label class="fld">Where should it go?</label>
-                    <select id="imp-mode">
-                        <option value="floor">Add it as a new floor (keeps what is drawn)</option>
-                        <option value="replace">Replace the whole drawing</option>
-                        <option value="merge">Merge onto this floor</option>
-                    </select>
-                </div>
-
-                <div class="fp-panel hidden" id="edit-panel">
-                    <div class="ep-head">
-                        <div>
-                            <div class="ep-title" id="ep-title">Item</div>
-                            <div class="ep-sub" id="ep-sub"></div>
-                        </div>
-                        <div class="ep-grow"></div>
-                        <span class="close" id="ep-close">✕</span>
-                    </div>
-                    <div class="ep-body" id="ep-body"></div>
-                    <button class="fp-tbtn sm" id="ep-delete" style="color:#b91c1c;width:100%;margin-top:6px">Delete</button>
-                </div>
-
-                <div class="fp-text-overlay" id="text-input-overlay">
-                    <input type="text" id="text-input" placeholder="Label" autocomplete="off">
-                    <button class="fp-tbtn primary sm" id="text-confirm">Add</button>
-                    <button class="fp-tbtn sm" id="text-cancel">✕</button>
-                </div>
-
-                <div class="fp-drop" id="drop-zone">
-                    <div>Drop it here
-                        <small>A DivisionScan .json becomes the drawing — an image or PDF becomes a tracing underlay</small>
-                    </div>
-                </div>
-            </div>
-
-            <div class="fp-palette">
-              <div class="fp-palette-head">
-                <span class="title">Symbols</span>
-                <input type="text" id="sym-search" placeholder="Search...">
-                <div class="fp-cat-tabs" id="cat-tabs"></div>
-              </div>
-              <div class="fp-palette-body" id="sym-body"></div>
-            </div>
-        </div>
-
+        <div id="fp-meta"></div>
         <div class="nav-buttons">
-            <button type="button" class="btn-secondary" onclick="ppSaveBeforeLeaving();window.location.href='page10-site-plan.html'">← Previous</button>
             <button type="button" class="btn-primary" onclick="ppSaveBeforeLeaving();window.location.href='page12-submit.html'">Next →</button>
         </div>
     </div>
 </div>
-<footer>
-    <img src="images/city-logo.png" alt="City of Centerville" class="city-logo">
-    <p>© 2026 City of Centerville Fire Department</p>
-</footer>
 
+<!-- ======================= the editor ======================= -->
+<div class="fpx" id="fpx">
+
+  <div class="fpx-top">
+    <button class="fpx-icon" id="fpx-back" title="Back to Site Plan">←</button>
+
+    <button class="fpx-floorbtn" id="fpx-floorbtn" title="Switch floor">
+      <span class="nm" id="fpx-planname">Floor Plan</span>
+      <span class="fl" id="fpx-floorname">Floor 1</span>
+      <span class="cv">▾</span>
+    </button>
+
+    <div class="fpx-stat" id="area-bar"></div>
+
+    <div class="fpx-spacer"></div>
+
+    <button class="fpx-btn" id="btn-import" title="Bring in a DivisionScan capture">⬇ Import</button>
+    <button class="fpx-btn accent" id="btn-save" title="Save (Cmd/Ctrl+S)">💾 Save</button>
+    <button class="fpx-icon" id="fpx-more" title="More">⋯</button>
+    <button class="fpx-btn primary" id="fpx-next" title="Go to Review">Next →</button>
+  </div>
+
+  <div class="fpx-body">
+
+    <!-- Primary tools only. Everything else lives under ⋯ -->
+    <div class="fpx-rail" id="tool-rail">
+      <button class="fpx-tool active" data-tool="select"><i>✋</i><b>Select</b></button>
+      <button class="fpx-tool" data-tool="chain"><i>🔗</i><b>Draw</b></button>
+      <button class="fpx-tool" data-tool="room"><i>⬛</i><b>Room</b></button>
+      <button class="fpx-tool" data-tool="door"><i>🚪</i><b>Door</b></button>
+      <button class="fpx-tool" data-tool="window"><i>▭</i><b>Window</b></button>
+      <button class="fpx-tool" data-tool="zone"><i>🟦</i><b>Area</b></button>
+      <button class="fpx-tool" id="rail-symbol" data-tool="place"><i>📍</i><b>Symbol</b></button>
+      <button class="fpx-tool" data-tool="text"><i>Aa</i><b>Text</b></button>
+      <button class="fpx-tool" data-tool="measure"><i>📐</i><b>Measure</b></button>
+      <div class="fpx-railsep"></div>
+      <button class="fpx-tool" id="btn-undo"><i>↶</i><b>Undo</b></button>
+      <button class="fpx-tool" id="btn-redo"><i>↷</i><b>Redo</b></button>
+    </div>
+
+    <div class="fp-stage" id="stage">
+        <div class="fp-canvas-wrap" id="canvas-wrap">
+            <canvas id="fp-canvas"></canvas>
+        </div>
+        <div class="fp-3d-wrap" id="threed-wrap">
+            <canvas id="three-canvas"></canvas>
+        </div>
+
+        <div class="fp-empty" id="empty-state">
+            <div class="icon">📐</div>
+            <h3>No floor plan yet</h3>
+            <p>Three ways to start. You do not need DivisionScan to draw a building.</p>
+            <div class="fp-empty-acts">
+                <button class="fp-tbtn primary" id="es-draw">✏️ Draw it here</button>
+                <button class="fp-tbtn" id="es-trace">▤ Trace a plan photo</button>
+                <button class="fp-tbtn" id="es-import">⬇ Import a scan</button>
+            </div>
+        </div>
+
+        <!-- Layer visibility. The ids and data-layer names are a contract with
+             fp-markers.js — do not rename them. -->
+        <div class="fp-panel hidden" id="layers">
+            <span class="close" data-close="layers">✕</span>
+            <h4>Layers</h4>
+            <label class="fp-layer-row"><input type="checkbox" data-layer="underlay" checked><span class="swatch" style="background:#0ea5e9;"></span>Underlay</label>
+            <label class="fp-layer-row"><input type="checkbox" data-layer="zones" checked><span class="swatch" style="background:#3b82f6;"></span>Areas<span class="count" id="ct-zones">0</span></label>
+            <label class="fp-layer-row"><input type="checkbox" data-layer="walls" checked><span class="swatch" style="background:#2D2D2D;"></span>Walls<span class="count" id="ct-walls">0</span></label>
+            <label class="fp-layer-row"><input type="checkbox" data-layer="doors" checked><span class="swatch" style="background:#C05020;"></span>Doors<span class="count" id="ct-doors">0</span></label>
+            <label class="fp-layer-row"><input type="checkbox" data-layer="windows" checked><span class="swatch" style="background:#C8E0F0;"></span>Windows<span class="count" id="ct-windows">0</span></label>
+            <label class="fp-layer-row"><input type="checkbox" data-layer="objects" checked><span class="swatch" style="background:#7c3aed;"></span>Objects<span class="count" id="ct-objects">0</span></label>
+            <label class="fp-layer-row"><input type="checkbox" data-layer="symbols" checked><span class="swatch" style="background:#dc2626;"></span>Symbols<span class="count" id="ct-symbols">0</span></label>
+            <label class="fp-layer-row"><input type="checkbox" data-layer="texts" checked><span class="swatch" style="background:#475569;"></span>Text<span class="count" id="ct-texts">0</span></label>
+            <label class="fp-layer-row"><input type="checkbox" data-layer="measurements" checked><span class="swatch" style="background:#eab308;"></span>Measures<span class="count" id="ct-measurements">0</span></label>
+            <label class="fp-layer-row"><input type="checkbox" data-layer="freehand" checked><span class="swatch" style="background:#0f172a;"></span>Freehand<span class="count" id="ct-freehand">0</span></label>
+            <label class="fp-layer-row"><input type="checkbox" data-layer="dimensions" checked><span class="swatch" style="background:#64748b;"></span>Dimensions</label>
+            <label class="fp-layer-row"><input type="checkbox" data-layer="grid"><span class="swatch" style="background:#dfe5ea;"></span>5 ft grid</label>
+            <label class="fp-layer-row"><input type="checkbox" data-layer="legend"><span class="swatch" style="background:#1e3a5f;"></span>Legend</label>
+        </div>
+
+        <div class="fp-panel hidden" id="view-controls">
+            <span class="close" data-close="view-controls">✕</span>
+            <h4>Orient</h4>
+            <label>Rotation: <span id="rot-val">0°</span></label>
+            <input type="range" id="vc-rotate" min="-180" max="180" step="1" value="0">
+            <button class="fp-tbtn sm" id="vc-snap" style="margin-top:6px;width:100%;">Snap to nearest 90°</button>
+            <button class="fp-tbtn sm" id="vc-north" style="margin-top:4px;width:100%;">Auto-align (compass)</button>
+            <button class="fp-tbtn sm" id="vc-reset" style="margin-top:4px;width:100%;">Reset</button>
+            <hr>
+            <label class="fld">True north on the sheet (°)</label>
+            <input type="number" id="vc-northdeg" step="1" min="-180" max="360">
+            <label class="fp-layer-row"><input type="checkbox" id="vc-shownorth" checked>Show north arrow</label>
+            <label class="fp-layer-row"><input type="checkbox" id="vc-showscale" checked>Show scale bar</label>
+        </div>
+
+        <div class="fp-panel hidden" id="threeD-controls">
+            <span class="close" data-close="threeD-controls">✕</span>
+            <h4>3D</h4>
+            <label>Rotate: <input type="range" id="td-rotate" min="0" max="360" step="1" value="45"></label>
+            <label>Tilt: <input type="range" id="td-tilt" min="5" max="85" step="1" value="45"></label>
+            <label>Wall height (ft): <input type="range" id="td-wall-h" min="6" max="30" step="1" value="9"></label>
+            <label class="fp-layer-row"><input type="checkbox" id="td-furniture" checked>Show contents</label>
+            <button class="fp-tbtn sm" id="td-reset" style="width:100%;margin-top:5px">Reset view</button>
+        </div>
+
+        <div class="fp-panel hidden" id="zone-panel">
+            <span class="close" data-close="zone-panel">✕</span>
+            <h4>Area</h4>
+            <div id="zp-area">—</div>
+            <div id="zp-sub" class="hint">—</div>
+            <label class="fld">Name</label>
+            <input type="text" id="zp-name" placeholder="Sales floor, Stockroom, Apt 2B…">
+            <label class="fld">Use</label>
+            <select id="zp-use">
+                <option value="">— not set —</option>
+                <option>Sales / Retail</option><option>Storage</option><option>Office</option>
+                <option>Assembly</option><option>Kitchen</option><option>Mechanical</option>
+                <option>Electrical</option><option>Sprinkler riser</option><option>Hazmat storage</option>
+                <option>Residential</option><option>Corridor / Egress</option><option>Stairwell</option>
+                <option>Restroom</option><option>Void / Concealed space</option>
+            </select>
+            <label class="fld">Colour</label>
+            <div class="fp-swatches" id="zp-colors"></div>
+            <label class="fp-layer-row"><input type="checkbox" id="zp-exclude">Leave out of the area total</label>
+            <div class="row">
+                <button class="fp-tbtn sm" id="zp-recompute">Re-solve</button>
+                <button class="fp-tbtn sm danger" id="zp-delete">Delete</button>
+            </div>
+        </div>
+
+        <div class="fp-panel hidden" id="underlay-panel">
+            <span class="close" data-close="underlay-panel">✕</span>
+            <h4>Trace a plan</h4>
+            <div class="hint">Put a photo, screenshot or PDF of an existing plan behind the drawing,
+                set its scale, then draw on top. It is a reference — it never prints.</div>
+            <div class="row">
+                <button class="fp-tbtn sm" id="ul-pick">Choose file…</button>
+                <button class="fp-tbtn sm danger" id="ul-remove">Remove</button>
+            </div>
+            <input type="file" id="ul-file" accept="image/*,application/pdf,.pdf" hidden>
+            <div id="ul-status" class="hint"></div>
+            <label class="fld">Opacity</label>
+            <input type="range" id="ul-opacity" min="5" max="100" step="5" value="55">
+            <label class="fld">Rotate (°)</label>
+            <input type="range" id="ul-rot" min="-180" max="180" step="0.5" value="0">
+            <label class="fp-layer-row"><input type="checkbox" id="ul-lock">Lock it</label>
+            <button class="fp-tbtn sm" id="ul-calibrate" style="width:100%;margin-top:6px">📏 Set scale from a known length</button>
+            <div class="hint" id="ul-cal-status"></div>
+        </div>
+
+        <div class="fp-panel hidden" id="import-panel">
+            <span class="close" data-close="import-panel">✕</span>
+            <h4>Import a DivisionScan capture</h4>
+            <div id="imp-warnings"></div>
+            <div class="fp-imp-opt" id="imp-latest"><b>⬇ Load the latest capture</b><span>The most recent scan uploaded from the app.</span></div>
+            <div class="fp-imp-opt" id="imp-browse"><b>📂 Choose from the server…</b><span>Pick by name and date.</span></div>
+            <div class="fp-imp-opt" id="imp-file"><b>📄 Upload a scan file</b><span>A .json from DivisionScan. Dragging it onto the drawing works too.</span></div>
+            <input type="file" id="imp-fileinput" accept=".json,application/json" hidden>
+            <div id="imp-list"></div>
+            <hr>
+            <label class="fld">Where should it go?</label>
+            <select id="imp-mode">
+                <option value="floor">Add as a new floor (keeps what is drawn)</option>
+                <option value="replace">Replace the whole drawing</option>
+                <option value="merge">Merge onto this floor</option>
+            </select>
+        </div>
+
+        <div class="fp-panel hidden" id="edit-panel">
+            <div class="ep-head">
+                <div>
+                    <div class="ep-title" id="ep-title">Item</div>
+                    <div class="ep-sub" id="ep-sub"></div>
+                </div>
+                <div class="ep-grow"></div>
+                <span class="close" id="ep-close">✕</span>
+            </div>
+            <div class="ep-body" id="ep-body"></div>
+            <button class="fp-tbtn sm danger" id="ep-delete" style="width:100%;margin-top:6px">Delete</button>
+        </div>
+
+        <div class="fp-text-overlay" id="text-input-overlay">
+            <input type="text" id="text-input" placeholder="Label" autocomplete="off">
+            <button class="fp-tbtn primary sm" id="text-confirm">Add</button>
+            <button class="fp-tbtn sm" id="text-cancel">✕</button>
+        </div>
+
+        <div class="fp-drop" id="drop-zone">
+            <div>Drop it here
+                <small>A DivisionScan .json becomes the drawing — an image or PDF becomes a tracing underlay</small>
+            </div>
+        </div>
+
+        <!-- Bottom-left: the bottom-right corner belongs to the photo button
+             and the ISO badge, both injected by the Worker. -->
+        <div class="fpx-zoom">
+            <button id="btn-zoom-in" title="Zoom in">＋</button>
+            <button id="btn-zoom-out" title="Zoom out">−</button>
+            <button id="btn-fit" title="Fit the drawing">Fit</button>
+        </div>
+    </div>
+  </div>
+
+  <div class="fpx-hint" id="hint-bar"></div>
+</div>
+
+<!-- ---------------- symbol drawer, opens with the Symbol tool ------------- -->
+<div class="fpx-drawer" id="palette-drawer">
+  <div class="fpx-drawer-head">
+    <span class="title">Symbols</span>
+    <input type="text" id="sym-search" placeholder="Search…">
+    <button class="fpx-icon" id="palette-close">✕</button>
+  </div>
+  <div class="fp-cat-tabs" id="cat-tabs"></div>
+  <div class="fp-palette-body" id="sym-body"></div>
+</div>
+
+<!-- ---------------------------- floor menu -------------------------------- -->
+<div class="fpx-menu hidden" id="floor-menu">
+  <div class="fpx-menu-head">Floors</div>
+  <div id="floor-tabs"></div>
+  <div class="fpx-menu-sep"></div>
+  <button class="fpx-menu-item" id="btn-floor-add">＋ Add a floor</button>
+  <button class="fpx-menu-item" id="btn-floor-rename">Rename this floor</button>
+  <button class="fpx-menu-item" id="btn-floor-dup">Duplicate this floor</button>
+  <button class="fpx-menu-item danger" id="btn-floor-del">Delete this floor</button>
+</div>
+
+<!-- ----------------------------- more menu -------------------------------- -->
+<div class="fpx-menu hidden" id="more-menu">
+  <div class="fpx-menu-head">Drawing</div>
+  <button class="fpx-menu-item" id="btn-detect-rooms">Detect rooms<small>Measure every closed room at once</small></button>
+  <button class="fpx-menu-item" id="btn-weld">Weld corners<small>Pull near-touching wall ends together</small></button>
+  <button class="fpx-menu-item" id="btn-underlay">Trace a plan<small>Put a photo or PDF behind the drawing</small></button>
+
+  <div class="fpx-menu-head">More tools</div>
+  <button class="fpx-menu-item" data-tool="pan">Pan</button>
+  <button class="fpx-menu-item" data-tool="wall">Single wall</button>
+  <button class="fpx-menu-item" data-tool="pen">Freehand pen</button>
+  <button class="fpx-menu-item" data-tool="delete">Tap to delete</button>
+
+  <div class="fpx-menu-head">View</div>
+  <button class="fpx-menu-item" id="btn-layers">Layers</button>
+  <button class="fpx-menu-item" id="btn-view">Orient / north</button>
+  <button class="fpx-menu-item" id="btn-3d">3D view</button>
+  <button class="fpx-menu-item" id="mm-minimap">Where am I<small>Minimap and marker list</small></button>
+  <button class="fpx-menu-item" id="mm-steps">All 12 pages</button>
+
+  <div class="fpx-menu-head">Plan</div>
+  <button class="fpx-menu-item" id="btn-scan">Open DivisionScan</button>
+  <button class="fpx-menu-item" id="mm-sheets">Uploaded floor sheets<small>Scanned plans that print with the report</small></button>
+  <button class="fpx-menu-item" id="btn-export">Export this drawing</button>
+  <button class="fpx-menu-item danger" id="btn-clear">Clear this floor</button>
+</div>
+
+<div class="fpx-scrim hidden" id="fpx-scrim"></div>
 <div class="fp-toast" id="toast"></div>
-<div id="status" style="display:none"></div>
+<div id="status" hidden></div>
 
 <script src="preplan-storage.js"></script>
 <script src="preplan-common.js"></script>
@@ -310,9 +306,9 @@
 <script src="fp2-render.js"></script>
 <script src="fp2-3d.js"></script>
 <script src="fp2-app.js"></script>
+<script src="fp2-shell.js"></script>
 
-<!-- Photo pins and the mini-map. Talks to window.FP and window.__FP_OVERLAY,
-     both of which fp2-app.js still provides. -->
+<!-- Photo pins and the minimap. Talks to window.FP and window.__FP_OVERLAY. -->
 <script src="fp-markers.js"></script>
 </body>
 </html>
