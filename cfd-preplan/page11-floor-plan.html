@@ -245,6 +245,32 @@
     <button class="fpx-icon" id="palette-close">✕</button>
   </div>
   <div class="fp-cat-tabs" id="cat-tabs"></div>
+
+  <!-- Describe a symbol you have not got. The server asks Claude for a shape
+       list; nothing executable comes back. -->
+  <div class="fpx-symgen" id="symgen">
+    <button class="fpx-symgen-toggle" id="sg-toggle">✨ Make a symbol…</button>
+    <div class="fpx-symgen-body hidden" id="sg-body">
+      <input type="text" id="sg-input" maxlength="200"
+             placeholder="e.g. three-bay loading dock, walk-in cooler, transformer pad">
+      <div class="row">
+        <button class="fp-tbtn primary sm" id="sg-go">Generate</button>
+        <button class="fp-tbtn sm" id="sg-cancel">Close</button>
+      </div>
+      <div class="fpx-symgen-status" id="sg-status"></div>
+      <div class="fpx-symgen-preview hidden" id="sg-preview">
+        <div class="sg-thumb" id="sg-thumb"></div>
+        <div class="sg-meta">
+          <div class="sg-name" id="sg-name"></div>
+          <div class="row">
+            <button class="fp-tbtn primary sm" id="sg-keep">Use it</button>
+            <button class="fp-tbtn sm" id="sg-retry">Try again</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="fp-palette-body" id="sym-body"></div>
 </div>
 
@@ -303,6 +329,7 @@
 <script src="fp2-geom.js"></script>
 <script src="fp2-model.js"></script>
 <script src="fp2-io.js"></script>
+<script src="fp2-symgen.js"></script>
 <script src="fp2-render.js"></script>
 <script src="fp2-3d.js"></script>
 <script src="fp2-app.js"></script>

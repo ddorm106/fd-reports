@@ -595,3 +595,27 @@ body.sm-full .leaflet-left { left: 8px; }
 @media (max-width: 760px) {
   body.sm-full #sm-stat { display: none; }
 }
+
+/* ------------------------------------------------------- symbol generator */
+.fpx-symgen { border-bottom: 1px solid var(--slate-200); padding: 7px 8px; flex: 0 0 auto; }
+.fpx-symgen-toggle { width: 100%; padding: 7px 9px; border-radius: var(--radius-sm);
+  border: 1px dashed var(--slate-300); background: var(--slate-50); cursor: pointer;
+  font-family: var(--font-body); font-size: .78rem; font-weight: 600; color: var(--slate-600); }
+.fpx-symgen-toggle:hover { border-color: var(--navy-blue); color: var(--navy-blue); }
+.fpx-symgen-body { margin-top: 7px; }
+.fpx-symgen-body.hidden { display: none; }
+.fpx-symgen-body input[type=text] { width: 100%; padding: 6px 8px; margin-bottom: 6px;
+  border: 1px solid var(--slate-300); border-radius: var(--radius-sm);
+  font-size: .8rem; font-family: var(--font-body); }
+.fpx-symgen-status { font-size: .72rem; color: var(--slate-500); margin-top: 5px; line-height: 1.35; }
+.fpx-symgen-status.err { color: #b91c1c; }
+.fpx-symgen-preview { display: flex; gap: 9px; align-items: center; margin-top: 8px;
+  padding: 8px; border: 1px solid var(--slate-200); border-radius: var(--radius-sm);
+  background: var(--white); }
+.fpx-symgen-preview.hidden { display: none; }
+.sg-thumb { flex: 0 0 auto; width: 56px; height: 56px; display: flex; align-items: center;
+  justify-content: center; background: var(--slate-50); border-radius: var(--radius-sm); }
+.sg-meta { flex: 1 1 auto; min-width: 0; }
+.sg-name { font-size: .78rem; font-weight: 700; color: var(--slate-800); margin-bottom: 5px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fp-sym-chip.custom { border-color: #a78bfa; }

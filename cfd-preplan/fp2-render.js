@@ -667,6 +667,25 @@ function drawUnknownSymbol(s, sel) {
 }
 
 function drawSymbol(s, sel) {
+  /* A generated symbol carries its own shape list, so the drawing stays whole
+   * on another machine that has never seen the device library it came from. */
+  if (s.spec && root.FPSymGen) {
+    var zc = state.view.zoom;
+    ctx.save();
+    ctx.translate(s.x, s.y);
+    ctx.rotate(degToRad(s.angle || 0));
+    var sc = s.scale || 1;
+    if (sel) {
+      ctx.strokeStyle = COL.symbolRing;
+      ctx.lineWidth = 3 / zc;
+      var rr = Math.max(s.spec.w || 32, s.spec.h || 32) * 0.7 * sc;
+      ctx.beginPath(); ctx.arc(0, 0, rr, 0, Math.PI * 2); ctx.stroke();
+    }
+    ctx.scale(sc, sc);
+    try { root.FPSymGen.drawSpec(ctx, s.spec); } catch (e) {}
+    ctx.restore();
+    return;
+  }
   const def = SYMBOLS.byId[s.symbolId];
   if (!def) { drawUnknownSymbol(s, sel); return; }
   ctx.save();

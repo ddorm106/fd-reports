@@ -404,8 +404,14 @@
     });
   }
 
-  function selectSymbol(id) {
+  function selectSymbol(id, spec) {
     state.activeSymbolId = id;
+    /* Cleared unless a spec is handed in, or a built-in picked after a
+     * generated one would silently carry the generated artwork. */
+    state.activeSymbolSpec = spec || null;
+    if (!spec && window.FP_SYMBOLS && FP_SYMBOLS.byId[id] && FP_SYMBOLS.byId[id].spec) {
+      state.activeSymbolSpec = FP_SYMBOLS.byId[id].spec;
+    }
     /* fp-markers.js highlights its own palette off state.selectedSymbolId.
      * Keeping both names in step costs one line and stops the fire-service
      * palette showing nothing selected after a pick. */
@@ -414,6 +420,85 @@
     if (placeBtn) placeBtn.disabled = !id;
     setTool('place');
     renderPaletteBody();
+  }
+
+
+  /* ===================================================== symbol generator */
+
+  /* Put saved custom symbols into the catalog before anything renders a
+   * palette — fp-markers.js builds its own from FP_SYMBOLS at boot, so late
+   * additions would not appear until the next load. */
+  function registerCustomSymbols() {
+    if (!window.FPSymGen || !SYMBOLS) return 0;
+    var lib = FPSymGen.loadLibrary(), added = 0;
+    lib.forEach(function (entry) {
+      if (!entry || !entry.spec || SYMBOLS.byId[entry.id]) return;
+      var def = FPSymGen.defFromSpec(entry.spec, entry.id);
+      SYMBOLS.byId[entry.id] = def;
+      SYMBOLS.all.push(def);
+      added++;
+    });
+    return added;
+  }
+
+  function initSymbolGenerator() {
+    var toggle = $('sg-toggle'), body = $('sg-body'), input = $('sg-input');
+    if (!toggle || !window.FPSymGen) return;
+    var pending = null;
+
+    function status(msg, isErr) {
+      var el = $('sg-status');
+      el.textContent = msg || '';
+      el.className = 'fpx-symgen-status' + (isErr ? ' err' : '');
+    }
+    function showPreview(spec) {
+      pending = spec;
+      var host = $('sg-thumb');
+      host.innerHTML = '';
+      host.appendChild(FPSymGen.thumbnail(spec, 52, state.dpr));
+      $('sg-name').textContent = spec.label || 'Custom symbol';
+      $('sg-preview').classList.remove('hidden');
+    }
+    function hidePreview() { pending = null; $('sg-preview').classList.add('hidden'); }
+
+    toggle.addEventListener('click', function () {
+      body.classList.toggle('hidden');
+      if (!body.classList.contains('hidden')) input.focus();
+    });
+    $('sg-cancel').addEventListener('click', function () {
+      body.classList.add('hidden'); hidePreview(); status('');
+    });
+
+    function run() {
+      var desc = (input.value || '').trim();
+      if (!desc) { status('Describe what you want first.', true); return; }
+      hidePreview();
+      status('Drawing “' + desc + '”…');
+      $('sg-go').disabled = true;
+      FPSymGen.generate(desc).then(function (spec) {
+        status('');
+        showPreview(spec);
+      }).catch(function (e) {
+        status(e.message || 'Could not make that symbol.', true);
+      }).then(function () { $('sg-go').disabled = false; });
+    }
+    $('sg-go').addEventListener('click', run);
+    input.addEventListener('keydown', function (e) { if (e.key === 'Enter') run(); });
+    $('sg-retry').addEventListener('click', run);
+
+    $('sg-keep').addEventListener('click', function () {
+      if (!pending) return;
+      var entry = FPSymGen.saveToLibrary(pending);
+      var def = FPSymGen.defFromSpec(entry.spec, entry.id);
+      SYMBOLS.byId[def.id] = def;
+      SYMBOLS.all.push(def);
+      selectSymbol(def.id, entry.spec);
+      hidePreview();
+      status('');
+      body.classList.add('hidden');
+      if (window.FPShell) FPShell.closeDrawer();
+      showToast('Tap the plan to place “' + def.label + '”', 'ok');
+    });
   }
 
   /* ================================================================ tools */
@@ -678,7 +763,11 @@
     if (t === 'place') {
       if (!state.activeSymbolId) { showToast('Pick a symbol first', 'err'); return; }
       doc.pushUndo();
-      doc.list('symbols').push({ id: uid('s_'), symbolId: state.activeSymbolId, x: pt.x, y: pt.y, angle: 0, label: '' });
+      var rec = { id: uid('s_'), symbolId: state.activeSymbolId, x: pt.x, y: pt.y, angle: 0, label: '' };
+      /* A generated symbol travels WITH the plan. Storing only an id would
+       * leave a blank where the symbol was on any other device. */
+      if (state.activeSymbolSpec) rec.spec = state.activeSymbolSpec;
+      doc.list('symbols').push(rec);
       hideEmpty();
       commit('Placed');
       return;
@@ -1874,8 +1963,10 @@
       onStatus: function () {}
     });
 
+    registerCustomSymbols();
     initLayers();
     buildPalette();
+    initSymbolGenerator();
     initToolbar();
     initPanelCloses();
     initZonePanel();

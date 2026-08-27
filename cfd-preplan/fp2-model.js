@@ -308,7 +308,8 @@
        * to print raw ids like "gas_shutoff" straight onto the IC's plan. */
       var pretty = String(s.symbolId || 'Marker').replace(/[_-]+/g, ' ')
         .replace(/\b\w/g, function (c) { return c.toUpperCase(); });
-      var label = (def && def.label) || s.label || pretty;
+      /* A generated symbol carries its own label; it is not in the catalog. */
+      var label = (s.spec && s.spec.label) || (def && def.label) || s.label || pretty;
       var k = 'sym:' + (s.symbolId || label);
       if (!counts[k]) counts[k] = { kind: 'symbol', symbolId: s.symbolId, label: label, count: 0 };
       counts[k].count++;

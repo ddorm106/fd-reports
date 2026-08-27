@@ -97,6 +97,8 @@
     <p>© 2026 City of Centerville Fire Department</p>
 </footer>
 <div class="toast-container" id="toast-container"></div>
+<script src="fp2-symbols.js"></script>
+<script src="fp2-symgen.js"></script>
 <script src="preplan-storage.js"></script>
 <script src="preplan-common.js"></script>
 <script src="preplan-cloud.js"></script>
@@ -529,15 +531,41 @@ function renderV4Floorplan(d,pdfW,pdfH){
             ctx.beginPath(); ctx.arc(hx,hy,2/scale,0,Math.PI*2); ctx.fill();
         }
     });
+    /* Symbols used to print as a red dot with three letters in it, whatever
+       they were — so the editor showed an FDC and the IC's copy showed "FDC"
+       in a circle. Draw the real artwork: the catalog for built-ins, the
+       carried shape list for generated ones, and the old dot only as a last
+       resort for an id nothing knows. */
     (d.symbols||[]).forEach(function(s){
-        var r=10/scale;
-        ctx.fillStyle='#dc2626';
-        ctx.beginPath(); ctx.arc(s.x,s.y,r,0,Math.PI*2); ctx.fill();
-        ctx.strokeStyle='#fff'; ctx.lineWidth=2/scale; ctx.stroke();
-        ctx.fillStyle='#fff';
-        ctx.font='bold '+(r*0.8)+'px "Source Sans Pro",system-ui';
-        ctx.textAlign='center'; ctx.textBaseline='middle';
-        ctx.fillText(((s.symbolId||'S').slice(0,3)).toUpperCase(),s.x,s.y);
+        var drew=false;
+        ctx.save();
+        ctx.translate(s.x,s.y);
+        if(s.angle) ctx.rotate((s.angle||0)*Math.PI/180);
+        var sc=s.scale||1;
+        try{
+            if(s.spec && window.FPSymGen){
+                ctx.save(); ctx.scale(sc,sc);
+                drew = window.FPSymGen.drawSpec(ctx, s.spec, {lwScale:1});
+                ctx.restore();
+            } else if(window.FP_SYMBOLS && window.FP_SYMBOLS.byId[s.symbolId]){
+                var def=window.FP_SYMBOLS.byId[s.symbolId];
+                ctx.save(); ctx.scale(sc,sc);
+                def.draw(ctx, def.w, def.h);
+                ctx.restore();
+                drew=true;
+            }
+        }catch(e){ drew=false; }
+        ctx.restore();
+        if(!drew){
+            var r=10/scale;
+            ctx.fillStyle='#dc2626';
+            ctx.beginPath(); ctx.arc(s.x,s.y,r,0,Math.PI*2); ctx.fill();
+            ctx.strokeStyle='#fff'; ctx.lineWidth=2/scale; ctx.stroke();
+            ctx.fillStyle='#fff';
+            ctx.font='bold '+(r*0.8)+'px "Source Sans Pro",system-ui';
+            ctx.textAlign='center'; ctx.textBaseline='middle';
+            ctx.fillText(((s.symbolId||'S').slice(0,3)).toUpperCase(),s.x,s.y);
+        }
     });
     (d.texts||[]).forEach(function(t){
         ctx.fillStyle=t.color||'#1f2937';
