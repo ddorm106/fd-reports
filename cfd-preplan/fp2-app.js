@@ -1383,16 +1383,71 @@
       }, 'number');
       if (hit.kind === 'door') {
         var sel = document.createElement('select');
-        ['single', 'double', 'rollup', 'entryway'].forEach(function (t) {
+        [['single', 'Single'], ['double', 'Double'], ['rollup', 'Roll-up / overhead'],
+         ['entryway', 'Open doorway (no leaf)']].forEach(function (t) {
           var o = document.createElement('option');
-          o.value = t; o.textContent = t;
-          if ((el.type || 'single') === t) o.selected = true;
+          o.value = t[0]; o.textContent = t[1];
+          if ((el.type || 'single') === t[0]) o.selected = true;
           sel.appendChild(o);
         });
-        sel.addEventListener('change', function () { doc.pushUndo(); el.type = sel.value; commit(); });
+        sel.addEventListener('change', function () {
+          doc.pushUndo(); el.type = sel.value; commit();
+          showEditPanel(hit);            // swing controls appear/disappear with the type
+        });
         var dl = document.createElement('label');
         dl.className = 'fld'; dl.textContent = 'Type';
         body.appendChild(dl); body.appendChild(sel);
+
+        /* Which way the door swings. A roll-up has no leaf and an open doorway
+         * has no door, so neither has a swing to set. */
+        var t = el.type || 'single';
+        if (t === 'single' || t === 'double') {
+          var sl = document.createElement('label');
+          sl.className = 'fld';
+          sl.textContent = 'Swing';
+          body.appendChild(sl);
+
+          var row = document.createElement('div');
+          row.className = 'row';
+
+          /* Two flips rather than four named states: "left hand reverse" means
+           * nothing to most people, and the door visibly moves on the plan the
+           * moment you tap, which explains itself. A single door has both; a
+           * double swings as a pair, so only the side applies. */
+          if (t === 'single') {
+            var hb = document.createElement('button');
+            hb.className = 'fp-tbtn sm';
+            hb.textContent = '⇄ Hinge side';
+            hb.title = 'Move the hinge to the other end of the opening';
+            hb.addEventListener('click', function () {
+              doc.pushUndo();
+              el.hinge = (el.hinge === 'end') ? 'start' : 'end';
+              commit();
+              showEditPanel(hit);
+            });
+            row.appendChild(hb);
+          }
+
+          var sb = document.createElement('button');
+          sb.className = 'fp-tbtn sm';
+          sb.textContent = '⤺ Swing side';
+          sb.title = 'Swing the door to the other side of the wall';
+          sb.addEventListener('click', function () {
+            doc.pushUndo();
+            el.swing = (el.swing === -1) ? 1 : -1;
+            commit();
+            showEditPanel(hit);
+          });
+          row.appendChild(sb);
+          body.appendChild(row);
+
+          var state_ = document.createElement('div');
+          state_.className = 'hint';
+          state_.textContent = 'Hinged at the ' + ((el.hinge === 'end') ? 'far' : 'near') +
+            ' end, opening ' + ((el.swing === -1) ? 'one' : 'the other') + ' way. ' +
+            'Tap to flip — the plan updates as you go.';
+          body.appendChild(state_);
+        }
       }
       if (!el.wallId) {
         var warn = document.createElement('div');

@@ -325,8 +325,10 @@ function drawDoorSymbol(d, sel) {
     ctx.stroke();
     ctx.setLineDash([]);
   } else if (d.type === 'double') {
-    // Two panels meeting in middle
-    const swingA = a + Math.PI/2;
+    // Two panels meeting in middle. Both leaves mirror together when the swing
+    // is flipped — a double that opens the other way opens BOTH ways.
+    const dblSign = (d.swing === -1) ? -1 : 1;
+    const swingA = a + dblSign * Math.PI/2;
     // Left panel — hinge at left end (cx-dx,cy-dy), swings to center
     ctx.strokeStyle = COL.doorLeaf;
     ctx.lineWidth = 1.8 / state.view.zoom;
@@ -342,8 +344,8 @@ function drawDoorSymbol(d, sel) {
     ctx.strokeStyle = COL.doorArc;
     ctx.lineWidth = 0.9 / state.view.zoom;
     ctx.setLineDash([4/state.view.zoom, 2/state.view.zoom]);
-    ctx.beginPath(); ctx.arc(hL_x, hL_y, w/2, a, a + Math.PI/2); ctx.stroke();
-    ctx.beginPath(); ctx.arc(hR_x, hR_y, w/2, a + Math.PI, a + Math.PI + Math.PI/2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(hL_x, hL_y, w/2, a, a + dblSign * Math.PI/2, dblSign < 0); ctx.stroke();
+    ctx.beginPath(); ctx.arc(hR_x, hR_y, w/2, a + Math.PI, a + Math.PI + dblSign * Math.PI/2, dblSign < 0); ctx.stroke();
     ctx.setLineDash([]);
     // Hinge dots
     ctx.fillStyle = COL.doorLeaf;
@@ -355,7 +357,13 @@ function drawDoorSymbol(d, sel) {
     const hx = cx + (atEnd ? 1 : -1) * w/2 * cosA, hy = cy + (atEnd ? 1 : -1) * w/2 * sinA;
     const closedDir = atEnd ? (a + Math.PI) : a;
     const swingSign = (d.swing === -1) ? -1 : 1;
-    const swingA = closedDir + swingSign * Math.PI/2;
+    /* Hinge and swing have to be INDEPENDENT. Rotating by a fixed +90 from the
+     * closed direction meant moving the hinge to the other jamb also threw the
+     * door to the other side of the wall, so the two buttons fought each other.
+     * Measuring from a reversed closed direction needs a reversed sweep to land
+     * on the same side. */
+    const effSign = (atEnd ? -1 : 1) * swingSign;
+    const swingA = closedDir + effSign * Math.PI/2;
     const px_ = hx + w*Math.cos(swingA);
     const py_ = hy + w*Math.sin(swingA);
     // Panel
@@ -367,7 +375,7 @@ function drawDoorSymbol(d, sel) {
     ctx.lineWidth = 0.9 / state.view.zoom;
     ctx.setLineDash([4/state.view.zoom, 2/state.view.zoom]);
     ctx.beginPath();
-    ctx.arc(hx, hy, w, closedDir, swingA, swingSign < 0);
+    ctx.arc(hx, hy, w, closedDir, swingA, effSign < 0);
     ctx.stroke();
     ctx.setLineDash([]);
     // Hinge dot

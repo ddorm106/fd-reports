@@ -487,14 +487,43 @@ function renderV4Floorplan(d,pdfW,pdfH){
             ctx.setLineDash([6/scale,3/scale]);
             ctx.beginPath(); ctx.moveTo(p1x,p1y); ctx.lineTo(p2x,p2y); ctx.stroke();
             ctx.setLineDash([]);
+        } else if(dr.type==='entryway'||dr.type==='opening'){
+            /* A cased opening has no leaf. The gap in the wall above is the
+               whole drawing — the old code fell through to the swing branch and
+               printed a door that is not there. */
+        } else if(dr.type==='double'){
+            var dblSign=(dr.swing===-1)?-1:1, dblA=a+dblSign*Math.PI/2;
+            var lx=p1x, ly=p1y, rx=p2x, ry=p2y;
+            ctx.strokeStyle='#1E1E1E'; ctx.lineWidth=1.8/scale;
+            ctx.beginPath(); ctx.moveTo(lx,ly); ctx.lineTo(lx+half*Math.cos(dblA), ly+half*Math.sin(dblA)); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(rx,ry); ctx.lineTo(rx+half*Math.cos(dblA+Math.PI), ry+half*Math.sin(dblA+Math.PI)); ctx.stroke();
+            ctx.strokeStyle='#555'; ctx.lineWidth=0.9/scale;
+            ctx.setLineDash([4/scale,2/scale]);
+            ctx.beginPath(); ctx.arc(lx,ly,half,a,a+dblSign*Math.PI/2,dblSign<0); ctx.stroke();
+            ctx.beginPath(); ctx.arc(rx,ry,half,a+Math.PI,a+Math.PI+dblSign*Math.PI/2,dblSign<0); ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle='#1E1E1E';
+            ctx.beginPath(); ctx.arc(lx,ly,2/scale,0,Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(rx,ry,2/scale,0,Math.PI*2); ctx.fill();
         } else {
-            var hx=p1x, hy=p1y, swingA=a+Math.PI/2;
+            /* Hinge end and swing side, matching fp2-render.js exactly. The PDF
+               used to hard-code both, so a door the crew had flipped in the
+               editor printed opening the wrong way on the copy the IC carries —
+               which is the copy that decides where a line goes. */
+            var atEnd=(dr.hinge==='end');
+            var hx=atEnd?p2x:p1x, hy=atEnd?p2y:p1y;
+            var closedDir=atEnd?(a+Math.PI):a;
+            var swingSign=(dr.swing===-1)?-1:1;
+            /* Same independence rule as the editor: a reversed closed direction
+               needs a reversed sweep to stay on the same side of the wall. */
+            var effSign=(atEnd?-1:1)*swingSign;
+            var swingA=closedDir+effSign*Math.PI/2;
             var pex=hx+w*Math.cos(swingA), pey=hy+w*Math.sin(swingA);
             ctx.strokeStyle='#1E1E1E'; ctx.lineWidth=1.8/scale;
             ctx.beginPath(); ctx.moveTo(hx,hy); ctx.lineTo(pex,pey); ctx.stroke();
             ctx.strokeStyle='#555'; ctx.lineWidth=0.9/scale;
             ctx.setLineDash([4/scale,2/scale]);
-            ctx.beginPath(); ctx.arc(hx,hy,w,a,a+Math.PI/2); ctx.stroke();
+            ctx.beginPath(); ctx.arc(hx,hy,w,closedDir,swingA,effSign<0); ctx.stroke();
             ctx.setLineDash([]);
             ctx.fillStyle='#1E1E1E';
             ctx.beginPath(); ctx.arc(hx,hy,2/scale,0,Math.PI*2); ctx.fill();

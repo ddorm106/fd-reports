@@ -210,7 +210,10 @@
       };
       if (typeOverride) o.type = typeOverride;
       else if (e.type) o.type = e.type;
-      if (e.swingDirection) o.swing = e.swingDirection;
+      /* The app sends "inswing"/"outswing"; the renderer wants +1/-1. Storing
+       * the raw string meant every imported door drew with the default swing,
+       * silently discarding what the crew recorded on scene. */
+      if (e.swingDirection) o.swing = /out/i.test(e.swingDirection) ? -1 : 1;
       /* Prefer the app's hosting; fall back to solving it geometrically. */
       var mapped = e.wallId ? idMap[String(e.wallId)] : null;
       if (mapped) {
