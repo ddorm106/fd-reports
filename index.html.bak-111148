@@ -388,14 +388,7 @@
             <span class="card-status draft">Not Ready</span>
             <h3>Pre-Fire Plans</h3>
             <p>Create and manage building pre-fire plan data sheets for target hazards.</p>
-            <!-- Opens in its own tab on purpose. This site is installed as a
-                 standalone PWA (manifest.json, display:standalone), and from a
-                 Home Screen app a link like this opens inside the app window or
-                 as an in-app browser sheet — which reads as a modal you cannot
-                 get out of, and runs the form in a different storage context.
-                 The pre-plan form keeps its work in localStorage, so that is
-                 the difference between saving and losing a plan. -->
-            <a href="cfd-preplan/preplan-index.html" class="card-link" target="_blank" rel="noopener">Open Plans <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+            <a href="cfd-preplan/preplan-index.html" class="card-link">Open Plans <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
         </div>
 
         <div class="card">
