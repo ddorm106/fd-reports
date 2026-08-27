@@ -65,15 +65,26 @@
 
   /* ============================================================== storage */
 
-  /* The snapshot written to floor_plan_image is what the Book and the older
-   * report paths display. It is NOT the tracing underlay — keeping those two
-   * apart is the fix for a live bug where saving the drawing overwrote a floor
-   * sheet somebody had uploaded. */
+  /* A picture of the drawing, for the Book and the report.
+   *
+   * This goes to floor_plan_render. It used to go to floor_plan_image — the
+   * SAME key the Worker's floor-sheet uploader writes — so saving the drawing
+   * destroyed any plan sheet somebody had uploaded, and the uploader fought
+   * back with a timer that rewrote it every 1.5s. Two different documents were
+   * sharing one key and taking turns winning.
+   *
+   * floor_plan_image is still written when it does not hold an upload, because
+   * older readers know that key and only that key. floor_plan_src_1 is set by
+   * the uploader to say where the sheet came from. */
   function snapshot() {
     try {
       draw();
       return canvas.toDataURL('image/jpeg', 0.72);
     } catch (e) { return null; }
+  }
+
+  function sheetIsUploaded() {
+    try { return M.readPlan().floor_plan_src_1 === 'upload'; } catch (e) { return false; }
   }
 
   function saveToStorage(opts) {
@@ -82,7 +93,10 @@
     var extra = {};
     if (opts.withImage !== false) {
       var img = snapshot();
-      if (img) extra.floor_plan_image = img;
+      if (img) {
+        extra.floor_plan_render = img;
+        if (!sheetIsUploaded()) extra.floor_plan_image = img;
+      }
     }
     doc.save(extra);
     updateAreaBar();
@@ -118,11 +132,18 @@
       fetch('/api/preplans/' + encodeURIComponent(pid) + '/floorplan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          floor_plan_data: doc.serialize(),
-          scan_id: (doc.data.scan_meta && doc.data.scan_meta.scan_id) || null,
-          floor_plan_image: snapshot()
-        })
+        body: (function () {
+          var img = snapshot();
+          var payload = {
+            floor_plan_data: doc.serialize(),
+            scan_id: (doc.data.scan_meta && doc.data.scan_meta.scan_id) || null,
+            floor_plan_render: img
+          };
+          /* Same rule as local storage: never push the snapshot into the key
+           * that is holding somebody's uploaded sheet. */
+          if (!sheetIsUploaded()) payload.floor_plan_image = img;
+          return JSON.stringify(payload);
+        })()
       }).catch(function () {});
     } catch (e) {}
   }
@@ -1703,12 +1724,12 @@
   }
 
   function init() {
-    /* The Worker injects a panel that paints `floor_plan_image` — the saved
-     * snapshot of THIS drawing — underneath the canvas as a "background".
-     * That put a stale ghost of the drawing under the live one on every load.
-     * v5 has a real underlay, so the hook is neutralised here. Defined
-     * non-writable so the injected script's later assignment cannot revive it.
-     * Remove this once the Worker's getFloorPlanUploadHTML() drops the hook. */
+    /* The Worker used to inject a panel that painted `floor_plan_image` — the
+     * saved snapshot of THIS drawing — underneath the canvas as a
+     * "background", putting a stale ghost of the drawing under the live one on
+     * every load. The hook was removed from the Worker on 2026-08-27, but a
+     * cached copy of the old panel can still be served for a while, so this
+     * stays: non-writable, so the old script's assignment cannot revive it. */
     try {
       Object.defineProperty(window, 'fpBgLoad', {
         value: function () {}, writable: false, configurable: false
