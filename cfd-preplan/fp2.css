@@ -522,3 +522,69 @@ body.fp-full.show-sheets #fpUpWrap { display: block; }
 /* The top-bar stats degrade by dropping detail, never by clipping a word. */
 @media (max-width: 1150px) { .fpx-stat .sec { display: none; } }
 @media (max-width: 900px)  { .fpx-stat { max-width: 40vw; } }
+
+/* ----------------------------------------------------------- Apple Pencil
+ * touch-action must be declared on the element the pointer actually hits, not
+ * only on an ancestor, or Safari can still claim the gesture for scrolling.
+ * The selection/callout rules stop a pencil press-and-hold turning into a text
+ * selection or a share sheet over the drawing. */
+.fp-canvas-wrap, .fp-canvas-wrap canvas, .fpx-body .fp-stage {
+  touch-action: none;
+  -webkit-user-select: none; user-select: none;
+  -webkit-touch-callout: none;
+}
+.fp-canvas-wrap canvas { -webkit-tap-highlight-color: transparent; }
+
+/* ============================================================================
+ * PAGE 10 — the site map, same shell as the floor plan
+ * ==========================================================================*/
+
+/* The map component sizes itself to a 560px box; here it fills the stage. */
+body.sm-full #sm-mapslot { position: absolute; inset: 0; }
+body.sm-full #smMap { height: 100% !important; width: 100%; margin: 0 !important;
+  border: none !important; border-radius: 0 !important; }
+body.sm-full #smBox { border: none; padding: 0; margin: 0; background: none; box-shadow: none; }
+
+/* Its hint and status lines are re-parented into the shell's strips. */
+body.sm-full #sm-hintslot #smHint { margin: 0; padding: 0; border: none; background: none;
+  font-size: .72rem; color: var(--slate-500); }
+/* The component colours this line green for "ready to print" — unreadable on
+   the navy bar, so the shell restates it in the bar's own palette. */
+body.sm-full #sm-stat #smStat,
+body.sm-full #sm-stat #smStat * { margin: 0; font-size: .72rem;
+  color: rgba(255,255,255,.92) !important; }
+body.sm-full #sm-stat { max-width: 34vw; overflow: hidden; white-space: nowrap; }
+
+/* The 18-marker palette, in the drawer. */
+.fpx-drawer-note { padding: 8px 10px 0; font-size: .72rem; color: var(--slate-500); line-height: 1.35; }
+body.sm-full #sm-palslot { flex: 1 1 auto; overflow-y: auto; padding: 8px; }
+body.sm-full #smPal { display: grid; grid-template-columns: 1fr; gap: 5px; margin: 0; }
+body.sm-full #smPal .sm-cat { display: flex; align-items: center; gap: 8px; width: 100%;
+  padding: 9px 10px; min-height: 44px; border: 1px solid var(--slate-200);
+  border-radius: var(--radius-sm); background: var(--white); cursor: pointer;
+  font-family: var(--font-body); font-size: .82rem; font-weight: 600;
+  color: var(--slate-800); text-align: left; }
+body.sm-full #smPal .sm-cat:hover { border-color: var(--navy-blue); background: var(--slate-50); }
+body.sm-full #smPal .sm-cat.sel { border-color: var(--fire-red); background: #fef2f2;
+  box-shadow: 0 0 0 2px rgba(220,38,38,.16); }
+body.sm-full #smPal .sm-cat .d { width: 26px; height: 26px; border-radius: 50%; flex: 0 0 26px;
+  color: #fff; font-weight: 700; font-size: .78rem;
+  display: inline-flex; align-items: center; justify-content: center; }
+
+/* Leaflet's own controls must clear the rail and the top bar. */
+body.sm-full .leaflet-top { top: 8px; }
+body.sm-full .leaflet-left { left: 8px; }
+
+/* The old uploaded aerial, revealed from the menu. */
+#legacySite { position: fixed; right: 14px; bottom: 14px; z-index: 340; width: min(92vw, 330px);
+  background: var(--white); border: 1px solid var(--slate-300); border-radius: var(--radius-md);
+  box-shadow: 0 12px 30px rgba(15,23,42,.22); padding: 11px 13px; }
+#legacySite.hidden { display: none; }
+#legacySite .ls-head { font-weight: 700; color: var(--navy-blue); font-size: .82rem; }
+#legacySite .ls-note { font-size: .72rem; color: var(--slate-500); margin: 3px 0 7px; line-height: 1.35; }
+#legacySite img { max-width: 100%; border-radius: 6px; border: 1px solid var(--slate-300);
+  display: block; margin: 0 0 8px; }
+
+@media (max-width: 760px) {
+  body.sm-full #sm-stat { display: none; }
+}

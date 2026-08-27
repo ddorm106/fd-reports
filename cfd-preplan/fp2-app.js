@@ -569,6 +569,56 @@
   var drag = null;
   var lastPinch = 0;
 
+  /* ---------------------------------------------------------- the pencil
+   *
+   * Drawing with an Apple Pencil puts your PALM on the glass too. The old code
+   * counted every contact, so palm + pencil looked like two pointers, which
+   * looked like a pinch — and the pinch branch cancels whatever is being drawn.
+   * The pencil therefore did nothing at all.
+   *
+   * So: a pen contact wins. Touches are ignored while it is down, and a pinch
+   * needs two FINGERS, never a finger and a pencil. */
+  function penIsDown() {
+    var yes = false;
+    pointers.forEach(function (p) { if (p.pointerType === 'pen') yes = true; });
+    return yes;
+  }
+
+  function touchCount() {
+    var n = 0;
+    pointers.forEach(function (p) { if (p.pointerType === 'touch') n++; });
+    return n;
+  }
+
+  /* A palm usually lands BEFORE the tip does, so when the pen arrives any touch
+   * already registered is discarded along with whatever drag it began. */
+  function dropTouchContacts() {
+    var ids = [];
+    pointers.forEach(function (p, id) { if (p.pointerType === 'touch') ids.push(id); });
+    ids.forEach(function (id) { pointers.delete(id); });
+    if (!ids.length) return 0;
+
+    if (drag && drag.mode === 'pan') drag = null;
+
+    /* A palm lands a moment before the tip, and with a multi-tap tool it has
+     * already dropped a corner where the heel of your hand was. Take back any
+     * corner a touch placed in the last half second — long enough to catch the
+     * palm, short enough that a chain genuinely started by finger and continued
+     * with the pencil keeps its points. */
+    var d = state.drawing;
+    if (d && d.points && d.points.length) {
+      var now = Date.now();
+      while (d.points.length && d.points[d.points.length - 1]._pt === 'touch' &&
+             (now - (d.points[d.points.length - 1]._t || 0)) < 500) {
+        d.points.pop();
+      }
+      if (!d.points.length) state.drawing = null;
+    } else if (d && d.startedBy === 'touch') {
+      state.drawing = null;                      // a drag tool begun by the palm
+    }
+    return ids.length;
+  }
+
   function evPos(e) {
     var r = canvas.getBoundingClientRect();
     return { sx: e.clientX - r.left, sy: e.clientY - r.top };
@@ -576,9 +626,17 @@
 
   function onPointerDown(e) {
     if (!doc) return;
-    canvas.setPointerCapture && canvas.setPointerCapture(e.pointerId);
+    /* Palm rejection, both orderings. */
+    if (e.pointerType === 'touch' && penIsDown()) return;
+    if (e.pointerType === 'pen') dropTouchContacts();
+
+    /* Capture is an optimisation, not a requirement — but an unguarded call
+     * throws NotFoundError for some pointers and takes the whole handler down
+     * with it, so the tool silently does nothing. Never let it. */
+    try { if (canvas.setPointerCapture) canvas.setPointerCapture(e.pointerId); } catch (err) {}
     pointers.set(e.pointerId, e);
-    if (pointers.size === 2) { state.drawing = null; return; }
+    /* Two fingers is a pinch. A finger and a pencil is a pencil. */
+    if (touchCount() >= 2) { state.drawing = null; drag = null; return; }
 
     var p = evPos(e);
     var pt = renderer.screenToData(p.sx, p.sy);
@@ -596,6 +654,9 @@
 
     if (t === 'chain' || t === 'zone') {
       var sp = snapped(pt);
+      /* Provenance, so a palm that lands a fraction before the pencil can have
+       * its stray corner taken back out again. */
+      sp._pt = e.pointerType; sp._t = Date.now();
       if (!state.drawing) {
         state.drawing = { kind: t === 'chain' ? 'chain' : 'zone', points: [sp], cursor: sp };
       } else {
@@ -627,11 +688,12 @@
 
     if (t === 'wall' || t === 'measure' || t === 'room' || t === 'calibrate') {
       var s0 = (t === 'calibrate') ? pt : snapped(pt);
-      state.drawing = { kind: t === 'calibrate' ? 'calibrate' : t, x1: s0.x, y1: s0.y, x2: s0.x, y2: s0.y };
+      state.drawing = { kind: t === 'calibrate' ? 'calibrate' : t, x1: s0.x, y1: s0.y,
+                        x2: s0.x, y2: s0.y, startedBy: e.pointerType };
       return;
     }
 
-    if (t === 'pen') { state.drawing = { kind: 'pen', points: [pt] }; return; }
+    if (t === 'pen') { state.drawing = { kind: 'pen', points: [pt], startedBy: e.pointerType }; return; }
   }
 
   function beginSelectDrag(p, pt) {
@@ -706,9 +768,10 @@
 
   function onPointerMove(e) {
     if (!doc) return;
+    if (e.pointerType === 'touch' && penIsDown()) return;      // palm dragging
     if (pointers.has(e.pointerId)) pointers.set(e.pointerId, e);
 
-    if (pointers.size === 2) { handlePinch(); return; }
+    if (touchCount() >= 2) { handlePinch(); return; }
 
     var p = evPos(e);
     var pt = renderer.screenToData(p.sx, p.sy);
@@ -815,7 +878,10 @@
   }
 
   function handlePinch() {
-    var it = Array.from(pointers.values());
+    /* Fingers only — including the pencil here is what made palm + pencil
+     * register as a two-finger zoom. */
+    var it = [];
+    pointers.forEach(function (p) { if (p.pointerType === 'touch') it.push(p); });
     if (it.length < 2) return;
     var r = canvas.getBoundingClientRect();
     var a = { x: it[0].clientX - r.left, y: it[0].clientY - r.top };
@@ -832,7 +898,7 @@
 
   function onPointerUp(e) {
     pointers.delete(e.pointerId);
-    if (pointers.size < 2) lastPinch = 0;
+    if (touchCount() < 2) lastPinch = 0;
 
     if (drag) {
       var mode = drag.mode;

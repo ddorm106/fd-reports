@@ -1,24 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
 <title>Pre-Fire Plan: Site Plan</title>
 <link rel="stylesheet" href="styles-preplan.css">
-<script src="preplan-storage.js"></script>
-<script src="preplan-cloud.js"></script>
-<script src="preplan-iso.js"></script>
-<script src="preplan-reset.js"></script>
-<script src="preplan-flow.js"></script>
-<script src="preplan-layout.js"></script>
-<script src="preplan-sitemap.js?v=3"></script>
-<style>
-#legacySite{margin-top:18px;border:1px solid var(--slate-300);border-radius:var(--radius-md);padding:12px;background:var(--slate-50)}
-#legacySite img{max-width:240px;border-radius:6px;border:1px solid var(--slate-300);display:block;margin:8px 0}
-</style>
-  <link rel="stylesheet" href="preplan-layout.css">
+<link rel="stylesheet" href="fp2.css">
+<link rel="stylesheet" href="preplan-layout.css">
 </head>
-<body>
-<div class="page-wrapper">
+<body class="fp-full sm-full">
+
+<!-- Kept in the DOM for the shared scripts (preplan-flow rewrites
+     .nav-buttons), parked off screen. The map is the page. -->
+<div class="page-wrapper fp-formchrome">
     <div class="container">
         <header class="report-header">
             <div class="header-top">
@@ -29,34 +23,101 @@
         <div class="progress-indicator">Page 10 of 12: Site Plan</div>
         <div class="progress-bar-container"><div class="progress-bar" style="width:83.33%"></div></div>
 
-        <!-- The site map builds itself in here. It replaced the upload-a-screenshot
-             box: markers on a screengrab have no coordinates and cannot be checked
-             against anything. -->
+        <!-- preplan-sitemap.js builds itself in here; sm-shell.js then moves the
+             pieces into the full-screen shell below. -->
         <div id="siteMapHost"></div>
 
-        <!-- Only shown when a plan still carries an aerial from the old page. -->
-        <div id="legacySite" class="hidden">
-            <div style="font-weight:700;color:var(--navy-blue)">Aerial from the old site plan page</div>
-            <div style="font-size:0.85rem;color:var(--slate-500)">Kept so nothing is lost. The site map above is
-                what the report uses now; this only prints if no site map has been made.</div>
-            <img id="legacySiteImg" alt="Previous site plan">
-            <button type="button" class="btn-secondary" onclick="dropLegacy()">Remove it</button>
-        </div>
-
         <div class="nav-buttons">
-            <button type="button" class="btn-secondary" onclick="leave('page9-hazardous-materials.html')">← Previous</button>
-            <button type="button" class="btn-primary" onclick="leave('page11-floor-plan.html')">Next →</button>
+            <button type="button" class="btn-primary" onclick="smLeave('page11-floor-plan.html')">Next →</button>
         </div>
     </div>
 </div>
-<footer>
-    <img src="images/city-logo.png" alt="City of Centerville" class="city-logo">
-    <p>© 2026 City of Centerville Fire Department</p>
-</footer>
+
+<!-- ======================= the shell ======================= -->
+<div class="fpx" id="fpx">
+
+  <div class="fpx-top">
+    <button class="fpx-icon" id="fpx-back" title="Back to Hazardous Materials">←</button>
+
+    <div class="fpx-floorbtn" id="sm-title" style="cursor:default">
+      <span class="nm" id="fpx-planname">Site Plan</span>
+      <span class="fl" id="sm-sub">Page 10 of 12</span>
+    </div>
+
+    <div class="fpx-stat" id="sm-stat"></div>
+
+    <div class="fpx-spacer"></div>
+
+    <button class="fpx-btn" id="sm-satellite" title="Satellite or street map">🛰 Satellite</button>
+    <button class="fpx-btn" id="sm-hydrants" title="Show or hide hydrants">🚰 Hydrants</button>
+    <button class="fpx-icon" id="fpx-more" title="More">⋯</button>
+    <button class="fpx-btn primary" id="fpx-next" title="Go to the Floor Plan">Next →</button>
+  </div>
+
+  <div class="fpx-body">
+
+    <div class="fpx-rail" id="tool-rail">
+      <button class="fpx-tool active" id="sm-place"><i>📍</i><b>Place</b></button>
+      <button class="fpx-tool" id="sm-centre"><i>⌖</i><b>Centre</b></button>
+      <button class="fpx-tool" id="sm-fit"><i>⤢</i><b>Fit</b></button>
+    </div>
+
+    <div class="fp-stage" id="stage">
+      <div id="sm-mapslot"></div>
+      <div class="fpx-marker-chip hidden" id="sm-picked"></div>
+    </div>
+  </div>
+
+  <div class="fpx-hint" id="sm-hintslot"></div>
+</div>
+
+<!-- ------------- marker drawer: what you are about to place -------------- -->
+<div class="fpx-drawer" id="palette-drawer">
+  <div class="fpx-drawer-head">
+    <span class="title">Place a marker</span>
+    <button class="fpx-icon" id="palette-close">✕</button>
+  </div>
+  <div class="fpx-drawer-note">Pick one, then tap the map where it is.
+    Tap a marker already on the map to remove it.</div>
+  <div id="sm-palslot"></div>
+</div>
+
+<!-- ----------------------------- more menu -------------------------------- -->
+<div class="fpx-menu hidden" id="more-menu">
+  <div class="fpx-menu-head">Map</div>
+  <button class="fpx-menu-item" id="mm-centre">Centre on the building</button>
+  <button class="fpx-menu-item" id="mm-fit">Fit everything</button>
+  <div class="fpx-menu-head">View</div>
+  <button class="fpx-menu-item" id="mm-steps">All 12 pages</button>
+  <button class="fpx-menu-item" id="mm-legacy">Old uploaded aerial<small>Only if this plan still carries one</small></button>
+</div>
+
+<div class="fpx-scrim hidden" id="fpx-scrim"></div>
+
+<!-- Shown only when a plan still carries an aerial from the old page. -->
+<div id="legacySite" class="hidden">
+    <div class="ls-head">Aerial from the old site plan page</div>
+    <div class="ls-note">Kept so nothing is lost. The map above is what the report uses now;
+        this only prints if no site map has been made.</div>
+    <img id="legacySiteImg" alt="Previous site plan">
+    <button type="button" class="fp-tbtn sm danger" onclick="dropLegacy()">Remove it</button>
+</div>
+
+<div class="fp-toast" id="toast"></div>
+
+<script src="preplan-storage.js"></script>
+<script src="preplan-cloud.js"></script>
+<script src="preplan-iso.js"></script>
+<script src="preplan-reset.js"></script>
+<script src="preplan-flow.js"></script>
+<script src="preplan-layout.js"></script>
+<script src="preplan-sitemap.js?v=3"></script>
+<script src="sm-shell.js"></script>
+
 <script>
-// Leaving the page composes the map one last time, so what is on screen is what
-// the report carries. It is async, so give it a moment before navigating.
-function leave(href){
+// Leaving composes the map one last time, so what is on screen is what the
+// report carries. It is async, so give it a moment before navigating.
+function smLeave(href){
     try{
         if(window.PreplanSiteMap&&window.PreplanSiteMap.render){
             window.PreplanSiteMap.render().then(function(){location.href=href})
@@ -71,7 +132,7 @@ function leave(href){
     var d={};try{d=JSON.parse(localStorage.getItem('preFirePlan')||'{}')}catch(e){}
     if(d.site_plan_image){
         document.getElementById('legacySiteImg').src=d.site_plan_image;
-        document.getElementById('legacySite').classList.remove('hidden');
+        document.body.classList.add('has-legacy');
     }
 })();
 function dropLegacy(){
@@ -82,6 +143,7 @@ function dropLegacy(){
         localStorage.setItem('preFirePlan',JSON.stringify(d));
     }catch(e){}
     document.getElementById('legacySite').classList.add('hidden');
+    document.body.classList.remove('has-legacy','show-legacy');
 }
 </script>
 </body>
