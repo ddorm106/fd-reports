@@ -423,6 +423,53 @@
   }
 
 
+
+  /* The catalog's door and window symbols predate the Door and Window tools.
+   * Placing a picture of a door beside a real one that sits IN the wall, moves
+   * with it and prints its swing is a trap — two things that look the same and
+   * are not. They come out of the palettes.
+   *
+   * They stay in byId, because plans already exist that placed them and a
+   * missing definition would draw a bare pin where a door used to be. Palettes
+   * are built from .all; drawing goes through .byId. */
+  var SUPERSEDED = ['door-l', 'door-r', 'door-d', 'door-roll', 'door-slide',
+                    'door-pocket', 'door-bifold', 'door-revolve',
+                    'win-3', 'win-4', 'win-6'];
+
+  function retireSupersededSymbols() {
+    if (!SYMBOLS || !SYMBOLS.all) return 0;
+    var drop = {}, n = 0;
+    SUPERSEDED.forEach(function (id) { drop[id] = 1; });
+    for (var i = SYMBOLS.all.length - 1; i >= 0; i--) {
+      if (drop[SYMBOLS.all[i].id]) { SYMBOLS.all.splice(i, 1); n++; }
+    }
+    return n;
+  }
+
+  /* Drafted line-art by default, matching the doors and windows the editor
+   * draws. Stored on the plan rather than the device, so the drawing and its
+   * printed copy always agree. */
+  function symbolStyle() {
+    return (doc && doc.data.sheet && doc.data.sheet.symbol_style) || 'draft';
+  }
+
+  function applySymbolStyle() {
+    if (!window.FPDraft || !SYMBOLS) return;
+    if (symbolStyle() === 'draft') FPDraft.applyTo(SYMBOLS);
+    else FPDraft.revert(SYMBOLS);
+  }
+
+  function toggleSymbolStyle() {
+    if (!doc) return symbolStyle();
+    doc.data.sheet = doc.data.sheet || {};
+    doc.data.sheet.symbol_style = (symbolStyle() === 'draft') ? 'colour' : 'draft';
+    applySymbolStyle();
+    saveSoon();
+    draw();
+    showToast(symbolStyle() === 'draft' ? 'Drafted symbols' : 'Original coloured symbols', 'ok');
+    return symbolStyle();
+  }
+
   /* ===================================================== symbol generator */
 
   /* Put saved custom symbols into the catalog before anything renders a
@@ -1550,10 +1597,49 @@
       field('Size', el.size || 14, function (v) { var n = parseFloat(v); if (n > 0) el.size = n; }, 'number');
     } else if (hit.kind === 'symbol') {
       var def = SYMBOLS.byId[el.symbolId];
-      sub = (def && def.label) || el.symbolId;
+      sub = (el.spec && el.spec.label) || (def && def.label) || el.symbolId;
       field('Label', el.label, function (v) { el.label = v; });
       field('Note', el.note, function (v) { el.note = v; });
       field('Rotation (°)', el.angle || 0, function (v) { el.angle = parseFloat(v) || 0; }, 'number');
+
+      /* Size. A symbol is placed at one nominal size, but a walk-in cooler and
+       * a smoke detector are not the same size on a real building, and a
+       * generated symbol has no way of knowing the scale of the plan it lands
+       * on. Live slider, because you size this by eye against the walls. */
+      var sizeLabel = document.createElement('label');
+      sizeLabel.className = 'fld';
+      var pct = Math.round((el.scale || 1) * 100);
+      sizeLabel.textContent = 'Size — ' + pct + '%';
+      var slider = document.createElement('input');
+      slider.type = 'range';
+      slider.min = '25'; slider.max = '400'; slider.step = '5';
+      slider.value = String(pct);
+      slider.style.width = '100%';
+      var pushed = false;
+      slider.addEventListener('input', function () {
+        /* One undo step for the whole drag, not one per pixel of travel. */
+        if (!pushed) { doc.pushUndo(); pushed = true; }
+        el.scale = parseInt(slider.value, 10) / 100;
+        sizeLabel.textContent = 'Size — ' + slider.value + '%';
+        draw();
+      });
+      slider.addEventListener('change', function () {
+        pushed = false;
+        commit();
+      });
+      body.appendChild(sizeLabel);
+      body.appendChild(slider);
+
+      var reset = document.createElement('button');
+      reset.className = 'fp-tbtn sm';
+      reset.textContent = 'Reset size';
+      reset.addEventListener('click', function () {
+        doc.pushUndo();
+        el.scale = 1;
+        commit();
+        showEditPanel(hit);
+      });
+      body.appendChild(reset);
     } else if (hit.kind === 'object') {
       sub = el.label || el.type || 'Object';
       field('Label', el.label, function (v) { el.label = v; });
@@ -1900,6 +1986,8 @@
     showEditPanel: showEditPanel,
     /* v5 additions, for anything that wants them later. */
     doc: function () { return doc; },
+    symbolStyle: symbolStyle,
+    toggleSymbolStyle: toggleSymbolStyle,
     renderer: function () { return renderer; },
     get tool() { return state.tool; },
     set tool(t) { setTool(t); }
@@ -1964,6 +2052,8 @@
     });
 
     registerCustomSymbols();
+    retireSupersededSymbols();
+    applySymbolStyle();
     initLayers();
     buildPalette();
     initSymbolGenerator();

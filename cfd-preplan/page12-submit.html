@@ -99,6 +99,7 @@
 <div class="toast-container" id="toast-container"></div>
 <script src="fp2-symbols.js"></script>
 <script src="fp2-symgen.js"></script>
+<script src="fp2-draft.js"></script>
 <script src="preplan-storage.js"></script>
 <script src="preplan-common.js"></script>
 <script src="preplan-cloud.js"></script>
@@ -417,6 +418,14 @@ function fpEachFloor(fp){
 }
 
 function renderV4Floorplan(d,pdfW,pdfH){
+    /* Match the editor's symbol style, so the printed plan is the drawing the
+       crew approved and not a differently-styled cousin of it. */
+    try{
+        if(window.FPDraft && window.FP_SYMBOLS){
+            var st=(d.sheet && d.sheet.symbol_style) || 'draft';
+            if(st==='draft') FPDraft.applyTo(window.FP_SYMBOLS); else FPDraft.revert(window.FP_SYMBOLS);
+        }
+    }catch(e){}
     var cw=d.canvas_width||1000, ch=d.canvas_height||700;
     var el=document.createElement('canvas'); el.width=pdfW; el.height=pdfH;
     var ctx=el.getContext('2d');

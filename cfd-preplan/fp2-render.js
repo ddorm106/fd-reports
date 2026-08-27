@@ -1332,7 +1332,13 @@ function drawFreehand(f, sel) {
       for (i = (d.symbols || []).length - 1; i >= 0; i--) {
         var s = d.symbols[i];
         var def = SYMBOLS.byId[s.symbolId];
-        var rr = def ? Math.max(def.w, def.h) * 0.6 * (s.scale || 1) : 14;
+        /* A generated symbol carries its own box; a placed one may reference an
+         * id this device has never registered, so the spec is the better
+         * source. Both are scaled, or a resized symbol could not be grabbed
+         * where it is actually drawn. */
+        var box = s.spec ? Math.max(s.spec.w || 32, s.spec.h || 32)
+                         : (def ? Math.max(def.w, def.h) : 24);
+        var rr = box * 0.6 * (s.scale || 1);
         if (near(s, Math.max(rr, tol))) return { kind: 'symbol', index: i };
       }
       for (i = (d.doors || []).length - 1; i >= 0; i--) {
