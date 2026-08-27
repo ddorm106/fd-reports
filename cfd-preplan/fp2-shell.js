@@ -162,6 +162,17 @@
       body.classList.toggle('show-sheets');
       this.classList.toggle('active', body.classList.contains('show-sheets'));
     });
+    var ss = $('mm-symstyle');
+    if (ss) {
+      var mark = function () {
+        ss.classList.toggle('active', !window.FP || !FP.symbolStyle || FP.symbolStyle() === 'draft');
+      };
+      mark();
+      ss.addEventListener('click', function () {
+        if (window.FP && FP.toggleSymbolStyle) FP.toggleSymbolStyle();
+        mark();
+      });
+    }
     $('mm-minimap').addEventListener('click', function () {
       $('fpx').classList.toggle('show-minimap');
       this.classList.toggle('active', $('fpx').classList.contains('show-minimap'));
