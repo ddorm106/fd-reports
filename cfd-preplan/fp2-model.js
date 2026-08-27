@@ -349,6 +349,8 @@
     var d = doc.data, f = doc.floor();
     LEGACY_LISTS.forEach(function (k) { d[k] = f[k] || []; });
     d.zones = f.zones || [];
+    /* Side labels are fireground designations — the PDF needs them too. */
+    d.sides = f.sides || [];
     return d;
   }
 

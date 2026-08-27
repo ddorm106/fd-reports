@@ -609,6 +609,24 @@ function renderV4Floorplan(d,pdfW,pdfH){
     // title block, but the PDF is what actually reaches the incident commander,
     // so it needs them too — a floor plan with no scale and no north is a
     // picture, not a document you can work off.
+    /* Fireground side designations. These were carried into the per-floor data
+       but never drawn, so A/B/C/D existed in the editor and were simply absent
+       from the copy the IC works off — which is the copy that decides which
+       side a crew is told to go to. */
+    (d.sides||[]).forEach(function(sd){
+        if(typeof sd.x!=='number') return;
+        var t='SIDE '+(sd.label||'?');
+        ctx.font='bold 13px "Source Sans Pro",system-ui';
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        var tw=ctx.measureText(t).width;
+        ctx.fillStyle='rgba(255,255,255,0.88)';
+        ctx.fillRect(sd.x-tw/2-5, sd.y-10, tw+10, 20);
+        ctx.strokeStyle='rgba(185,28,28,0.35)'; ctx.lineWidth=1/scale;
+        ctx.strokeRect(sd.x-tw/2-5, sd.y-10, tw+10, 20);
+        ctx.fillStyle='#b91c1c';
+        ctx.fillText(t, sd.x, sd.y);
+    });
+
     // Zone names and areas, over the geometry so a wall cannot cross the text.
     (d.zones||[]).forEach(function(z){
         if(!z.poly||z.poly.length<3) return;

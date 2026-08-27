@@ -585,15 +585,11 @@ function drawSides(sides){
   // First time (or old saved plan with none): seed 4 movable labels from the
   // floor-plan bounds and STORE them in state.data.sides so they can be dragged
   // and are saved. A=front(bottom), B=left, C=rear(top), D=right — drag to taste.
-  if((!sides || !sides.length) && state.data){
-    var ws=state.data.walls||[]; if(!ws.length) return;
-    var minX=1e9,minY=1e9,maxX=-1e9,maxY=-1e9;
-    ws.forEach(function(w){ if(typeof w.x1!=='number')return; minX=Math.min(minX,w.x1,w.x2); maxX=Math.max(maxX,w.x1,w.x2); minY=Math.min(minY,w.y1,w.y2); maxY=Math.max(maxY,w.y1,w.y2); });
-    if(minX>maxX) return;
-    var cx=(minX+maxX)/2, cy=(minY+maxY)/2, pad=22;
-    state.data.sides=[{label:'A',x:cx,y:maxY+pad},{label:'B',x:minX-pad,y:cy},{label:'C',x:cx,y:minY-pad},{label:'D',x:maxX+pad,y:cy}];
-    sides=state.data.sides;
-  }
+  /* Seeding used to happen HERE, writing to state.data.sides. In v5 state.data
+   * is a view model rebuilt every frame, so the labels were re-seeded on every
+   * draw and never persisted — which is also why dragging one could not stick.
+   * Seeding now lives in the controller (ensureSides) and writes to the floor.
+   * A draw function must not mutate the document. */
   if(!sides || !sides.length) return;
   var selSide = (state.selected && state.selected.kind==='side') ? state.selected.index : -1;
   ctx.save(); ctx.font='bold 13px system-ui,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
@@ -1384,6 +1380,16 @@ function drawFreehand(f, sel) {
           }
         }
       }
+      /* Fireground side labels. Drawn in plan units at a fixed 13px font, so
+       * the box is about 46 x 20 around the anchor. */
+      for (i = (d.sides || []).length - 1; i >= 0; i--) {
+        var sd = d.sides[i];
+        if (typeof sd.x !== 'number') continue;
+        if (Math.abs(p.x - sd.x) <= 30 && Math.abs(p.y - sd.y) <= 12) {
+          return { kind: 'side', index: i };
+        }
+      }
+
       /* Zones last: they are large, so anything on top of one wins. */
       for (i = (d.zones || []).length - 1; i >= 0; i--) {
         var z = d.zones[i];

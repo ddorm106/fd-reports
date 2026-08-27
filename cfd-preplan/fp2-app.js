@@ -291,6 +291,7 @@
       btn.addEventListener('click', function () {
         if (f.id === doc.data.active_floor) return;
         doc.setActiveFloor(f.id);
+        ensureSides();
         state.selected = null;
         hideEditPanel();
         syncUnderlayPanel();
@@ -546,6 +547,34 @@
       if (window.FPShell) FPShell.closeDrawer();
       showToast('Tap the plan to place “' + def.label + '”', 'ok');
     });
+  }
+
+
+  /* Fireground side designations. A is the address side, then B/C/D clockwise.
+   * Seeded from the wall bounds the first time a floor has geometry, and stored
+   * ON THE FLOOR so they persist and can be dragged — the renderer used to seed
+   * them into a per-frame view model, which is why they never stayed put. */
+  function ensureSides() {
+    if (!doc) return false;
+    var f = doc.floor();
+    if (Array.isArray(f.sides) && f.sides.length) return false;
+    var ws = f.walls || [];
+    if (!ws.length) return false;
+    var minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
+    ws.forEach(function (w) {
+      if (typeof w.x1 !== 'number') return;
+      minX = Math.min(minX, w.x1, w.x2); maxX = Math.max(maxX, w.x1, w.x2);
+      minY = Math.min(minY, w.y1, w.y2); maxY = Math.max(maxY, w.y1, w.y2);
+    });
+    if (minX > maxX) return false;
+    var cx = (minX + maxX) / 2, cy = (minY + maxY) / 2, pad = 26;
+    f.sides = [
+      { label: 'A', x: cx, y: maxY + pad },
+      { label: 'B', x: minX - pad, y: cy },
+      { label: 'C', x: cx, y: minY - pad },
+      { label: 'D', x: maxX + pad, y: cy }
+    ];
+    return true;
   }
 
   /* ================================================================ tools */
@@ -1412,6 +1441,7 @@
      * stale set from whatever was loaded before. */
     doc.data.layers = Object.assign({}, M.DEFAULT_LAYERS, doc.data.layers || {});
     state.selected = null;
+    ensureSides();
     hideEmpty();
     renderFloors(); updateCounts(); updateAreaBar(); updateMeta(); syncUnderlayPanel();
     renderer.fitToView();
@@ -1683,6 +1713,27 @@
       field('Depth (ft)', Math.round(G.pxToFeet(el.depth || 24, scale) * 100) / 100,
         function (v) { var n = parseFloat(v); if (n > 0) el.depth = n * scale; }, 'number');
       field('Rotation (°)', el.angle || 0, function (v) { el.angle = parseFloat(v) || 0; }, 'number');
+    } else if (hit.kind === 'side') {
+      sub = 'Fireground side — drag to reposition';
+      var sideSel = document.createElement('select');
+      ['A', 'B', 'C', 'D'].forEach(function (L) {
+        var o = document.createElement('option');
+        o.value = L;
+        o.textContent = 'Side ' + L + (L === 'A' ? ' (address side)' : '');
+        if ((el.label || 'A') === L) o.selected = true;
+        sideSel.appendChild(o);
+      });
+      sideSel.addEventListener('change', function () {
+        doc.pushUndo(); el.label = sideSel.value; commit();
+      });
+      var sl = document.createElement('label');
+      sl.className = 'fld'; sl.textContent = 'Which side';
+      body.appendChild(sl); body.appendChild(sideSel);
+      var note = document.createElement('div');
+      note.className = 'hint';
+      note.textContent = 'A is the address side; B, C and D follow clockwise. ' +
+        'These print on the report.';
+      body.appendChild(note);
     } else if (hit.kind === 'measurement') {
       sub = G.formatFeet(G.pxToFeet(G.dist(el.x1, el.y1, el.x2, el.y2), scale));
       field('Label', el.label, function (v) { el.label = v; });
@@ -2134,6 +2185,7 @@
     window.addEventListener('resize', resize);
     resize();
 
+    if (ensureSides()) saveSoon();
     renderFloors();
     updateCounts();
     updateAreaBar();
