@@ -271,6 +271,7 @@
         source_type: mtid || '',
         x: tx(m.x), y: ty(m.y),
         angle: num(m.rotation) || 0,
+        scale: num(m.scale) || 1,
         note: m.note || '', label: m.label || m.markerName || m.marker_name || ''
       };
       /* An AI-generated symbol placed on the iPad carries its own drawing —
