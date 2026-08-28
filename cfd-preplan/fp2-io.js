@@ -262,14 +262,22 @@
        * found live 2026-08-28 with a test import, not by a report, because the
        * symbol still LOOKED placed. */
       var mtid = m.markerTypeId || m.marker_type_id;
-      out.symbols.push({
+      var sym = {
         id: uid('s_'),
         symbolId: symbolIdFor(mtid),
         source_type: mtid || '',
         x: tx(m.x), y: ty(m.y),
         angle: num(m.rotation) || 0,
         note: m.note || '', label: m.label || m.markerName || m.marker_name || ''
-      });
+      };
+      /* An AI-generated symbol placed on the iPad carries its own drawing —
+       * the spec exists nowhere else. With it attached, the renderer and the
+       * PDF draw the real artwork instead of a labelled pin. */
+      if (m.spec && typeof m.spec === 'object' && Array.isArray(m.spec.shapes)) {
+        sym.spec = m.spec;
+        sym.symbolId = 'custom';
+      }
+      out.symbols.push(sym);
     });
 
     (scan.textAnnotations || []).forEach(function (t) {
