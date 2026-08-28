@@ -255,13 +255,20 @@
      * These were dropped entirely by the v4 importer. */
     (scan.markers || []).forEach(function (m) {
       if (num(m.x) === null) return;
+      /* Two spellings reach this loop. The app posts camelCase; both servers
+       * store snake_case and Peach's NAS returns its rows verbatim, so a scan
+       * loaded on Peach arrives as marker_type_id. Reading only the camelCase
+       * form sent every Peach FDC, riser and shutoff to the generic note pin —
+       * found live 2026-08-28 with a test import, not by a report, because the
+       * symbol still LOOKED placed. */
+      var mtid = m.markerTypeId || m.marker_type_id;
       out.symbols.push({
         id: uid('s_'),
-        symbolId: symbolIdFor(m.markerTypeId),
-        source_type: m.markerTypeId || '',
+        symbolId: symbolIdFor(mtid),
+        source_type: mtid || '',
         x: tx(m.x), y: ty(m.y),
         angle: num(m.rotation) || 0,
-        note: m.note || '', label: m.label || ''
+        note: m.note || '', label: m.label || m.markerName || m.marker_name || ''
       });
     });
 
