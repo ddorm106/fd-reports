@@ -550,12 +550,9 @@ function drawObject(o, sel) {
     ctx.fillStyle = 'rgba(251,191,36,0.42)'; ctx.strokeStyle = COL.selection;
     ctx.lineWidth = 2 / state.view.zoom;
     ctx.fillRect(-w/2, -dp/2, w, dp); ctx.strokeRect(-w/2, -dp/2, w, dp);
-  } else {
-    ctx.fillStyle = 'rgba(148,163,184,0.10)';
-    ctx.strokeStyle = '#94a3b8';
-    ctx.lineWidth = 1 / state.view.zoom;
-    ctx.fillRect(-w/2, -dp/2, w, dp); ctx.strokeRect(-w/2, -dp/2, w, dp);
   }
+  // No footprint either — words only, per the operator. The selection box
+  // above still appears when an object is tapped, so it can be deleted.
   // Label (upright)
   var objWord = o.label || (o.category || '').replace(/_/g, ' ');
   if (objWord && state.view.zoom > 0.25) {
