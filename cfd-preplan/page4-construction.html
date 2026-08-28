@@ -11,18 +11,21 @@
 .mat-grid{display:flex;flex-wrap:wrap;gap:6px}
 .mat-btn{background:#f0f0f0;border:2px solid #ddd;border-radius:6px;padding:7px 12px;cursor:pointer;transition:all .15s;font-size:12px;font-weight:600;color:#444;text-align:center;line-height:1.3;user-select:none}
 .mat-btn:hover{border-color:#c0392b;background:#fff}
-.mat-btn.selected{border-color:#c0392b;background:#fdf2f0;color:#c0392b;box-shadow:0 0 0 1px #c0392b}
+/* Unselected buttons all look the same -- plain. The hazard only speaks up once
+   the material is actually chosen, which is when it matters. Amber was dropped
+   because next to the selection red it read as the same colour: blue and red
+   are told apart at a glance and in peripheral vision. Plain selection is slate
+   so that red means one thing on this page -- collapse risk -- and nothing else. */
+.mat-btn.selected{border-color:#334155;background:#eef2f7;color:#1f2937;box-shadow:0 0 0 1px #334155}
 .mat-btn .mat-detail{font-weight:400;font-size:10px;color:#888;display:block;margin-top:1px}
-.mat-btn.selected .mat-detail{color:#c0392b}
-.mat-btn.warn{border-color:#e67e22;border-style:dashed}
-.mat-btn.warn .mat-detail{color:#b5651d}
-.mat-btn.warn.selected{border-color:#e67e22;border-style:solid;background:#fef5ec;color:#e67e22;box-shadow:0 0 0 1px #e67e22}
-.mat-btn.danger{border-color:#c0392b;border-style:dashed}
-.mat-btn.danger .mat-detail{color:#a33326}
-.mat-btn.danger.selected{border-color:#c0392b;border-style:solid;background:#fdf2f0;color:#c0392b;box-shadow:0 0 0 1px #c0392b}
+.mat-btn.selected .mat-detail{color:#475569}
+.mat-btn.warn.selected{border-color:#1d4ed8;border-style:dashed;background:#eff4ff;color:#1d4ed8;box-shadow:0 0 0 1px #1d4ed8}
+.mat-btn.warn.selected .mat-detail{color:#1d4ed8}
+.mat-btn.danger.selected{border-color:#b91c1c;border-style:dashed;background:#fdf0f0;color:#b91c1c;box-shadow:0 0 0 1px #b91c1c}
+.mat-btn.danger.selected .mat-detail{color:#b91c1c}
 .mat-legend{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin:2px 0 10px;font-size:10.5px;color:#777}
-.mat-legend i{display:inline-block;width:14px;height:0;border-top:2px dashed #e67e22;margin-right:4px;vertical-align:middle}
-.mat-legend i.d{border-top-color:#c0392b}
+.mat-legend i{display:inline-block;width:14px;height:0;border-top:2px dashed #1d4ed8;margin-right:4px;vertical-align:middle}
+.mat-legend i.d{border-top-color:#b91c1c}
 .mat-other-wrap{display:flex;gap:6px;align-items:center;margin-top:8px}
 .mat-other-wrap input{flex:1;padding:6px 10px;border:1px solid #ddd;border-radius:6px;font-size:12px}
 .mat-other-wrap .mat-other-label{font-size:11px;color:#888;white-space:nowrap}
@@ -335,10 +338,9 @@ function buildMatGrid(gridId, items, hiddenId, multi) {
     html += '<div class="mat-btn" data-val="Other" onclick="pickMat(this,\'' + hiddenId + '\',' + (multi ? 'true' : 'false') + ')">Other<span class="mat-detail">Specify below</span></div>';
     grid.innerHTML = html;
 
-    /* Say what the coloured outlines mean. A DASHED amber or red edge marks a
-     * collapse-risk material that has not been chosen; a SOLID edge with a tint
-     * is the one that is. Before this both states were drawn with the same
-     * solid coloured border, so an unpicked hazard button read as picked. */
+    /* Say what the coloured outlines mean. Nothing is marked until it is
+     * chosen; a chosen material then goes blue if it is engineered or
+     * combustible and red if it is a collapse risk. */
     var hasWarn = items.some(function (m) { return m.cls === 'warn'; });
     var hasDanger = items.some(function (m) { return m.cls === 'danger'; });
     var prev = grid.parentElement.querySelector('.mat-legend');
@@ -349,7 +351,7 @@ function buildMatGrid(gridId, items, hiddenId, multi) {
         var bits = [];
         if (hasWarn) bits.push('<span><i></i>engineered / combustible</span>');
         if (hasDanger) bits.push('<span><i class="d"></i>collapse risk</span>');
-        bits.push('<span>dashed outline = not selected</span>');
+        bits.push('<span>shown once selected</span>');
         leg.innerHTML = bits.join('');
         grid.parentElement.insertBefore(leg, grid.nextSibling);
     }
