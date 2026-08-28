@@ -214,6 +214,9 @@
        * the raw string meant every imported door drew with the default swing,
        * silently discarding what the crew recorded on scene. */
       if (e.swingDirection) o.swing = /out/i.test(e.swingDirection) ? -1 : 1;
+      /* Which end holds the hinge — the app records it per door now, and the
+       * renderer already draws hinge:'end' doors mirrored. */
+      if (e.hingeSide) o.hinge = /end/i.test(e.hingeSide) ? 'end' : 'start';
       /* Prefer the app's hosting; fall back to solving it geometrically. */
       var mapped = e.wallId ? idMap[String(e.wallId)] : null;
       if (mapped) {
