@@ -537,47 +537,33 @@ function drawObject(o, sel) {
   if (o.category === 'text') { drawObjText(o, sel); return; }
   var cat = OBJ_CAT[o.category] || { c:'#777', g:'' };
   var w = o.width || 20, dp = o.depth || 20;
-  var g = cat.g;
   ctx.save();
   ctx.translate(o.x, o.y); ctx.rotate(degToRad(o.angle || 0));
-  var symId = OBJ_SYM[o.category];
-  var hasArt = symId && SYMBOLS.byId[symId];
-  // Box only for selection, or for objects with neither vector art nor a glyph.
+  // Scanned furniture draws as a quiet footprint and a WORD, never as an
+  // illustration. The kitchen ground-truth run settled this: RoomPlan's
+  // geometry is tape-grade, its identification is a guess — and a chair
+  // glyph where a prep table stands reads as fact on a pre-plan. The
+  // footprint keeps the trustworthy part (where the mass is, how big);
+  // the label says what the scanner THINKS it is. Symbols stay reserved
+  // for what a firefighter placed on purpose.
   if (sel) {
     ctx.fillStyle = 'rgba(251,191,36,0.42)'; ctx.strokeStyle = COL.selection;
     ctx.lineWidth = 2 / state.view.zoom;
     ctx.fillRect(-w/2, -dp/2, w, dp); ctx.strokeRect(-w/2, -dp/2, w, dp);
-  } else if (!hasArt && !g) {
-    ctx.fillStyle = hexA(cat.c, 0.12); ctx.strokeStyle = cat.c;
-    ctx.lineWidth = 1.2 / state.view.zoom;
+  } else {
+    ctx.fillStyle = 'rgba(148,163,184,0.10)';
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 1 / state.view.zoom;
     ctx.fillRect(-w/2, -dp/2, w, dp); ctx.strokeRect(-w/2, -dp/2, w, dp);
   }
-  // Symbol — prefer page 11's built-in vector art (clean, like the app); else glyph/emoji.
-  if (hasArt && Math.min(w, dp) >= 6 && state.view.zoom > 0.12) {
-    var def = SYMBOLS.byId[symId];
-    var fit = Math.min(w / def.w, dp / def.h);
-    ctx.save(); ctx.scale(fit, fit); try { def.draw(ctx, def.w, def.h); } catch(e){} ctx.restore();
-  } else {
-    var sz = Math.min(w, dp) * 0.6;
-    if (g && sz >= 8 && state.view.zoom > 0.2) {
-      if (g.charAt(0) === '@') {
-        drawObjGlyph(g.slice(1), w, dp, cat.c);
-      } else {
-        ctx.save();
-        ctx.rotate(-degToRad(o.angle || 0)); ctx.rotate(-degToRad(state.view.rotation));
-        ctx.font = sz + 'px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle';
-        ctx.fillText(g, 0, 0);
-        ctx.restore();
-      }
-    }
-  }
   // Label (upright)
-  if (o.label && state.view.zoom > 0.25) {
+  var objWord = o.label || (o.category || '').replace(/_/g, ' ');
+  if (objWord && state.view.zoom > 0.25) {
     ctx.rotate(-degToRad(o.angle || 0)); ctx.rotate(-degToRad(state.view.rotation));
     ctx.fillStyle = sel ? '#78350f' : '#374151';
     ctx.font = (10 / state.view.zoom) + 'px "Source Sans Pro", system-ui';
     ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-    ctx.fillText(o.label, 0, dp/2 + 2);
+    ctx.fillText(objWord, 0, dp/2 + 2);
   }
   ctx.restore();
 }

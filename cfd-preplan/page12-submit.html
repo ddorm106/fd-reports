@@ -452,12 +452,16 @@ function renderV4Floorplan(d,pdfW,pdfH){
 
     (d.objects||[]).forEach(function(o){
         ctx.save(); ctx.translate(o.x,o.y); ctx.rotate((o.angle||0)*Math.PI/180);
-        ctx.fillStyle='rgba(124,58,237,0.18)'; ctx.strokeStyle='#7c3aed'; ctx.lineWidth=1/scale;
+        /* Scanned furniture: quiet footprint + WORD, matching the editor.
+         * The geometry is measured; the identity is a guess and reads best
+         * as one. */
+        ctx.fillStyle='rgba(148,163,184,0.10)'; ctx.strokeStyle='#94a3b8'; ctx.lineWidth=1/scale;
         ctx.fillRect(-o.width/2,-o.depth/2,o.width,o.depth);
         ctx.strokeRect(-o.width/2,-o.depth/2,o.width,o.depth);
-        if(o.label){ ctx.rotate(-(o.angle||0)*Math.PI/180);
-            ctx.fillStyle='#5b21b6'; ctx.font=(10/scale)+'px "Source Sans Pro",system-ui';
-            ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(o.label,0,0); }
+        var objWord=o.label||String(o.category||'').replace(/_/g,' ');
+        if(objWord){ ctx.rotate(-(o.angle||0)*Math.PI/180);
+            ctx.fillStyle='#374151'; ctx.font=(10/scale)+'px "Source Sans Pro",system-ui';
+            ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(objWord,0,0); }
         ctx.restore();
     });
     ctx.fillStyle='#2D2D2D';
