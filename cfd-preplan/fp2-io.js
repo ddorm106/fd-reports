@@ -365,11 +365,15 @@
     /* ai_features is the Worker's separate list of detected fire features. */
     if (Array.isArray(scan.ai_features)) {
       scan.ai_features.forEach(function (f) {
+        /* Prefer the real marker type id (the worker now sends it); the
+         * category is a last resort and was never a symbol - mapping on it
+         * turned every CFD marker into a generic pin wearing a label. */
+        var fid = f.type || f.marker_type_id || f.category;
         floorData.symbols.push({
-          id: uid('s_'), symbolId: symbolIdFor(f.category),
-          source_type: f.category || '',
+          id: uid('s_'), symbolId: symbolIdFor(fid),
+          source_type: fid || '',
           x: num(f.x) || 0, y: num(f.y) || 0, angle: 0,
-          note: f.note || '', label: f.name || ''
+          note: f.note || '', label: f.name || f.marker_name || ''
         });
       });
     }
