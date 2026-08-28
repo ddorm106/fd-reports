@@ -138,7 +138,21 @@
       scale_px_per_ft: layout.scale_px_per_ft || DEFAULT_SCALE,
       walls: (layout.walls || []).map(function (w) { return Object.assign({ id: uid('w_') }, w); }),
       doors: (layout.doors || []).map(function (d) { return Object.assign({ id: uid('d_') }, d); }),
-      windows: (layout.windows || []).map(function (w) { return Object.assign({ id: uid('n_') }, w); }),
+      windows: (layout.windows || []).map(function (w) {
+        var o = Object.assign({ id: uid('n_') }, w);
+        /* The worker ships layout windows as bare segments (x1..y2); the
+         * renderer draws a window from centre + width + angle, the shape
+         * doors already arrive in. Un-normalized, every window imported
+         * invisible — "the doors transferred but the windows did not". */
+        if (o.x == null && o.x1 != null && o.x2 != null) {
+          o.x = (o.x1 + o.x2) / 2;
+          o.y = (o.y1 + o.y2) / 2;
+          var dx = o.x2 - o.x1, dy = o.y2 - o.y1;
+          if (o.width == null) o.width = Math.sqrt(dx * dx + dy * dy);
+          if (o.angle == null) o.angle = Math.atan2(dy, dx) * 180 / Math.PI;
+        }
+        return o;
+      }),
       objects: (layout.objects || []).map(function (o) { return Object.assign({ id: uid('o_') }, o); }),
       measurements: (layout.measurements || []).map(function (m) { return Object.assign({ id: uid('m_') }, m); }),
       symbols: [], texts: [], freehand: [], zones: [],

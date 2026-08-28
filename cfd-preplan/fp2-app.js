@@ -1494,7 +1494,12 @@
         jobs.forEach(function (j) {
           var row = document.createElement('div');
           row.className = 'fp-imp-opt';
-          var when = j.created_at ? new Date(j.created_at) : null;
+          /* imported_at is when this scan was (re)sent; created_at is when
+           * it was first drawn. Showing the draw date made a re-send look
+           * like the stale scan — the operator resubmitted and read the list
+           * as "my update isn't here". */
+          var when = j.imported_at ? new Date(j.imported_at)
+                   : (j.created_at ? new Date(j.created_at) : null);
           row.innerHTML = '<b>' + escapeHTML(j.building_name || j.id) + '</b><span>' +
             (when && !isNaN(when) ? when.toLocaleString() : '') + '</span>';
           row.onclick = function () {
