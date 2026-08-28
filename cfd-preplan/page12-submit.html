@@ -474,11 +474,12 @@ function renderV4Floorplan(d,pdfW,pdfH){
         var half=(wn.width||30)/2;
         var p1x=wn.x-half*cosA, p1y=wn.y-half*sinA, p2x=wn.x+half*cosA, p2y=wn.y+half*sinA;
         var nx=-sinA*4, ny=cosA*4;
-        ctx.fillStyle='#C8E0F0';
+        ctx.fillStyle='#DCEBFA';
         ctx.beginPath(); ctx.moveTo(p1x+nx,p1y+ny); ctx.lineTo(p2x+nx,p2y+ny);
         ctx.lineTo(p2x-nx,p2y-ny); ctx.lineTo(p1x-nx,p1y-ny); ctx.closePath(); ctx.fill();
         [-2.4,0,2.4].forEach(function(off){
-            ctx.strokeStyle='#1E1E1E'; ctx.lineWidth=(off===0?1.5:0.75)/scale;
+            /* Blue, matching the editor — glass reads as glass on the print too. */
+            ctx.strokeStyle='#2563eb'; ctx.lineWidth=(off===0?1.5:0.75)/scale;
             ctx.beginPath();
             ctx.moveTo(p1x+(-sinA*off),p1y+(cosA*off));
             ctx.lineTo(p2x+(-sinA*off),p2y+(cosA*off));

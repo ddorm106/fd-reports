@@ -21,6 +21,10 @@
   var COL = {
     bg: '#F5F3EF', wall: '#2D2D2D', doorLeaf: '#1E1E1E', doorArc: '#555',
     window: '#C8E0F0', windowEdge: '#5A8CA8', selection: '#2563eb',
+    /* The drawing code reads windowLine/windowGap — which this palette never
+     * defined, so the canvas silently kept the previous style and windows
+     * drew in wall-black. Blue, by request: glass reads as glass. */
+    windowLine: '#2563eb', windowGap: '#DCEBFA',
     symbolRing: '#2563eb', text: '#475569', measure: '#eab308',
     freehand: '#0f172a', dim: '#64748b', guide: '#e11d48',
     zoneStroke: '#1d4ed8', gridLine: '#dfe5ea'
