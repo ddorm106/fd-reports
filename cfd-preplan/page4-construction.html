@@ -14,10 +14,15 @@
 .mat-btn.selected{border-color:#c0392b;background:#fdf2f0;color:#c0392b;box-shadow:0 0 0 1px #c0392b}
 .mat-btn .mat-detail{font-weight:400;font-size:10px;color:#888;display:block;margin-top:1px}
 .mat-btn.selected .mat-detail{color:#c0392b}
-.mat-btn.warn{border-color:#e67e22}
-.mat-btn.warn.selected{border-color:#e67e22;background:#fef5ec;color:#e67e22;box-shadow:0 0 0 1px #e67e22}
-.mat-btn.danger{border-color:#c0392b}
-.mat-btn.danger.selected{border-color:#c0392b;background:#fdf2f0;color:#c0392b;box-shadow:0 0 0 1px #c0392b}
+.mat-btn.warn{border-color:#e67e22;border-style:dashed}
+.mat-btn.warn .mat-detail{color:#b5651d}
+.mat-btn.warn.selected{border-color:#e67e22;border-style:solid;background:#fef5ec;color:#e67e22;box-shadow:0 0 0 1px #e67e22}
+.mat-btn.danger{border-color:#c0392b;border-style:dashed}
+.mat-btn.danger .mat-detail{color:#a33326}
+.mat-btn.danger.selected{border-color:#c0392b;border-style:solid;background:#fdf2f0;color:#c0392b;box-shadow:0 0 0 1px #c0392b}
+.mat-legend{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin:2px 0 10px;font-size:10.5px;color:#777}
+.mat-legend i{display:inline-block;width:14px;height:0;border-top:2px dashed #e67e22;margin-right:4px;vertical-align:middle}
+.mat-legend i.d{border-top-color:#c0392b}
 .mat-other-wrap{display:flex;gap:6px;align-items:center;margin-top:8px}
 .mat-other-wrap input{flex:1;padding:6px 10px;border:1px solid #ddd;border-radius:6px;font-size:12px}
 .mat-other-wrap .mat-other-label{font-size:11px;color:#888;white-space:nowrap}
@@ -329,6 +334,25 @@ function buildMatGrid(gridId, items, hiddenId, multi) {
     // "Other" option
     html += '<div class="mat-btn" data-val="Other" onclick="pickMat(this,\'' + hiddenId + '\',' + (multi ? 'true' : 'false') + ')">Other<span class="mat-detail">Specify below</span></div>';
     grid.innerHTML = html;
+
+    /* Say what the coloured outlines mean. A DASHED amber or red edge marks a
+     * collapse-risk material that has not been chosen; a SOLID edge with a tint
+     * is the one that is. Before this both states were drawn with the same
+     * solid coloured border, so an unpicked hazard button read as picked. */
+    var hasWarn = items.some(function (m) { return m.cls === 'warn'; });
+    var hasDanger = items.some(function (m) { return m.cls === 'danger'; });
+    var prev = grid.parentElement.querySelector('.mat-legend');
+    if (prev) prev.parentElement.removeChild(prev);
+    if (hasWarn || hasDanger) {
+        var leg = document.createElement('div');
+        leg.className = 'mat-legend';
+        var bits = [];
+        if (hasWarn) bits.push('<span><i></i>engineered / combustible</span>');
+        if (hasDanger) bits.push('<span><i class="d"></i>collapse risk</span>');
+        bits.push('<span>dashed outline = not selected</span>');
+        leg.innerHTML = bits.join('');
+        grid.parentElement.insertBefore(leg, grid.nextSibling);
+    }
 }
 
 function pickMat(el, hiddenId, multi) {
