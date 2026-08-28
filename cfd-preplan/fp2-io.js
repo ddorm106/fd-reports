@@ -381,12 +381,20 @@
          * category is a last resort and was never a symbol - mapping on it
          * turned every CFD marker into a generic pin wearing a label. */
         var fid = f.type || f.marker_type_id || f.category;
-        floorData.symbols.push({
+        var fsym = {
           id: uid('s_'), symbolId: symbolIdFor(fid),
           source_type: fid || '',
-          x: num(f.x) || 0, y: num(f.y) || 0, angle: 0,
+          x: num(f.x) || 0, y: num(f.y) || 0,
+          angle: num(f.rotation) || 0,
+          scale: num(f.scale) || 1,
           note: f.note || '', label: f.name || f.marker_name || ''
-        });
+        };
+        /* AI symbols exist nowhere but the payload that carried them. */
+        if (f.spec && typeof f.spec === 'object' && Array.isArray(f.spec.shapes)) {
+          fsym.spec = f.spec;
+          fsym.symbolId = 'custom';
+        }
+        floorData.symbols.push(fsym);
       });
     }
 
