@@ -162,7 +162,10 @@
   }
 
   /* Path B: raw iOS scan in feet + radians. */
-  function fromRawScan(scan, warnings) {
+  /* `frame` ({minX, minY, scale}) pins the plan to another floor's origin and
+   * px/ft instead of its own bounding box — how later storeys are made to sit
+   * exactly over the first one. */
+  function fromRawScan(scan, warnings, frame) {
     var xs = [], ys = [];
     function note(x, y) { if (num(x) !== null) xs.push(x); if (num(y) !== null) ys.push(y); }
 
@@ -188,6 +191,11 @@
       warnings.push('Large building: scale set to ' + (Math.round(scale * 10) / 10) + ' px/ft to fit the canvas.');
     }
 
+    if (frame && num(frame.minX) !== null && num(frame.minY) !== null && num(frame.scale) > 0) {
+      minX = frame.minX; minY = frame.minY; scale = frame.scale;
+      spanX = Math.max(maxX - minX, 1); spanY = Math.max(maxY - minY, 1);
+    }
+
     var tx = function (ft) { return (ft - minX) * scale + PADDING; };
     var ty = function (ft) { return (ft - minY) * scale + PADDING; };
 
@@ -195,6 +203,9 @@
       canvas_width: Math.ceil(spanX * scale) + PADDING * 2,
       canvas_height: Math.ceil(spanY * scale) + PADDING * 2,
       scale_px_per_ft: scale,
+      /* Where this floor's px origin sits in the scan's feet — what a later
+       * storey needs to be projected into the same frame. */
+      origin_ft: { x: minX, y: minY },
       walls: [], doors: [], windows: [], objects: [], symbols: [], texts: [],
       measurements: [], freehand: [], zones: []
     };
@@ -380,7 +391,7 @@
   }
 
   /* Parse anything into a floor's worth of geometry. Never throws. */
-  function parseScan(payload) {
+  function parseScan(payload, frame) {
     var warnings = [];
     var scan = unwrap(payload);
     if (!scan) return { ok: false, error: 'Not a readable file.', warnings: warnings };
@@ -391,7 +402,7 @@
     if (layout && Array.isArray(layout.walls) && layout.walls.length) {
       floorData = fromLayout(layout, scan);
     } else if (Array.isArray(scan.walls) && scan.walls.length) {
-      floorData = fromRawScan(scan, warnings);
+      floorData = fromRawScan(scan, warnings, frame);
       if (!floorData) return { ok: false, error: 'The scan has walls but no usable coordinates.', warnings: warnings };
       materializeRooms(floorData, warnings);
     } else if (Array.isArray(scan.walls)) {
@@ -457,7 +468,9 @@
       }
     }
 
-    return { ok: true, floor: floorData, meta: meta, stats: stats, warnings: warnings };
+    /* The unwrapped scan rides along so applyParsed can re-project it into an
+     * existing floor's frame when it is added as another storey. */
+    return { ok: true, floor: floorData, meta: meta, stats: stats, warnings: warnings, raw: scan };
   }
 
   /* ------------------------------------------------------------- applying */
@@ -475,6 +488,24 @@
       d.floors.push(f0);
       d.active_floor = f0.id;
     } else if (mode === 'floor') {
+      /* Later storeys are re-projected into the FIRST floor's frame — same
+       * origin in feet, same px/ft — so Floor 2 sits exactly over Floor 1
+       * instead of being framed by its own (smaller) bounding box. Before
+       * this, a 2nd floor of half the footprint landed shifted up and left,
+       * and a large building's clamped scale overwrote the document's.
+       * A doc whose first floor predates origin_ft keeps its own origin but
+       * still adopts the doc's scale. */
+      if (parsed.raw && fd.origin_ft && Array.isArray(parsed.raw.walls) && parsed.raw.walls.length) {
+        var base = null;
+        for (var bi = 0; bi < d.floors.length; bi++) {
+          if (d.floors[bi] && d.floors[bi].origin_ft) { base = d.floors[bi]; break; }
+        }
+        var frame = base ? { minX: base.origin_ft.x, minY: base.origin_ft.y }
+                         : { minX: fd.origin_ft.x, minY: fd.origin_ft.y };
+        frame.scale = d.scale_px_per_ft || fd.scale_px_per_ft;
+        var re = parseScan(parsed.raw, frame);
+        if (re && re.ok) { fd = re.floor; (re.warnings || []).forEach(function (w) { if (parsed.warnings && parsed.warnings.indexOf(w) < 0) parsed.warnings.push(w); }); }
+      }
       var lvl = d.floors.length + 1;
       var fN = M.emptyFloor(floorName || parsed.meta.floor_label || ('Floor ' + lvl), lvl);
       d.floors.push(fN);
@@ -503,9 +534,12 @@
     } else {
       lists.forEach(function (k) { f[k] = fd[k] || []; });
       f.freehand = f.freehand || [];
+      f.origin_ft = fd.origin_ft || null;
       d.canvas_width = Math.max(d.canvas_width || 0, fd.canvas_width || 1000);
       d.canvas_height = Math.max(d.canvas_height || 0, fd.canvas_height || 700);
-      d.scale_px_per_ft = fd.scale_px_per_ft || DEFAULT_SCALE;
+      /* One px/ft for the whole document. A replace sets it; an added storey
+       * was projected at the document's scale above and must not change it. */
+      if (mode === 'replace' || !d.scale_px_per_ft) d.scale_px_per_ft = fd.scale_px_per_ft || DEFAULT_SCALE;
     }
 
     if (fd.sides) f.sides = fd.sides;
