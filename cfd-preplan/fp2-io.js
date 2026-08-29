@@ -327,7 +327,8 @@
      * rather than silently drawing a wrong number on the plan. */
     out._pendingRooms = (scan.rooms || []).map(function (r) {
       if (num(r.centerX) === null) return null;
-      return { name: r.name || '', appArea: num(r.area) || 0, x: tx(r.centerX), y: ty(r.centerY) };
+      return { name: r.name || '', appArea: num(r.area) || 0, x: tx(r.centerX), y: ty(r.centerY),
+               labelScale: num(r.labelScale) || 1 };
     }).filter(Boolean);
 
     return out;
@@ -343,6 +344,17 @@
     pending.forEach(function (r) {
       var poly = G.faceAtPoint(floorData.walls, r.x, r.y, { closeGap: 8 });
       if (!poly) {
+        /* The app exports free-standing labels (hazard notes, "PANEL", a
+         * stairwell name) as rooms with NO area. Those are text, not a room
+         * that failed to enclose — put them on the plan as text, at the size
+         * the crew set on the iPad, instead of dropping them with a warning. */
+        if (r.appArea <= 5 && r.name) {
+          floorData.texts.push({
+            id: uid('t_'), x: r.x, y: r.y, text: r.name,
+            size: Math.round(14 * (r.labelScale || 1)), color: '#475569', angle: 0
+          });
+          return;
+        }
         warnings.push('Room "' + (r.name || 'unnamed') + '" is not enclosed by the scanned walls — no zone created.');
         return;
       }
