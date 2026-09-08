@@ -23,6 +23,24 @@
 .action-btn{padding:12px 28px;border-radius:8px;border:none;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .15s}
 .btn-pdf{background:#c0392b;color:#fff}.btn-pdf:hover{background:#e74c3c}
 .btn-submit{background:#27ae60;color:#fff}.btn-submit:hover{background:#2ecc71}
+.btn-next-bldg{background:#2d6ca8;color:#fff}.btn-next-bldg:hover{background:#3a83c6}
+/* Own dialog rather than prompt(): the form runs as an installed PWA, where a
+   native prompt is unreliable, and a storage site means typing a building name
+   twenty times — it wants a real field and a keyboard that behaves. */
+#nbWrap{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;
+  justify-content:center;z-index:10000;padding:20px}
+#nbWrap.show{display:flex}
+#nbBox{background:#fff;border-radius:14px;padding:22px;max-width:440px;width:100%;
+  box-shadow:0 20px 50px rgba(0,0,0,.35)}
+#nbBox h3{margin:0 0 6px;font-size:18px;color:#1a2b45}
+#nbBox p{margin:0 0 14px;font-size:13px;color:#5a6a7d;line-height:1.45}
+#nbName{width:100%;padding:12px;font-size:16px;border:2px solid #ccd5e0;border-radius:8px}
+#nbName:focus{outline:none;border-color:#2d6ca8}
+#nbKeep{font-size:12px;color:#5a6a7d;background:#f2f5f9;border-radius:8px;padding:10px;margin:12px 0}
+#nbRow{display:flex;gap:8px;justify-content:flex-end;margin-top:4px}
+#nbRow button{padding:11px 18px;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer}
+#nbGo{background:#2d6ca8;color:#fff}#nbCancel{background:#e6ebf1;color:#41506180}
+#nbCancel{color:#415061}
 .btn-json{background:#2980b9;color:#fff}.btn-json:hover{background:#3498db}
 .btn-import{background:#8e44ad;color:#fff}.btn-import:hover{background:#9b59b6}
 .btn-print{background:#e67e22;color:#fff}.btn-print:hover{background:#f39c12}
@@ -78,10 +96,32 @@
         <!-- REVIEW CONTENT -->
         <div id="reviewContent"></div>
 
+        <!-- NEXT BUILDING -->
+        <div id="nbWrap" onclick="if(event.target===this)nbClose()">
+          <div id="nbBox">
+            <h3>Copy this plan to another building</h3>
+            <p>For a site where the buildings are alike — a storage row, a
+               apartment block, a strip of units. Everything you have recorded
+               carries over; you change what is different about this one.</p>
+            <input id="nbName" type="text" autocomplete="off" placeholder="Building name or number">
+            <div id="nbKeep">
+              <strong>Carried over:</strong> construction, occupancy, fire protection,
+              utilities, hazmat, water supply, site plan and floor plan.<br>
+              <strong>Starts fresh:</strong> photographs and the PFP number.<br>
+              This plan is submitted first, so it cannot be lost.
+            </div>
+            <div id="nbRow">
+              <button id="nbCancel" onclick="nbClose()">Cancel</button>
+              <button id="nbGo" onclick="nbConfirm()">Submit &amp; start next</button>
+            </div>
+          </div>
+        </div>
+
         <!-- ACTION BUTTONS -->
         <div class="action-buttons">
             <button class="action-btn btn-pdf" onclick="generatePDF()" id="pdfBtn">📄 Generate PDF Report</button>
             <button class="action-btn btn-submit" onclick="submitPlan()">📤 Submit Pre-Plan</button>
+            <button class="action-btn btn-next-bldg" onclick="nextBuilding()">🏢 Next Building (copy this plan)</button>
             <button class="action-btn btn-json" onclick="exportJSON()">💾 Export JSON</button>
             <a href="/preplan/import" class="action-btn btn-import" style="text-decoration:none">📥 Import from PDF</a>
         </div>
@@ -1045,6 +1085,93 @@ function generatePDF(){
         pdfObj.doc.save((data.business_name||'preplan').replace(/[^a-zA-Z0-9]/g,'-')+'-preplan.pdf');
     }).finally(function(){
         if(btn){btn.disabled=false;btn.textContent='📄 Generate PDF Report';}
+    });
+}
+
+/* ── Next building ───────────────────────────────────────────────────────────
+   A self-storage site is twenty buildings that differ by a letter. Re-walking
+   the whole form for each one is how pre-plans stop getting done, so a finished
+   plan is copied and only its identity is changed.
+
+   What must NOT carry over is the identity: the name, the PFP number, and the
+   plan_uid — the last one because photographs are filed under it, and a shared
+   uid would show building A's pictures on building B's record. The publish id
+   is a hash of business_name|address, so a changed name lands as its own
+   record rather than overwriting the building just finished. */
+
+/** "Building C" -> "Building D", "Bldg 4" -> "Bldg 5", "#12" -> "#13". */
+function nextBuildingName(name){
+    var s=String(name||'').trim();
+    if(!s) return '';
+    // A trailing number wins over a letter: "Building 12" must not become "Building 13uilding".
+    var num=s.match(/^(.*?)(\d+)(\s*)$/);
+    if(num){
+        var next=String(parseInt(num[2],10)+1);
+        // Keep any zero padding — "Unit 007" carries on as "Unit 008".
+        if(num[2].length>next.length && num[2][0]==='0') next=num[2].slice(0,num[2].length-next.length)+next;
+        return num[1]+next+num[3];
+    }
+    var letter=s.match(/^(.*?)([A-Za-z])(\s*)$/);
+    if(letter && /[ \-#.]$/.test(letter[1]) && letter[2].toUpperCase()!=='Z'){
+        return letter[1]+String.fromCharCode(letter[2].charCodeAt(0)+1)+letter[3];
+    }
+    return s+' 2';
+}
+
+function nextBuilding(){
+    var data=getSavedData();
+    if(!data.business_name){showToast('Fill in the building name first','error');return}
+    document.getElementById('nbName').value=nextBuildingName(data.business_name);
+    document.getElementById('nbWrap').classList.add('show');
+    var f=document.getElementById('nbName');
+    f.focus();
+    /* Select only the part that changes, so the next building is one keystroke
+       when the guess is wrong. */
+    try{
+        var m=f.value.match(/(\d+|[A-Za-z])\s*$/);
+        if(m) f.setSelectionRange(m.index, m.index+m[1].length); else f.select();
+    }catch(e){}
+}
+function nbClose(){ document.getElementById('nbWrap').classList.remove('show'); }
+
+function nbConfirm(){
+    var name=document.getElementById('nbName').value.trim();
+    if(!name){showToast('Give the next building a name','error');return}
+    var data=getSavedData();
+    if(name===data.business_name){showToast('That is the same name as this building','error');return}
+
+    var go=document.getElementById('nbGo');
+    go.disabled=true; go.textContent='Submitting…';
+
+    /* Publish the building just finished BEFORE overwriting the working copy.
+       The form holds one plan at a time, so copying without publishing would
+       quietly replace the walk-through that was just completed. */
+    saveFormData(planForm);
+    var current=getSavedData();
+    fetch('/api/preplans/publish',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({data:current,published_by:''})})
+    .then(function(r){return r.json()})
+    .then(function(result){
+        if(!result||!result.success) throw new Error((result&&result.error)||'publish failed');
+
+        var copy=JSON.parse(JSON.stringify(current));
+        copy.business_name=name;
+        copy.pfp_number='';
+        // A fresh id, or the new building inherits the last one's photographs.
+        copy.plan_uid='plan-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8);
+        // Marks reference photo ids that are not coming with it.
+        delete copy.photo_annotations;
+        // Editing an existing record is not what this is.
+        delete copy._edit_id;
+        localStorage.setItem('preFirePlan',JSON.stringify(copy));
+
+        nbClose();
+        showToast(current.business_name+' submitted — starting '+name,'success');
+        setTimeout(function(){ window.location.href='page1-location.html'; },900);
+    })
+    .catch(function(e){
+        go.disabled=false; go.textContent='Submit & start next';
+        showToast('Could not submit this building: '+e.message+'. Nothing was copied.','error');
     });
 }
 
