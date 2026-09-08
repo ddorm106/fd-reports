@@ -24,6 +24,14 @@
 .btn-pdf{background:#c0392b;color:#fff}.btn-pdf:hover{background:#e74c3c}
 .btn-submit{background:#27ae60;color:#fff}.btn-submit:hover{background:#2ecc71}
 .btn-next-bldg{background:#2d6ca8;color:#fff}.btn-next-bldg:hover{background:#3a83c6}
+/* Sits above the review, because the point is to be read BEFORE submitting.
+   Amber, not red: none of this is an error, it is unfinished. */
+.gap-box{background:#fff8e6;border:1px solid #e0b357;border-left:5px solid #e0a020;
+    border-radius:8px;padding:14px 16px;margin:14px 0}
+.gap-h{font-weight:700;font-size:14px;color:#8a5a00;margin-bottom:8px}
+.gap-box ul{margin:0 0 8px 18px;padding:0}
+.gap-box li{font-size:13px;color:#5c4a22;margin:4px 0;line-height:1.4}
+.gap-f{font-size:11px;color:#8a7a55;font-style:italic}
 /* Own dialog rather than prompt(): the form runs as an installed PWA, where a
    native prompt is unreliable, and a storage site means typing a building name
    twenty times — it wants a real field and a keyboard that behaves. */
@@ -92,6 +100,9 @@
 
         <!-- STATS -->
         <div class="stats-bar" id="statsBar"></div>
+
+        <!-- WHAT IS STILL MISSING -->
+        <div id="gapPanel" style="display:none"></div>
 
         <!-- REVIEW CONTENT -->
         <div id="reviewContent"></div>
@@ -234,12 +245,93 @@ function render(){
     }
 
     document.getElementById('reviewContent').innerHTML=html;
+    renderGaps(data);
     document.getElementById('statsBar').innerHTML=
         '<div class="stat-pill"><span class="num">'+filled+'</span>/ '+total+' fields completed</div>'+
         '<div class="stat-pill"><span class="num">'+(data.business_name||'—')+'</span></div>';
 }
 
 function esc(s){if(!s)return'';var d=document.createElement('div');d.textContent=s;return d.innerHTML}
+
+/* ── What's still missing ────────────────────────────────────────────────────
+   A field count says "149 of 206" and tells a crew nothing about whether the
+   plan is usable. These are the specific gaps that cost somebody something on
+   scene, and they are almost all the same shape: a hazard answered "Yes" with
+   nobody having said WHERE.
+
+   Drawn from a real plan that went out with aerial obstructions marked Yes and
+   no location, three chemicals including acetylene and no SDS location, and no
+   responsible party at all.
+
+   It never blocks a submit. A plan captured on a walk-through is better in the
+   book than held back for a phone number, and a crew that cannot submit will
+   stop using the form. */
+var GAP_PAIRS = [
+    ['exterior_access','exterior_access_locs','Exterior access is marked Yes, but not where'],
+    ['exterior_door','exterior_door_locs','Exterior doors are marked Yes, but not where'],
+    ['interior_roof','interior_roof_locs','Interior/roof access is marked Yes, but not where'],
+    ['aerial_obstructions','aerial_obstruction_locs','Aerial obstructions are marked Yes, but not where'],
+    ['confined_space','confined_space_locs','Confined space is marked Yes, but not where'],
+    ['high_angle','high_angle_locs','High angle is marked Yes, but not where'],
+    ['water_rescue','water_rescue_locs','Water rescue is marked Yes, but not where'],
+    ['high_fire_load','high_fire_load_locs','High fire load is marked Yes, but not where'],
+    ['knox_box','knox_box_loc','A Knox box is marked Yes, but not where'],
+    ['natural_gas','natural_gas_loc','Natural gas is marked Yes, but the shutoff has no location'],
+    ['lp_gas','lp_tank_loc','LP gas is marked Yes, but the tank has no location'],
+    ['solar_power','solar_panel_loc','Solar is marked Yes, but the panels have no location'],
+    ['emergency_power','transfer_switch_loc','Emergency power is marked Yes, but no transfer switch location'],
+    ['fire_alarm','panel_loc','A fire alarm is marked Yes, but the panel has no location'],
+    ['sprinklered','fdc_loc','Sprinklers are marked Yes, but there is no FDC location'],
+    ['standpipe','standpipe_loc','A standpipe is marked Yes, but it has no location']
+];
+
+function planGaps(d){
+    function has(k){ var v=d[k]; return v!==undefined && v!==null && String(v).trim()!==''; }
+    var out=[];
+    // A hazard recorded without a place to find it.
+    GAP_PAIRS.forEach(function(p){
+        if(String(d[p[0]]||'').toLowerCase()==='yes' && !has(p[1])) out.push({t:'where',m:p[2]});
+    });
+    // Nobody to call.
+    if(!has('primary_contact')) out.push({t:'who',m:'No responsible party recorded'});
+    else if(!has('primary_tel')) out.push({t:'who',m:'The responsible party has no phone number'});
+    // Chemicals on site with nothing saying where the sheets are.
+    var chem=false;
+    for(var k in d){ if(/^chem_name_\d+$/.test(k) && String(d[k]||'').trim()){ chem=true; break; } }
+    if(chem && !has('sds_location')) out.push({t:'hazmat',m:'Chemicals are listed but the SDS location is blank'});
+    // The same hydrant entered more than once inflates the water supply.
+    var seen={},dupes=[];
+    for(var i=1;i<=10;i++){
+        var n=String(d['hyd_num_'+i]||'').trim();
+        if(!n) continue;
+        if(seen[n]){ if(dupes.indexOf(n)<0) dupes.push(n); } else seen[n]=1;
+    }
+    if(dupes.length) out.push({t:'water',m:'Hydrant '+dupes.join(', ')+' is listed more than once — the available supply will read high'});
+    // A drawing on a storey nobody is in.
+    try{
+        var fp=typeof d.floor_plan_data==='string'?JSON.parse(d.floor_plan_data):d.floor_plan_data;
+        if(fp&&Array.isArray(fp.floors)){
+            var empty=fp.floors.filter(function(f){
+                return !['walls','doors','windows','objects','symbols','texts','zones','freehand']
+                    .some(function(kk){ return Array.isArray(f[kk])&&f[kk].length; });
+            }).length;
+            if(empty) out.push({t:'plan',m:empty+' empty floor'+(empty===1?'':'s')+' in the floor plan — delete them in the editor'});
+        }
+    }catch(e){}
+    return out;
+}
+
+function renderGaps(d){
+    var host=document.getElementById('gapPanel');
+    if(!host) return;
+    var gaps=planGaps(d);
+    if(!gaps.length){ host.innerHTML=''; host.style.display='none'; return; }
+    host.style.display='block';
+    host.innerHTML='<div class="gap-box"><div class="gap-h">⚠️ '+gaps.length+
+        ' thing'+(gaps.length===1?'':'s')+' worth filling in before this goes in the book</div><ul>'+
+        gaps.map(function(g){ return '<li>'+esc(g.m)+'</li>'; }).join('')+
+        '</ul><div class="gap-f">You can submit anyway — this is a prompt, not a gate.</div></div>';
+}
 
 // ===== PDF GENERATION (jsPDF) =====
 function enrichData(data){
@@ -1175,10 +1267,28 @@ function nbConfirm(){
     });
 }
 
+/* Asked once per submit, never twice for the same set of gaps. */
+var __gapsAcknowledged='';
+
 function submitPlan(){
     saveFormData(planForm);
     var data=getSavedData();
     if(!data.business_name){showToast('Please fill in the business name first','error');return}
+
+    /* Last look before it goes in the book. Confirm, not block: a plan captured
+       on a walk-through belongs in the book more than it belongs held back for
+       a phone number, and a crew that cannot submit stops using the form. */
+    var gaps=planGaps(data);
+    var sig=gaps.map(function(g){return g.m}).join('|');
+    if(gaps.length && __gapsAcknowledged!==sig){
+        __gapsAcknowledged=sig;
+        renderGaps(data);
+        var panel=document.getElementById('gapPanel');
+        if(panel&&panel.scrollIntoView){ try{ panel.scrollIntoView({behavior:'smooth',block:'center'}); }catch(e){} }
+        showToast(gaps.length+' thing'+(gaps.length===1?'':'s')+
+                  ' still worth filling in — see the list, or press Submit again to send it as it is','info');
+        return;
+    }
     var btn=document.querySelector('.btn-submit');
     if(btn){btn.disabled=true;btn.textContent='⏳ Publishing & Emailing...';}
 
