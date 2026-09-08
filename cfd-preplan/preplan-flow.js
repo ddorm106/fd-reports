@@ -30,13 +30,21 @@
     { file: 'page2-operating.html',           title: 'Access',              desc: 'Getting in, hours, obstructions', fields: ['primary_access', 'operating_hours', 'exterior_access_locs'] },
     { file: 'page4-construction.html',        title: 'Building',            desc: 'Construction, roof, dimensions',  fields: ['wall_construction', 'roof_construction', 'total_sq_ft'] },
     { file: 'page3-occupancy.html',           title: 'Occupancy & Life',    desc: 'Use, occupant load, hazards',     fields: ['occupancy_types', 'occupant_load_day', 'life_safety_concerns'] },
-    { file: 'page5-fire-protection.html',     title: 'Fire Protection',     desc: 'Sprinkler, standpipe, FDC, Knox', fields: ['sprinklered', 'fire_alarm_type', 'knox_box_loc'] },
+    /* `standpipe` counts: answering it "None" is an answer, and a building with
+       no sprinkler and no standpipe was otherwise stuck reading unstarted. */
+    { file: 'page5-fire-protection.html',     title: 'Fire Protection',     desc: 'Sprinkler, standpipe, FDC, Knox', fields: ['sprinklered', 'standpipe', 'fire_alarm_type', 'knox_box_loc'] },
     { file: 'page6-utilities.html',           title: 'Utilities',           desc: 'Gas, electric, water shutoffs',   fields: ['electric_loc', 'natural_gas_loc', 'water_shutoff_loc'] },
     { file: 'page8-fire-flow.html',           title: 'Water Supply',        desc: 'Hydrants, needed fire flow',      fields: ['hyd_aff_1', 'nff_area', 'nff_const_class'] },
     { file: 'page9-hazardous-materials.html', title: 'Hazmat',              desc: 'Chemicals, NFPA 704',             fields: ['chemCount', 'tier_ii', 'msds_onsite'] },
     { file: 'page7-special-rescue.html',      title: 'Special Rescue',      desc: 'Confined space, high angle',      fields: ['confined_space', 'high_angle'] },
-    { file: 'page10-site-plan.html',          title: 'Site Plan',           desc: 'Exterior sketch',                 fields: ['site_plan_data'] },
-    { file: 'page11-floor-plan.html',         title: 'Floor Plan',          desc: 'Interior sketch',                 fields: ['floor_plan_data'] },
+    /* Page 10 is a satellite map now and stores itself as `site_map_image`,
+       deleting the old Fabric `site_plan_data` when it saves. Watching only the
+       retired key meant a finished site plan could never turn the step green.
+       All three are listed so older plans keep their state too. */
+    { file: 'page10-site-plan.html',          title: 'Site Plan',           desc: 'Exterior sketch',                 fields: ['site_map_image', 'site_plan_image', 'site_plan_data'] },
+    /* An uploaded floor sheet counts as a floor plan even when nothing was
+       drawn on top of it. */
+    { file: 'page11-floor-plan.html',         title: 'Floor Plan',          desc: 'Interior sketch',                 fields: ['floor_plan_data', 'floor_plan_render', 'floor_plan_image'] },
     { file: 'page12-submit.html',             title: 'Contacts & Review',   desc: 'Responsible party, tour, submit', fields: ['primary_contact', 'plan_date', 'pre_plan_conducted_by'] }
   ];
   FLOW.forEach(function (s, i) { s.step = i + 1; });
@@ -47,14 +55,31 @@
     catch (e) { return {}; }
   }
 
+  /* Does this plan object hold any actual drawing? Used for both the v5
+     per-storey shape and the v4 flat one. */
+  function hasShapes(o) {
+    if (!o || typeof o !== 'object') return false;
+    var keys = ['walls', 'objects', 'symbols', 'texts', 'doors', 'windows', 'zones', 'freehand'];
+    for (var i = 0; i < keys.length; i++) {
+      if (Array.isArray(o[keys[i]]) && o[keys[i]].length) return true;
+    }
+    return false;
+  }
+
   function filled(v) {
     if (v == null) return false;
     if (typeof v === 'object') {
       if (Array.isArray(v)) return v.length > 0;
-      if (v.walls || v.objects || v.symbols) {
-        return (v.walls || []).length > 0 || (v.objects || []).length > 0 ||
-               (v.symbols || []).length > 0 || (v.texts || []).length > 0;
+      /* A v5 floor plan keeps its drawing in floors[]; the top-level arrays are
+         only a mirror of the ACTIVE floor. A plan whose active floor happens to
+         be an empty storey therefore looked untouched, and the Floor Plan step
+         stayed grey with a full set of drawings behind it. */
+      if (Array.isArray(v.floors)) {
+        for (var f = 0; f < v.floors.length; f++) if (hasShapes(v.floors[f])) return true;
+        return hasShapes(v);
       }
+      if (hasShapes(v)) return true;
+      /* A data-URL image (the site map) or any other populated object. */
       return Object.keys(v).length > 0;
     }
     return String(v).trim() !== '';

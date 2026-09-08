@@ -385,13 +385,26 @@ function renderCanvasToImage(jsonStr,w,h){
  * v4 or v5 plan produced one blank PDF page per top-level key — "Floor Plan -
  * Floor walls", "Floor Plan - Floor canvas_width" and so on.
  */
+/* The arrays that hold actual drawing. `sides` is deliberately NOT one of them:
+   A/B/C/D labels are seeded onto every floor whether anything is drawn on it or
+   not, so counting them makes an empty storey look occupied. */
+var FP_DRAWN_KEYS=['walls','doors','windows','objects','symbols','texts','measurements','freehand','zones'];
+
+function fpFloorHasContent(d){
+    if(!d||typeof d!=='object') return false;
+    for(var i=0;i<FP_DRAWN_KEYS.length;i++){
+        var a=d[FP_DRAWN_KEYS[i]];
+        if(Array.isArray(a)&&a.length) return true;
+    }
+    return false;
+}
+
 function fpEachFloor(fp){
     if(!fp||typeof fp!=='object') return [];
 
     // v5: real storeys.
     if(Array.isArray(fp.floors)&&fp.floors.length){
-        var multi=fp.floors.length>1;
-        return fp.floors.map(function(f,i){
+        var built=fp.floors.map(function(f,i){
             var d={};
             // Carry the document-level settings each floor is drawn against.
             ['canvas_width','canvas_height','scale_px_per_ft','sheet','view_rotation'].forEach(function(k){
@@ -399,7 +412,17 @@ function fpEachFloor(fp){
             });
             ['walls','doors','windows','objects','symbols','texts','measurements','freehand','zones','sides']
                 .forEach(function(k){ d[k]=f[k]||[]; });
-            return { label:'Floor Plan'+(multi?' - '+(f.name||('Floor '+(i+1))):''), data:d };
+            return { name:f.name, index:i, data:d };
+        });
+        /* An empty storey is not a page. Adding a floor in the editor creates it
+           before anything is drawn on it, and abandoned or duplicated floors
+           stayed in the document — each one printing a titled but empty sheet.
+           That is the "four blank pages before the floor plan" in the PDF. */
+        var drawn=built.filter(function(b){ return fpFloorHasContent(b.data); });
+        if(!drawn.length) drawn=built.slice(0,1);   // never print nothing at all
+        var multi=drawn.length>1;
+        return drawn.map(function(b){
+            return { label:'Floor Plan'+(multi?' - '+(b.name||('Floor '+(b.index+1))):''), data:b.data };
         });
     }
 
@@ -417,6 +440,46 @@ function fpEachFloor(fp){
     });
 }
 
+/**
+ * The box the drawing actually occupies, in plan units.
+ *
+ * Deliberately shape-agnostic: it walks every array on the plan and takes any
+ * numeric x/y, x1/y1/x2/y2 and any nested point list it finds. Element schemas
+ * here have changed repeatedly (wall-hosted openings, zones, floor rects), and
+ * a bounds function written against a fixed field list silently under-measures
+ * the moment one changes — which prints a clipped plan rather than an error.
+ */
+function fpPlanBounds(d){
+    var x1=Infinity,y1=Infinity,x2=-Infinity,y2=-Infinity,seen=false;
+    function pt(x,y,r){
+        if(typeof x!=='number'||typeof y!=='number'||!isFinite(x)||!isFinite(y)) return;
+        r=r||0; seen=true;
+        if(x-r<x1)x1=x-r; if(y-r<y1)y1=y-r;
+        if(x+r>x2)x2=x+r; if(y+r>y2)y2=y+r;
+    }
+    function walk(e,depth){
+        if(!e||typeof e!=='object'||depth>3) return;
+        if(Array.isArray(e)){ e.forEach(function(c){ walk(c,depth+1); }); return; }
+        /* Half the width of an opening or the footprint of an object reaches
+           past its centre point, so the extent travels with it. */
+        var r=0;
+        if(typeof e.width==='number') r=Math.max(r,e.width/2);
+        if(typeof e.depth==='number') r=Math.max(r,e.depth/2);
+        if(typeof e.size==='number') r=Math.max(r,e.size);
+        pt(e.x,e.y,r);
+        pt(e.x1,e.y1,0); pt(e.x2,e.y2,0);
+        pt(e.cx,e.cy,r);
+        ['poly','points','pts'].forEach(function(k){
+            if(Array.isArray(e[k])) e[k].forEach(function(p){
+                if(Array.isArray(p)) pt(p[0],p[1],0); else walk(p,depth+1);
+            });
+        });
+    }
+    FP_DRAWN_KEYS.concat(['sides']).forEach(function(k){ walk(d[k],0); });
+    if(!seen) return null;
+    return {x1:x1,y1:y1,x2:x2,y2:y2};
+}
+
 function renderV4Floorplan(d,pdfW,pdfH){
     /* Match the editor's symbol style, so the printed plan is the drawing the
        crew approved and not a differently-styled cousin of it. */
@@ -430,10 +493,32 @@ function renderV4Floorplan(d,pdfW,pdfH){
     var el=document.createElement('canvas'); el.width=pdfW; el.height=pdfH;
     var ctx=el.getContext('2d');
     ctx.fillStyle='#F5F3EF'; ctx.fillRect(0,0,pdfW,pdfH);
-    var scale=Math.min((pdfW-40)/cw,(pdfH-40)/ch);
-    var tx=(pdfW-cw*scale)/2, ty=(pdfH-ch*scale)/2;
+
+    /* Frame on what is actually DRAWN, not on the nominal canvas box.
+       canvas_width/height is a 1000x700 default that the v5 full-screen editor
+       and every imported DivisionScan scan happily draw outside of — the scan
+       lands at whatever origin and scale the import chose. Fitting the box
+       instead of the drawing is why the printed plan came out cut off at the
+       edges and sitting off-centre on the page. */
+    var b=fpPlanBounds(d);
+    var bx1,by1,bw,bh;
+    if(b && b.x2-b.x1>1 && b.y2-b.y1>1){
+        var pad=Math.max(12,(b.x2-b.x1+b.y2-b.y1)*0.02);
+        bx1=b.x1-pad; by1=b.y1-pad; bw=(b.x2-b.x1)+pad*2; bh=(b.y2-b.y1)+pad*2;
+    } else {
+        bx1=0; by1=0; bw=cw; bh=ch;
+    }
+    /* Leave room at the bottom for the scale bar and the title block, which are
+       drawn in page space afterwards and used to sit on top of the drawing. */
+    var padL=20,padR=20,padT=20,padB=46;
+    var scale=Math.min((pdfW-padL-padR)/bw,(pdfH-padT-padB)/bh);
+    var tx=padL+((pdfW-padL-padR)-bw*scale)/2-bx1*scale;
+    var ty=padT+((pdfH-padT-padB)-bh*scale)/2-by1*scale;
     ctx.translate(tx,ty); ctx.scale(scale,scale);
-    var WH=3;
+    /* Wall thickness in PAGE pixels, not plan units: framing on content means
+       the scale now varies a lot between a single room and a warehouse, and a
+       fixed plan-unit thickness turned a small building's walls into slabs. */
+    var WH=3/scale;
 
     // Zones first, under everything: a filled area must never hide a wall,
     // a door or a hydrant. Labels go on last, further down.
@@ -737,7 +822,18 @@ function fpSheetFurniture(ctx, d, W, H, scale){
 
 function addPlanPages(pdfObj,data){
     var planRenders=[];
-    if(data.site_plan_data){
+    /* Where the site plan lives, newest first.
+       Page 10 is a satellite map now: it renders itself to a PNG and stores it
+       as `site_map_image`, and it DELETES `site_plan_data` (the retired Fabric
+       drawing) when it does. This function still asked only for
+       `site_plan_data`, so the site plan could never reach the PDF — the IC's
+       copy has been going out without it. `site_plan_image` is the older
+       uploaded aerial and is still worth printing when that is all there is. */
+    if(data.site_map_image){
+        planRenders.push({label:'Site Plan',promise:Promise.resolve(data.site_map_image)});
+    } else if(data.site_plan_image){
+        planRenders.push({label:'Site Plan',promise:Promise.resolve(data.site_plan_image)});
+    } else if(data.site_plan_data){
         planRenders.push({label:'Site Plan',promise:renderCanvasToImage(data.site_plan_data,900,550)});
     }
     if(data.floor_plan_data){
@@ -754,20 +850,44 @@ function addPlanPages(pdfObj,data){
     }
     if(planRenders.length===0)return Promise.resolve();
     return Promise.all(planRenders.map(function(p){return p.promise})).then(function(images){
-        var doc=pdfObj.doc,M=pdfObj.M,pw=pdfObj.pw;
-        for(var i=0;i<planRenders.length;i++){
-            doc.addPage();var y=M;
-            doc.setFillColor(30,58,95);doc.rect(M,y,pw,8,'F');
-            doc.setTextColor(255);doc.setFontSize(11);doc.setFont('helvetica','bold');
-            doc.text(planRenders[i].label,M+3,y+5.5);doc.setTextColor(0);y+=10;
-            if(images[i]){
-                var imgW=pw;var imgH=imgW*0.65;
-                doc.addImage(images[i],'PNG',M,y,imgW,imgH);
-            }else{
-                doc.setFontSize(10);doc.setTextColor(150);
-                doc.text(planRenders[i].label+' could not be rendered',M+2,y+5);
-            }
+        var doc=pdfObj.doc,M=pdfObj.M,pw=pdfObj.pw,H=279.4;
+        /* Measure each image rather than assuming its shape. The old code drew
+           every plan at a hardcoded pw x pw*0.65 — the floor plan is rendered
+           900x600 (0.667) and the site map is a screen-shaped PNG, so both were
+           stretched to a ratio neither one has, and a tall plan ran off the
+           bottom of the sheet. */
+        function measure(src){
+            return new Promise(function(resolve){
+                if(!src){resolve(null);return}
+                var im=new Image();
+                im.onload=function(){resolve({src:src,w:im.naturalWidth||900,h:im.naturalHeight||600})};
+                im.onerror=function(){resolve({src:src,w:900,h:600})};
+                im.src=src;
+            });
         }
+        return Promise.all(images.map(measure)).then(function(sized){
+            for(var i=0;i<planRenders.length;i++){
+                doc.addPage();var y=M;
+                doc.setFillColor(30,58,95);doc.rect(M,y,pw,8,'F');
+                doc.setTextColor(255);doc.setFontSize(11);doc.setFont('helvetica','bold');
+                doc.text(planRenders[i].label,M+3,y+5.5);doc.setTextColor(0);y+=10;
+                var im=sized[i];
+                if(im){
+                    var availW=pw, availH=H-y-M;
+                    var ar=im.w/im.h;
+                    var dw=availW, dh=dw/ar;
+                    if(dh>availH){ dh=availH; dw=dh*ar; }
+                    // Centre it on the sheet instead of pinning it to the margin.
+                    var dx=M+(availW-dw)/2, dy=y+(availH-dh)/2;
+                    var fmt=/^data:image\/jpe?g/i.test(im.src)?'JPEG':'PNG';
+                    try{ doc.addImage(im.src,fmt,dx,dy,dw,dh); }
+                    catch(e){ try{ doc.addImage(im.src,'PNG',dx,dy,dw,dh); }catch(e2){} }
+                }else{
+                    doc.setFontSize(10);doc.setTextColor(150);
+                    doc.text(planRenders[i].label+' could not be rendered',M+2,y+5);
+                }
+            }
+        });
     });
 }
 

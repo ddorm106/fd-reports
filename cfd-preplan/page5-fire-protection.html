@@ -380,7 +380,11 @@ function pickFP(el, hiddenId, multi) {
    COVERAGE PICKER
    ======================================================== */
 function pickCov(el) {
-    document.querySelectorAll('.fp-cov-btn').forEach(function(b) { b.classList.remove('selected'); });
+    /* Scoped to the sprinkler grid. This used to clear EVERY .fp-cov-btn on the
+       page, so choosing a sprinkler coverage silently un-highlighted whatever
+       had been chosen for the standpipe. Same class of bug as the restore
+       below, and the two together are why the standpipe would not take. */
+    document.querySelectorAll('#covGrid .fp-cov-btn').forEach(function(b) { b.classList.remove('selected'); });
     el.classList.add('selected');
     var val = el.dataset.val;
     document.getElementById('sprinklered').value = val;
@@ -469,7 +473,13 @@ restoreFPGrid('notificationGrid', 'notification_devices');
 (function() {
     var val = document.getElementById('sprinklered').value;
     if (val) {
-        document.querySelectorAll('.fp-cov-btn').forEach(function(b) {
+        /* Scoped to the sprinkler grid.
+           Unscoped, this marked the matching card in the STANDPIPE grid too:
+           a building with sprinklered="No" reopened showing "None" already
+           selected for the standpipe, while the standpipe field itself was
+           still empty. The card looked answered, so tapping None appeared to
+           do nothing, and the section stayed incomplete on review. */
+        document.querySelectorAll('#covGrid .fp-cov-btn').forEach(function(b) {
             if (b.dataset.val === val) b.classList.add('selected');
         });
         if (val === 'Yes' || val === 'Partial') {
