@@ -70,6 +70,22 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--n
 input:hover, textarea:hover, select:hover { border-color: var(--slate-400); }
 textarea { min-height: 100px; resize: vertical; }
 
+/* Room for an Apple Pencil.
+   Scribble is an iPadOS setting, not something a page turns on — nothing here
+   ever disabled it — but a 40px field is comfortable to TYPE in and cramped to
+   WRITE in, and handwriting that overruns the box gets dropped. On a touch
+   device the text fields get a taller band and the notes boxes get more depth.
+   Only pointer:coarse, so the desktop form is unchanged.
+   Font size stays at or above 16px: below that, iOS zooms the page on focus,
+   which throws the pencil off what you were aiming at. */
+@media (pointer: coarse) {
+    input[type="text"], input[type="tel"], input[type="email"], input[type="url"] {
+        min-height: 50px;
+        font-size: 1.05rem;
+    }
+    textarea { min-height: 140px; font-size: 1.05rem; line-height: 1.6; }
+}
+
 .preplan-section { background: var(--slate-50); border: 1px solid var(--slate-200); border-radius: var(--radius-lg); padding: var(--spacing-lg); margin-bottom: var(--spacing-md); }
 .apparatus-buttons { display: flex; gap: var(--spacing-sm); flex-wrap: wrap; margin-top: var(--spacing-xs); }
 .apparatus-btn { position: relative; }
