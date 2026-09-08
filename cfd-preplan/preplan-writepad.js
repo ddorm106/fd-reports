@@ -20,11 +20,21 @@
     if (window.__preplanWritePad) return;
     window.__preplanWritePad = true;
 
-    // A pencil implies a touch screen. Typing on a laptop is left alone.
-    var coarse = false;
-    try { coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches; }
-    catch (e) { coarse = false; }
-    if (!coarse) return;
+    /* A pencil implies a touch screen, so a laptop is left alone.
+     *
+     * `any-pointer`, NOT `pointer`. `pointer` describes the PRIMARY pointing
+     * device, and an iPad with a Magic Keyboard or any trackpad attached
+     * reports that as fine — so the sheet would never appear on exactly the
+     * setup most likely to be running the form on a truck. `any-pointer:
+     * coarse` asks whether the device has a touch screen at all, which is the
+     * real question. Touch is checked too, for anything that answers neither. */
+    var touchy = false;
+    try {
+        touchy = (window.matchMedia && window.matchMedia('(any-pointer: coarse)').matches)
+              || ('ontouchstart' in window)
+              || (navigator.maxTouchPoints > 0);
+    } catch (e) { touchy = false; }
+    if (!touchy) return;
 
     /* Which fields are worth a sheet. Dates, numbers and selects have their own
        pickers and would be made worse by this; a short phone number is still

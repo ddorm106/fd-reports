@@ -78,7 +78,9 @@ textarea { min-height: 100px; resize: vertical; }
    Only pointer:coarse, so the desktop form is unchanged.
    Font size stays at or above 16px: below that, iOS zooms the page on focus,
    which throws the pencil off what you were aiming at. */
-@media (pointer: coarse) {
+/* any-pointer, not pointer: an iPad with a keyboard case attached reports its
+   PRIMARY pointer as fine, and would have missed this entirely. */
+@media (any-pointer: coarse) {
     input[type="text"], input[type="tel"], input[type="email"], input[type="url"] {
         min-height: 50px;
         font-size: 1.05rem;
