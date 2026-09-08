@@ -891,29 +891,138 @@ function addPlanPages(pdfObj,data){
     });
 }
 
+/* Every id the photographs for this plan might be filed under.
+   A pre-plan is given a permanent `plan_uid` the first time a photo is taken,
+   kept inside preFirePlan so it survives the business name or the address being
+   edited. The PDF asked ONLY for the old business|address key, so every
+   photograph taken since plan_uid arrived was invisible to it — the report went
+   out without the pictures the crew stood there and took. Both are read. */
+function fpPhotoPlanIds(data){
+    var ids=[];
+    if(data.plan_uid) ids.push(data.plan_uid);
+    var legacy=(data.business_name||'')+'|'+(data.address||'');
+    if(legacy!=='|') ids.push(legacy);
+    return ids;
+}
+
+/* Photographs still sitting on this iPad, never uploaded. Read straight out of
+   the vault the photo panel writes to, rather than through that panel, so a PDF
+   made on a page where the panel was never opened still carries them — which is
+   the case that matters, because the reason they are local is no signal. */
+function fpLocalPhotos(planUid){
+    return new Promise(function(resolve){
+        if(typeof indexedDB==='undefined'){resolve([]);return}
+        var rq;
+        try{ rq=indexedDB.open('cfdPreplanPhotos',1); }catch(e){ resolve([]); return }
+        rq.onerror=function(){resolve([])};
+        rq.onblocked=function(){resolve([])};
+        rq.onupgradeneeded=function(e){
+            /* The database not existing means there are no photographs on this
+               device. Abort rather than create an empty one just to read it. */
+            try{ e.target.transaction.abort(); }catch(x){}
+        };
+        rq.onsuccess=function(){
+            var db=rq.result;
+            try{
+                if(!db.objectStoreNames.contains('pending')){resolve([]);return}
+                var all=db.transaction('pending').objectStore('pending').getAll();
+                all.onsuccess=function(){
+                    resolve((all.result||[]).filter(function(r){
+                        return r && r.data_base64 && (!planUid || r.plan_id===planUid);
+                    }));
+                };
+                all.onerror=function(){resolve([])};
+            }catch(e){ resolve([]) }
+        };
+    });
+}
+
 function addPhotoPages(pdfObj,data){
-    var planId=(data.business_name||'')+'|'+(data.address||'');
-    return fetch('/api/preplan/photos?plan_id='+encodeURIComponent(planId)).then(function(r){return r.json()}).then(function(res){
-        var photos=(res&&res.photos)||[];
+    var ids=fpPhotoPlanIds(data);
+    function fetchFor(id){
+        return fetch('/api/preplan/photos?plan_id='+encodeURIComponent(id))
+            .then(function(r){return r.json()})
+            .then(function(d){return (d&&d.photos)?d.photos:[]})
+            .catch(function(){return []});
+    }
+    return Promise.all([
+        Promise.all(ids.map(fetchFor)),
+        fpLocalPhotos(data.plan_uid)
+    ]).then(function(got){
+        var seen={},photos=[];
+        got[0].forEach(function(list){
+            list.forEach(function(p){ if(p&&!seen[p.id]){ seen[p.id]=1; photos.push(p); } });
+        });
+        // A local record that already made it up is the same photograph twice.
+        (got[1]||[]).forEach(function(r){
+            if(r.uploaded&&r.serverId&&seen[r.serverId]) return;
+            photos.push({id:r.localId,caption:r.caption||'',category:r.category||'General',
+                         page:r.page,localOnly:true,_data:r.data_base64});
+        });
         if(!photos.length)return;
-        function loadImg(p){return new Promise(function(resolve){var img=new Image();img.onload=function(){resolve({img:img,meta:p})};img.onerror=function(){resolve(null)};img.src='/api/preplan/photos/'+p.id+'/image';});}
+
+        /* Grouped by category so the sheet reads like a walk-through rather than
+           upload order — hazards together, utilities together. */
+        var order=['Exterior','Access','Interior','Fire Protection','Utility','Hazard','General'];
+        photos.sort(function(a,b){
+            var ai=order.indexOf(a.category||'General'), bi=order.indexOf(b.category||'General');
+            if(ai<0)ai=order.length; if(bi<0)bi=order.length;
+            return ai-bi;
+        });
+
+        function src(p){ return p.localOnly ? ('data:image/jpeg;base64,'+p._data)
+                                            : ('/api/preplan/photos/'+p.id+'/image'); }
+        function loadImg(p){
+            return new Promise(function(resolve){
+                var img=new Image();
+                img.onload=function(){resolve({img:img,meta:p})};
+                img.onerror=function(){resolve(null)};
+                img.src=src(p);
+            });
+        }
         return Promise.all(photos.map(loadImg)).then(function(loaded){
             loaded=loaded.filter(Boolean);
             if(!loaded.length)return;
             var doc=pdfObj.doc,M=pdfObj.M,pw=pdfObj.pw,H=279.4;
-            doc.addPage();var y=M;
-            doc.setFillColor(30,58,95);doc.rect(M,y,pw,8,'F');
-            doc.setTextColor(255);doc.setFontSize(11);doc.setFont('helvetica','bold');
-            doc.text('Site Photos ('+loaded.length+')',M+3,y+5.5);doc.setTextColor(0);y+=12;
-            var cols=2,gap=6,cellW=(pw-gap)/cols,boxH=52,capH=7,cellH=boxH+capH+4,col=0;
+            var cols=2,gap=6,cellW=(pw-gap)/cols,boxH=52,capH=9,cellH=boxH+capH+5;
+            var y=0,col=0,shown=0,lastCat=null;
+
+            function header(cont){
+                doc.addPage();y=M;
+                doc.setFillColor(30,58,95);doc.rect(M,y,pw,8,'F');
+                doc.setTextColor(255);doc.setFontSize(11);doc.setFont('helvetica','bold');
+                doc.text('Site Photos ('+loaded.length+')'+(cont?' cont.':''),M+3,y+5.5);
+                doc.setTextColor(0);y+=12;col=0;
+            }
+            header(false);
+
             loaded.forEach(function(it){
-                if(y+cellH>H-M){doc.addPage();y=M;col=0;}
+                var cat=it.meta.category||'General';
+                // A category heading, on its own line, when the group changes.
+                if(cat!==lastCat){
+                    if(col!==0){ col=0; y+=cellH; }
+                    if(y+cellH+6>H-M) header(true);
+                    doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(30,58,95);
+                    doc.text(cat.toUpperCase(),M,y+3);
+                    doc.setTextColor(0);doc.setFont('helvetica','normal');
+                    y+=6; lastCat=cat;
+                }
+                if(y+cellH>H-M) header(true);
                 var x=M+col*(cellW+gap);
                 var ar=(it.img.width/it.img.height)||1.33,dw=cellW,dh=dw/ar;
                 if(dh>boxH){dh=boxH;dw=dh*ar;}
-                try{doc.addImage(it.img,'JPEG',x,y,dw,dh);}catch(e){try{doc.addImage(it.img,'PNG',x,y,dw,dh);}catch(e2){}}
-                var cap=((it.meta.page?it.meta.page+' · ':'')+(it.meta.caption||it.meta.category||'')).trim();
-                if(cap){doc.setFontSize(7);doc.setTextColor(90);doc.text(doc.splitTextToSize(cap,cellW),x,y+boxH+4);doc.setTextColor(0);}
+                // Centre a portrait shot in its column instead of left-pinning it.
+                var ix=x+(cellW-dw)/2;
+                try{doc.addImage(it.img,'JPEG',ix,y,dw,dh);}
+                catch(e){try{doc.addImage(it.img,'PNG',ix,y,dw,dh);}catch(e2){}}
+                var cap=((it.meta.page?it.meta.page+' · ':'')+(it.meta.caption||'')).trim();
+                if(it.meta.localOnly) cap=(cap?cap+' · ':'')+'on this device only';
+                if(cap){
+                    doc.setFontSize(7);doc.setTextColor(90);
+                    doc.text(doc.splitTextToSize(cap,cellW).slice(0,2),x,y+boxH+4);
+                    doc.setTextColor(0);
+                }
+                shown++;
                 col++;if(col>=cols){col=0;y+=cellH;}
             });
         });
