@@ -106,7 +106,7 @@
 
         wrap.querySelector('#pwp-clear').addEventListener('click', function () {
             area.value = '';
-            area.focus();
+            // Not focused: same reason as open() — keep the pencil's path clear.
         });
         wrap.querySelector('#pwp-done').addEventListener('click', commit);
 
@@ -120,17 +120,19 @@
         if (!pad) build();
         target = el;
         title.textContent = labelFor(el);
-        hint.textContent = (el.tagName === 'TEXTAREA')
-            ? 'Write or type here. Nothing behind this sheet can be touched.'
-            : 'Write or type here, then Done. Nothing behind this sheet can be touched.';
+        hint.textContent = 'Write straight onto the lines with the pencil, or tap to type. '
+                         + 'Nothing behind this sheet can be touched.';
         area.value = el.value || '';
-        // Let the field's own keyboard go away before the sheet takes over.
+        /* Blur the field so its keyboard goes away, and DO NOT focus the
+           writing area.
+           Focusing it would bring the on-screen keyboard straight back up,
+           which covers half the sheet and, worse, means the pencil is writing
+           onto a field that already holds keyboard focus — where strokes can be
+           taken as selection rather than handed to Scribble. Left unfocused,
+           writing on it engages Scribble the same way it does anywhere else,
+           and a tap still opens the keyboard for anyone who would rather type. */
         try { el.blur(); } catch (e) {}
         pad.classList.add('on');
-        setTimeout(function () {
-            area.focus();
-            try { area.setSelectionRange(area.value.length, area.value.length); } catch (e) {}
-        }, 30);
     }
 
     function commit() {
