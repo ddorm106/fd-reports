@@ -299,7 +299,12 @@ function planGaps(d){
     // Chemicals on site with nothing saying where the sheets are.
     var chem=false;
     for(var k in d){ if(/^chem_name_\d+$/.test(k) && String(d[k]||'').trim()){ chem=true; break; } }
-    if(chem && !has('sds_location')) out.push({t:'hazmat',m:'Chemicals are listed but the SDS location is blank'});
+    /* "No SDS on site" is an ANSWER, not a gap. A crew that checked and found
+       none has done the work, and nagging them for a location that does not
+       exist teaches them to ignore this list — which is how a warning stops
+       being read at all. */
+    var sdsSettled = has('sds_location') || String(d.msds_onsite||'').toLowerCase()==='no';
+    if(chem && !sdsSettled) out.push({t:'hazmat',m:'Chemicals are listed but the SDS location is blank'});
     // The same hydrant entered more than once inflates the water supply.
     var seen={},dupes=[];
     for(var i=1;i<=10;i++){
