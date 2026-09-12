@@ -365,6 +365,7 @@
          * to read is a plan nobody reads. */
       });
       (f.sides || []).forEach(movePoint);
+      (f.photos || []).forEach(movePoint);
       (f.freehand || []).forEach(function (fh) {
         fh.points = (fh.points || []).map(function (q) { return rot(q.x, q.y); });
       });
@@ -450,6 +451,8 @@
     d.zones = f.zones || [];
     /* Side labels are fireground designations — the PDF needs them too. */
     d.sides = f.sides || [];
+    /* Photo pins (fp-photo.js) ride along for the same reason. */
+    d.photos = f.photos || [];
     return d;
   }
 
