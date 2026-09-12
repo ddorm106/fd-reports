@@ -45,6 +45,9 @@
     { k: 'exposure',  label: 'Exposure',         t: 'X',      c: '#ff9800' },
     { k: 'assembly',  label: 'Assembly point',   t: '●', c: '#4caf50' },
     { k: 'obstruct',  label: 'Overhead obstruction', t: '⚠', c: '#ffd54f' },
+    // A photo pin captures a picture where it stands; sm-photo-sym.js does the work.
+    { k: 'photo',     label: 'Photo',            t: '\u{1F4F7}', c: '#0ea5e9' },
+    // 'other' stays LAST: cat() falls back to the final entry.
     { k: 'other',     label: 'Other hazard',     t: '!',      c: '#b3252b' }
   ];
   function cat(k) { for (var i = 0; i < CATS.length; i++) if (CATS[i].k === k) return CATS[i]; return CATS[CATS.length - 1]; }
@@ -127,8 +130,12 @@
     markerLayer.clearLayers();
     markers().forEach(function (m, i) {
       var c = cat(m.k);
-      var mk = L.marker([m.lat, m.lng], { icon: pinIcon({ t: c.t, c: c.c, label: m.label || c.label }) });
+      var icon = (m.spec && window.SMAdd && window.SMAdd.iconFor(m)) ||
+                 pinIcon({ t: c.t, c: c.c, label: m.label || c.label });
+      var mk = L.marker([m.lat, m.lng], { icon: icon });
       mk.on('click', function () {
+        // A photo pin opens its picture; removing it lives inside that view.
+        if (m.k === 'photo' && m.photoId && window.SMAdd) { window.SMAdd.openPhoto(m, i); return; }
         if (confirm('Remove this ' + (m.label || c.label) + ' marker?')) {
           var list = markers(); list.splice(i, 1); writeMarkers(list);
           drawMarkers(); refreshCount(); scheduleRender();
@@ -314,12 +321,15 @@
         var cc = cat(m.k); used[cc.k] = cc;
         var pt = P(m.lat, m.lng);
         var r = 15 * S;
-        g.beginPath(); g.arc(pt.x, pt.y, r, 0, Math.PI * 2);
-        g.fillStyle = cc.c; g.fill();
-        g.lineWidth = 2.5 * S; g.strokeStyle = '#fff'; g.stroke();
-        g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle';
-        g.font = '700 ' + Math.round((cc.t.length > 1 ? 12 : 16) * S) + 'px system-ui, sans-serif';
-        g.fillText(cc.t, pt.x, pt.y + 0.5 * S);
+        // A generated symbol prints as its own drawing, not as a letter badge.
+        if (!(m.spec && window.SMAdd && window.SMAdd.drawSpecOn(g, m, pt, S))) {
+          g.beginPath(); g.arc(pt.x, pt.y, r, 0, Math.PI * 2);
+          g.fillStyle = cc.c; g.fill();
+          g.lineWidth = 2.5 * S; g.strokeStyle = '#fff'; g.stroke();
+          g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle';
+          g.font = '700 ' + Math.round((cc.t.length > 1 ? 12 : 16) * S) + 'px system-ui, sans-serif';
+          g.fillText(cc.t, pt.x, pt.y + 0.5 * S);
+        }
         var lab = (m.label || cc.label);
         g.font = '700 ' + Math.round(11 * S) + 'px system-ui, sans-serif';
         var lw = g.measureText(lab).width + 8 * S;
@@ -521,6 +531,10 @@
         document.getElementById('smHint').textContent = 'Pick a symbol first, then tap the map.';
         return;
       }
+      // Seams for sm-photo-sym.js: a photo pin takes a picture instead of a label,
+      // and a generated symbol carries its own drawing.
+      if (picked === 'photo' && window.SMAdd) { window.SMAdd.placePhoto(e.latlng); return; }
+      if (picked.indexOf('gen:') === 0 && window.SMAdd) { window.SMAdd.placeSymbol(picked, e.latlng); return; }
       var label = prompt('Label for this ' + cat(picked).label + ' (optional)', '');
       if (label === null) return;
       var list = markers();
@@ -587,6 +601,10 @@
 
   window.PreplanSiteMap = {
     CATS: CATS, cat: cat, markers: markers,
-    render: renderNow, flush: flush, compose: composeImage
+    render: renderNow, flush: flush, compose: composeImage,
+    // Seams for sm-photo-sym.js (photo pins, AI symbols).
+    map: function () { return map; },
+    writeMarkers: writeMarkers, draw: drawMarkers, refresh: refreshCount,
+    schedule: scheduleRender, pick: function (k) { picked = k; }
   };
 })();
