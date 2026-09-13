@@ -1098,7 +1098,7 @@
       var sy = dr.sym;
       /* Work in the symbol's own frame so a rotated symbol stretches along ITS
        * length, not the screen's. */
-      var ra = -degToRad(sy.angle || 0);
+      var ra = -(sy.angle || 0) * Math.PI / 180;
       var glx = (pt.x - sy.x) * Math.cos(ra) - (pt.y - sy.y) * Math.sin(ra);
       var gly = (pt.x - sy.x) * Math.sin(ra) + (pt.y - sy.y) * Math.cos(ra);
       /* About the centre, not the opposite corner: a symbol's x,y means "the
