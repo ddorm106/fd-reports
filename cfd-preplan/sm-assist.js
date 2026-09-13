@@ -62,6 +62,12 @@
       markers: (h.markers() || []).map(function (m, i) {
         return { index: i, symbol: m.k, label: m.label || '', lat: m.lat, lng: m.lng };
       }),
+      /* Drawn by the map from the city hydrant dataset, not by markers. Given to
+         the model as context to place things NEAR, not as things to re-place. */
+      hydrants_on_map: (h.hydrants ? h.hydrants() : []).slice(0, 25).map(function (x) {
+        return { id: x.hydrant_id || x.id, lat: x.latitude, lng: x.longitude,
+                 gpm_at_20psi: x.aff_20psi || null, out_of_service: String(x.out_of_service) === '1' };
+      }),
       palette: (h.CATS || []).map(function (c2) { return { key: c2.k, label: c2.label }; }),
       generated: (plan.site_symbols || []).map(function (s) { return { key: 'gen:' + s.id, label: s.label }; })
     };

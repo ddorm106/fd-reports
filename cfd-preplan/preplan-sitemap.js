@@ -604,6 +604,9 @@
     render: renderNow, flush: flush, compose: composeImage,
     // Seams for sm-photo-sym.js (photo pins, AI symbols).
     map: function () { return map; },
+    /* Seam for sm-assist.js: the city hydrants near this property, so the
+       assistant can place an FDC beside one instead of guessing. */
+    hydrants: function () { try { return nearbyHydrants(); } catch (e) { return []; } },
     writeMarkers: writeMarkers, draw: drawMarkers, refresh: refreshCount,
     schedule: scheduleRender, pick: function (k) { picked = k; }
   };
