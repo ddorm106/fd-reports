@@ -649,22 +649,89 @@ function drawUnknownSymbol(s, sel) {
   ctx.restore();
 }
 
+/* ---------------------------------------------------------------- symbols
+ * A symbol used to have one `scale`, which kept it square. But a walk-in cooler
+ * is not square, and neither is a loading dock, a pump house or a canopy — so a
+ * symbol now has sx and sy and can be stretched along either axis by dragging
+ * the grips that appear when it is selected.
+ *
+ * `scale` is still read as the fallback for both axes, so every symbol already
+ * on a plan keeps the size it was given, and still WRITTEN as the mean of the
+ * two, so readers that only know about `scale` (the DivisionScan export, older
+ * copies of this editor) get something sensible rather than nothing.
+ *
+ * This is deliberately not the rule the underlay follows. A traced image is
+ * evidence and stretching it makes the plan lie; a symbol is notation, and
+ * stretching it is how you say "the cooler is twice as long as it is deep".
+ */
+function symScale(s) {
+  var base = s.scale || 1;
+  return { x: typeof s.sx === 'number' ? s.sx : base,
+           y: typeof s.sy === 'number' ? s.sy : base };
+}
+
+/* The symbol's drawn box in plan units, plus the nominal box it came from. */
+function symBox(s) {
+  var w = 24, h = 24;
+  if (s.spec) { w = s.spec.w || 32; h = s.spec.h || 32; }
+  else {
+    var def = SYMBOLS.byId[s.symbolId];
+    if (def) { w = def.w; h = def.h; }
+  }
+  var k = symScale(s);
+  return { w: w * k.x, h: h * k.y, baseW: w, baseH: h, sx: k.x, sy: k.y };
+}
+
+/* The eight grips, in DATA space so the app can hit-test them: four corners,
+ * which take both axes, and four edge midpoints, which take one. */
+function symbolHandles(s) {
+  var b = symBox(s);
+  var a = degToRad(s.angle || 0), ca = Math.cos(a), sa = Math.sin(a);
+  var hw = b.w / 2, hh = b.h / 2;
+  return [
+    { id: 'nw', lx: -hw, ly: -hh, axis: 'both' }, { id: 'n', lx: 0, ly: -hh, axis: 'y' },
+    { id: 'ne', lx: hw, ly: -hh, axis: 'both' }, { id: 'e', lx: hw, ly: 0, axis: 'x' },
+    { id: 'se', lx: hw, ly: hh, axis: 'both' }, { id: 's', lx: 0, ly: hh, axis: 'y' },
+    { id: 'sw', lx: -hw, ly: hh, axis: 'both' }, { id: 'w', lx: -hw, ly: 0, axis: 'x' }
+  ].map(function (g) {
+    return { id: g.id, axis: g.axis, box: b,
+             x: s.x + g.lx * ca - g.ly * sa,
+             y: s.y + g.lx * sa + g.ly * ca };
+  });
+}
+
+/* Drawn inside the symbol's translated and rotated frame, BEFORE the scale is
+ * applied, so the box hugs the artwork while the grips stay one size on screen
+ * at any zoom. */
+function drawSymbolGrips(b) {
+  var z = state.view.zoom;
+  ctx.strokeStyle = COL.symbolRing;
+  ctx.lineWidth = 2 / z;
+  ctx.setLineDash([5 / z, 4 / z]);
+  ctx.strokeRect(-b.w / 2, -b.h / 2, b.w, b.h);
+  ctx.setLineDash([]);
+  var g = 5 / z;
+  ctx.fillStyle = '#fff';
+  ctx.lineWidth = 1.5 / z;
+  [[-1, -1], [0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0]].forEach(function (p) {
+    var x = p[0] * b.w / 2, y = p[1] * b.h / 2;
+    ctx.beginPath();
+    ctx.rect(x - g, y - g, g * 2, g * 2);
+    ctx.fill();
+    ctx.stroke();
+  });
+}
+
 function drawSymbol(s, sel) {
   /* A generated symbol carries its own shape list, so the drawing stays whole
    * on another machine that has never seen the device library it came from. */
   if (s.spec && root.FPSymGen) {
-    var zc = state.view.zoom;
     ctx.save();
     ctx.translate(s.x, s.y);
     ctx.rotate(degToRad(s.angle || 0));
-    var sc = s.scale || 1;
-    if (sel) {
-      ctx.strokeStyle = COL.symbolRing;
-      ctx.lineWidth = 3 / zc;
-      var rr = Math.max(s.spec.w || 32, s.spec.h || 32) * 0.7 * sc;
-      ctx.beginPath(); ctx.arc(0, 0, rr, 0, Math.PI * 2); ctx.stroke();
-    }
-    ctx.scale(sc, sc);
+    var k = symScale(s);
+    if (sel) drawSymbolGrips(symBox(s));
+    ctx.scale(k.x, k.y);
     try { root.FPSymGen.drawSpec(ctx, s.spec); } catch (e) {}
     ctx.restore();
     return;
@@ -674,14 +741,9 @@ function drawSymbol(s, sel) {
   ctx.save();
   ctx.translate(s.x, s.y);
   ctx.rotate(degToRad(s.angle || 0));
-  const _sc = s.scale || 1;
-  if (sel) {
-    ctx.strokeStyle = COL.symbolRing;
-    ctx.lineWidth = 3 / state.view.zoom;
-    const r = Math.max(def.w, def.h) * 0.7 * _sc;
-    ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI*2); ctx.stroke();
-  }
-  ctx.save(); ctx.scale(_sc, _sc); def.draw(ctx, def.w, def.h); ctx.restore();
+  const _k = symScale(s);
+  if (sel) drawSymbolGrips(symBox(s));
+  ctx.save(); ctx.scale(_k.x, _k.y); def.draw(ctx, def.w, def.h); ctx.restore();
   if (s.label && state.view.zoom > 0.3) {
     // Labels upright regardless of symbol + view rotation
     ctx.rotate(-degToRad(s.angle || 0));
@@ -689,7 +751,7 @@ function drawSymbol(s, sel) {
     ctx.fillStyle = '#1f2937';
     ctx.font = (9 / state.view.zoom) + 'px "Source Sans Pro", system-ui';
     ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-    ctx.fillText(s.label, 0, def.h/2 * (s.scale||1) + 3);
+    ctx.fillText(s.label, 0, symBox(s).h / 2 + 3);
   }
   ctx.restore();
 }
@@ -1327,15 +1389,15 @@ function drawFreehand(f, sel) {
       }
       for (i = (d.symbols || []).length - 1; i >= 0; i--) {
         var s = d.symbols[i];
-        var def = SYMBOLS.byId[s.symbolId];
-        /* A generated symbol carries its own box; a placed one may reference an
-         * id this device has never registered, so the spec is the better
-         * source. Both are scaled, or a resized symbol could not be grabbed
-         * where it is actually drawn. */
-        var box = s.spec ? Math.max(s.spec.w || 32, s.spec.h || 32)
-                         : (def ? Math.max(def.w, def.h) : 24);
-        var rr = box * 0.6 * (s.scale || 1);
-        if (near(s, Math.max(rr, tol))) return { kind: 'symbol', index: i };
+        /* The drawn box, turned with the symbol: a stretched one has to be
+         * grabbable along the part that sticks out, not just near its middle. */
+        var sb = symBox(s);
+        var sa2 = -degToRad(s.angle || 0);
+        var slx = (p.x - s.x) * Math.cos(sa2) - (p.y - s.y) * Math.sin(sa2);
+        var sly = (p.x - s.x) * Math.sin(sa2) + (p.y - s.y) * Math.cos(sa2);
+        if (Math.abs(slx) <= sb.w / 2 + tol && Math.abs(sly) <= sb.h / 2 + tol) {
+          return { kind: 'symbol', index: i };
+        }
       }
       for (i = (d.doors || []).length - 1; i >= 0; i--) {
         if (near(d.doors[i], Math.max((d.doors[i].width || 32) / 2, tol))) return { kind: 'door', index: i };
@@ -1397,6 +1459,7 @@ function drawFreehand(f, sel) {
       fitToView: fitToView,
       zoomAt: zoomAt,
       hitTest: hitTest,
+      symbolHandles: symbolHandles,
       buildViewModel: buildViewModel,
       contentBounds: contentBounds,
       fmtLen: fmtLen,

@@ -900,6 +900,25 @@
     var hit = renderer.hitTest(p.sx, p.sy);
     var f = doc.floor();
 
+    /* A selected symbol wears eight grips. Grabbing one resizes it, and that is
+     * checked BEFORE the normal hit test, or the grip on top of a neighbouring
+     * symbol would select that symbol instead of resizing this one. */
+    if (state.selected && state.selected.kind === 'symbol' && renderer.symbolHandles) {
+      var selSym = doc.list('symbols')[state.selected.index];
+      if (selSym) {
+        var grab = 10 / state.view.zoom;
+        var got = null;
+        renderer.symbolHandles(selSym).forEach(function (h) {
+          if (!got && G.dist(pt.x, pt.y, h.x, h.y) <= grab) got = h;
+        });
+        if (got) {
+          doc.pushUndo();
+          drag = { mode: 'symbol-scale', sym: selSym, grip: got, base: got.box };
+          return;
+        }
+      }
+    }
+
     /* An unlocked underlay is grabbable, but only when nothing else is under
      * the cursor — otherwise tracing would drag the picture instead of drawing. */
     if (!hit && f.underlay && !f.underlay.locked) {
@@ -1073,6 +1092,25 @@
       var u = doc.floor().underlay;
       u.x = dr.u0.x + (pt.x - dr.start.x);
       u.y = dr.u0.y + (pt.y - dr.start.y);
+      return;
+    }
+    if (dr.mode === 'symbol-scale') {
+      var sy = dr.sym;
+      /* Work in the symbol's own frame so a rotated symbol stretches along ITS
+       * length, not the screen's. */
+      var ra = -degToRad(sy.angle || 0);
+      var glx = (pt.x - sy.x) * Math.cos(ra) - (pt.y - sy.y) * Math.sin(ra);
+      var gly = (pt.x - sy.x) * Math.sin(ra) + (pt.y - sy.y) * Math.cos(ra);
+      /* About the centre, not the opposite corner: a symbol's x,y means "the
+       * thing is HERE", and resizing must not walk it off that spot. */
+      var cur = { x: dr.base.sx, y: dr.base.sy };
+      if (dr.grip.axis !== 'y') cur.x = Math.abs(glx) * 2 / dr.base.baseW;
+      if (dr.grip.axis !== 'x') cur.y = Math.abs(gly) * 2 / dr.base.baseH;
+      sy.sx = Math.max(0.1, Math.min(20, cur.x));
+      sy.sy = Math.max(0.1, Math.min(20, cur.y));
+      /* Keep `scale` meaningful for readers that never heard of sx/sy. */
+      sy.scale = (sy.sx + sy.sy) / 2;
+      draw();
       return;
     }
     if (dr.mode === 'underlay-scale') {
@@ -1699,8 +1737,12 @@
        * on. Live slider, because you size this by eye against the walls. */
       var sizeLabel = document.createElement('label');
       sizeLabel.className = 'fld';
-      var pct = Math.round((el.scale || 1) * 100);
-      sizeLabel.textContent = 'Size — ' + pct + '%';
+      var sx0 = typeof el.sx === 'number' ? el.sx : (el.scale || 1);
+      var sy0 = typeof el.sy === 'number' ? el.sy : (el.scale || 1);
+      var ratio = sx0 ? sy0 / sx0 : 1;
+      var pct = Math.round(sx0 * 100);
+      var stretched = Math.abs(ratio - 1) > 0.01;
+      sizeLabel.textContent = 'Size — ' + pct + '%' + (stretched ? ' (stretched)' : '');
       var slider = document.createElement('input');
       slider.type = 'range';
       slider.min = '25'; slider.max = '400'; slider.step = '5';
@@ -1710,8 +1752,11 @@
       slider.addEventListener('input', function () {
         /* One undo step for the whole drag, not one per pixel of travel. */
         if (!pushed) { doc.pushUndo(); pushed = true; }
-        el.scale = parseInt(slider.value, 10) / 100;
-        sizeLabel.textContent = 'Size — ' + slider.value + '%';
+        var v = parseInt(slider.value, 10) / 100;
+        el.sx = v;
+        el.sy = v * ratio;
+        el.scale = (el.sx + el.sy) / 2;
+        sizeLabel.textContent = 'Size — ' + slider.value + '%' + (stretched ? ' (stretched)' : '');
         draw();
       });
       slider.addEventListener('change', function () {
