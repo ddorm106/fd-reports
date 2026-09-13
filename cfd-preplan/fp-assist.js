@@ -249,11 +249,27 @@
     return hit;
   }
 
+  /* Focus is held as an id and a name, never as a reference to the zone object.
+   * doc.undo() replaces the whole data graph (JSON.parse of a snapshot), so a
+   * reference would go stale on every undo even when the zone is still there. */
+  function focusZone() {
+    if (!focused) return null;
+    var d = doc();
+    if (!d) return null;
+    var zones = d.floor().zones || [];
+    var byId = null, byName = null;
+    zones.forEach(function (z) {
+      if (z.id === focused.id) byId = z;
+      if (!byName && z.name && z.name === focused.name) byName = z;
+    });
+    return byId || byName;
+  }
+
   function setFocus(name) {
     if (!name) { focused = null; chip(); FP.draw(); return true; }
     var z = zoneByName(name);
     if (!z) { focused = null; chip(); return false; }
-    focused = z;
+    focused = { id: z.id, name: z.name || name, color: z.color };
     chip();
     FP.draw();
     return true;
@@ -267,7 +283,12 @@
     if (!focused || suppressDim) return;
     var c = FP.ctx;
     if (!c) return;
-    var poly = focused.poly || [];
+    /* An Undo can take the zone away, or the operator can switch floors. Dimming
+     * around a shape that is no longer there would grey the plan with nothing to
+     * explain it, so focus follows the zone out. */
+    var z = focusZone();
+    if (!z) { focused = null; chip(); return; }
+    var poly = z.poly || [];
     if (poly.length < 3) return;
     c.save();
     c.setTransform(state.dpr || 1, 0, 0, state.dpr || 1, 0, 0);
@@ -291,7 +312,7 @@
       c.lineTo(q.sx, q.sy);
     }
     c.closePath();
-    c.strokeStyle = focused.color || '#f59e0b';
+    c.strokeStyle = z.color || focused.color || '#f59e0b';
     c.lineWidth = 3;
     c.stroke();
     c.restore();
