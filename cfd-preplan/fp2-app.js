@@ -907,9 +907,10 @@
       var selSym = doc.list('symbols')[state.selected.index];
       if (selSym) {
         var grab = 10 / state.view.zoom;
-        var got = null;
+        var got = null, gotD = Infinity;
         renderer.symbolHandles(selSym).forEach(function (h) {
-          if (!got && G.dist(pt.x, pt.y, h.x, h.y) <= grab) got = h;
+          var hd = G.dist(pt.x, pt.y, h.x, h.y);
+          if (hd <= grab && hd < gotD) { got = h; gotD = hd; }
         });
         if (got) {
           doc.pushUndo();
