@@ -855,6 +855,7 @@ function drawFreehand(f, sel) {
     function drawGrid() {
       var d = state.data;
       if (!d) return;
+      if (state.printing) return;      // never onto a printed sheet
       var ft = d.scale_px_per_ft || 12;
       var z = state.view.zoom;
 

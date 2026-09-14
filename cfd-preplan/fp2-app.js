@@ -78,10 +78,21 @@
    * older readers know that key and only that key. floor_plan_src_1 is set by
    * the uploader to say where the sheet came from. */
   function snapshot() {
+    /* The grid is a drawing aid, not part of the drawing: it helps put a line
+     * in the right place and has no business on a printed sheet. Every export
+     * comes through this one function, so suppressing it here covers the PDF,
+     * the Book and the copy pushed to the record — and the flag is cleared in a
+     * finally, so a failed capture cannot leave the grid switched off. */
     try {
+      state.printing = true;
       draw();
       return canvas.toDataURL('image/jpeg', 0.72);
-    } catch (e) { return null; }
+    } catch (e) {
+      return null;
+    } finally {
+      state.printing = false;
+      draw();
+    }
   }
 
   function sheetIsUploaded() {
