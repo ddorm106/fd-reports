@@ -36,7 +36,8 @@
     visibleLayers: {},
     activeSymbolId: null,
     snapping: true,
-    ortho: false,
+    ortho: false,          // Shift, held
+    orthoLock: false,      // the button, until it is pressed again
     pendingCalibration: null
   };
 
@@ -1014,7 +1015,7 @@
         d.x2 = pt.x; d.y2 = pt.y;
       } else {
         var sp = pt;
-        if (e.shiftKey || state.ortho) {
+        if (e.shiftKey || state.ortho || state.orthoLock) {
           var c = G.constrainAngle(d.x1, d.y1, pt.x, pt.y, { ortho: true });
           sp = { x: c.x, y: c.y };
         } else {
@@ -1063,7 +1064,7 @@
       return;
     }
     if (dr.mode === 'wall-end') {
-      var sp = (e && e.shiftKey)
+      var sp = ((e && e.shiftKey) || state.ortho || state.orthoLock)
         ? G.constrainAngle(dr.end === 1 ? dr.wall.x2 : dr.wall.x1,
                            dr.end === 1 ? dr.wall.y2 : dr.wall.y1, pt.x, pt.y, { ortho: true })
         : snapped(pt, { excludeWallId: dr.wall.id });
@@ -2016,11 +2017,39 @@
     restore();
   }
 
+  /* Straight lines without a keyboard. Holding Shift constrains a line to
+   * horizontal or vertical, which is no use at all on a tablet, so the same
+   * constraint gets a button that stays on. With the foot grid underneath and
+   * snapping on the foot, a wall drawn with this held down lands square and
+   * the right length. */
+  function initOrthoLock() {
+    var rail = document.querySelector('[data-tool="measure"]');
+    if (!rail || !rail.parentNode || document.getElementById('fpx-ortho')) return;
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.id = 'fpx-ortho';
+    b.className = rail.className.replace(/\bactive\b/, '').trim();
+    b.title = 'Straight lines only — horizontal and vertical';
+    b.innerHTML = '<i>\u22a5</i><b>Straight</b>';
+    try { state.orthoLock = localStorage.getItem('fp2OrthoLock') === '1'; } catch (e) {}
+    function paint() { b.classList.toggle('active', !!state.orthoLock); }
+    b.addEventListener('click', function () {
+      state.orthoLock = !state.orthoLock;
+      try { localStorage.setItem('fp2OrthoLock', state.orthoLock ? '1' : '0'); } catch (e) {}
+      paint();
+      showToast(state.orthoLock ? 'Straight lines on — horizontal and vertical only'
+                                : 'Straight lines off', 'ok');
+    });
+    rail.parentNode.insertBefore(b, rail.nextSibling);
+    paint();
+  }
+
   function initPanelCloses() {
     Array.prototype.forEach.call(document.querySelectorAll('[data-close]'), function (el) {
       el.addEventListener('click', function () { closePanel(el.getAttribute('data-close')); });
     });
     initPanelDrag();
+    initOrthoLock();
   }
 
   /* ============================================================ keyboard */

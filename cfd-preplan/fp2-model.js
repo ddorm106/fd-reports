@@ -34,7 +34,7 @@
   var DEFAULT_LAYERS = {
     underlay: true, zones: true, walls: true, doors: true, windows: true,
     objects: true, symbols: true, texts: true, measurements: true,
-    freehand: true, dimensions: true, grid: false,
+    freehand: true, dimensions: true, grid: true,
     /* Off by default: it is screen-only furniture that repeats the Layers
      * panel, and it was costing a third of the canvas width in portrait. */
     legend: false
@@ -115,6 +115,11 @@
     if (isV5(d)) {
       d.version = SCHEMA_VERSION;
       d.layers = Object.assign(clone(DEFAULT_LAYERS), d.layers || {});
+      /* Graph paper became the default after these plans were drawn, and they
+       * carry an explicit grid:false from the old one. Lift it ONCE; the marker
+       * means that switching it back off afterwards sticks. It is not a layer —
+       * the Layers panel is fixed markup, so this adds no stray toggle. */
+      if (!d.layers.grid_paper_v2) { d.layers.grid = true; d.layers.grid_paper_v2 = true; }
       d.sheet = Object.assign({ north: 0, show_north: true, show_scalebar: true, show_titleblock: false, title: '' }, d.sheet || {});
       d.legend = Object.assign({ show: true, x: null, y: null }, d.legend || {});
       d.floors.forEach(function (f) {

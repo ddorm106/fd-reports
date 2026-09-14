@@ -853,18 +853,32 @@ function drawFreehand(f, sel) {
       var d = state.data;
       if (!d) return;
       var ft = d.scale_px_per_ft || 12;
-      var step = ft * 5;                       // a 5 ft grid
-      /* Below this zoom the grid is denser than the pixels and just muddies
-       * the drawing, so it drops out rather than aliasing. */
-      if (step * state.view.zoom < 6) return;
-      var b = { x0: 0, y0: 0, x1: d.canvas_width, y1: d.canvas_height };
+      var z = state.view.zoom;
+      var w = d.canvas_width, h = d.canvas_height;
+
+      /* Graph paper rather than one flat grid: a foot you can count, a heavier
+       * line every 5 ft and heavier again every 10, so a run of wall can be
+       * measured by eye and a line drawn along it stays straight. Snapping is
+       * on the foot, so the finest lines are the ones a point lands on.
+       *
+       * Each tier drops out once its lines would fall closer than 5 screen
+       * pixels — below that a grid stops being paper and becomes grey mud. */
+      var tiers = [
+        { step: ft,      color: 'rgba(37, 99, 235, 0.10)', width: 1 },
+        { step: ft * 5,  color: 'rgba(37, 99, 235, 0.20)', width: 1 },
+        { step: ft * 10, color: 'rgba(37, 99, 235, 0.32)', width: 1.3 }
+      ];
+
       ctx.save();
-      ctx.strokeStyle = COL.gridLine;
-      ctx.lineWidth = 1 / state.view.zoom;
-      ctx.beginPath();
-      for (var x = 0; x <= b.x1; x += step) { ctx.moveTo(x, 0); ctx.lineTo(x, b.y1); }
-      for (var y = 0; y <= b.y1; y += step) { ctx.moveTo(0, y); ctx.lineTo(b.x1, y); }
-      ctx.stroke();
+      tiers.forEach(function (t) {
+        if (t.step * z < 5) return;
+        ctx.strokeStyle = t.color;
+        ctx.lineWidth = t.width / z;
+        ctx.beginPath();
+        for (var x = 0; x <= w; x += t.step) { ctx.moveTo(x, 0); ctx.lineTo(x, h); }
+        for (var y = 0; y <= h; y += t.step) { ctx.moveTo(0, y); ctx.lineTo(w, y); }
+        ctx.stroke();
+      });
       ctx.restore();
     }
 
