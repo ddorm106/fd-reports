@@ -1712,6 +1712,23 @@
     }
 
     if (hit.kind === 'wall') {
+      /* The one you are looking at, straightened on its own — its neighbours
+       * come with it, because the corner is solved rather than the wall. */
+      var straighten = document.createElement('button');
+      straighten.type = 'button';
+      straighten.className = 'fp-tbtn';
+      straighten.style.cssText = 'width:100%;margin-bottom:7px;padding:8px;font-weight:700';
+      straighten.textContent = '\u22a5 Straighten this wall';
+      straighten.addEventListener('click', function () {
+        doc.pushUndo();
+        var r = G.straightenWalls(doc.list('walls'), {
+          tolDeg: 20, joinTol: Math.max(4, scale * 0.5), only: [el.id]
+        });
+        commit(r.squared ? 'Straightened' : 'That wall is too far off to be meant as square');
+        showEditPanel(hit);
+      });
+      body.appendChild(straighten);
+
       var len = G.pxToFeet(G.dist(el.x1, el.y1, el.x2, el.y2), scale);
       sub = G.formatFeet(len);
       field('Length (ft)', Math.round(len * 100) / 100, function (v) {
@@ -2156,6 +2173,16 @@
     $('btn-underlay').addEventListener('click', function () { togglePanel('underlay-panel'); syncUnderlayPanel(); });
     $('btn-import').addEventListener('click', openImportPanel);
     $('btn-detect-rooms').addEventListener('click', detectRooms);
+
+    $('btn-straighten').addEventListener('click', function () {
+      var f = doc.floor();
+      var scale = doc.data.scale_px_per_ft || 12;
+      doc.pushUndo();
+      var r = G.straightenWalls(f.walls || [], { tolDeg: 8, joinTol: Math.max(4, scale * 0.5) });
+      commit(r.squared
+        ? ('Squared ' + r.squared + ' wall' + (r.squared === 1 ? '' : 's') + ', corners kept closed')
+        : 'Every wall was already square');
+    });
 
     $('btn-weld').addEventListener('click', function () {
       var f = doc.floor();

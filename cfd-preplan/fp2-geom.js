@@ -629,6 +629,98 @@
   /* Pull endpoints that are within tol of each other onto a shared point.
    * Deliberately capped: welding MOVES corners, so a large tolerance drags
    * genuinely separate walls together. Same rule as the app's 0.5 ft join. */
+
+  /* ------------------------------------------------------------- straighten
+   * Walls drawn by hand come out a degree or two off square. Squaring each one
+   * on its own is the obvious fix and it is wrong: rotating a wall about its
+   * own midpoint pulls its ends away from the walls it met, and on a real
+   * building that opened foot-wide gaps at the corners and left MORE walls off
+   * square than it fixed. (Measured on a 246-wall trace: 469 of 492 ends moved
+   * and 36 new off-square walls appeared.)
+   *
+   * So the corners are solved, not the walls. Ends that touch are one corner;
+   * a near-horizontal wall says "my two corners share a Y", a near-vertical one
+   * says "they share an X"; those constraints chain through the whole building,
+   * and each connected group settles on its average. Corners stay closed
+   * because they were never taken apart.
+   */
+  function straightenWalls(walls, opts) {
+    opts = opts || {};
+    var slope = Math.tan((opts.tolDeg == null ? 8 : opts.tolDeg) * Math.PI / 180);
+    var join = opts.joinTol == null ? 6 : opts.joinTol;
+    var only = opts.only || null;              // wall ids to square, or all
+
+    /* 1. Ends that touch become one corner. */
+    var corners = [], at = [];
+    function corner(x, y) {
+      for (var i = 0; i < corners.length; i++) {
+        if (Math.abs(corners[i].x - x) <= join && Math.abs(corners[i].y - y) <= join) return i;
+      }
+      corners.push({ x: x, y: y });
+      return corners.length - 1;
+    }
+    walls.forEach(function (w, i) {
+      at[i] = [corner(w.x1, w.y1), corner(w.x2, w.y2)];
+    });
+
+    /* 2. Union-find, one set per shared coordinate. */
+    function maker() {
+      var p = [];
+      function find(i) { while (p[i] != null && p[i] !== i) i = p[i]; return i; }
+      return {
+        find: find,
+        join: function (a, b) {
+          if (p[a] == null) p[a] = a;
+          if (p[b] == null) p[b] = b;
+          var ra = find(a), rb = find(b);
+          if (ra !== rb) p[ra] = rb;
+        }
+      };
+    }
+    var xg = maker(), yg = maker();
+    var squared = 0;
+
+    walls.forEach(function (w, i) {
+      if (only && only.indexOf(w.id) < 0) return;
+      var dx = Math.abs(w.x2 - w.x1), dy = Math.abs(w.y2 - w.y1);
+      if (dx < 1e-6 && dy < 1e-6) return;
+      if (dx >= dy) {
+        if (dy > slope * dx) return;           // too far off to be meant as level
+        yg.join(at[i][0], at[i][1]);
+      } else {
+        if (dx > slope * dy) return;
+        xg.join(at[i][0], at[i][1]);
+      }
+      squared++;
+    });
+
+    /* 3. Each connected set settles on its average. */
+    function settle(group, key) {
+      var sums = {}, counts = {};
+      corners.forEach(function (c, i) {
+        var r = group.find(i);
+        if (r == null) return;
+        sums[r] = (sums[r] || 0) + c[key];
+        counts[r] = (counts[r] || 0) + 1;
+      });
+      corners.forEach(function (c, i) {
+        var r = group.find(i);
+        if (counts[r] > 1) c[key] = sums[r] / counts[r];
+      });
+    }
+    settle(yg, 'y');
+    settle(xg, 'x');
+
+    /* 4. Back onto the walls. */
+    var moved = 0;
+    walls.forEach(function (w, i) {
+      var a = corners[at[i][0]], b = corners[at[i][1]];
+      if (w.x1 !== a.x || w.y1 !== a.y || w.x2 !== b.x || w.y2 !== b.y) moved++;
+      w.x1 = a.x; w.y1 = a.y; w.x2 = b.x; w.y2 = b.y;
+    });
+    return { squared: squared, moved: moved };
+  }
+
   function weldCorners(walls, tolPx) {
     var tol = Math.min(tolPx == null ? 6 : tolPx, 36);
     var pts = [];
@@ -731,6 +823,7 @@
     snapPoint: snapPoint, constrainAngle: constrainAngle, pointAtDistance: pointAtDistance,
     resolveOpening: resolveOpening, hostOpening: hostOpening,
     weldCorners: weldCorners, chainWalls: chainWalls,
+    straightenWalls: straightenWalls,
     pxToFeet: pxToFeet, areaPxToSqFt: areaPxToSqFt, formatFeet: formatFeet
   };
 });
