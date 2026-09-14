@@ -1937,10 +1937,90 @@
     if (p) p.classList.toggle('hidden');
   }
 
+  /* Drag the edit panel by its header. It opens on the right, out of the way of
+   * the drawing, but "out of the way" depends on where the work is — so it
+   * moves, and where it is left is remembered on this device. Double-tap the
+   * header to send it back to the right. */
+  function initPanelDrag() {
+    if (!editPanel) return;
+    var head = editPanel.querySelector('.ep-head');
+    if (!head) return;
+    var KEY = 'fp2EditPanelPos';
+
+    function host() { return editPanel.parentNode.getBoundingClientRect(); }
+
+    function place(left, top) {
+      var h = host();
+      var w = editPanel.offsetWidth, ht = editPanel.offsetHeight;
+      left = Math.max(4, Math.min(left, h.width - w - 4));
+      top = Math.max(4, Math.min(top, h.height - ht - 4));
+      editPanel.style.left = left + 'px';
+      editPanel.style.top = top + 'px';
+      editPanel.style.right = 'auto';
+      editPanel.style.bottom = 'auto';
+      editPanel.style.transform = 'none';
+    }
+
+    function home() {
+      editPanel.style.left = '';
+      editPanel.style.top = '';
+      editPanel.style.right = '';
+      editPanel.style.bottom = '';
+      editPanel.style.transform = '';
+    }
+
+    function restore() {
+      try {
+        var s = JSON.parse(localStorage.getItem(KEY) || 'null');
+        if (s && isFinite(s.left) && isFinite(s.top)) place(s.left, s.top);
+      } catch (e) {}
+    }
+
+    var drag = null;
+    head.addEventListener('pointerdown', function (e) {
+      /* The close button and any field in the header keep working. */
+      if (e.target.closest && e.target.closest('button, input, select, textarea')) return;
+      var r = editPanel.getBoundingClientRect(), h = host();
+      drag = { dx: e.clientX - r.left, dy: e.clientY - r.top, hx: h.left, hy: h.top };
+      try { head.setPointerCapture(e.pointerId); } catch (err) {}
+      e.preventDefault();
+    });
+    head.addEventListener('pointermove', function (e) {
+      if (!drag) return;
+      place(e.clientX - drag.hx - drag.dx, e.clientY - drag.hy - drag.dy);
+    });
+    function stop() {
+      if (!drag) return;
+      drag = null;
+      try {
+        localStorage.setItem(KEY, JSON.stringify({
+          left: parseFloat(editPanel.style.left) || 0,
+          top: parseFloat(editPanel.style.top) || 0
+        }));
+      } catch (e) {}
+    }
+    head.addEventListener('pointerup', stop);
+    head.addEventListener('pointercancel', stop);
+    head.addEventListener('dblclick', function () {
+      home();
+      try { localStorage.removeItem(KEY); } catch (e) {}
+      showToast('Panel back on the right', 'ok');
+    });
+
+    /* A remembered spot can be off-screen after a rotate or a window resize. */
+    window.addEventListener('resize', function () {
+      if (!editPanel.style.left) return;
+      place(parseFloat(editPanel.style.left) || 0, parseFloat(editPanel.style.top) || 0);
+    });
+
+    restore();
+  }
+
   function initPanelCloses() {
     Array.prototype.forEach.call(document.querySelectorAll('[data-close]'), function (el) {
       el.addEventListener('click', function () { closePanel(el.getAttribute('data-close')); });
     });
+    initPanelDrag();
   }
 
   /* ============================================================ keyboard */

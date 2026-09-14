@@ -183,11 +183,29 @@
   color: var(--slate-600); font-family: var(--font-body); }
 #view-controls input[type=range] { width: 100%; }
 
+/* The edit panel stands as a COLUMN ON THE RIGHT rather than a bar across the
+   bottom middle. The old place put it directly over the thing being edited,
+   which is the one place it must not be. Drag it by its header if the right is
+   where the work is; where you leave it is remembered. */
 #edit-panel {
-  bottom: 28px; left: 50%; transform: translateX(-50%);
-  width: min(540px, calc(100% - 24px));
-  max-height: 45%; overflow-y: auto;
+  top: 12px; right: 12px; left: auto; bottom: auto; transform: none;
+  width: 264px; max-height: calc(100% - 24px); overflow-y: auto;
   padding: 10px 12px; z-index: 15;
+}
+#edit-panel .ep-head { cursor: move; touch-action: none; }
+#edit-panel .ep-body { flex-direction: column; align-items: stretch; }
+#edit-panel .ep-body > * { width: 100%; }
+#edit-panel input[type=text] { min-width: 0; }
+/* On a phone a 264px column IS the screen, so there it goes back to a sheet
+   across the bottom. */
+@media (max-width: 560px) {
+  #edit-panel {
+    top: auto; bottom: 28px; left: 50%; right: auto; transform: translateX(-50%);
+    width: calc(100% - 24px); max-height: 45%;
+  }
+  #edit-panel .ep-head { cursor: default; }
+  #edit-panel .ep-body { flex-direction: row; flex-wrap: wrap; align-items: center; }
+  #edit-panel .ep-body > * { width: auto; }
 }
 #edit-panel.open { display: block; }
 #edit-panel .ep-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
