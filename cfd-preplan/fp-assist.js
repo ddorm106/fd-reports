@@ -594,6 +594,90 @@
     if (history.length > 12) history = history.slice(-12);
   }
 
+  /* ----------------------------------------------------------- attachments
+   * A picture the OPERATOR hands over: a photo of the paper plan, a sketch of
+   * the layout they want, a manufacturer's drawing. It rides with the next
+   * message only — it is an example for that instruction, not a new permanent
+   * fact about the building, and leaving it attached would quietly steer every
+   * later answer.
+   */
+
+  var attached = [];            // {name, b64, w, h}
+  var picker = null;
+
+  function shrink(file) {
+    return new Promise(function (resolve, reject) {
+      var img = new Image();
+      var url = URL.createObjectURL(file);
+      img.onload = function () {
+        URL.revokeObjectURL(url);
+        /* Bigger than a photo pin: the point of this one is that fine detail —
+         * a dimension scribbled on a page — survives to be read. */
+        var max = 1600;
+        var k = Math.min(1, max / Math.max(img.width, img.height));
+        var c = document.createElement('canvas');
+        c.width = Math.round(img.width * k);
+        c.height = Math.round(img.height * k);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        var q = [0.8, 0.6, 0.45, 0.3], out = null;
+        for (var i = 0; i < q.length; i++) {
+          out = c.toDataURL('image/jpeg', q[i]);
+          if (out.length - 23 <= 1.4e6) break;
+        }
+        if (out.length - 23 > 1.4e6) { reject(new Error('that picture is too big even at low quality')); return; }
+        resolve({ b64: out.split(',')[1], w: c.width, h: c.height });
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('that file is not an image this browser can read')); };
+      img.src = url;
+    });
+  }
+
+  function drawChips() {
+    var box = el('fa-clips');
+    if (!box) return;
+    box.innerHTML = '';
+    box.style.display = attached.length ? 'flex' : 'none';
+    attached.forEach(function (a, i) {
+      var chip = document.createElement('span');
+      chip.className = 'fa-clip';
+      chip.textContent = a.name;
+      var x = document.createElement('button');
+      x.type = 'button';
+      x.textContent = '\u00d7';
+      x.addEventListener('click', function () { attached.splice(i, 1); drawChips(); });
+      chip.appendChild(x);
+      box.appendChild(chip);
+    });
+  }
+
+  function ensurePicker() {
+    if (picker) return picker;
+    picker = document.createElement('input');
+    picker.type = 'file';
+    picker.accept = 'image/*';
+    picker.multiple = true;
+    /* No capture attribute on purpose: an example is usually already in the
+     * photo library or in Files, and forcing the camera hides both. */
+    picker.style.display = 'none';
+    picker.addEventListener('change', function () {
+      var files = Array.prototype.slice.call(picker.files || []).slice(0, 3 - attached.length);
+      picker.value = '';
+      files.forEach(function (f) {
+        shrink(f).then(function (shot) {
+          attached.push({ name: String(f.name || 'example').slice(0, 24), b64: shot.b64, w: shot.w, h: shot.h });
+          drawChips();
+        }).catch(function (e) { say('Could not attach ' + f.name + ': ' + e.message, true); });
+      });
+    });
+    document.body.appendChild(picker);
+    return picker;
+  }
+
+  function pickExamples() {
+    if (attached.length >= 3) { say('Three examples at a time is the limit.', true); return; }
+    ensurePicker().click();
+  }
+
   function ask() {
     var inp = el('fa-input');
     var text = (inp.value || '').trim();
@@ -606,7 +690,7 @@
     inp.value = '';
     var mine = document.createElement('div');
     mine.className = 'fa-row me';
-    mine.textContent = text;
+    mine.textContent = text + (attached.length ? '  [' + attached.length + ' example' + (attached.length > 1 ? 's' : '') + ']' : '');
     el('fa-log').appendChild(mine);
     say('Thinking…');
     var thinking = el('fa-log').lastChild;
@@ -616,12 +700,16 @@
      * last few exchanges go with every request now. */
     var sending = history.slice(-8);
     var shot = planImage();
+    var examples = attached.map(function (a) { return a.b64; });
+    var exampleNames = attached.map(function (a) { return a.name; }).join(', ');
+    attached = [];               // the example belongs to this message only
+    drawChips();
 
     fetch('/api/plan-assistant', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ page: '11', instruction: text, plan: plan,
-                             history: sending, image_b64: shot })
+                             history: sending, image_b64: shot, examples: examples })
     }).then(function (r) {
       return r.json().then(function (j) {
         if (!r.ok || !j.ok) throw new Error(j && j.error ? j.error : 'The assistant did not answer.');
@@ -670,6 +758,12 @@
     '#fa-ask{display:flex;gap:6px;padding:8px;border-top:1px solid #e2e8f0}',
     '#fa-input{flex:1;min-width:0;padding:9px;border:1px solid #cbd5e1;border-radius:8px;font-size:16px}',
     '#fa-send{background:#1e3a5f;color:#fff;border:0;border-radius:8px;padding:9px 14px;font-weight:700;cursor:pointer}',
+    '#fa-clip{background:#e2e8f0;border:0;border-radius:8px;padding:9px 11px;font-size:15px;cursor:pointer}',
+    '#fa-clips{flex-wrap:wrap;gap:5px;padding:6px 8px 0}',
+    '.fa-clip{display:inline-flex;align-items:center;gap:5px;background:#dbeafe;color:#1e3a5f;',
+    '  border-radius:12px;padding:3px 6px 3px 9px;font-size:11px;font-weight:600;max-width:150px;',
+    '  overflow:hidden;white-space:nowrap}',
+    '.fa-clip button{background:none;border:0;color:#1e3a5f;font-size:14px;cursor:pointer;padding:0 2px}',
     '#fa-focus{display:none;align-items:center;gap:8px;padding:7px 10px;background:#fef3c7;',
     '  border-top:1px solid #fde68a;color:#78350f;font-weight:600}',
     '#fa-focus button{margin-left:auto;background:#78350f;color:#fff;border:0;border-radius:6px;',
@@ -687,7 +781,9 @@
       '<div id="fa-focus"><span id="fa-focus-name"></span>' +
         '<label><input type="checkbox" id="fa-focus-print"> print it too</label>' +
         '<button type="button" id="fa-focus-off">Clear</button></div>' +
+      '<div id="fa-clips" style="display:none"></div>' +
       '<div id="fa-ask">' +
+        '<button type="button" id="fa-clip" title="Attach an example picture">\ud83d\udcce</button>' +
         '<input id="fa-input" type="text" placeholder="What do you want changed?" autocomplete="off">' +
         '<button type="button" id="fa-send">Go</button>' +
       '</div>' +
@@ -714,6 +810,7 @@
       el('fa-open').style.display = '';
     });
     el('fa-send').addEventListener('click', ask);
+    el('fa-clip').addEventListener('click', pickExamples);
     el('fa-input').addEventListener('keydown', function (e) { if (e.key === 'Enter') ask(); });
     el('fa-focus-off').addEventListener('click', function () { setFocus(null); });
     el('fa-focus-print').addEventListener('change', function () {
