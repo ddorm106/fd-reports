@@ -39,6 +39,7 @@
 
   var state = FP.state;
   var busy = false;
+  var history = [];             // the conversation, so follow-ups mean something
   var focused = null;            // the zone being focused on, or null
   var printDimmed = false;       // does the dimming go into the PDF too
   var lastBatch = null;          // what the last answer did, for the Undo chip
@@ -50,6 +51,171 @@
   function r1(v) { return Math.round(v * 10) / 10; }
 
   /* -------------------------------------------------- describing the plan */
+
+  /* ------------------------------------------------ making sense of the plan
+   * A model handed 246 line segments has to rebuild the building in its head
+   * before it can answer anything, and it does that badly: asked how big the
+   * Belk was it guessed 55-65,000 sq ft against a true 92,352, and asked for a
+   * door "in the middle of the north wall" it listed six candidate segments
+   * instead of picking one. So the segments are turned into the things an
+   * operator actually refers to BEFORE they are sent:
+   *   - the footprint area, measured rather than estimated
+   *   - collinear runs merged into walls, each labelled by the side it is on
+   *   - the openings grouped by which side they sit in
+   * and a picture of the plan goes with it, because "the big open area in the
+   * middle" is a visual statement and no list of coordinates conveys it.
+   */
+
+  function runsFromWalls(walls) {
+    /* Merge collinear, touching segments into one run. The trace splits a wall
+     * at every junction, so a 220 ft back wall arrives as nine pieces. */
+    var TOL = 0.6, runs = [];
+    var axis = walls.map(function (w) {
+      var dx = Math.abs(w.x2 - w.x1), dy = Math.abs(w.y2 - w.y1);
+      if (dy <= TOL && dx > TOL) return 'h';
+      if (dx <= TOL && dy > TOL) return 'v';
+      return null;
+    });
+    ['h', 'v'].forEach(function (kind) {
+      var group = {};
+      walls.forEach(function (w, i) {
+        if (axis[i] !== kind) return;
+        var at = kind === 'h' ? (w.y1 + w.y2) / 2 : (w.x1 + w.x2) / 2;
+        var key = Math.round(at / TOL);
+        (group[key] = group[key] || []).push(w);
+      });
+      Object.keys(group).forEach(function (k) {
+        var list = group[k].map(function (w) {
+          var a = kind === 'h' ? [w.x1, w.x2] : [w.y1, w.y2];
+          return { lo: Math.min(a[0], a[1]), hi: Math.max(a[0], a[1]) };
+        }).sort(function (p, q) { return p.lo - q.lo; });
+        var at = k * TOL, cur = null;
+        list.forEach(function (seg) {
+          if (cur && seg.lo <= cur.hi + 1.5) { cur.hi = Math.max(cur.hi, seg.hi); return; }
+          if (cur) runs.push({ kind: kind, at: at, lo: cur.lo, hi: cur.hi });
+          cur = { lo: seg.lo, hi: seg.hi };
+        });
+        if (cur) runs.push({ kind: kind, at: at, lo: cur.lo, hi: cur.hi });
+      });
+    });
+    return runs.filter(function (r) { return r.hi - r.lo >= 6; });
+  }
+
+  /* Measured, not guessed: mark the walls on a one-foot grid, flood in from
+   * outside, and whatever the flood never reaches is inside the building. */
+  function footprint(walls, ext) {
+    var pad = 2;
+    var w = Math.ceil(ext.maxX - ext.minX) + pad * 2;
+    var h = Math.ceil(ext.maxY - ext.minY) + pad * 2;
+    if (w < 3 || h < 3 || w * h > 4e6) return null;
+    var cell = new Uint8Array(w * h);
+    var ox = ext.minX - pad, oy = ext.minY - pad;
+    walls.forEach(function (s) {
+      var len = Math.hypot(s.x2 - s.x1, s.y2 - s.y1);
+      var steps = Math.max(1, Math.ceil(len * 3));
+      for (var i = 0; i <= steps; i++) {
+        var t = i / steps;
+        var gx = Math.round(s.x1 + (s.x2 - s.x1) * t - ox);
+        var gy = Math.round(s.y1 + (s.y2 - s.y1) * t - oy);
+        /* Mark a 2 ft brush so a hairline gap at a junction does not let the
+         * flood leak in and swallow the whole building. */
+        for (var a = -1; a <= 1; a++) for (var b = -1; b <= 1; b++) {
+          var px = gx + a, py = gy + b;
+          if (px >= 0 && px < w && py >= 0 && py < h) cell[py * w + px] = 1;
+        }
+      }
+    });
+    var seen = new Uint8Array(w * h), stack = [0], out = 0;
+    seen[0] = 1;
+    while (stack.length) {
+      var p = stack.pop(), px2 = p % w, py2 = (p - px2) / w;
+      out++;
+      [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(function (d) {
+        var nx = px2 + d[0], ny = py2 + d[1];
+        if (nx < 0 || ny < 0 || nx >= w || ny >= h) return;
+        var n = ny * w + nx;
+        if (seen[n] || cell[n]) return;
+        seen[n] = 1; stack.push(n);
+      });
+    }
+    var inside = 0;
+    for (var i2 = 0; i2 < cell.length; i2++) if (!cell[i2] && !seen[i2]) inside++;
+    /* The walls themselves are floor area too; half of the brush is inside. */
+    return Math.round(inside + 0);
+  }
+
+  function sideOf(run, ext) {
+    var NEAR = 12;
+    if (run.kind === 'h') {
+      if (Math.abs(run.at - ext.minY) <= NEAR) return 'north (outside wall)';
+      if (Math.abs(run.at - ext.maxY) <= NEAR) return 'south (outside wall)';
+      return 'interior, runs east-west';
+    }
+    if (Math.abs(run.at - ext.minX) <= NEAR) return 'west (outside wall)';
+    if (Math.abs(run.at - ext.maxX) <= NEAR) return 'east (outside wall)';
+    return 'interior, runs north-south';
+  }
+
+  /* A picture of the whole floor with a foot grid burned into it. "The big open
+   * area in the middle" is a visual statement; no list of coordinates carries
+   * it. The grid is what lets the model turn what it sees back into feet. */
+  function planImage() {
+    try {
+      var cv = FP.canvas;
+      if (!cv || !FP.state.data) return null;
+      var keep = JSON.parse(JSON.stringify(FP.state.view));
+      FP.fitToView();
+      FP.draw();
+      var c = FP.ctx;
+      var sc = scale();
+      var ext = extentFeet();
+      if (ext) {
+        var step = 25;
+        while ((ext.maxX - ext.minX) / step > 16) step *= 2;
+        c.save();
+        c.setTransform(FP.state.dpr || 1, 0, 0, FP.state.dpr || 1, 0, 0);
+        c.font = '11px system-ui, sans-serif';
+        c.textBaseline = 'top';
+        c.lineWidth = 1;
+        for (var gx = Math.ceil(ext.minX / step) * step; gx <= ext.maxX; gx += step) {
+          var a = FP.dataToScreen(gx * sc, ext.minY * sc), b = FP.dataToScreen(gx * sc, ext.maxY * sc);
+          c.strokeStyle = 'rgba(37,99,235,.28)';
+          c.beginPath(); c.moveTo(a.sx, a.sy); c.lineTo(b.sx, b.sy); c.stroke();
+          c.fillStyle = '#1d4ed8';
+          c.fillText('x' + gx, a.sx + 2, a.sy + 2);
+        }
+        for (var gy = Math.ceil(ext.minY / step) * step; gy <= ext.maxY; gy += step) {
+          var p = FP.dataToScreen(ext.minX * sc, gy * sc), q = FP.dataToScreen(ext.maxX * sc, gy * sc);
+          c.strokeStyle = 'rgba(37,99,235,.28)';
+          c.beginPath(); c.moveTo(p.sx, p.sy); c.lineTo(q.sx, q.sy); c.stroke();
+          c.fillStyle = '#1d4ed8';
+          c.fillText('y' + gy, p.sx + 2, p.sy + 2);
+        }
+        c.restore();
+      }
+      var url = cv.toDataURL('image/jpeg', 0.7);
+      FP.state.view = keep;
+      FP.draw();
+      if (url.length > 4.2e6) return null;
+      return url.split(',')[1];
+    } catch (e) {
+      try { FP.draw(); } catch (e2) {}
+      return null;
+    }
+  }
+
+  function extentFeet() {
+    var f = doc() && doc().floor();
+    if (!f) return null;
+    var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    (f.walls || []).forEach(function (w) {
+      minX = Math.min(minX, w.x1, w.x2); maxX = Math.max(maxX, w.x1, w.x2);
+      minY = Math.min(minY, w.y1, w.y2); maxY = Math.max(maxY, w.y1, w.y2);
+    });
+    if (!isFinite(minX)) return null;
+    return { minX: r1(px2ft(minX)), minY: r1(px2ft(minY)),
+             maxX: r1(px2ft(maxX)), maxY: r1(px2ft(maxY)) };
+  }
 
   /* What the model is allowed to know. Ids are included precisely so it can refer
    * to something that already exists instead of guessing at coordinates. */
@@ -98,6 +264,43 @@
     });
 
     if (isFinite(minX)) out.extent = { minX: r1(minX), minY: r1(minY), maxX: r1(maxX), maxY: r1(maxY) };
+
+    /* The digest: the building as things you can refer to, not as segments. */
+    if (out.extent && out.walls.length) {
+      var runs = runsFromWalls(out.walls);
+      out.wall_runs = runs.map(function (rn) {
+        return { side: sideOf(rn, out.extent),
+                 line: rn.kind === 'h' ? ('y=' + r1(rn.at)) : ('x=' + r1(rn.at)),
+                 from: r1(rn.lo), to: r1(rn.hi), length_ft: r1(rn.hi - rn.lo) };
+      }).sort(function (p, q) { return q.length_ft - p.length_ft; }).slice(0, 60);
+
+      var area = footprint(out.walls, out.extent);
+      if (area) out.footprint_sqft = area;
+      out.building_size_ft = { east_west: r1(out.extent.maxX - out.extent.minX),
+                               north_south: r1(out.extent.maxY - out.extent.minY) };
+
+      /* Openings by the side they sit in, so "the doors on the south wall" is
+         one lookup rather than a coordinate hunt. */
+      var bySide = {};
+      out.doors.forEach(function (dr) {
+        var lab = 'inside';
+        if (Math.abs(dr.y - out.extent.minY) <= 12) lab = 'north wall';
+        else if (Math.abs(dr.y - out.extent.maxY) <= 12) lab = 'south wall';
+        else if (Math.abs(dr.x - out.extent.minX) <= 12) lab = 'west wall';
+        else if (Math.abs(dr.x - out.extent.maxX) <= 12) lab = 'east wall';
+        (bySide[lab] = bySide[lab] || []).push(dr.id);
+      });
+      out.doors_by_side = bySide;
+    }
+
+    /* What is selected right now, so "make this bigger" has a subject. */
+    var sel = state.selected;
+    if (sel && doc()) {
+      var arr = doc().floor()[sel.kind === 'freehand' ? 'freehand' : sel.kind + 's'] || [];
+      var selEl = arr[sel.index];
+      if (selEl) out.selected = { kind: sel.kind, id: selEl.id,
+                                  label: selEl.label || selEl.name || selEl.text || '' };
+    }
 
     /* The palette, so it picks a real symbol instead of inventing a name. */
     out.symbol_palette = ((root.FP_SYMBOLS && root.FP_SYMBOLS.all) || [])
@@ -376,6 +579,21 @@
     el('fa-focus-print').checked = printDimmed;
   }
 
+  /* What went into the transcript, kept small: the model needs to know what it
+   * did last turn, not every coordinate of it. */
+  function remember(asked, said, ops, notes) {
+    var kinds = {};
+    (ops || []).forEach(function (o) { kinds[o.op] = (kinds[o.op] || 0) + 1; });
+    var didBits = Object.keys(kinds).map(function (k) { return k + ' x' + kinds[k]; });
+    history.push({
+      you: String(asked).slice(0, 400),
+      assistant: String(said || '').slice(0, 300),
+      did: didBits.join(', ') || 'nothing',
+      problems: (notes || []).slice(0, 3).join(' ')
+    });
+    if (history.length > 12) history = history.slice(-12);
+  }
+
   function ask() {
     var inp = el('fa-input');
     var text = (inp.value || '').trim();
@@ -393,10 +611,17 @@
     say('Thinking…');
     var thinking = el('fa-log').lastChild;
 
+    /* It used to forget between messages, so "no, the other side" had nothing
+     * to attach to and the operator had to say everything in one breath. The
+     * last few exchanges go with every request now. */
+    var sending = history.slice(-8);
+    var shot = planImage();
+
     fetch('/api/plan-assistant', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ page: '11', instruction: text, plan: plan })
+      body: JSON.stringify({ page: '11', instruction: text, plan: plan,
+                             history: sending, image_b64: shot })
     }).then(function (r) {
       return r.json().then(function (j) {
         if (!r.ok || !j.ok) throw new Error(j && j.error ? j.error : 'The assistant did not answer.');
@@ -404,7 +629,11 @@
       });
     }).then(function (j) {
       thinking.remove();
-      if (!j.ops.length) { say(j.say || 'Nothing to change.', false); return; }
+      if (!j.ops.length) {
+        say(j.say || 'Nothing to change.', false);
+        remember(text, j.say, [], []);
+        return;
+      }
       var res = apply(j.ops);
       if (res === null) { say('Left the plan alone.', false); return; }
       var bits = [];
@@ -414,6 +643,7 @@
       say((j.say || 'Done.') + (bits.length ? '  (' + bits.join(', ') + ')' : ''), false, true);
       res.notes.forEach(function (n) { say(n, true); });
       lastBatch = res;
+      remember(text, j.say, j.ops, res.notes);
     }).catch(function (e) {
       if (thinking && thinking.remove) thinking.remove();
       say(e.message, true);
