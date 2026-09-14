@@ -712,7 +712,13 @@
                              history: sending, image_b64: shot, examples: examples })
     }).then(function (r) {
       return r.json().then(function (j) {
-        if (!r.ok || !j.ok) throw new Error(j && j.error ? j.error : 'The assistant did not answer.');
+        if (!r.ok || !j.ok) {
+          /* The reason used to be dropped on the floor, so a billing problem
+             read as a mystery error code. */
+          var why = (j && j.error) ? j.error : 'The assistant did not answer.';
+          if (j && j.detail && why.indexOf(j.detail) < 0) why += ' — ' + j.detail;
+          throw new Error(why);
+        }
         return j;
       });
     }).then(function (j) {
