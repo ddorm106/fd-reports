@@ -235,7 +235,10 @@
      * draw the same shapes, and all three must agree.
      * ============================================================ */
 function drawWallsAsPolygons(walls) {
-  const WALL_HALF = 3;   // wall is 6 px thick (scale_px_per_ft=12, ~6 inches)
+  /* 8 px at 12 px/ft — drawn heavier than the ~6 inches a wall measures, so the
+     building reads over the graph paper at arm's length. Openings are cut from
+     the same geometry, so they widen with it. */
+  const WALL_HALF = 4;
   ctx.fillStyle = COL.wall;
   walls.forEach(w => {
     const dx = w.x2 - w.x1, dy = w.y2 - w.y1;
@@ -313,7 +316,7 @@ function drawDoorSymbol(d, sel) {
     // would put a door on the plan that isn't there.
     if (sel) {
       ctx.strokeStyle = COL.selection;
-      ctx.lineWidth = 2 / state.view.zoom;
+      ctx.lineWidth = 2.7 / state.view.zoom;
       ctx.beginPath(); ctx.arc(cx, cy, w/2 + 4/state.view.zoom, 0, Math.PI*2); ctx.stroke();
     }
     ctx.restore();
@@ -321,7 +324,7 @@ function drawDoorSymbol(d, sel) {
   }
   if (d.type === 'rollup') {
     ctx.strokeStyle = COL.doorRoll;
-    ctx.lineWidth = 2.5 / state.view.zoom;
+    ctx.lineWidth = 3.4 / state.view.zoom;
     ctx.setLineDash([6/state.view.zoom, 3/state.view.zoom]);
     ctx.beginPath();
     ctx.moveTo(cx - w/2*cosA, cy - w/2*sinA);
@@ -335,7 +338,7 @@ function drawDoorSymbol(d, sel) {
     const swingA = a + dblSign * Math.PI/2;
     // Left panel — hinge at left end (cx-dx,cy-dy), swings to center
     ctx.strokeStyle = COL.doorLeaf;
-    ctx.lineWidth = 1.8 / state.view.zoom;
+    ctx.lineWidth = 2.4 / state.view.zoom;
     const hL_x = cx - w/2*cosA, hL_y = cy - w/2*sinA;
     const hR_x = cx + w/2*cosA, hR_y = cy + w/2*sinA;
     const pL_x = hL_x + (w/2)*Math.cos(swingA);
@@ -346,7 +349,7 @@ function drawDoorSymbol(d, sel) {
     ctx.beginPath(); ctx.moveTo(hR_x, hR_y); ctx.lineTo(pR_x, pR_y); ctx.stroke();
     // Dashed arcs
     ctx.strokeStyle = COL.doorArc;
-    ctx.lineWidth = 0.9 / state.view.zoom;
+    ctx.lineWidth = 1.2 / state.view.zoom;
     ctx.setLineDash([4/state.view.zoom, 2/state.view.zoom]);
     ctx.beginPath(); ctx.arc(hL_x, hL_y, w/2, a, a + dblSign * Math.PI/2, dblSign < 0); ctx.stroke();
     ctx.beginPath(); ctx.arc(hR_x, hR_y, w/2, a + Math.PI, a + Math.PI + dblSign * Math.PI/2, dblSign < 0); ctx.stroke();
@@ -372,11 +375,11 @@ function drawDoorSymbol(d, sel) {
     const py_ = hy + w*Math.sin(swingA);
     // Panel
     ctx.strokeStyle = COL.doorLeaf;
-    ctx.lineWidth = 1.8 / state.view.zoom;
+    ctx.lineWidth = 2.4 / state.view.zoom;
     ctx.beginPath(); ctx.moveTo(hx, hy); ctx.lineTo(px_, py_); ctx.stroke();
     // Arc
     ctx.strokeStyle = COL.doorArc;
-    ctx.lineWidth = 0.9 / state.view.zoom;
+    ctx.lineWidth = 1.2 / state.view.zoom;
     ctx.setLineDash([4/state.view.zoom, 2/state.view.zoom]);
     ctx.beginPath();
     ctx.arc(hx, hy, w, closedDir, swingA, effSign < 0);
@@ -389,7 +392,7 @@ function drawDoorSymbol(d, sel) {
   // Selection ring
   if (sel) {
     ctx.strokeStyle = COL.selection;
-    ctx.lineWidth = 2 / state.view.zoom;
+    ctx.lineWidth = 2.7 / state.view.zoom;
     ctx.beginPath(); ctx.arc(cx, cy, w/2 + 4/state.view.zoom, 0, Math.PI*2); ctx.stroke();
   }
   ctx.restore();
@@ -435,7 +438,7 @@ function drawWindowSymbol(w, sel) {
   });
   if (sel) {
     ctx.strokeStyle = COL.selection;
-    ctx.lineWidth = 2 / state.view.zoom;
+    ctx.lineWidth = 2.7 / state.view.zoom;
     ctx.beginPath(); ctx.arc(cx, cy, width/2 + 4/state.view.zoom, 0, Math.PI*2); ctx.stroke();
   }
 }
@@ -854,7 +857,21 @@ function drawFreehand(f, sel) {
       if (!d) return;
       var ft = d.scale_px_per_ft || 12;
       var z = state.view.zoom;
-      var w = d.canvas_width, h = d.canvas_height;
+
+      /* The paper covers the WHOLE VIEW, not just the nominal canvas. Pan past
+       * the edge of the old sheet and the squares carry on, because a building
+       * does not stop where the page did — and drawing onto blank white was
+       * exactly where lines came out crooked. */
+      var vw = state.view.width || 0, vh = state.view.height || 0;
+      var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      [[0, 0], [vw, 0], [0, vh], [vw, vh]].forEach(function (c) {
+        var p = screenToData(c[0], c[1]);
+        if (p.x < minX) minX = p.x;
+        if (p.x > maxX) maxX = p.x;
+        if (p.y < minY) minY = p.y;
+        if (p.y > maxY) maxY = p.y;
+      });
+      if (!isFinite(minX)) return;
 
       /* Graph paper rather than one flat grid: a foot you can count, a heavier
        * line every 5 ft and heavier again every 10, so a run of wall can be
@@ -863,10 +880,12 @@ function drawFreehand(f, sel) {
        *
        * Each tier drops out once its lines would fall closer than 5 screen
        * pixels — below that a grid stops being paper and becomes grey mud. */
+      /* Paler than the drawing by a wide margin: the grid is something you
+       * measure against, never something you read. */
       var tiers = [
-        { step: ft,      color: 'rgba(37, 99, 235, 0.10)', width: 1 },
-        { step: ft * 5,  color: 'rgba(37, 99, 235, 0.20)', width: 1 },
-        { step: ft * 10, color: 'rgba(37, 99, 235, 0.32)', width: 1.3 }
+        { step: ft,      color: 'rgba(37, 99, 235, 0.055)', width: 1 },
+        { step: ft * 5,  color: 'rgba(37, 99, 235, 0.11)',  width: 1 },
+        { step: ft * 10, color: 'rgba(37, 99, 235, 0.18)',  width: 1.2 }
       ];
 
       ctx.save();
@@ -875,8 +894,10 @@ function drawFreehand(f, sel) {
         ctx.strokeStyle = t.color;
         ctx.lineWidth = t.width / z;
         ctx.beginPath();
-        for (var x = 0; x <= w; x += t.step) { ctx.moveTo(x, 0); ctx.lineTo(x, h); }
-        for (var y = 0; y <= h; y += t.step) { ctx.moveTo(0, y); ctx.lineTo(w, y); }
+        var x0 = Math.floor(minX / t.step) * t.step;
+        var y0 = Math.floor(minY / t.step) * t.step;
+        for (var x = x0; x <= maxX; x += t.step) { ctx.moveTo(x, minY); ctx.lineTo(x, maxY); }
+        for (var y = y0; y <= maxY; y += t.step) { ctx.moveTo(minX, y); ctx.lineTo(maxX, y); }
         ctx.stroke();
       });
       ctx.restore();
