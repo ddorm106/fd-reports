@@ -693,7 +693,13 @@ function symbolHandles(s) {
     { id: 'ne', lx: hw, ly: -hh, axis: 'both' }, { id: 'e', lx: hw, ly: 0, axis: 'x' },
     { id: 'se', lx: hw, ly: hh, axis: 'both' }, { id: 's', lx: 0, ly: hh, axis: 'y' },
     { id: 'sw', lx: -hw, ly: hh, axis: 'both' }, { id: 'w', lx: -hw, ly: 0, axis: 'x' }
-  ].map(function (g) {
+  ].concat([
+    /* The rotation grip stands off the top edge on a stem, the way every
+     * drawing tool puts it, so it is never mistaken for a resize corner. Its
+     * offset is in screen pixels, not plan units, or it would disappear into
+     * the symbol when zoomed out and fly away when zoomed in. */
+    { id: 'rot', lx: 0, ly: -hh - 22 / state.view.zoom, axis: 'rotate' }
+  ]).map(function (g) {
     return { id: g.id, axis: g.axis, box: b,
              x: s.x + g.lx * ca - g.ly * sa,
              y: s.y + g.lx * sa + g.ly * ca };
@@ -720,6 +726,21 @@ function drawSymbolGrips(b) {
     ctx.fill();
     ctx.stroke();
   });
+
+  /* The rotation grip: a stem up off the top edge and a round head, so it reads
+   * as "turn me" rather than "stretch me". */
+  var off = 22 / z, ry = -b.h / 2 - off;
+  ctx.strokeStyle = COL.symbolRing;
+  ctx.lineWidth = 1.5 / z;
+  ctx.beginPath();
+  ctx.moveTo(0, -b.h / 2);
+  ctx.lineTo(0, ry + 6 / z);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(0, ry, 6 / z, 0, Math.PI * 2);
+  ctx.fillStyle = '#fff';
+  ctx.fill();
+  ctx.stroke();
 }
 
 function drawSymbol(s, sel) {

@@ -280,6 +280,15 @@
 .fp-panel input[type=text], .fp-panel input[type=number], .fp-panel select {
   width: 100%; padding: 5px 7px; border: 1px solid var(--slate-300);
   border-radius: var(--radius-sm); font-size: 0.8rem; font-family: var(--font-body); }
+/* Rotation by arrows. Buttons sized for a gloved thumb, and the row wraps
+   rather than squeezing them narrower on a phone. */
+.fp-panel .ep-rot { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-bottom: 7px; }
+.fp-panel .ep-rot input[type=number] { width: 62px; flex: 0 0 auto; text-align: center; }
+.fp-panel .ep-rot-b { flex: 0 0 auto; min-width: 42px; padding: 7px 6px;
+  border: 1px solid var(--slate-300); border-radius: var(--radius-sm);
+  background: #fff; font-size: 0.72rem; font-weight: 700; color: var(--slate-600);
+  cursor: pointer; font-family: var(--font-body); }
+.fp-panel .ep-rot-b:active { background: var(--slate-200); }
 .fp-panel .hint { font-size: 0.7rem; color: var(--slate-500); line-height: 1.35; margin: 4px 0 8px; }
 .fp-panel .close { float: right; cursor: pointer; color: var(--slate-400);
   font-weight: 700; font-size: 0.9rem; line-height: 1; }

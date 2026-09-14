@@ -914,7 +914,9 @@
         });
         if (got) {
           doc.pushUndo();
-          drag = { mode: 'symbol-scale', sym: selSym, grip: got, base: got.box };
+          drag = got.axis === 'rotate'
+            ? { mode: 'symbol-rotate', sym: selSym }
+            : { mode: 'symbol-scale', sym: selSym, grip: got, base: got.box };
           return;
         }
       }
@@ -1093,6 +1095,22 @@
       var u = doc.floor().underlay;
       u.x = dr.u0.x + (pt.x - dr.start.x);
       u.y = dr.u0.y + (pt.y - dr.start.y);
+      return;
+    }
+    if (dr.mode === 'symbol-rotate') {
+      var rs = dr.sym;
+      /* The grip stands straight up from the symbol, so the angle that puts it
+       * under the finger is the bearing to the finger plus 90 degrees. Computed
+       * in plan space, so a rotated VIEW does not throw it off. */
+      var ang = Math.atan2(pt.y - rs.y, pt.x - rs.x) * 180 / Math.PI + 90;
+      while (ang < 0) ang += 360;
+      while (ang >= 360) ang -= 360;
+      /* Half a degree by hand; hold shift for 15 degree steps. Fine tuning is
+       * the point of dragging — the arrows in the panel are there for exact. */
+      rs.angle = e && e.shiftKey ? Math.round(ang / 15) * 15 : Math.round(ang * 2) / 2;
+      var rot = $('ep-rot-val');
+      if (rot) rot.value = rs.angle;
+      draw();
       return;
     }
     if (dr.mode === 'symbol-scale') {
@@ -1608,6 +1626,66 @@
     body.innerHTML = '';
     var sub = '';
 
+    /* Rotation by arrows. Typing a bearing into a box is the wrong tool for
+     * "turn it a bit": you cannot see the drawing while the keyboard is up, and
+     * on an iPad that keyboard covers the plan. Clicks step it; the number is
+     * still there to type into when the angle IS known. */
+    function rotationRow(el) {
+      var l = document.createElement('label');
+      l.className = 'fld';
+      l.textContent = 'Rotation (°)';
+      body.appendChild(l);
+
+      var row = document.createElement('div');
+      row.className = 'ep-rot';
+      var val = document.createElement('input');
+      val.type = 'number';
+      val.step = 'any';
+      val.id = 'ep-rot-val';
+      val.value = el.angle || 0;
+
+      /* One undo step per burst of clicks, not one per click — nobody wants to
+       * tap Undo six times to take back one turn. */
+      var pushed = false, burst = null;
+      function bump(by) {
+        if (!pushed) { doc.pushUndo(); pushed = true; }
+        clearTimeout(burst);
+        burst = setTimeout(function () { pushed = false; }, 900);
+        var a = (parseFloat(val.value) || 0) + by;
+        while (a < 0) a += 360;
+        while (a >= 360) a -= 360;
+        a = Math.round(a * 2) / 2;
+        el.angle = a;
+        val.value = a;
+        draw();
+        saveSoon();
+      }
+
+      [['\u21ba 90', -90], ['\u21ba 15', -15], ['\u21ba 1', -1]].forEach(function (b) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'ep-rot-b';
+        btn.textContent = b[0];
+        btn.addEventListener('click', function () { bump(b[1]); });
+        row.appendChild(btn);
+      });
+      val.addEventListener('change', function () {
+        doc.pushUndo();
+        el.angle = parseFloat(val.value) || 0;
+        commit();
+      });
+      row.appendChild(val);
+      [['1 \u21bb', 1], ['15 \u21bb', 15], ['90 \u21bb', 90]].forEach(function (b) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'ep-rot-b';
+        btn.textContent = b[0];
+        btn.addEventListener('click', function () { bump(b[1]); });
+        row.appendChild(btn);
+      });
+      body.appendChild(row);
+    }
+
     function field(label, value, onChange, type) {
       var l = document.createElement('label');
       l.className = 'fld';
@@ -1730,7 +1808,7 @@
       sub = (el.spec && el.spec.label) || (def && def.label) || el.symbolId;
       field('Label', el.label, function (v) { el.label = v; });
       field('Note', el.note, function (v) { el.note = v; });
-      field('Rotation (°)', el.angle || 0, function (v) { el.angle = parseFloat(v) || 0; }, 'number');
+      rotationRow(el);
 
       /* Size. A symbol is placed at one nominal size, but a walk-in cooler and
        * a smoke detector are not the same size on a real building, and a
@@ -1784,7 +1862,7 @@
         function (v) { var n = parseFloat(v); if (n > 0) el.width = n * scale; }, 'number');
       field('Depth (ft)', Math.round(G.pxToFeet(el.depth || 24, scale) * 100) / 100,
         function (v) { var n = parseFloat(v); if (n > 0) el.depth = n * scale; }, 'number');
-      field('Rotation (°)', el.angle || 0, function (v) { el.angle = parseFloat(v) || 0; }, 'number');
+      rotationRow(el);
     } else if (hit.kind === 'side') {
       sub = 'Fireground side — drag to reposition';
       var sideSel = document.createElement('select');
