@@ -517,8 +517,16 @@ body.fp-full.show-sheets #fpUpWrap { display: block; }
 
 /* ------------------------------------------------- panel tweaks for the shell */
 .fpx .fp-panel { z-index: 40; }
-.fpx #edit-panel { bottom: 14px; left: 50%; transform: translateX(-50%);
-  width: min(520px, calc(100% - 28px)); top: auto; right: auto; }
+/* The column on the right lives HERE, not on the bare #edit-panel rule above:
+   the shell's selector is more specific and wins, so setting the other one
+   changed nothing at all. */
+.fpx #edit-panel { top: 12px; right: 12px; bottom: auto; left: auto;
+  transform: none; width: 264px; max-height: calc(100% - 24px); }
+@media (max-width: 560px) {
+  /* A 264px column is the whole screen on a phone. */
+  .fpx #edit-panel { top: auto; bottom: 14px; left: 50%; right: auto;
+    transform: translateX(-50%); width: calc(100% - 28px); max-height: 45%; }
+}
 .fpx #edit-panel .ep-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
 .fpx #edit-panel .ep-grow { flex: 1; }
 .fpx #zone-panel { right: 12px; top: 12px; }
