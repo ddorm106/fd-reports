@@ -277,10 +277,8 @@
             .hero h1 { font-size: 2rem; letter-spacing: 4px; }
             .hero h1 span { font-size: 1.2rem; }
             .grid { grid-template-columns: 1fr; gap: 14px; }
-            /* One column on a phone: a two-column card would widen the grid
-               past the screen, and the sign-in fields stack. */
+            /* One column on a phone: a two-column card would widen the grid past the screen. */
             .card.wide { grid-column: auto; }
-            #careerLoginForm { grid-template-columns: 1fr !important; }
             .main { padding: 28px 14px 40px; }
         }
     </style>
@@ -297,6 +295,18 @@
 </header>
 
 <main class="main">
+
+    <div class="section-label">Career Portal</div>
+    <div class="grid">
+
+        <div class="card wide">
+            <span class="card-status active">Live</span>
+            <h3>🔺 Career Portal</h3>
+            <p>Your career path, task books, training requests, roster, SOPs, and daily reports. You're already signed in — the same fdtraining.org login opens it.</p>
+            <a href="https://career.fdtraining.org/" class="card-link">Open Career Portal <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+
+    </div>
 
     <div class="section-label">Reports &amp; Evaluations</div>
     <div class="grid">
@@ -346,32 +356,6 @@
             <h3>Vector Scheduling</h3>
             <p>Shift scheduling in Vector Solutions.</p>
             <a href="https://app.targetsolutions.com/auth/index.cfm?action=login.showloginone&amp;idpid=cf319ac1e3e6efbaecd4a45a720fbae6&amp;noauto=1" class="card-link" target="_blank" rel="noopener">Vector Scheduling Login <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
-        </div>
-
-    </div>
-
-    <div class="section-label">Career Portal</div>
-    <div class="grid">
-
-        <div class="card wide">
-            <span class="card-status active">Live</span>
-            <h3>🔺 Career Portal</h3>
-            <p>Sign in to access your career path, task books, training requests, roster, SOPs, and daily reports.</p>
-            <form id="careerLoginForm" onsubmit="careerLogin(event)" style="display:grid;grid-template-columns:1fr 120px auto;gap:8px;align-items:end;margin-top:12px">
-                <div>
-                    <div style="font-size:.68rem;letter-spacing:1px;text-transform:uppercase;color:#8e9198;margin-bottom:4px">Email</div>
-                    <input type="email" id="cl-email" placeholder="you@centervillefd.com" required autocomplete="email"
-                        style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:5px;padding:9px 11px;color:#e8e8e8;font-size:.85rem;font-family:inherit;outline:none;"/>
-                </div>
-                <div>
-                    <div style="font-size:.68rem;letter-spacing:1px;text-transform:uppercase;color:#8e9198;margin-bottom:4px">PIN</div>
-                    <input type="password" id="cl-pin" placeholder="••••" maxlength="12" required autocomplete="current-password"
-                        style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:5px;padding:9px 11px;color:#e8e8e8;font-size:.85rem;font-family:inherit;outline:none;"/>
-                </div>
-                <button type="submit" style="padding:9px 16px;background:#c41e3a;color:#fff;border:none;border-radius:5px;font-family:'Oswald',sans-serif;font-size:.82rem;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;white-space:nowrap">Sign In →</button>
-            </form>
-            <div id="clError" style="color:#f87171;font-size:.76rem;margin-top:6px;display:none">Invalid email or PIN.</div>
-            <a href="https://career.fdtraining.org" class="card-link" style="margin-top:10px">Open full portal <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
         </div>
 
     </div>
@@ -439,59 +423,17 @@
     <div class="grid">
 
         <div class="card">
-            <span class="card-status instructor">Instructor</span>
-            <h3>Live Fire Instructor</h3>
-            <p>Burn-day instructor side of the Live Fire course.</p>
-            <a href="/livefire/instructor" class="card-link">Open Instructor <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+            <span class="card-status instructor">Restricted</span>
+            <h3>Instructors &amp; Admin</h3>
+            <p>Instructor results, course dashboards, and site admin tools in one place. Training admins and chiefs only.</p>
+            <a href="https://career.fdtraining.org/instructors" class="card-link">Open Instructors &amp; Admin <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
         </div>
 
         <div class="card">
-            <span class="card-status instructor">Instructor</span>
-            <h3>Size-Up Results</h3>
-            <p>Course results and progress for Modern Aggressive Size-Up. Instructor PIN required.</p>
-            <a href="https://instructor-sizeup.fdtraining.org" class="card-link">Open Portal <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
-        </div>
-
-        <div class="card">
-            <span class="card-status instructor">Instructor</span>
-            <h3>Fire Dynamics Results</h3>
-            <p>Course results and progress for Fire Dynamics. Instructor PIN required.</p>
-            <a href="https://instructor-firedynamics.fdtraining.org" class="card-link">Open Portal <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
-        </div>
-
-        <div class="card">
-            <span class="card-status instructor">Instructor</span>
-            <h3>ERG 2024 Results</h3>
-            <p>Course results and progress for Hazmat — ERG 2024. Instructor PIN required.</p>
-            <a href="https://instructor-erg.fdtraining.org" class="card-link">Open Portal <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
-        </div>
-
-        <div class="card">
-            <span class="card-status instructor">Instructor</span>
-            <h3>Safety Stand Down Dashboard</h3>
-            <p>Completions and progress for Safety Stand Down 2026. Instructor PIN required.</p>
-            <a href="https://safetystanddown.fdtraining.org/admin" class="card-link">Open Dashboard <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
-        </div>
-
-        <div class="card">
-            <span class="card-status instructor">Admin</span>
-            <h3>Street Map Admin</h3>
-            <p>Manage the street map trainer and its target hazards. Sign-in required.</p>
-            <a href="/cfd-map/admin" class="card-link">Open Admin <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
-        </div>
-
-        <div class="card">
-            <span class="card-status instructor">Admin</span>
-            <h3>Training Sheets Admin</h3>
-            <p>Create, edit, and manage prefilled training sheet templates. Admin access required.</p>
-            <a href="https://sheets.fdtraining.org/admin" class="card-link">Open Admin <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
-        </div>
-
-        <div class="card">
-            <span class="card-status instructor">Admin</span>
-            <h3>Pre-Plan Admin</h3>
-            <p>Manage DivisionScan captures and published pre-plans. Delete, edit, re-send emails, unpublish. Admin PIN required.</p>
-            <a href="/admin/preplans" class="card-link">Open Admin <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+            <span class="card-status instructor">Restricted</span>
+            <h3>Add Members</h3>
+            <p>Give someone their fdtraining.org login and Career Portal account in one step, with a temporary PIN to hand them.</p>
+            <a href="https://career.fdtraining.org/instructors#add" class="card-link">Add a Member <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
         </div>
 
     </div>
@@ -523,39 +465,5 @@
     <div class="motto">Punctual · Valuable · Selfless</div>
     <div>Centerville Fire Department — Training Division</div>
 </footer>
-
-
-<script>
-async function careerLogin(e) {
-    e.preventDefault();
-    const email = document.getElementById('cl-email').value.trim().toLowerCase();
-    const pin   = document.getElementById('cl-pin').value.trim();
-    const errEl = document.getElementById('clError');
-    errEl.style.display = 'none';
-
-    // Hash the PIN with SHA-256 (same as career Worker)
-    const pinHash = Array.from(new Uint8Array(
-        await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pin))
-    )).map(b => b.toString(16).padStart(2,'0')).join('');
-
-    // POST to career.fdtraining.org/api/login-json
-    try {
-        const res = await fetch('https://career.fdtraining.org/api/login', {
-            method: 'POST',
-            headers: {'Content-Type':'application/json'},
-            credentials: 'include',
-            body: JSON.stringify({email, pin_hash: pinHash})
-        });
-        if (res.ok) {
-            window.location.href = 'https://career.fdtraining.org/';
-        } else {
-            errEl.style.display = 'block';
-        }
-    } catch {
-        errEl.style.display = 'block';
-    }
-}
-</script>
-
 </body>
 </html>
