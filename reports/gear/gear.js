@@ -184,7 +184,6 @@
                     <div class="rp-row" style="margin-top:8px">
                         <button type="button" class="rp-btn" id="sig-clear">Clear</button>
                         <button type="button" class="rp-btn" id="sig-undo">Undo</button>
-                        <span class="rp-sig-tag" id="sig-tag" hidden>Signed automatically for Sgt. Dorman</span>
                     </div></div>
             </div>`));
 
@@ -339,48 +338,22 @@
     function setupSignature() {
         const canvas = $('#sig');
         pad = new SignaturePad(canvas, { backgroundColor: 'rgb(255,255,255)', penColor: '#1e3a8a' });
-        pad.addEventListener('beginStroke', () => {
-            if (state.sigSource === 'dorman') pad.clear();
-            state.sigSource = 'drawn'; $('#sig-tag').hidden = true; $('#sig-hint').hidden = true;
-        });
+        pad.addEventListener('beginStroke', () => { state.sigSource = 'drawn'; $('#sig-hint').hidden = true; });
         pad.addEventListener('endStroke', () => changed());
         const resize = () => {
             const data = state.sigSource === 'drawn' ? pad.toData() : null, r = Math.max(window.devicePixelRatio || 1, 1);
             canvas.width = canvas.offsetWidth * r; canvas.height = canvas.offsetHeight * r;
             canvas.getContext('2d').scale(r, r); pad.clear();
             if (data && data.length) pad.fromData(data);
-            if (state.sigSource === 'dorman') drawDorman();
         };
         window.addEventListener('resize', resize); resize();
-        $('#sig-clear').onclick = () => { pad.clear(); state.sigSource = null; $('#sig-tag').hidden = true; $('#sig-hint').hidden = false; changed(); };
+        $('#sig-clear').onclick = () => { pad.clear(); state.sigSource = null; $('#sig-hint').hidden = false; changed(); };
         $('#sig-undo').onclick = () => {
-            if (state.sigSource === 'dorman') return $('#sig-clear').onclick();
             const d = pad.toData(); d.pop(); pad.fromData(d);
             if (!d.length) { state.sigSource = null; $('#sig-hint').hidden = false; }
             changed();
         };
     }
-    function drawDorman() {
-        if (!A.DORMAN_SIG) return;
-        const canvas = $('#sig'), img = new Image();
-        img.onload = () => {
-            pad.clear();
-            const r = Math.max(window.devicePixelRatio || 1, 1), cw = canvas.width / r, ch = canvas.height / r;
-            const s = Math.min((cw * 0.6) / img.width, (ch * 0.7) / img.height);
-            canvas.getContext('2d').drawImage(img, (cw - img.width * s) / 2, (ch - img.height * s) / 2, img.width * s, img.height * s);
-        };
-        img.src = A.DORMAN_SIG;
-    }
-    function inspectorChanged() {
-        const v = $('#g-inspector').value.trim();
-        const isDorman = /^(sgt\.?|sergeant)\s+dorman$|^dorman,?\s*david$/i.test(v);
-        if (isDorman && state.sigSource !== 'drawn') {
-            state.sigSource = 'dorman'; $('#sig-tag').hidden = false; $('#sig-hint').hidden = true; drawDorman();
-        } else if (!isDorman && state.sigSource === 'dorman') {
-            pad.clear(); state.sigSource = null; $('#sig-tag').hidden = true; $('#sig-hint').hidden = false;
-        }
-    }
-
     // ─────────────────────────── data, drafts, progress ───────────────────────────
     function header() {
         return {
@@ -675,8 +648,7 @@
         grid([['Inspected by', h.inspector], ['Date', dayLabel(h.date)]], 2);
         font('bold', 6.8, DIM); pdf.text('SIGNATURE', M, y + 3);
         try {
-            if (state.sigSource === 'dorman') { const pr = pdf.getImageProperties(A.DORMAN_SIG), sc = Math.min(55 / pr.width, 20 / pr.height); pdf.addImage(A.DORMAN_SIG, 'PNG', M, y + 5, pr.width * sc, pr.height * sc, 'dsig', 'FAST'); }
-            else if (state.sigSource === 'drawn') pdf.addImage(pad.toDataURL('image/jpeg', 0.7), 'JPEG', M, y + 5, 60, 20, undefined, 'FAST');
+            if (state.sigSource === 'drawn') pdf.addImage(pad.toDataURL('image/jpeg', 0.7), 'JPEG', M, y + 5, 60, 20, undefined, 'FAST');
         } catch (e) { }
         y += 28;
 
@@ -794,7 +766,7 @@
                 $('#gearForm').reset();
                 C.items.forEach(it => state.items[it.id] = { notIssued: false, condition: '', fields: {}, pins: [], photos: [] });
                 state.general = []; renderPhotos('general');
-                pad.clear(); state.sigSource = null; $('#sig-tag').hidden = true; $('#sig-hint').hidden = false;
+                pad.clear(); state.sigSource = null; $('#sig-hint').hidden = false;
                 try { localStorage.removeItem(C.storageKey); } catch (e) { }
                 $('#g-date').value = todayIso(); $('#saved').textContent = '';
                 changed(); window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -854,7 +826,6 @@
             if (t.name && t.name.startsWith('cond-')) { state.items[t.name.slice(5)].condition = t.value; }
             if (t.dataset.addPhoto) { addPhotos(t.dataset.addPhoto, t.files); t.value = ''; return; }
             if (t.dataset.pinType || (t.name && t.name.startsWith('dmg-'))) return;   // handled on input
-            if (t.id === 'g-inspector') inspectorChanged();
             if (t.dataset.f && t.dataset.item) state.items[t.dataset.item].fields[t.dataset.f] = t.value;
             changed();
         });
@@ -896,7 +867,6 @@
         wire();
         const restored = restore();
         if (!$('#g-date').value) $('#g-date').value = todayIso();
-        inspectorChanged();
         changed();
         if (restored) $('#saved').textContent = 'Draft restored';
     }

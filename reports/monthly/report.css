@@ -130,6 +130,12 @@ button { cursor: pointer; }
     outline: none; border-color: var(--red); box-shadow: var(--focus); background: #fff;
 }
 .rp-field input[readonly] { background: #f0eee8; color: var(--dim); }
+/* iPhone/iPad Safari give date and month boxes a built-in width wider than
+   their column, so they ran past the card or over the box beside them. */
+input[type="date"], input[type="month"], input[type="time"] {
+    -webkit-appearance: none; appearance: none; display: block; min-width: 0; max-width: 100%;
+}
+input::-webkit-date-and-time-value { text-align: left; }
 .rp-invalid { border-color: var(--r-u) !important; box-shadow: 0 0 0 3px rgba(198,40,40,.15) !important; }
 
 .rp-chips { display: flex; flex-wrap: wrap; gap: 8px; }

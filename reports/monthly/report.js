@@ -40,7 +40,7 @@
     const state = {
         days: [],
         files: [],
-        sigSource: null,       // 'drawn' | 'dorman' | null
+        sigSource: null,       // 'drawn' | null
         sent: false,
         saveTimer: null
     };
@@ -195,7 +195,6 @@
                     <div class="rp-row" style="margin-top:8px">
                         <button type="button" class="rp-btn" id="sig-clear">Clear</button>
                         <button type="button" class="rp-btn" id="sig-undo">Undo</button>
-                        <span class="rp-sig-tag" id="sig-tag" hidden>Signed automatically for Sgt. Dorman</span>
                     </div>
                 </div>
             </div>`;
@@ -397,9 +396,7 @@
         const canvas = $('#sig');
         pad = new SignaturePad(canvas, { backgroundColor: 'rgb(255,255,255)', penColor: '#1e3a8a' });
         pad.addEventListener('beginStroke', () => {
-            if (state.sigSource === 'dorman') { pad.clear(); }
             state.sigSource = 'drawn';
-            $('#sig-tag').hidden = true;
             $('#sig-hint').hidden = true;
         });
         pad.addEventListener('endStroke', () => changed());
@@ -411,50 +408,21 @@
             canvas.getContext('2d').scale(r, r);
             pad.clear();
             if (data && data.length) pad.fromData(data);
-            if (state.sigSource === 'dorman') drawDorman();
         };
         window.addEventListener('resize', resize);
         resize();
-        $('#sig-clear').onclick = () => { pad.clear(); state.sigSource = null; $('#sig-tag').hidden = true; $('#sig-hint').hidden = false; changed(); };
+        $('#sig-clear').onclick = () => { pad.clear(); state.sigSource = null; $('#sig-hint').hidden = false; changed(); };
         $('#sig-undo').onclick = () => {
-            if (state.sigSource === 'dorman') { $('#sig-clear').onclick(); return; }
             const d = pad.toData(); d.pop(); pad.fromData(d);
             if (!d.length) { state.sigSource = null; $('#sig-hint').hidden = false; }
             changed();
         };
     }
 
-    function drawDorman() {
-        if (!A.DORMAN_SIG) return;
-        const canvas = $('#sig');
-        const img = new Image();
-        img.onload = () => {
-            pad.clear();
-            const r = Math.max(window.devicePixelRatio || 1, 1);
-            const cw = canvas.width / r, ch = canvas.height / r;
-            const s = Math.min((cw * 0.6) / img.width, (ch * 0.7) / img.height);
-            canvas.getContext('2d').drawImage(img, (cw - img.width * s) / 2, (ch - img.height * s) / 2, img.width * s, img.height * s);
-        };
-        img.src = A.DORMAN_SIG;
-    }
-
-    // Sgt. Dorman's reports sign themselves, as they always have.
+    // Choosing Sergeant Dorman as the officer fills in his name and rank. Everyone signs by hand.
     function officerChanged() {
-        const off = $('#f-officer').value;
         const name = $('#f-evname'), rank = $('#f-evrank');
-        if (off === 'Sergeant Dorman') {
-            if (!name.value || name.value === 'Dorman, David') { name.value = 'Dorman, David'; rank.value = 'Sergeant'; }
-            if (state.sigSource !== 'drawn' && name.value === 'Dorman, David') {
-                state.sigSource = 'dorman';
-                $('#sig-tag').hidden = false;
-                $('#sig-hint').hidden = true;
-                drawDorman();
-            }
-        } else if (state.sigSource === 'dorman') {
-            pad.clear(); state.sigSource = null;
-            $('#sig-tag').hidden = true; $('#sig-hint').hidden = false;
-            if (name.value === 'Dorman, David') { name.value = ''; rank.value = ''; }
-        }
+        if ($('#f-officer').value === 'Sergeant Dorman' && !name.value) { name.value = 'Dorman, David'; rank.value = 'Sergeant'; }
     }
 
     // ─────────────────────────────── data ───────────────────────────────
@@ -817,11 +785,7 @@
         kvGrid([['Evaluator', d['Evaluator Name']], ['Rank', d['Evaluator Rank']]]);
         font('bold', 7, DIM); pdf.text('SIGNATURE', M, y + 3);
         try {
-            if (state.sigSource === 'dorman') {
-                const pr = pdf.getImageProperties(A.DORMAN_SIG);
-                const s = Math.min(55 / pr.width, 20 / pr.height);
-                pdf.addImage(A.DORMAN_SIG, 'PNG', M, y + 5, pr.width * s, pr.height * s, 'dsig', 'FAST');
-            } else if (state.sigSource === 'drawn') {
+            if (state.sigSource === 'drawn') {
                 pdf.addImage(pad.toDataURL('image/jpeg', 0.7), 'JPEG', M, y + 5, 60, 20, undefined, 'FAST');
             }
         } catch (e) { }
@@ -951,7 +915,7 @@
             $$('.rp-note').forEach(n => n.hidden = true);
             $$('[data-note-toggle]').forEach(b => b.textContent = '＋ Note');
             state.days = []; state.files = []; state.sigSource = null;
-            pad.clear(); $('#sig-tag').hidden = true; $('#sig-hint').hidden = false;
+            pad.clear(); $('#sig-hint').hidden = false;
             try { localStorage.removeItem(C.storageKey); } catch (e) { }
             defaults();
             renderDays(); renderFiles(); updateProgress();
@@ -1036,9 +1000,6 @@
             if (e.target.id === 'f-officer') officerChanged();
             if (e.target.id === 'f-shift') state.days.forEach(x => { if (!x.shift) x.shift = e.target.value; }), renderDays();
             if (e.target.name === 'Apparatus Assignment') apparatusInfo();
-            if (e.target.id === 'f-evname' && state.sigSource === 'dorman' && e.target.value !== 'Dorman, David') {
-                pad.clear(); state.sigSource = null; $('#sig-tag').hidden = true; $('#sig-hint').hidden = false;
-            }
             changed();
         });
 
