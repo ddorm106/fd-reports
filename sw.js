@@ -1,5 +1,8 @@
 // sw.js - Service Worker for Centerville FD Reports & Training
-// Version: 1.8 (update version when making changes) — 1.8: one login; Career Portal on top; restricted admin tiles
+// Version: 1.12 (keep this line and CACHE_NAME below in step) — 1.12: gear inspection v2
+// (placed damage marks, helmet/hood/gloves), no automatic signatures, date boxes stop
+// overlapping on iPhone/iPad, Equipment & Book Checkout, Repair Request, Training
+// Request, Aerial Operator monthly evaluation. 1.8: one login; Career Portal on top.
 
 // Cache name - change version number to force update
 const CACHE_NAME = 'centerville-fd-v1.12';
@@ -19,7 +22,7 @@ const FILES_TO_CACHE = [
 
 // Install event - cache all essential files
 self.addEventListener('install', (event) => {
-    console.log('[SW] Install v1.3');
+    console.log('[SW] Install', CACHE_NAME);
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then((cache) => {
@@ -32,7 +35,7 @@ self.addEventListener('install', (event) => {
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
-    console.log('[SW] Activate v1.3');
+    console.log('[SW] Activate', CACHE_NAME);
     event.waitUntil(
         caches.keys().then((cacheNames) => {
             return Promise.all(
