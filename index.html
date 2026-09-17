@@ -281,6 +281,12 @@
             .card.wide { grid-column: auto; }
             .main { padding: 28px 14px 40px; }
         }
+
+        /* Tile detail as chips. Keep lists out of <p>: iOS Safari switches Reader
+           on by itself once a page has enough long paragraphs. */
+        .card-chips { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+        .card-chips li { font-size: .74rem; line-height: 1.2; padding: 4px 9px; border-radius: 999px;
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); color: #b9b9b9; }
     </style>
 </head>
 <body>
@@ -302,7 +308,8 @@
         <div class="card wide">
             <span class="card-status active">Live</span>
             <h3>🔺 Career Portal</h3>
-            <p>Your career path, task books, training requests, roster, SOPs, and daily reports. You're already signed in — the same fdtraining.org login opens it.</p>
+            <p>You're already signed in — the same fdtraining.org login opens it.</p>
+                    <ul class="card-chips"><li>Career path</li><li>Task books</li><li>Training requests</li><li>Roster</li><li>SOPs</li><li>Daily reports</li></ul>
             <a href="https://career.fdtraining.org/" class="card-link">Open Career Portal <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
         </div>
 
@@ -321,14 +328,16 @@
         <div class="card">
             <span class="card-status active">Active</span>
             <h3>Monthly Position Evaluations</h3>
-            <p>Firefighter, Rescue Driver, Engine Driver, Aerial Operator, and AOIC monthly evaluations. Log the days worked, rate the month, and attach reports and photos.</p>
+            <p>Log the days worked, rate the month, attach reports and photos.</p>
+                    <ul class="card-chips"><li>Firefighter</li><li>Rescue Driver</li><li>Engine Driver</li><li>Aerial Operator</li><li>AOIC</li></ul>
             <a href="monthly-evaluations/" class="card-link">Open Evaluations <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
         </div>
 
         <div class="card">
             <span class="card-status active">New</span>
             <h3>PPE Gear Inspection</h3>
-            <p>Inspect a member's turnout gear, TechGen, helmet, boots, gloves, Nomex, and SCBA mask. Mark damage on the drawings and add photos — out-of-service gear is tagged and command staff are notified.</p>
+            <p>Mark damage on the drawings and add photos. Out-of-service gear is tagged and command staff notified.</p>
+                    <ul class="card-chips"><li>Turnout gear</li><li>TechGen</li><li>Helmet</li><li>Boots</li><li>Gloves</li><li>Nomex hood</li><li>SCBA mask</li></ul>
             <a href="gear-inspection/" class="card-link">Start Inspection <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
         </div>
 
@@ -366,7 +375,8 @@
         <div class="card">
             <span class="card-status active">Active</span>
             <h3>Interactive Training</h3>
-            <p>Live Fire, Modern Aggressive Size-Up, Fire Dynamics, Hazmat ERG 2024, Safety Stand Down, the Centerville street map and target hazards, and certification practice tests.</p>
+            <p>Interactive courses, plus certification practice tests.</p>
+                    <ul class="card-chips"><li>Live Fire</li><li>Size-Up</li><li>Fire Dynamics</li><li>Hazmat ERG 2024</li><li>Safety Stand Down</li><li>Street map</li><li>Target hazards</li></ul>
             <a href="training-courses/" class="card-link">Open Courses <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
         </div>
 
@@ -380,7 +390,8 @@
         <div class="card">
             <span class="card-status active">New</span>
             <h3>Training Request</h3>
-            <p>Ask to attend a class. Browse GPSTC fire courses with upcoming dates and registration windows, or request any outside class. Sergeants and command staff are emailed.</p>
+            <p>Ask to attend a class — sergeants and command staff are emailed.</p>
+                    <ul class="card-chips"><li>GPSTC fire catalog</li><li>Upcoming dates</li><li>Registration windows</li><li>Any outside class</li></ul>
             <a href="training-request/" class="card-link">Request a Class <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
         </div>
 
@@ -446,7 +457,8 @@
         <div class="card">
             <span class="card-status instructor">Restricted</span>
             <h3>Instructors &amp; Admin</h3>
-            <p>Add members, members &amp; sign-ins, Career Portal admin, course results and dashboards, and site admin tools — all in one place. Training admins and chiefs only.</p>
+            <p>All in one place. Training admins and chiefs only.</p>
+                    <ul class="card-chips"><li>Add members</li><li>Sign-ins</li><li>Career Portal admin</li><li>Course results</li><li>Site admin</li></ul>
             <a href="https://career.fdtraining.org/instructors" class="card-link">Open Instructors &amp; Admin <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
         </div>
 

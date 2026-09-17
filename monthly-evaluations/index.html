@@ -279,6 +279,12 @@
             .card.wide { grid-column: auto; }
             .main { padding: 28px 14px 40px; }
         }
+
+        /* Tile detail as chips. Keep lists out of <p>: iOS Safari switches Reader
+           on by itself once a page has enough long paragraphs. */
+        .card-chips { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+        .card-chips li { font-size: .74rem; line-height: 1.2; padding: 4px 9px; border-radius: 999px;
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); color: #b9b9b9; }
     </style>
     <style>
         /* This page only */
@@ -314,35 +320,40 @@
         <div class="card" data-report="cfdMonthly.firefighter">
             <span class="card-status active">Active</span>
             <h3>Firefighter Monthly</h3>
-            <p>All firefighter personnel. 21 items — Policies &amp; Conduct, PPE &amp; Medical, Hose &amp; Equipment, Advanced Operations, Command &amp; Scene Proficiency.</p>
+            <p>All firefighter personnel. 21 items.</p>
+            <ul class="card-chips"><li>Policies &amp; Conduct</li><li>PPE &amp; Medical</li><li>Hose &amp; Equipment</li><li>Advanced Operations</li><li>Command &amp; Scene Proficiency</li></ul>
             <a href="../firefighter-report/page1.html" class="card-link">Open Report <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
         </div>
 
         <div class="card" data-report="cfdMonthly.rescueDriver">
             <span class="card-status active">Active</span>
             <h3>Rescue Driver Monthly</h3>
-            <p>Rescue 1 driver operations. 26 items — Safe Driving &amp; Policy Compliance, PPE, SCBA &amp; Medical Equipment, Rescue Tools &amp; Equipment, MVC &amp; Technical Rescue Operations, Scene Management &amp; Decision Making.</p>
+            <p>Rescue 1 driver operations. 26 items.</p>
+            <ul class="card-chips"><li>Safe Driving &amp; Policy Compliance</li><li>PPE, SCBA &amp; Medical Equipment</li><li>Rescue Tools &amp; Equipment</li><li>MVC &amp; Technical Rescue Operations</li><li>Scene Management &amp; Decision Making</li></ul>
             <a href="../rescue-driver-report/page1.html" class="card-link">Open Report <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
         </div>
 
         <div class="card" data-report="cfdMonthly.engineDriver">
             <span class="card-status active">Active</span>
             <h3>Engine Driver Monthly</h3>
-            <p>Engine company driver/operators. 34 items — Policies &amp; Protocols, Driving &amp; Road Knowledge, Apparatus Checks &amp; Equipment, Pump Operations &amp; Hydraulics, Hose &amp; Water Supply, Scene Operations.</p>
+            <p>Engine company driver/operators. 34 items.</p>
+            <ul class="card-chips"><li>Policies &amp; Protocols</li><li>Driving &amp; Road Knowledge</li><li>Apparatus Checks &amp; Equipment</li><li>Pump Operations &amp; Hydraulics</li><li>Hose &amp; Water Supply</li><li>Scene Operations</li></ul>
             <a href="../engine-driver-report/page1.html" class="card-link">Open Report <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
         </div>
 
         <div class="card" data-report="cfdMonthly.aoic">
             <span class="card-status active">Active</span>
             <h3>AOIC Monthly</h3>
-            <p>Acting Officer in Charge. 34 items — Policy Knowledge &amp; Administration, Leadership &amp; Crew Management, Incident Command, Strategy &amp; Tactics, Communication, Daily Operations &amp; Time Management.</p>
+            <p>Acting Officer in Charge. 34 items.</p>
+            <ul class="card-chips"><li>Policy Knowledge &amp; Administration</li><li>Leadership &amp; Crew Management</li><li>Incident Command</li><li>Strategy &amp; Tactics</li><li>Communication</li><li>Daily Operations &amp; Time Management</li></ul>
             <a href="../aoic-report/page1.html" class="card-link">Open Report <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
         </div>
 
         <div class="card" data-report="cfdMonthly.aerial">
             <span class="card-status active">Active</span>
             <h3>Aerial Operator Monthly</h3>
-            <p>Truck 1 aerial operators — task book skills, driving, and aerial pumping. 39 items — Apparatus &amp; Aerial Checks, Driving &amp; Road Knowledge, Positioning &amp; Stabilizing, Aerial Device Operation, Elevated Water &amp; Aerial Pumping, Scene Operations &amp; Tactics.</p>
+            <p>Truck 1 aerial operators — task book skills, driving, and aerial pumping. 39 items.</p>
+            <ul class="card-chips"><li>Apparatus &amp; Aerial Checks</li><li>Driving &amp; Road Knowledge</li><li>Positioning &amp; Stabilizing</li><li>Aerial Device Operation</li><li>Elevated Water &amp; Aerial Pumping</li><li>Scene Operations &amp; Tactics</li></ul>
             <a href="../aerial-report/page1.html" class="card-link">Open Report <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
         </div>
     </div>
