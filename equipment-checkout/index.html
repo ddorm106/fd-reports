@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#2c3e50">
+    <title>Centerville FD — Equipment Checkout</title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@600;700&family=Playfair+Display:wght@900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../reports/monthly/report.css?v=2026-09-17c">
+    <link rel="stylesheet" href="../reports/requests/requests.css?v=2026-09-17b">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.2.0/dist/signature_pad.umd.min.js"></script>
+</head>
+<body>
+<noscript>This form needs JavaScript turned on.</noscript>
+<!-- Training equipment in and out. Built by ../reports/requests/requests.js;
+     who gets the email: ../reports/requests/staff.js. -->
+<script src="../reports/monthly/assets.js?v=2026-09-17c"></script>
+<script src="../reports/requests/staff.js?v=2026-09-17a"></script>
+<script src="../reports/requests/requests.js?v=2026-09-17b"></script>
+<script>
+CFDForm.start(CFDForm.checkout({
+  id: "equipment-checkout", title: "Equipment Checkout", noun: "equipment checkout", refPrefix: "EQ", fileWord: "Equipment",
+  pronoun: "the equipment", dueDays: 7, returnedWord: "Equipment returned",
+  intro: "Sign training equipment out, and bring it back through this same form. Every checkout and return is emailed to the sergeants and command staff.",
+  outNote: "Taking equipment out", returnNote: "Bringing it back",
+  useSub: "Why, and where it's going",
+  purposes: ["Company training / drill", "Class I'm teaching", "Public education event", "Station use", "Outside agency or class", "Other"],
+  useFields: [
+    { id: "location", label: "Where it's going", required: true, full: true, placeholder: "e.g. training ground, Station bay, school visit" }
+  ],
+  detailsPlaceholder: "The class or event, and anything the sergeants should know",
+  stepItems: "Equipment", itemsOutTitle: "Equipment", itemsReturnTitle: "Equipment coming back",
+  itemsOutSub: "Everything you're taking",
+  itemsOutHelp: "One line per item. Add the asset or serial number when it has one.",
+  itemNoun: "item",
+  itemFields: [
+    { id: "name", label: "Equipment", required: true, size: "xl", keep: true, pdfW: 2.4, placeholder: "What is it",
+      list: ["Thermal imaging camera", "CPR manikin (adult)", "CPR manikin (infant)", "AED trainer", "Rescue manikin (weighted)",
+             "Smoke machine", "Forcible entry door prop", "SCBA (training)", "Blacked-out SCBA facepiece", "Training hose",
+             "Nozzle (training)", "Ground ladder (training)", "Hydraulic rescue tool (training)", "Rope rescue kit",
+             "Rotary saw (training)", "Chainsaw (training)", "Portable radio (training)", "Gas monitor", "Extinguisher trainer",
+             "Traffic cones", "Projector", "Laptop", "Portable speaker / PA", "Pop-up canopy", "Folding tables", "Folding chairs",
+             "Public education handouts"] },
+    { id: "qty", label: "Qty", type: "number", size: "m", default: "1", keep: true, pdfW: 0.5 },
+    { id: "tag", label: "Asset / serial #", size: "m", keep: true, pdfW: 1.2 }
+  ],
+  outConditions: ["Good", "Fair", "Damaged"],
+  returnConditions: ["Good", "Needs cleaning", "Damaged", "Missing parts", "Lost"],
+  badConditions: ["Damaged", "Missing parts", "Lost"],
+  repairLink: true,
+  outAck: "I'm responsible for this equipment until it's returned clean, complete, and in the same condition. I'll report any damage or loss right away.",
+  returnAck: "The equipment listed is returned, and the condition shown for each item is accurate."
+}));
+</script>
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#2c3e50">
+    <title>Centerville FD — Repair Request</title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@600;700&family=Playfair+Display:wght@900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../reports/monthly/report.css?v=2026-09-17c">
+    <link rel="stylesheet" href="../reports/requests/requests.css?v=2026-09-17b">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+<noscript>This form needs JavaScript turned on.</noscript>
+<!-- Report something broken. Built by ../reports/requests/requests.js; who gets
+     the email: ../reports/requests/staff.js. A returned-damaged item on the
+     checkout forms links here with ?item=&tag=&related=&description= filled in. -->
+<script src="../reports/monthly/assets.js?v=2026-09-17c"></script>
+<script src="../reports/requests/staff.js?v=2026-09-17a"></script>
+<script src="../reports/requests/requests.js?v=2026-09-17b"></script>
+<script>
+(function () {
+  const F = window.CFDForm, S = window.CFD_STAFF;
+  const CATEGORIES = [
+    { v: "apparatus", label: "Apparatus", icon: "🚒", item: "Which apparatus, and what part", ph: "e.g. Engine 1 — driver-side compartment door won't latch" },
+    { v: "tools", label: "Tools & equipment", icon: "🔧", item: "Tool or equipment", ph: "e.g. rotary saw, hydraulic spreader, PPV fan" },
+    { v: "scba", label: "SCBA / air", icon: "🫁", item: "SCBA or air equipment", ph: "e.g. SCBA pack, facepiece, cylinder, fill station" },
+    { v: "radio", label: "Radios & comms", icon: "📻", item: "Radio or comms equipment", ph: "e.g. portable radio, charger, mobile radio in Truck 1" },
+    { v: "station", label: "Station / facility", icon: "🏠", item: "What in the station", ph: "e.g. bay door, exhaust system, kitchen range" },
+    { v: "training", label: "Training props", icon: "🎯", item: "Training prop or equipment", ph: "e.g. forcible entry door prop, CPR manikin" },
+    { v: "it", label: "Computer / IT", icon: "💻", item: "Device or system", ph: "e.g. station computer, printer, tablet" },
+    { v: "ppe", label: "PPE", icon: "🧤", item: "PPE item", ph: "e.g. flashlight, helmet light, radio strap" },
+    { v: "other", label: "Other", icon: "❓", item: "What needs repair", ph: "Describe the item" }
+  ];
+  const cat = d => CATEGORIES.find(c => c.v === d.f.category);
+  const PRIORITY = [
+    { v: "oos", label: "Out of service", note: "Can't be used until it's fixed", tone: "bad", icon: "⛔" },
+    { v: "urgent", label: "Urgent", note: "Usable, but fix it this week", tone: "warn", icon: "⚠️" },
+    { v: "routine", label: "Routine", note: "Fix it when possible", tone: "ok", icon: "🛠️" }
+  ];
+  const prio = d => PRIORITY.find(p => p.v === d.f.priority);
+  const where = d => [d.f.item, d.f.location].filter(Boolean).join(" · ");
+
+  F.start({
+    id: "repair-request", title: "Repair Request", noun: "repair request", refPrefix: "RR", storageKey: "cfd.repair-request.v1",
+    intro: "Something broken, damaged, or not working right? Report it here with photos. The sergeants and command staff are emailed as soon as you submit.",
+    keepOnReset: ["name", "shift", "phone"],
+    sections: [
+      { id: "who", step: "Reporter", title: "Reported by", sub: "Who is reporting it", fields: [
+        { id: "name", label: "Name", required: true, list: () => S.roster, placeholder: "Last, First" },
+        { id: "shift", label: "Shift", type: "select", options: () => S.shifts },
+        { id: "date", label: "Date reported", type: "date", required: true, default: () => F.isoDay() },
+        { id: "phone", label: "Phone", type: "tel", placeholder: "Optional — for questions about it" }
+      ] },
+      { id: "what", step: "What", title: "What needs repair", sub: "Pick a category, then say what it is", fields: [
+        { id: "category", label: "Category", type: "chips", cards: true, required: true, rerender: true, options: CATEGORIES },
+        { id: "ppeNote", type: "note", show: d => d.f.category === "ppe",
+          html: "Turnout gear — coat, pants, helmet, hood, gloves, boots — goes through the <a href=\"../gear-inspection/\">PPE Gear Inspection</a>, so it's tagged out of service and the damage is marked on the drawings. Use this form for other PPE." },
+        { id: "item", label: d => (cat(d) || CATEGORIES[CATEGORIES.length - 1]).item, required: true, full: true, placeholder: d => (cat(d) || CATEGORIES[CATEGORIES.length - 1]).ph },
+        { id: "location", label: "Unit or location", required: true, placeholder: "e.g. Engine 1, Station bay, training ground",
+          list: ["Engine 1", "Engine 2", "Truck 1", "Rescue 1", "Station", "Station — apparatus bay", "Training ground", "Live fire training building"] },
+        { id: "tag", label: "Asset / serial #", placeholder: "If it has one" },
+        { id: "related", label: "Related checkout #", show: d => !!d.f.related, help: "Filled in from the returned-equipment form." }
+      ] },
+      { id: "problem", step: "Problem", title: "The problem", sub: "How urgent, and what's wrong", fields: [
+        { id: "priority", label: "How urgent is it", type: "chips", cards: true, required: true, rerender: true, options: PRIORITY },
+        { id: "oosNote", type: "note", tone: "warn", show: d => d.f.priority === "oos",
+          html: "<b>Tag it and take it out of service now</b> — somewhere nobody will grab it. Sergeants and command staff get this the moment you submit." },
+        { id: "tagged", label: "I tagged it and took it out of service", type: "check", show: d => d.f.priority === "oos" },
+        { id: "description", label: "What's wrong", type: "textarea", required: true, full: true,
+          placeholder: "What it's doing or not doing, what happened, and anything you already tried" },
+        { id: "noticed", label: "When it was noticed", type: "date", default: () => F.isoDay() },
+        { id: "cause", label: "How it happened (if known)", placeholder: "e.g. normal wear, dropped, weather" },
+        { id: "hazard", label: "It's a safety hazard to anyone near it", type: "check", tone: "bad" }
+      ] },
+      { id: "photos", type: "photos", step: "Photos", title: "Photos", sub: "Strongly recommended",
+        help: "One close-up of the damage, and one from farther back so it can be found." },
+      { id: "sign", type: "sign", step: "Send", title: "Review & send", sub: "Goes to the sergeants and command staff", signature: false }
+    ],
+    summary: d => [["Priority", (prio(d) || {}).label], ["Category", (cat(d) || {}).label], ["Photos", String(d.photos.length)]],
+    status: d => {
+      const p = prio(d); if (!p) return null;
+      return { text: { oos: "OUT OF SERVICE", urgent: "URGENT", routine: "ROUTINE" }[p.v] + (d.f.hazard ? " — SAFETY HAZARD" : ""), tone: d.f.hazard ? "bad" : p.tone };
+    },
+    submitLabel: "Submit Repair Request",
+    pdfHeader: d => ({ title: "Repair Request", line: `${where(d)}  ·  ${F.dayLabel(d.f.date)}`, ref: d.ref, signer: d.f.name }),
+    fileBase: d => `Repair_Request_${d.ref}_${d.f.item || ""}`,
+    subject: d => `${d.f.priority === "oos" ? "⚠ OUT OF SERVICE — " : d.f.priority === "urgent" ? "URGENT — " : ""}Repair request: ${where(d)}${d.f.hazard ? " (safety hazard)" : ""} — ${d.f.name}`,
+    emailLead: d => `<b>${F.esc(d.f.name)}</b> reported a problem with <b>${F.esc(d.f.item)}</b> (${F.esc(d.f.location)}).`
+      + (d.f.priority === "oos" ? ` It is <b style="color:#c62828">out of service</b>${d.f.tagged ? " and has been tagged" : " — <b>not yet marked as tagged</b>"}.` : "")
+      + (d.f.hazard ? ` <b style="color:#c62828">Reported as a safety hazard.</b>` : ""),
+    done: d => ({ title: "Repair request sent", html: `<p>Request number <b>${F.esc(d.ref)}</b>.${d.f.priority === "oos" ? " Keep it tagged and out of service until it's fixed." : ""}</p>` })
+  });
+})();
+</script>
+</body>
+</html>

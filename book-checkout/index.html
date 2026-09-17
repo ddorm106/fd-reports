@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#2c3e50">
+    <title>Centerville FD — Book Checkout</title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@600;700&family=Playfair+Display:wght@900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../reports/monthly/report.css?v=2026-09-17c">
+    <link rel="stylesheet" href="../reports/requests/requests.css?v=2026-09-17b">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.2.0/dist/signature_pad.umd.min.js"></script>
+</head>
+<body>
+<noscript>This form needs JavaScript turned on.</noscript>
+<!-- The training library: books, manuals and study guides in and out. Built by
+     ../reports/requests/requests.js; who gets the email: ../reports/requests/staff.js. -->
+<script src="../reports/monthly/assets.js?v=2026-09-17c"></script>
+<script src="../reports/requests/staff.js?v=2026-09-17a"></script>
+<script src="../reports/requests/requests.js?v=2026-09-17b"></script>
+<script>
+CFDForm.start(CFDForm.checkout({
+  id: "book-checkout", title: "Book Checkout", noun: "book checkout", refPrefix: "BK", fileWord: "Books",
+  pronoun: "the books", dueDays: 30, returnedWord: "Books returned",
+  intro: "Borrow books, manuals and study guides from the training library, and return them through this same form. Checkouts and returns are emailed to the sergeants and command staff.",
+  outNote: "Borrowing books", returnNote: "Bringing them back",
+  useSub: "What you're studying for",
+  purposes: ["Promotion study", "Certification test", "Class or course", "Teaching / lesson prep", "Personal development"],
+  useFields: [
+    { id: "course", label: "Class, test or position", full: true, placeholder: "e.g. Fire Officer I, driver/operator test, Fire Instructor I" }
+  ],
+  detailsPlaceholder: "Anything else — test date, class dates",
+  stepItems: "Books", itemsOutTitle: "Books", itemsReturnTitle: "Books coming back",
+  itemsOutSub: "Every book you're taking",
+  itemsOutHelp: "One line per book. The copy or library number is usually on the spine or inside the cover.",
+  itemNoun: "book",
+  itemFields: [
+    { id: "name", label: "Title", required: true, size: "xl", keep: true, pdfW: 2.6, placeholder: "Book or manual",
+      list: ["IFSTA Essentials of Fire Fighting (8th ed.)", "IFSTA Pumping Apparatus Driver/Operator Handbook",
+             "IFSTA Aerial Apparatus Driver/Operator Handbook", "IFSTA Fire and Emergency Services Company Officer",
+             "IFSTA Fire and Emergency Services Instructor (9th ed.)", "IFSTA Hazardous Materials for First Responders",
+             "IFSTA Building Construction Related to the Fire Service", "IFSTA Fire Service Search and Rescue",
+             "IFSTA Principles of Vehicle Extrication", "IFSTA Fire Inspection and Code Enforcement",
+             "Brannigan's Building Construction for the Fire Service", "Fire Officer: Principles and Practice",
+             "Fundamentals of Fire Fighter Skills and Hazardous Materials Response", "Emergency Response Guidebook (ERG 2024)",
+             "NFPA 1010 (2024)", "NFPA 1403 Live Fire Training Evolutions"] },
+    { id: "edition", label: "Edition", size: "m", keep: true, pdfW: 0.8, placeholder: "e.g. 8th" },
+    { id: "tag", label: "Copy / library #", size: "m", keep: true, pdfW: 1 }
+  ],
+  outConditions: ["Good", "Worn", "Damaged"],
+  returnConditions: ["Good", "Worn", "Damaged", "Missing pages", "Lost"],
+  badConditions: ["Damaged", "Missing pages", "Lost"],
+  repairLink: false,
+  outAck: "I'm responsible for these books until they're returned. I'll bring them back by the due date and report any damage or loss.",
+  returnAck: "The books listed are returned, and the condition shown for each is accurate."
+}));
+</script>
+</body>
+</html>
