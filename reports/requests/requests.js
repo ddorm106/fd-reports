@@ -605,6 +605,15 @@
         const ctrl = new AbortController(), timer = setTimeout(() => ctrl.abort(), 180000);
         const d = data(), to = recipients().map(p => p.email);
         try {
+            // A form can file the submission somewhere else first (the Training
+            // Request saves it in the Career Portal) and add to what's emailed.
+            if (C.beforeSend) {
+                btn.textContent = 'Saving…';
+                let extra = null;
+                try { extra = await C.beforeSend(d, { toast }); } catch (e) { extra = { f: { _sendNote: e.message } }; }
+                if (extra && extra.f) Object.assign(state.f, extra.f);
+                btn.textContent = 'Sending…';
+            }
             const pdf = buildPDF();
             const attachments = [{ filename: fileBase() + '.pdf', content: pdf.output('datauristring').split(',')[1] }];
             for (let i = 0; i < state.photos.length; i++) {

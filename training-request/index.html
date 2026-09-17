@@ -20,7 +20,7 @@
 <script src="../reports/monthly/assets.js?v=2026-09-17c"></script>
 <script src="../reports/requests/staff.js?v=2026-09-17a"></script>
 <script src="../reports/requests/gpstc-courses.js?v=2026-09-17a"></script>
-<script src="../reports/requests/requests.js?v=2026-09-17c"></script>
+<script src="../reports/requests/requests.js?v=2026-09-17d"></script>
 <script>
 (function () {
   const F = window.CFDForm, S = window.CFD_STAFF, G = window.GPSTC_COURSES;
@@ -131,7 +131,34 @@
   };
   const chosenClass = d => { const c = course(d); return c && c.o.find(x => classKey(c, x) === d.f.classPick); };
 
+  // The portal keeps the record and runs the approvals (sergeant → Training).
+  // Signed in at fdtraining.org means signed in there too, so the browser just posts it.
+  const portalOrigin = () => window.CFD_PORTAL_ORIGIN || "https://career.fdtraining.org";
+  async function saveToPortal(d) {
+    const c = course(d), o = chosenClass(d);
+    const body = {
+      source: d.f.source, course_name: d.f.source === "other" ? d.f.otherName : c ? c.t : "",
+      provider: d.f.source === "other" ? d.f.otherProvider : c ? `GPSTC (${c.c})` : "", code: c ? c.c : "",
+      url: d.f.source === "other" ? d.f.otherUrl : c ? c.u : "",
+      dates: o ? range(o) : d.f.source === "other" ? d.f.otherDates : classPicker.text(d),
+      location: o ? `${place(o)}${o[3] ? ", " + o[3] : ""}` : d.f.otherLocation || "",
+      class_number: o ? o[5] : "", registration: o && o[6] === "Coming Soon" ? `Registration opens ${opensOn(o[0])}` : o ? o[6] : "",
+      hours: d.f.source === "other" ? d.f.otherHours : c ? c.h : null, cost: d.f.source === "other" ? d.f.cost : "GPSTC — free for sponsored GA fire department members",
+      justification: d.f.justification, reason: d.f.reason, rank: d.f.rank, shift: d.f.shift, gfstc: d.f.gfstc,
+      lodging: !!d.f.lodging, coverage: !!d.f.coverage, prereqs: c ? c.p : d.f.prereqNotes, meets_prereqs: !!d.f.meetsPrereqs, ref: d.ref
+    };
+    try {
+      const r = await fetch(portalOrigin() + "/api/training-requests", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const j = await r.json().catch(() => ({}));
+      if (j && j.ok) return { f: { _portal: j.url } };
+      return { f: { _portal: "", _portalErr: j.error === "no-portal-account" ? "no Career Portal account for your sign-in" : j.error === "not-signed-in" ? "you weren't signed in" : j.error || ("HTTP " + r.status) } };
+    } catch (e) {
+      return { f: { _portal: "", _portalErr: e.message } };
+    }
+  }
+
   F.start({
+    beforeSend: saveToPortal,
     id: "training-request", title: "Training Request", noun: "training request", refPrefix: "TR", storageKey: "cfd.training-request.v1",
     intro: "Ask to attend a class — a GPSTC fire course or anything else. The sergeants and command staff get your request by email with the course details.",
     keepOnReset: ["name", "rank", "shift", "phone", "gfstc"],
@@ -204,12 +231,16 @@
       const c = course(d), o = chosenClass(d);
       const what = d.f.source === "other" ? `<b>${esc(d.f.otherName)}</b> (${esc(d.f.otherProvider)})` : c ? `<b>${esc(c.t)}</b> (${esc(c.c)}, ${esc(hrs(c.h))}) — <a href="${esc(c.u)}">GPSTC course page</a>` : "";
       const when = o ? ` ${esc(classNo(o))}, ${esc(range(o))} at ${esc(place(o))}.${o[6] === "Coming Soon" ? ` Registration opens ${esc(opensOn(o[0]))} at 8:00 a.m.` : o[6] === "Waiting List" ? " That class has a waiting list." : ""}` : "";
+      const portal = d.f._portal
+        ? ` <a href="${esc(d.f._portal)}">Approve or deny it in the Career Portal →</a>`
+        : d.f._portalErr ? ` <i>(not saved to the Career Portal: ${esc(d.f._portalErr)} — approve by reply)</i>` : "";
       return `<b>${esc(d.f.name)}</b> (${esc(d.f.rank)}, ${esc(d.f.shift)}) is requesting ${what}.${when}`
-        + (d.f.coverage ? " <b>Needs shift coverage.</b>" : "") + (d.f.lodging ? " Needs lodging." : "");
+        + (d.f.coverage ? " <b>Needs shift coverage.</b>" : "") + (d.f.lodging ? " Needs lodging." : "") + portal;
     },
     done: d => {
       const o = chosenClass(d);
-      return { title: "Training request sent", html: `<p>Request number <b>${esc(d.ref)}</b>. Once it's approved, you'll be registered through the department.${o && o[6] === "Coming Soon" ? ` GPSTC opens registration for that class on <b>${esc(opensOn(o[0]))}</b>.` : ""}</p>` };
+      return { title: "Training request sent", html: `<p>Request number <b>${esc(d.ref)}</b>. Once it's approved, you'll be registered through the department.${o && o[6] === "Coming Soon" ? ` GPSTC opens registration for that class on <b>${esc(opensOn(o[0]))}</b>.` : ""}</p>`
+        + (d.f._portal ? `<p>Follow it in the <a href="${esc(d.f._portal)}" target="_blank" rel="noopener">Career Portal</a> — your sergeant approves it there.</p>` : d.f._portalErr ? `<p>It was emailed, but not saved in the Career Portal (${esc(d.f._portalErr)}).</p>` : "") };
     }
   });
 })();
