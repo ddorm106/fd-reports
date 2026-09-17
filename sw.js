@@ -2,7 +2,7 @@
 // Version: 1.8 (update version when making changes) — 1.8: one login; Career Portal on top; restricted admin tiles
 
 // Cache name - change version number to force update
-const CACHE_NAME = 'centerville-fd-v1.10';
+const CACHE_NAME = 'centerville-fd-v1.11';
 
 // Files to cache for offline use
 const FILES_TO_CACHE = [
