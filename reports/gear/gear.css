@@ -46,22 +46,49 @@
 
 /* damage map */
 .gi-map { margin-top: 14px; }
-.gi-map-title { font-size: .74rem; font-weight: 700; color: var(--dim); text-transform: uppercase; letter-spacing: .6px; margin: 10px 0 6px; }
-.gi-views { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-.gi-view { position: relative; border: 1px solid var(--line); border-radius: 8px; background: #fff; overflow: hidden; cursor: crosshair; touch-action: manipulation; }
-.gi-view img { display: block; width: 100%; height: auto; user-select: none; -webkit-user-drag: none; pointer-events: none; }
-.gi-view .cap { position: absolute; left: 0; right: 0; bottom: 0; font-size: .64rem; font-weight: 700; text-align: center; color: var(--dim); background: rgba(255,255,255,.85); padding: 2px; pointer-events: none; }
-.gi-pin {
-    position: absolute; width: 24px; height: 24px; margin: -12px 0 0 -12px; border-radius: 50%;
-    background: var(--r-u); color: #fff; font-size: .72rem; font-weight: 800; display: grid; place-items: center;
-    border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.35); pointer-events: none;
+.gi-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 4px; }
+.gi-tools .rp-label { margin: 0 6px 0 0; }
+.gi-tool { position: relative; }
+.gi-tool input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+.gi-tool span {
+    display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px 6px 7px; border-radius: 999px;
+    border: 1.5px solid var(--line-2); background: #fff; font-size: .82rem; font-weight: 700; color: var(--dim);
 }
-.gi-map-help { font-size: .8rem; color: var(--dim); margin-top: 6px; }
-.gi-pins { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
-.gi-pinrow { display: grid; grid-template-columns: 28px 1fr 40px; gap: 8px; align-items: center; }
-.gi-pinrow .num { width: 24px; height: 24px; border-radius: 50%; background: var(--r-u); color: #fff; font-size: .72rem; font-weight: 800; display: grid; place-items: center; }
-.gi-pinrow input { padding: 9px 10px; border: 1px solid var(--line-2); border-radius: 8px; background: #fbfaf7; min-height: 40px; width: 100%; }
-.gi-pinrow button { height: 40px; width: 40px; border-radius: 8px; border: 1px solid var(--line-2); background: #fff; color: var(--r-u); }
+.gi-tool input:checked + span { border-color: var(--slate); background: var(--slate); color: #fff; }
+.gi-tool input:checked + span svg { filter: drop-shadow(0 0 1px #fff); }
+.gi-tool input:focus-visible + span { box-shadow: var(--focus); }
+.gi-map-title { font-size: .74rem; font-weight: 700; color: var(--dim); text-transform: uppercase; letter-spacing: .6px; margin: 12px 0 6px; }
+.gi-views { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.gi-views.n2 { grid-template-columns: repeat(2, minmax(0, 260px)); }
+.gi-fig { margin: 0; display: flex; flex-direction: column; gap: 4px; }
+.gi-fig figcaption { font-size: .68rem; font-weight: 700; text-align: center; color: var(--dim); }
+.gi-view { position: relative; border: 1px solid var(--line); border-radius: 8px; background: #fff; overflow: visible; cursor: crosshair; touch-action: manipulation; }
+.gi-view img { display: block; width: 100%; height: auto; border-radius: 8px; user-select: none; -webkit-user-drag: none; pointer-events: none; }
+.gi-pin {
+    position: absolute; width: 30px; height: 30px; margin: -15px 0 0 -15px; display: grid; place-items: center;
+    cursor: grab; touch-action: none; z-index: 2; filter: drop-shadow(0 1px 2px rgba(0,0,0,.45));
+}
+.gi-pin svg { display: block; }
+.gi-pin b {
+    position: absolute; top: -6px; right: -7px; min-width: 16px; height: 16px; padding: 0 3px; border-radius: 8px;
+    background: var(--text); color: #fff; font-size: .62rem; line-height: 16px; text-align: center; border: 1.5px solid #fff;
+}
+.gi-pin.dragging { cursor: grabbing; transform: scale(1.25); z-index: 3; }
+.gi-map-help { font-size: .8rem; color: var(--dim); margin-top: 8px; }
+.gi-pins { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.gi-pinrow { display: grid; grid-template-columns: 34px 1fr; gap: 10px; align-items: start; padding: 10px; border: 1px solid var(--line); border-radius: 10px; background: #fbfaf7; }
+.gi-pinicon { position: relative; width: 30px; height: 30px; display: grid; place-items: center; }
+.gi-pinicon b { position: absolute; top: -5px; right: -6px; min-width: 16px; height: 16px; border-radius: 8px; background: var(--text); color: #fff; font-size: .62rem; line-height: 16px; text-align: center; border: 1.5px solid #fff; }
+.gi-pinbody { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.gi-pinhead { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.gi-pinhead select { padding: 7px 10px; border: 1px solid var(--line-2); border-radius: 8px; background: #fff; font-weight: 700; min-height: 36px; }
+.gi-pinwhere { font-size: .78rem; color: var(--dim); }
+.gi-pindel { margin-left: auto; height: 34px; width: 34px; border-radius: 8px; border: 1px solid var(--line-2); background: #fff; color: var(--r-u); }
+.gi-pinbody > input { padding: 9px 10px; border: 1px solid var(--line-2); border-radius: 8px; background: #fff; min-height: 40px; width: 100%; }
+.gi-pinbody .gi-photos { margin-top: 0; }
+.gi-pinbody .gi-photos:empty { display: none; }
+.gi-pinbody .gi-photo { width: 64px; height: 64px; }
+.rp-btn.gi-small { min-height: 34px; padding: 6px 10px; font-size: .8rem; }
 
 /* photos */
 .gi-photos { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
@@ -82,6 +109,7 @@
 
 @media (max-width: 720px) {
     .gi-cond { grid-template-columns: 1fr 1fr; }
-    .gi-views { grid-template-columns: 1fr 1fr; }
+    .gi-views, .gi-views.n2 { grid-template-columns: 1fr 1fr; }
+    .gi-tool span { padding: 5px 10px 5px 6px; font-size: .78rem; }
     .gi-summary b { font-size: 1.15rem; }
 }

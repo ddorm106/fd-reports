@@ -19,6 +19,31 @@
     const MB = 1024 * 1024;
     const MAX_TOTAL = 28 * MB;          // Resend's 40 MB per email, after base64
     const VIEW_NAMES = [['front', 'Front'], ['back', 'Back'], ['front-inside', 'Front (inside out)'], ['back-inside', 'Back (inside out)']];
+    const viewsOf = layer => layer.viewList || VIEW_NAMES;
+    // What a mark on a drawing means. The icon is placed where the damage is.
+    const DAMAGE = [
+        { id: 'hole', label: 'Hole', rgb: [183, 28, 28] },
+        { id: 'tear', label: 'Tear', rgb: [198, 40, 40] },
+        { id: 'burn', label: 'Burn', rgb: [230, 81, 0] },
+        { id: 'abrasion', label: 'Abrasion / wear', rgb: [109, 76, 65] },
+        { id: 'contamination', label: 'Contamination', rgb: [106, 27, 154] },
+        { id: 'other', label: 'Other', rgb: [69, 90, 100] }
+    ];
+    const dmg = id => DAMAGE.find(d => d.id === id) || DAMAGE[DAMAGE.length - 1];
+    const hex = rgb => '#' + rgb.map(v => v.toString(16).padStart(2, '0')).join('');
+    // Small SVG icons, the same shapes the PDF draws.
+    function damageIcon(id, size = 22) {
+        const c = hex(dmg(id).rgb);
+        const body = {
+            hole: `<circle cx="12" cy="12" r="9" fill="${c}"/><circle cx="12" cy="12" r="4.2" fill="#fff"/>`,
+            tear: `<circle cx="12" cy="12" r="11" fill="#fff" stroke="${c}" stroke-width="1.5"/><path d="M4 15 L8 8 L11 15 L14 8 L17 15 L20 9" fill="none" stroke="${c}" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>`,
+            burn: `<path d="M12 2 C14 7 19 9 19 15 C19 19.5 15.8 22 12 22 C8.2 22 5 19.5 5 15 C5 11.5 7.5 10 8.5 7 C10 9 10.5 10.5 10.5 12 C12 10 12.5 6 12 2 Z" fill="${c}"/><path d="M12 13 C13.5 15 15 16 15 18 C15 19.8 13.7 21 12 21 C10.3 21 9 19.8 9 18 C9 16.5 10.5 15.5 12 13 Z" fill="#ffb74d"/>`,
+            abrasion: `<circle cx="12" cy="12" r="10" fill="#fff" stroke="${c}" stroke-width="2"/><path d="M6 14 L14 6 M7 18 L18 7 M11 19 L19 11" stroke="${c}" stroke-width="2" stroke-linecap="round"/>`,
+            contamination: `<path d="M12 2 C15 7 19 11 19 15.5 C19 19.4 15.9 22 12 22 C8.1 22 5 19.4 5 15.5 C5 11 9 7 12 2 Z" fill="${c}"/><circle cx="9.5" cy="15.5" r="1.8" fill="#fff" opacity=".7"/>`,
+            other: `<circle cx="12" cy="12" r="10" fill="${c}"/><path d="M12 6.5 L12 13.5" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><circle cx="12" cy="17.3" r="1.6" fill="#fff"/>`
+        }[dmg(id).id];
+        return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true">${body}</svg>`;
+    }
     // Needs repair and Retire take the item out of service: tagged, and command staff are told.
     const CONDITIONS = [
         { v: 'Serviceable', note: 'OK to wear' },
@@ -38,6 +63,7 @@
     const state = { items: {}, general: [], sigSource: null, sent: false, saveTimer: null };
     C.items.forEach(it => state.items[it.id] = { notIssued: false, condition: '', fields: {}, pins: [], photos: [] });
     let pad = null;
+    const drag = { on: null, justMoved: false };
 
     // ─────────────────────────── dates ───────────────────────────
     function todayIso() {
@@ -90,13 +116,20 @@
     function itemCard(it, i, n) {
         const sizeLabel = it.sizeLabel || 'Size';
         const cond = CONDITIONS.map(c => `<label><input type="radio" name="cond-${it.id}" value="${esc(c.v)}"><span>${esc(c.v)}<small>${esc(c.note)}</small></span></label>`).join('');
-        const map = (it.layers || []).map(l => `
+        const map = (it.layers || []).map(l => {
+            const vl = viewsOf(l);
+            return `
             <div class="gi-map-title">${esc(l.title)}</div>
-            <div class="gi-views">${VIEW_NAMES.map(([vk, vn]) => {
+            <div class="gi-views n${vl.length}">${vl.map(([vk, vn]) => {
                 const v = VIEWS[`${l.views}--${vk}`];
-                return `<div class="gi-view" data-view="${l.id}|${vk}" data-item="${it.id}" role="button" aria-label="${esc(l.title + ' ' + vn)}: tap to mark damage">
-                    ${v ? `<img src="${v.src}" alt="">` : ''}<span class="cap">${esc(vn)}</span></div>`;
-            }).join('')}</div>`).join('');
+                return `<figure class="gi-fig"><div class="gi-view" data-view="${l.id}|${vk}" data-item="${it.id}" role="button" aria-label="${esc(l.title + ' ' + vn)}: tap to mark damage">
+                    ${v ? `<img src="${v.src}" alt="" draggable="false">` : ''}</div><figcaption>${esc(vn)}</figcaption></figure>`;
+            }).join('')}</div>`;
+        }).join('');
+        const tools = `<div class="gi-tools" role="radiogroup" aria-label="Type of damage to place">
+            <span class="rp-label">Mark damage</span>
+            ${DAMAGE.map((d, di) => `<label class="gi-tool"><input type="radio" name="dmg-${it.id}" value="${d.id}"${di === 0 ? ' checked' : ''}><span>${damageIcon(d.id, 20)}${esc(d.label)}</span></label>`).join('')}
+        </div>`;
         const body = `
             <div class="gi-ni-row">
                 <label class="gi-ni"><input type="checkbox" data-not-issued="${it.id}"> Not issued / not inspected</label>
@@ -116,7 +149,7 @@
                 <div class="n" data-tagno="${it.id}"></div>
                 <textarea data-f="reason" data-item="${it.id}" placeholder="What is wrong with it? (required) — e.g. torn outer shell at left knee, liner delaminated"></textarea>
             </div>
-            ${map ? `<div class="gi-map">${map}<div class="gi-map-help">Tap a drawing where the damage is. Each mark gets a number and a note.</div><div class="gi-pins" data-pins="${it.id}"></div></div>` : ''}
+            ${map ? `<div class="gi-map">${tools}${map}<div class="gi-map-help">Pick the kind of damage, then tap the drawing where it is. Drag a mark to move it. Each mark takes a note and photos.</div><div class="gi-pins" data-pins="${it.id}"></div></div>` : ''}
             <div class="rp-field full" style="margin-top:14px"><label>Comments</label><textarea data-f="comments" data-item="${it.id}"></textarea></div>
             ${photoBlock(it.id)}`;
         return card('s-' + it.id, n, it.title, it.group || null, body, 'gi-item', '<span class="tag" data-tag>Not inspected</span>');
@@ -209,8 +242,10 @@
             const view = $(`.gi-view[data-item="${id}"][data-view="${p.layer}|${p.view}"]`);
             if (!view) return;
             const el = document.createElement('span');
-            el.className = 'gi-pin'; el.textContent = i + 1;
+            el.className = 'gi-pin'; el.dataset.pinIdx = `${id}|${i}`;
+            el.innerHTML = damageIcon(p.type, 26) + `<b>${i + 1}</b>`;
             el.style.left = (p.x * 100) + '%'; el.style.top = (p.y * 100) + '%';
+            el.title = `${i + 1}. ${dmg(p.type).label} — drag to move`;
             view.appendChild(el);
         });
         const list = $(`[data-pins="${id}"]`);
@@ -218,15 +253,34 @@
         const it = C.items.find(x => x.id === id);
         list.innerHTML = s.pins.map((p, i) => {
             const layer = (it.layers || []).find(l => l.id === p.layer);
-            const vn = (VIEW_NAMES.find(v => v[0] === p.view) || [])[1] || p.view;
-            return `<div class="gi-pinrow" data-pin="${i}"><span class="num">${i + 1}</span>
-                <input value="${esc(p.note)}" placeholder="${esc((layer ? layer.title + ', ' : '') + vn)}: what's wrong here?" data-pin-note="${id}|${i}">
-                <button type="button" data-pin-del="${id}|${i}" aria-label="Remove mark ${i + 1}">✕</button></div>`;
+            const vn = ((layer ? viewsOf(layer) : VIEW_NAMES).find(v => v[0] === p.view) || [])[1] || p.view;
+            const photos = (p.photos || []).map(ph => `<div class="gi-photo">${ph.thumb ? `<img src="${ph.thumb}" alt="">` : '<div class="busy">…</div>'}<button type="button" data-photo-del="pin:${id}:${i}|${ph.id}" aria-label="Remove photo">✕</button></div>`).join('');
+            return `<div class="gi-pinrow" data-pin="${i}">
+                <span class="gi-pinicon">${damageIcon(p.type, 24)}<b>${i + 1}</b></span>
+                <div class="gi-pinbody">
+                    <div class="gi-pinhead">
+                        <select data-pin-type="${id}|${i}" aria-label="Type of damage">${DAMAGE.map(d => `<option value="${d.id}"${d.id === p.type ? ' selected' : ''}>${esc(d.label)}</option>`).join('')}</select>
+                        <span class="gi-pinwhere">${esc((layer ? layer.title + ' · ' : '') + vn)}</span>
+                        <button type="button" class="gi-pindel" data-pin-del="${id}|${i}" aria-label="Remove mark ${i + 1}">✕</button>
+                    </div>
+                    <input value="${esc(p.note)}" placeholder="Size and detail — e.g. 2-inch tear through outer shell" data-pin-note="${id}|${i}">
+                    <div class="gi-photos">${photos}</div>
+                    <div class="gi-photo-add">
+                        <label class="rp-btn gi-small">📷 Photo<input type="file" accept="image/*" capture="environment" hidden data-add-photo="pin:${id}:${i}"></label>
+                        <label class="rp-btn gi-small">Choose<input type="file" accept="image/*,.heic,.heif" multiple hidden data-add-photo="pin:${id}:${i}"></label>
+                    </div>
+                </div></div>`;
         }).join('');
     }
 
+    function photoList(scope) {
+        if (scope === 'general') return state.general;
+        if (scope.startsWith('pin:')) { const [, id, i] = scope.split(':'); const p = state.items[id].pins[+i]; return p ? (p.photos = p.photos || []) : []; }
+        return state.items[scope].photos;
+    }
     function renderPhotos(scope) {
-        const list = scope === 'general' ? state.general : state.items[scope].photos;
+        if (scope.startsWith('pin:')) return renderPins(scope.split(':')[1]);
+        const list = photoList(scope);
         const box = $(`[data-photos="${scope}"]`);
         if (!box) return;
         box.innerHTML = list.map(p => `<div class="gi-photo">${p.thumb ? `<img src="${p.thumb}" alt="">` : '<div class="busy">Preparing…</div>'}<button type="button" data-photo-del="${scope}|${p.id}" aria-label="Remove photo">✕</button></div>`).join('');
@@ -245,7 +299,7 @@
     const toB64 = blob => new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(String(fr.result).split(',')[1] || ''); fr.onerror = rej; fr.readAsDataURL(blob); });
 
     async function addPhotos(scope, files) {
-        const list = scope === 'general' ? state.general : state.items[scope].photos;
+        const list = photoList(scope);
         for (const f of Array.from(files || [])) {
             const p = { id: uid(), name: f.name };
             list.push(p); renderPhotos(scope);
@@ -270,7 +324,12 @@
     }
     function allPhotos() {
         const out = [];
-        C.items.forEach(it => { if (!state.items[it.id].notIssued) state.items[it.id].photos.forEach((p, i) => out.push({ ...p, label: `${it.title} - photo ${i + 1}`, item: it })); });
+        C.items.forEach(it => {
+            const s = state.items[it.id];
+            if (s.notIssued) return;
+            s.photos.forEach((p, i) => out.push({ ...p, label: `${it.title} - photo ${i + 1}`, item: it }));
+            s.pins.forEach((pin, n) => (pin.photos || []).forEach((p, i) => out.push({ ...p, label: `${it.title} - mark ${n + 1} ${dmg(pin.type).label}${pin.photos.length > 1 ? ' ' + (i + 1) : ''}`, item: it })));
+        });
         state.general.forEach((p, i) => out.push({ ...p, label: `Inspection - photo ${i + 1}` }));
         return out;
     }
@@ -337,7 +396,7 @@
     function save() {
         try {
             const items = {};
-            C.items.forEach(it => { const s = state.items[it.id]; items[it.id] = { notIssued: s.notIssued, condition: s.condition, fields: s.fields, pins: s.pins }; });
+            C.items.forEach(it => { const s = state.items[it.id]; items[it.id] = { notIssued: s.notIssued, condition: s.condition, fields: s.fields, pins: s.pins.map(({ photos, ...p }) => p) }; });
             localStorage.setItem(C.storageKey, JSON.stringify({ v: 1, header: header(), items, savedAt: Date.now() }));
             $('#saved').textContent = 'Draft saved ' + new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
         } catch (e) { }
@@ -353,7 +412,7 @@
         C.items.forEach(it => {
             const src = (d.items || {})[it.id]; if (!src) return;
             const s = state.items[it.id];
-            s.notIssued = !!src.notIssued; s.condition = src.condition || ''; s.fields = src.fields || {}; s.pins = Array.isArray(src.pins) ? src.pins : [];
+            s.notIssued = !!src.notIssued; s.condition = src.condition || ''; s.fields = src.fields || {}; s.pins = Array.isArray(src.pins) ? src.pins.map(p => ({ type: 'other', photos: [], ...p, photos: [] })) : [];
             $(`[data-not-issued="${it.id}"]`).checked = s.notIssued;
             $$(`[data-item="${it.id}"][data-f]`).forEach(el => el.value = s.fields[el.dataset.f] || '');
             const r = $(`input[name="cond-${it.id}"][value="${CSS.escape(s.condition)}"]`); if (r) r.checked = true;
@@ -462,6 +521,22 @@
             need(16); font('bold', 10.5, col || RED); pdf.text(pdfText(t.toUpperCase()), M, y + 4);
             pdf.setDrawColor(...(col || RED)); pdf.setLineWidth(0.5); pdf.line(M, y + 6.2, M + PW, y + 6.2); y += 10;
         }
+        // The damage icons, drawn to match the form's SVG icons; n = the mark's number.
+        function drawDamage(type, cx, cy, n, small) {
+            const c = dmg(type).rgb, r = small ? 2.2 : 2.6;
+            pdf.setLineWidth(0.5);
+            if (type === 'hole') { pdf.setFillColor(...c); pdf.circle(cx, cy, r, 'F'); pdf.setFillColor(255, 255, 255); pdf.circle(cx, cy, r * 0.45, 'F'); }
+            else if (type === 'tear') { pdf.setFillColor(255, 255, 255); pdf.setDrawColor(...c); pdf.circle(cx, cy, r, 'FD'); pdf.setLineWidth(0.6); pdf.lines([[r * .5, -r * .8], [r * .4, r * .8], [r * .4, -r * .8], [r * .4, r * .8]], cx - r * .85, cy + r * .4); }
+            else if (type === 'burn') { pdf.setFillColor(...c); pdf.triangle(cx, cy - r * 1.2, cx - r * .85, cy + r * .2, cx + r * .85, cy + r * .2, 'F'); pdf.circle(cx, cy + r * .3, r * .85, 'F'); pdf.setFillColor(255, 183, 77); pdf.circle(cx, cy + r * .5, r * .38, 'F'); }
+            else if (type === 'abrasion') { pdf.setFillColor(255, 255, 255); pdf.setDrawColor(...c); pdf.circle(cx, cy, r, 'FD'); pdf.line(cx - r * .6, cy + r * .2, cx + r * .2, cy - r * .6); pdf.line(cx - r * .3, cy + r * .6, cx + r * .6, cy - r * .3); }
+            else if (type === 'contamination') { pdf.setFillColor(...c); pdf.triangle(cx, cy - r * 1.25, cx - r * .8, cy + r * .1, cx + r * .8, cy + r * .1, 'F'); pdf.circle(cx, cy + r * .35, r * .82, 'F'); }
+            else { pdf.setFillColor(...c); pdf.circle(cx, cy, r, 'F'); font('bold', 6, [255, 255, 255]); pdf.text('!', cx, cy + 0.9, { align: 'center' }); }
+            if (n != null) {
+                const bx = cx + r * 1.05, by = cy - r * 1.05;
+                pdf.setFillColor(34, 39, 46); pdf.circle(bx, by, 1.5, 'F');
+                font('bold', 5.2, [255, 255, 255]); pdf.text(String(n), bx, by + 0.7, { align: 'center' });
+            }
+        }
         function pill(text, rgb, x, yy, alignRight) {
             font('bold', 8, [255, 255, 255]);
             const w = pdf.getTextWidth(text) + 6, x0 = alignRight ? x - w : x;
@@ -530,29 +605,37 @@
             (it.layers || []).forEach(l => {
                 const pins = s.pins.map((p, i) => ({ ...p, n: i + 1 })).filter(p => p.layer === l.id);
                 if (!pins.length) return;
-                const cell = (PW - 3 * 3) / 4;
-                const imgs = VIEW_NAMES.map(([vk]) => VIEWS[`${l.views}--${vk}`]);
-                const maxH = Math.max(...imgs.map(v => v ? cell * v.h / v.w : 0));
+                const vl = viewsOf(l), cols = Math.max(vl.length, 2), gap = 3;
+                const cell = (PW - (cols - 1) * gap) / cols;
+                const imgs = vl.map(([vk]) => VIEWS[`${l.views}--${vk}`]);
+                const scaleFor = v => Math.min(cell / v.w, (vl.length > 2 ? 58 : 70) / v.h);
+                const maxH = Math.max(...imgs.map(v => v ? v.h * scaleFor(v) : 0));
                 need(maxH + 12);
                 font('bold', 7.5, DIM); pdf.text(pdfText(`${l.title.toUpperCase()} — DAMAGE MARKS`), M, y + 3); y += 5;
-                VIEW_NAMES.forEach(([vk, vn], j) => {
+                vl.forEach(([vk, vn], j) => {
                     const v = imgs[j]; if (!v) return;
-                    const x = M + j * (cell + 3), hh = cell * v.h / v.w;
-                    pdf.setDrawColor(...LINE); pdf.setLineWidth(0.2); pdf.rect(x, y, cell, hh);
-                    try { pdf.addImage(v.src, 'JPEG', x, y, cell, hh, `${l.views}-${vk}`, 'FAST'); } catch (e) { }
-                    pins.filter(p => p.view === vk).forEach(p => {
-                        pdf.setFillColor(...OOS); pdf.circle(x + p.x * cell, y + p.y * hh, 2.3, 'F');
-                        font('bold', 6.5, [255, 255, 255]); pdf.text(String(p.n), x + p.x * cell, y + p.y * hh + 0.9, { align: 'center' });
-                    });
-                    font('normal', 6.5, DIM); pdf.text(pdfText(vn), x + cell / 2, y + hh + 3, { align: 'center' });
+                    const sc = scaleFor(v), w = v.w * sc, hh = v.h * sc, x = M + j * (cell + gap) + (cell - w) / 2;
+                    pdf.setDrawColor(...LINE); pdf.setLineWidth(0.2); pdf.rect(M + j * (cell + gap), y, cell, maxH);
+                    try { pdf.addImage(v.src, 'JPEG', x, y + (maxH - hh) / 2, w, hh, `${l.views}-${vk}`, 'FAST'); } catch (e) { }
+                    pins.filter(p => p.view === vk).forEach(p => drawDamage(p.type, x + p.x * w, y + (maxH - hh) / 2 + p.y * hh, p.n));
+                    font('normal', 6.5, DIM); pdf.text(pdfText(vn), M + j * (cell + gap) + cell / 2, y + maxH + 3, { align: 'center' });
                 });
                 y += maxH + 6;
                 pins.forEach(p => {
-                    const lines = pdf.splitTextToSize(pdfText(p.note || '(no note)'), PW - 10);
-                    need(lines.length * 4.2 + 2);
-                    pdf.setFillColor(...OOS); pdf.circle(M + 2.3, y + 2.4, 2.1, 'F');
-                    font('bold', 6.3, [255, 255, 255]); pdf.text(String(p.n), M + 2.3, y + 3.3, { align: 'center' });
-                    font('normal', 9.2, INK); pdf.text(lines, M + 7, y + 3.6); y += lines.length * 4.2 + 1.5;
+                    const lines = pdf.splitTextToSize(pdfText(`${dmg(p.type).label}${p.note ? ' — ' + p.note : ''}`), PW - 12);
+                    need(lines.length * 4.2 + 3);
+                    drawDamage(p.type, M + 3, y + 2.6, p.n, true);
+                    font('normal', 9.2, INK); pdf.text(lines, M + 9, y + 3.6); y += lines.length * 4.2 + 1.8;
+                    const ph = (p.photos || []).filter(x => x.thumb).slice(0, 4);
+                    if (ph.length) {
+                        const pc = 30; need(pc + 3);
+                        ph.forEach((q, qi) => {
+                            const sc = Math.min(pc / q.tw, pc / q.th), w = q.tw * sc, hh = q.th * sc, x = M + 9 + qi * (pc + 3);
+                            pdf.setFillColor(...SOFT); pdf.rect(x, y, pc, pc, 'F');
+                            try { pdf.addImage(q.thumb, 'JPEG', x + (pc - w) / 2, y + (pc - hh) / 2, w, hh, undefined, 'FAST'); } catch (e) { }
+                        });
+                        y += pc + 3;
+                    }
                 });
                 y += 2;
             });
@@ -726,21 +809,26 @@
             const head = e.target.closest('[data-toggle]');
             if (head) return head.parentElement.classList.toggle('collapsed');
             const view = e.target.closest('.gi-view');
-            if (view) {
+            if (view && !e.target.closest('.gi-pin') && !drag.justMoved) {
                 const r = view.getBoundingClientRect();
                 const [layer, vk] = view.dataset.view.split('|');
-                const s = state.items[view.dataset.item];
-                s.pins.push({ layer, view: vk, x: Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)), y: Math.min(1, Math.max(0, (e.clientY - r.top) / r.height)), note: '' });
+                const id = view.dataset.item, s = state.items[id];
+                const type = ($(`input[name="dmg-${id}"]:checked`) || {}).value || 'other';
+                s.pins.push({ type, layer, view: vk, x: Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)), y: Math.min(1, Math.max(0, (e.clientY - r.top) / r.height)), note: '', photos: [] });
                 changed();
-                const inputs = $$(`[data-pin-note^="${view.dataset.item}|"]`);
-                if (inputs.length) inputs[inputs.length - 1].focus();
+                const inputs = $$(`[data-pin-note^="${id}|"]`);
+                if (inputs.length) inputs[inputs.length - 1].focus({ preventScroll: true });
                 return;
             }
             const del = e.target.closest('[data-pin-del]');
-            if (del) { const [id, i] = del.dataset.pinDel.split('|'); state.items[id].pins.splice(+i, 1); return changed(); }
+            if (del) {
+                const [id, i] = del.dataset.pinDel.split('|'), pin = state.items[id].pins[+i];
+                if (pin && (pin.note || (pin.photos || []).length) && !confirm(`Remove mark ${+i + 1} with its note and photos?`)) return;
+                state.items[id].pins.splice(+i, 1); return changed();
+            }
             const ph = e.target.closest('[data-photo-del]');
             if (ph) {
-                const [scope, pid] = ph.dataset.photoDel.split('|'), list = scope === 'general' ? state.general : state.items[scope].photos;
+                const [scope, pid] = ph.dataset.photoDel.split('|'), list = photoList(scope);
                 list.splice(list.findIndex(p => p.id === pid), 1); renderPhotos(scope); return changed();
             }
             const ret = e.target.closest('[data-retire]');
@@ -754,6 +842,9 @@
             const t = e.target;
             if (t.dataset.f && t.dataset.item) { state.items[t.dataset.item].fields[t.dataset.f] = t.value; }
             if (t.dataset.pinNote) { const [id, i] = t.dataset.pinNote.split('|'); state.items[id].pins[+i].note = t.value; clearTimeout(state.saveTimer); state.saveTimer = setTimeout(save, 350); return; }
+            // A select fires input then change; take the value here, before a re-render replaces the element.
+            if (t.dataset.pinType) { const [id, i] = t.dataset.pinType.split('|'); state.items[id].pins[+i].type = t.value; return changed(); }
+            if (t.name && t.name.startsWith('dmg-')) return;
             if (t.dataset.f === 'reason' || t.dataset.f === 'comments' || t.dataset.f === 'mfr' || t.dataset.f === 'serial' || t.dataset.f === 'size') { updateProgress(); clearTimeout(state.saveTimer); state.saveTimer = setTimeout(save, 350); return; }
             changed();
         });
@@ -762,10 +853,34 @@
             if (t.dataset.notIssued) { state.items[t.dataset.notIssued].notIssued = t.checked; }
             if (t.name && t.name.startsWith('cond-')) { state.items[t.name.slice(5)].condition = t.value; }
             if (t.dataset.addPhoto) { addPhotos(t.dataset.addPhoto, t.files); t.value = ''; return; }
+            if (t.dataset.pinType || (t.name && t.name.startsWith('dmg-'))) return;   // handled on input
             if (t.id === 'g-inspector') inspectorChanged();
             if (t.dataset.f && t.dataset.item) state.items[t.dataset.item].fields[t.dataset.f] = t.value;
             changed();
         });
+        // Drag a mark to move it (mouse, finger, or pencil).
+        form.addEventListener('pointerdown', e => {
+            const pin = e.target.closest('.gi-pin'); if (!pin) return;
+            e.preventDefault();
+            const [id, i] = pin.dataset.pinIdx.split('|');
+            drag.on = { id, i: +i, pin, view: pin.parentElement, x0: e.clientX, y0: e.clientY, moved: false };
+            pin.setPointerCapture(e.pointerId); pin.classList.add('dragging');
+        });
+        form.addEventListener('pointermove', e => {
+            const d = drag.on; if (!d) return;
+            if (Math.abs(e.clientX - d.x0) + Math.abs(e.clientY - d.y0) > 4) d.moved = true;
+            if (!d.moved) return;
+            const r = d.view.getBoundingClientRect(), p = state.items[d.id].pins[d.i];
+            p.x = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)); p.y = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height));
+            d.pin.style.left = (p.x * 100) + '%'; d.pin.style.top = (p.y * 100) + '%';
+        });
+        const endDrag = () => {
+            const d = drag.on; if (!d) return;
+            d.pin.classList.remove('dragging'); drag.on = null;
+            if (d.moved) { drag.justMoved = true; setTimeout(() => drag.justMoved = false, 50); save(); }
+            else { const row = $(`[data-pins="${d.id}"] [data-pin="${d.i}"]`); if (row) { row.scrollIntoView({ behavior: 'smooth', block: 'center' }); const n = $('input', row); n && n.focus({ preventScroll: true }); } }
+        };
+        form.addEventListener('pointerup', endDrag); form.addEventListener('pointercancel', endDrag);
         $$('[data-step]').forEach(a => a.addEventListener('click', () => { const s = document.getElementById(a.dataset.step); if (s) s.classList.remove('collapsed'); }));
         $('#btn-clear').onclick = resetAll;
         $('#btn-preview').onclick = () => preview(false);
@@ -786,6 +901,6 @@
         if (restored) $('#saved').textContent = 'Draft restored';
     }
 
-    window.CFDGear = { state, problems, buildPDF, submit, send, addPhotos, changed, header, tagged, tagNumber };
+    window.CFDGear = { state, problems, buildPDF, submit, send, addPhotos, changed, header, tagged, tagNumber, DAMAGE };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();

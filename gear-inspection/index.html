@@ -9,7 +9,7 @@
     <title>Centerville FD — PPE Gear Inspection</title>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@600;700&family=Playfair+Display:wght@900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../reports/monthly/report.css?v=2026-09-17b">
-    <link rel="stylesheet" href="../reports/gear/gear.css?v=2026-09-17b">
+    <link rel="stylesheet" href="../reports/gear/gear.css?v=2026-09-17c">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.2.0/dist/signature_pad.umd.min.js"></script>
 </head>
@@ -41,17 +41,21 @@ window.GEAR_CONFIG = {
       layers: [{ id: "outer", title: "Outer Shell", views: "jacket-outer" }, { id: "liner", title: "Inner Liner", views: "jacket-liner" }] },
     { id: "techgen-jacket", title: "TechGen Jacket", short: "TechGen Jacket",
       layers: [{ id: "shell", title: "TechGen Jacket", views: "techgen-jacket" }] },
-    { id: "helmet", title: "Firefighting Helmet", short: "Helmet", sizeLabel: "Color" },
+    { id: "helmet", title: "Firefighting Helmet", short: "Helmet", sizeLabel: "Color", group: "Cairns 1010",
+      layers: [{ id: "shell", title: "Helmet", views: "helmet", viewList: [["front", "Front"], ["side", "Side"], ["back", "Back"], ["top", "Top"]] }] },
     { id: "boots", title: "Firefighting Boots", short: "Boots" },
-    { id: "gloves", title: "Firefighting Gloves", short: "Gloves" },
-    { id: "nomex", title: "Firefighting Nomex", short: "Nomex" },
+    { id: "gloves", title: "Firefighting Gloves", short: "Gloves",
+      layers: [{ id: "pair", title: "Gloves", views: "gloves", viewList: [["back-of-hand", "Back of hand"], ["palm", "Palm"]] }] },
+    { id: "nomex", title: "Firefighting Nomex Hood", short: "Nomex Hood",
+      layers: [{ id: "hood", title: "Nomex Hood", views: "hood", viewList: [["front", "Front"], ["back", "Back"]] }] },
     { id: "scba-mask", title: "Firefighting SCBA Mask", short: "SCBA Mask" },
-    { id: "extrication-gloves", title: "Extrication Gloves", short: "Extrication Gloves" }
+    { id: "extrication-gloves", title: "Extrication Gloves", short: "Extrication Gloves",
+      layers: [{ id: "pair", title: "Gloves", views: "gloves", viewList: [["back-of-hand", "Back of hand"], ["palm", "Palm"]] }] }
   ]
 };
 </script>
 <script src="../reports/monthly/assets.js?v=2026-09-17b"></script>
-<script src="../reports/gear/views.js?v=2026-09-17a"></script>
-<script src="../reports/gear/gear.js?v=2026-09-17a"></script>
+<script src="../reports/gear/views.js?v=2026-09-17b"></script>
+<script src="../reports/gear/gear.js?v=2026-09-17b"></script>
 </body>
 </html>
