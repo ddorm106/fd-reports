@@ -1,8 +1,8 @@
 // sw.js - Service Worker for Centerville FD Reports & Training
-// Version: 1.6 (update version when making changes) — 1.6: training-courses/ and equipment-courses/ pages
+// Version: 1.7 (update version when making changes) — 1.7: PPE gear inspection + quick links
 
 // Cache name - change version number to force update
-const CACHE_NAME = 'centerville-fd-v1.6';
+const CACHE_NAME = 'centerville-fd-v1.7';
 
 // Files to cache for offline use
 const FILES_TO_CACHE = [

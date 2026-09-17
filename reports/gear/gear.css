@@ -1,0 +1,87 @@
+/* PPE Gear Inspection — additions to ../monthly/report.css */
+
+.gi-set { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* item cards */
+.gi-item .rp-card-head .tag {
+    margin-left: auto; font-size: .7rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
+    padding: 4px 10px; border-radius: 999px; background: #eceae4; color: var(--dim); white-space: nowrap;
+}
+.gi-item .rp-card-head .tag.ok { background: #e8f5e9; color: var(--ok); }
+.gi-item .rp-card-head .tag.warn { background: #fff3e0; color: var(--r-ni); }
+.gi-item .rp-card-head .tag.oos { background: var(--r-u); color: #fff; }
+.gi-item .rp-card-head .tag.na { background: #f1efe9; color: #9a9790; }
+.gi-item .rp-card-head .meta { margin-left: 8px; }
+.gi-item.oos { border-color: #ef9a9a; box-shadow: 0 0 0 2px rgba(198,40,40,.12); }
+.gi-item.not-issued .rp-card-body > :not(.gi-ni-row) { display: none; }
+
+.gi-ni-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+.gi-ni { display: inline-flex; align-items: center; gap: 8px; font-size: .88rem; color: var(--dim); font-weight: 600; }
+.gi-ni input { width: 20px; height: 20px; }
+
+.gi-cond { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.gi-cond label { position: relative; }
+.gi-cond input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+.gi-cond label > span {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; min-height: 48px;
+    padding: 6px; border-radius: 9px; border: 1.5px solid var(--line-2); background: #fff;
+    font-size: .8rem; font-weight: 700; line-height: 1.15; color: var(--dim);
+}
+.gi-cond input:focus-visible + span { box-shadow: var(--focus); }
+.gi-cond input[value="Serviceable"]:checked + span { background: var(--r-s); border-color: var(--r-s); color: #fff; }
+.gi-cond input[value="Needs cleaning"]:checked + span { background: var(--r-ee); border-color: var(--r-ee); color: #fff; }
+.gi-cond input[value="Needs repair"]:checked + span,
+.gi-cond input[value="Retire"]:checked + span { background: var(--r-u); border-color: var(--r-u); color: #fff; }
+.gi-cond small { display: block; font-weight: 600; font-size: .68rem; opacity: .85; }
+
+.gi-alert { margin-top: 10px; padding: 10px 12px; border-radius: 9px; font-size: .86rem; line-height: 1.4; }
+.gi-alert.age { background: #fff3e0; color: #7a4a00; border: 1px solid #ffcc80; }
+.gi-alert.age button { margin-left: 6px; }
+.gi-redtag {
+    margin-top: 12px; border: 2px dashed var(--r-u); border-radius: 10px; background: #fff6f5; padding: 12px;
+}
+.gi-redtag .t { color: var(--r-u); font-weight: 800; letter-spacing: 1px; text-transform: uppercase; font-size: .82rem; }
+.gi-redtag .n { font-size: .8rem; color: #8a1c1c; margin: 2px 0 8px; }
+.gi-redtag textarea { width: 100%; min-height: 64px; padding: 10px 12px; border: 1px solid #ef9a9a; border-radius: 9px; background: #fff; resize: vertical; }
+
+/* damage map */
+.gi-map { margin-top: 14px; }
+.gi-map-title { font-size: .74rem; font-weight: 700; color: var(--dim); text-transform: uppercase; letter-spacing: .6px; margin: 10px 0 6px; }
+.gi-views { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.gi-view { position: relative; border: 1px solid var(--line); border-radius: 8px; background: #fff; overflow: hidden; cursor: crosshair; touch-action: manipulation; }
+.gi-view img { display: block; width: 100%; height: auto; user-select: none; -webkit-user-drag: none; pointer-events: none; }
+.gi-view .cap { position: absolute; left: 0; right: 0; bottom: 0; font-size: .64rem; font-weight: 700; text-align: center; color: var(--dim); background: rgba(255,255,255,.85); padding: 2px; pointer-events: none; }
+.gi-pin {
+    position: absolute; width: 24px; height: 24px; margin: -12px 0 0 -12px; border-radius: 50%;
+    background: var(--r-u); color: #fff; font-size: .72rem; font-weight: 800; display: grid; place-items: center;
+    border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.35); pointer-events: none;
+}
+.gi-map-help { font-size: .8rem; color: var(--dim); margin-top: 6px; }
+.gi-pins { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.gi-pinrow { display: grid; grid-template-columns: 28px 1fr 40px; gap: 8px; align-items: center; }
+.gi-pinrow .num { width: 24px; height: 24px; border-radius: 50%; background: var(--r-u); color: #fff; font-size: .72rem; font-weight: 800; display: grid; place-items: center; }
+.gi-pinrow input { padding: 9px 10px; border: 1px solid var(--line-2); border-radius: 8px; background: #fbfaf7; min-height: 40px; width: 100%; }
+.gi-pinrow button { height: 40px; width: 40px; border-radius: 8px; border: 1px solid var(--line-2); background: #fff; color: var(--r-u); }
+
+/* photos */
+.gi-photos { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.gi-photo { position: relative; width: 84px; height: 84px; border-radius: 9px; overflow: hidden; border: 1px solid var(--line); background: #eceae4; }
+.gi-photo img { width: 100%; height: 100%; object-fit: cover; }
+.gi-photo .busy { position: absolute; inset: 0; display: grid; place-items: center; font-size: .7rem; color: var(--dim); }
+.gi-photo button { position: absolute; top: 3px; right: 3px; width: 26px; height: 26px; border-radius: 50%; border: 0; background: rgba(0,0,0,.6); color: #fff; font-size: .8rem; }
+.gi-photo-add { display: inline-flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+
+/* summary */
+.gi-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+.gi-summary div { background: #fbfaf7; border: 1px solid var(--line); border-radius: 10px; padding: 10px; text-align: center; }
+.gi-summary b { display: block; font-size: 1.4rem; font-family: 'IBM Plex Serif', serif; }
+.gi-summary span { font-size: .72rem; font-weight: 700; color: var(--dim); text-transform: uppercase; letter-spacing: .5px; }
+.gi-summary .oos b { color: var(--r-u); }
+.gi-notify { padding: 12px; border-radius: 10px; background: #fdecea; border: 1px solid #ef9a9a; color: #8a1c1c; font-size: .88rem; }
+.gi-notify.quiet { background: #e8f5e9; border-color: #a5d6a7; color: #1b5e20; }
+
+@media (max-width: 720px) {
+    .gi-cond { grid-template-columns: 1fr 1fr; }
+    .gi-views { grid-template-columns: 1fr 1fr; }
+    .gi-summary b { font-size: 1.15rem; }
+}

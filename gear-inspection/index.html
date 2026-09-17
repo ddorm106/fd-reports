@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#2c3e50">
+    <title>Centerville FD — PPE Gear Inspection</title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@600;700&family=Playfair+Display:wght@900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../reports/monthly/report.css?v=2026-09-17b">
+    <link rel="stylesheet" href="../reports/gear/gear.css?v=2026-09-17b">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.2.0/dist/signature_pad.umd.min.js"></script>
+</head>
+<body>
+<noscript>This inspection form needs JavaScript turned on.</noscript>
+<!-- The digital Personal Protective Equipment Inspection Form (source: the
+     department's 3-page Excel/PDF form). Built by ../reports/gear/gear.js. -->
+<script>
+window.GEAR_CONFIG = {
+  storageKey: "cfdGear.v1",
+  shifts: ["Shift 1", "Shift 2", "Shift 3", "Day Shift"],
+  // Suggestions only — any name can be typed.
+  roster: ["Barr, H", "Bennett, K", "Cannon, J", "Dunn, P", "Lightning, L", "Mixon, J", "Mooney, W", "Orona, A",
+           "Schuler, A", "Smith, M", "Stockholm, J", "Thornton, E",
+           "Sergeant Dorman", "Sergeant Redd", "Sergeant Talley", "Engineer Traxler"],
+  email: {
+    // Every inspection goes to Training.
+    training: ["ddorman@centervillefd.com"],
+    // Added when any item is tagged out of service (Needs repair / Retire).
+    command: ["jjones@centervillefd.com", "dbostick@centervillefd.com"]
+  },
+  // In the paper form's order. Garments carry the form's drawings for marking damage.
+  items: [
+    { id: "struct-pants", title: "Structural Firefighting Pants", short: "Pants", group: "Outer shell and inner liner",
+      layers: [{ id: "outer", title: "Outer Shell", views: "pants-outer" }, { id: "liner", title: "Inner Liner", views: "pants-liner" }] },
+    { id: "techgen-pants", title: "TechGen Pants", short: "TechGen Pants",
+      layers: [{ id: "shell", title: "TechGen Pants", views: "techgen-pants" }] },
+    { id: "struct-jacket", title: "Structural Firefighting Jacket", short: "Jacket", group: "Outer shell and inner liner",
+      layers: [{ id: "outer", title: "Outer Shell", views: "jacket-outer" }, { id: "liner", title: "Inner Liner", views: "jacket-liner" }] },
+    { id: "techgen-jacket", title: "TechGen Jacket", short: "TechGen Jacket",
+      layers: [{ id: "shell", title: "TechGen Jacket", views: "techgen-jacket" }] },
+    { id: "helmet", title: "Firefighting Helmet", short: "Helmet", sizeLabel: "Color" },
+    { id: "boots", title: "Firefighting Boots", short: "Boots" },
+    { id: "gloves", title: "Firefighting Gloves", short: "Gloves" },
+    { id: "nomex", title: "Firefighting Nomex", short: "Nomex" },
+    { id: "scba-mask", title: "Firefighting SCBA Mask", short: "SCBA Mask" },
+    { id: "extrication-gloves", title: "Extrication Gloves", short: "Extrication Gloves" }
+  ]
+};
+</script>
+<script src="../reports/monthly/assets.js?v=2026-09-17b"></script>
+<script src="../reports/gear/views.js?v=2026-09-17a"></script>
+<script src="../reports/gear/gear.js?v=2026-09-17a"></script>
+</body>
+</html>
