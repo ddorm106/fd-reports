@@ -897,7 +897,24 @@
 
             try { localStorage.setItem(sentKey(d), String(Date.now())); localStorage.removeItem(C.storageKey); } catch (e) { }
             state.sent = true;
-            modal('ok', 'Report sent', `<p><b>${esc(C.title)}</b> for ${esc(d[C.memberField])}, ${esc(month)}, was emailed to ${esc(C.email.to.join(', '))} with the PDF${state.files.length ? ` and ${state.files.length} attachment${state.files.length === 1 ? '' : 's'}` : ''}.</p>`,
+
+            // The email is the record; this puts the same PDF in the member's
+            // Career Portal documents so nobody prints and files it by hand.
+            // It runs after the send and can only add a line to the message.
+            let filed = null;
+            if (window.CFDPortal) {
+                filed = await CFDPortal.file({
+                    kind: 'evaluation',
+                    title: (C.shortTitle || C.title || 'Monthly evaluation').replace(/_/g, ' ').replace(/\s*Monthly.*$/i, '') + ' Monthly',
+                    member: d[C.memberField],
+                    month: d['Evaluation Month'],
+                    filename: fileBase(),
+                    blob: pdf.output('blob')
+                });
+            }
+            const filedLine = filed ? `<p style="margin-top:10px">${esc(CFDPortal.line(filed))}</p>` : '';
+
+            modal('ok', 'Report sent', `<p><b>${esc(C.title)}</b> for ${esc(d[C.memberField])}, ${esc(month)}, was emailed to ${esc(C.email.to.join(', '))} with the PDF${state.files.length ? ` and ${state.files.length} attachment${state.files.length === 1 ? '' : 's'}` : ''}.</p>${filedLine}`,
                 [{ t: 'Close' }, { t: 'Start a new report', primary: true, fn: () => resetForm(true) }]);
         } catch (err) {
             const msg = err.name === 'AbortError' ? 'It took too long — the connection may have dropped.' : (err.message || 'Unknown error');

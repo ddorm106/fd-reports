@@ -1,5 +1,7 @@
 // sw.js - Service Worker for Centerville FD Reports & Training
-// Version: 1.14 (keep this line and CACHE_NAME below in step) — 1.14: boot drawings on the
+// Version: 1.15 (keep this line and CACHE_NAME below in step) — 1.15: monthly evaluations, gear
+// inspections and training sheets file their PDF into the member's Career Portal documents
+// (reports/portal-file.js). 1.14: boot drawings on the
 // gear inspection (outside/front/heel/sole); tile detail moved to chips so iOS Safari stops
 // opening pages in Reader. 1.13: Sgt. Talley removed
 // from every roster and officer list; Truck 1 is a 75 ft aerial with a 1500 GPM pump. The
@@ -10,7 +12,7 @@
 // Request, Aerial Operator monthly evaluation. 1.8: one login; Career Portal on top.
 
 // Cache name - change version number to force update
-const CACHE_NAME = 'centerville-fd-v1.14';
+const CACHE_NAME = 'centerville-fd-v1.15';
 
 // Files to cache for offline use
 const FILES_TO_CACHE = [

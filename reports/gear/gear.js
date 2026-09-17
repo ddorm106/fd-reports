@@ -748,8 +748,24 @@
             if (!res.ok || !result.success) throw new Error(typeof result.error === 'string' ? result.error : JSON.stringify(result.error || ('HTTP ' + res.status)));
             try { localStorage.setItem(key, String(Date.now())); localStorage.removeItem(C.storageKey); } catch (e) { }
             state.sent = true;
+
+            // Also file it in the member's Career Portal documents, so the
+            // inspection lives with their record instead of only in an inbox.
+            let filed = null;
+            if (window.CFDPortal) {
+                filed = await CFDPortal.file({
+                    kind: 'gear-inspection',
+                    title: `PPE Gear Inspection${h.set ? ' — ' + h.set + ' set' : ''}`,
+                    member: h.member,
+                    date: h.date,
+                    filename: fileBase(),
+                    blob: pdf.output('blob')
+                });
+            }
+            const filedLine = filed ? `<p style="margin-top:10px">${esc(CFDPortal.line(filed))}</p>` : '';
+
             modal('ok', tg.length ? 'Inspection sent — command staff notified' : 'Inspection sent',
-                `<p>Emailed to ${esc(to.join(', '))} with the PDF${allPhotos().length ? ' and photos' : ''}.</p>${tg.length ? `<p><b>${tg.length} item${tg.length === 1 ? ' is' : 's are'} tagged out of service.</b> Print the tags on the last page of the PDF and attach them to the gear.</p>` : ''}`,
+                `<p>Emailed to ${esc(to.join(', '))} with the PDF${allPhotos().length ? ' and photos' : ''}.</p>${tg.length ? `<p><b>${tg.length} item${tg.length === 1 ? ' is' : 's are'} tagged out of service.</b> Print the tags on the last page of the PDF and attach them to the gear.</p>` : ''}${filedLine}`,
                 [{ t: 'Download PDF', fn: () => preview(true) }, { t: 'Close', primary: true }]);
         } catch (err) {
             const msg = err.name === 'AbortError' ? 'It took too long — the connection may have dropped.' : (err.message || 'Unknown error');
