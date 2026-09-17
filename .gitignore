@@ -1,3 +1,6 @@
 
 # Local notes for Claude sessions: holds infrastructure details and must not be published on GitHub Pages
 CLAUDE.md
+
+# wrangler scratch, created when a d1 command runs from this directory
+.wrangler/
