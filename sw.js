@@ -1,11 +1,14 @@
 // sw.js - Service Worker for Centerville FD Reports & Training
-// Version: 1.12 (keep this line and CACHE_NAME below in step) — 1.12: gear inspection v2
+// Version: 1.13 (keep this line and CACHE_NAME below in step) — 1.13: Sgt. Talley removed
+// from every roster and officer list; Truck 1 is a 75 ft aerial with a 1500 GPM pump. The
+// bump matters: the report pages have no ?v= of their own, so only a new cache name makes
+// an installed phone refetch them. 1.12: gear inspection v2
 // (placed damage marks, helmet/hood/gloves), no automatic signatures, date boxes stop
 // overlapping on iPhone/iPad, Equipment & Book Checkout, Repair Request, Training
 // Request, Aerial Operator monthly evaluation. 1.8: one login; Career Portal on top.
 
 // Cache name - change version number to force update
-const CACHE_NAME = 'centerville-fd-v1.12';
+const CACHE_NAME = 'centerville-fd-v1.13';
 
 // Files to cache for offline use
 const FILES_TO_CACHE = [
