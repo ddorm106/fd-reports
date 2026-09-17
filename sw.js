@@ -1,8 +1,8 @@
 // sw.js - Service Worker for Centerville FD Reports & Training
-// Version: 1.4 (update version when making changes) — 1.4: monthly position reports (reports/monthly/)
+// Version: 1.5 (update version when making changes) — 1.5: monthly evaluations page
 
 // Cache name - change version number to force update
-const CACHE_NAME = 'centerville-fd-v1.4';
+const CACHE_NAME = 'centerville-fd-v1.5';
 
 // Files to cache for offline use
 const FILES_TO_CACHE = [

@@ -214,7 +214,7 @@
             <header class="rp-header"><div class="rp-header-inner">
                 <img src="${A.PATCH_IMG || ''}" alt="CFD Training Division">
                 <div><div class="rp-dept">Centerville Fire Department</div><div class="rp-title">${esc(C.title)}</div></div>
-                <a class="home" href="../">← Home</a>
+                <a class="home" href="../monthly-evaluations/">← All evaluations</a>
             </div></header>
             <nav class="rp-steps"><div class="rp-steps-inner">
                 ${st.map((s, i) => `<a class="rp-step" href="#${s.id}" data-step="${s.id}"><span class="n">${i + 1}</span>${esc(s.t)}</a>`).join('')}

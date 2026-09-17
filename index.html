@@ -237,15 +237,6 @@
             background: rgba(255,255,255,0.06);
             border-color: rgba(255,255,255,0.12);
         }
-        .mag-issue.disabled { opacity: 0.55; cursor: default; }
-        .mag-issue.disabled:hover { background: rgba(255,255,255,0.03); border-color: var(--cfd-border); }
-        .mag-issue-soon {
-            color: var(--cfd-accent-amber);
-            font-size: 0.65rem;
-            font-weight: 700;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-        }
         .mag-issue-title { font-weight: 600; font-size: 0.95rem; }
         .mag-issue-topics { font-size: 0.78rem; color: var(--cfd-text-dim); margin-top: 3px; }
         .mag-issue-arrow { color: var(--cfd-red); font-size: 1.1rem; font-weight: 700; }
@@ -310,7 +301,7 @@
     <div class="section-label">Reports &amp; Evaluations</div>
     <div class="grid">
 
-        <div class="card" style="align-self:start">
+        <div class="card">
             <span class="card-status active">Active</span>
             <h3>Training Sheets</h3>
             <p>Prefilled training sheet templates with objectives, descriptions, and equipment loaded. Pick a sheet, add students, sign, and download.</p>
@@ -320,44 +311,9 @@
         <div class="card">
             <span class="card-status active">Active</span>
             <h3>Monthly Position Evaluations</h3>
-            <p>One evaluation per member per month: log the days you worked with them, rate the month overall, and attach reports, photos, and training sheets.</p>
-            <div class="mag-issues">
-            <a href="firefighter-report/page1.html" class="mag-issue">
-                <div>
-                    <div class="mag-issue-title">Firefighter Monthly</div>
-                    <div class="mag-issue-topics">All firefighter personnel</div>
-                </div>
-                <div class="mag-issue-arrow">→</div>
-            </a>
-            <a href="rescue-driver-report/page1.html" class="mag-issue">
-                <div>
-                    <div class="mag-issue-title">Rescue Driver Monthly</div>
-                    <div class="mag-issue-topics">Rescue 1 driver operations</div>
-                </div>
-                <div class="mag-issue-arrow">→</div>
-            </a>
-            <a href="engine-driver-report/page1.html" class="mag-issue">
-                <div>
-                    <div class="mag-issue-title">Engine Driver Monthly</div>
-                    <div class="mag-issue-topics">Engine company driver/operators</div>
-                </div>
-                <div class="mag-issue-arrow">→</div>
-            </a>
-            <a href="aoic-report/page1.html" class="mag-issue">
-                <div>
-                    <div class="mag-issue-title">AOIC Monthly</div>
-                    <div class="mag-issue-topics">Acting Officer in Charge</div>
-                </div>
-                <div class="mag-issue-arrow">→</div>
-            </a>
-            <div class="mag-issue disabled">
-                <div>
-                    <div class="mag-issue-title">Aerial Monthly</div>
-                    <div class="mag-issue-topics">Aerial operations</div>
-                </div>
-                <div class="mag-issue-soon">Soon</div>
-            </div>
-            </div>
+            <p>Firefighter, Rescue Driver, Engine Driver, and AOIC monthly evaluations. Log the days worked, rate the month, and attach reports and photos.</p>
+            <a href="monthly-evaluations/" class="card-link">Open Evaluations <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
         </div>
 
     </div>

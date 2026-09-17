@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Centerville FD — Monthly Position Evaluations</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="/patch.png">
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --cfd-dark: #1a1a1a;
+            --cfd-red: #c41e3a;
+            --cfd-red-glow: rgba(196,30,58,0.35);
+            --cfd-gold: #d4a843;
+            --cfd-gold-dim: rgba(212,168,67,0.15);
+            --cfd-slate: #2a2d32;
+            --cfd-card: #222529;
+            --cfd-card-hover: #2c2f34;
+            --cfd-border: rgba(255,255,255,0.06);
+            --cfd-text: #e8e8e8;
+            --cfd-text-dim: #8e9198;
+            --cfd-accent-green: #34a853;
+            --cfd-accent-amber: #e6a817;
+        }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+            background: var(--cfd-dark);
+            color: var(--cfd-text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── HERO ── */
+        .hero {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 56px 24px 48px;
+            text-align: center;
+            background:
+                radial-gradient(ellipse 80% 60% at 50% 40%, var(--cfd-red-glow) 0%, transparent 70%),
+                linear-gradient(180deg, #111 0%, var(--cfd-dark) 100%);
+            border-bottom: 3px solid var(--cfd-red);
+            overflow: hidden;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.015'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            pointer-events: none;
+        }
+        .hero-patch {
+            width: 220px;
+            height: 220px;
+            object-fit: contain;
+            filter: drop-shadow(0 0 30px var(--cfd-red-glow));
+            margin-bottom: 20px;
+            animation: patchIn 0.8s ease-out both;
+        }
+        @keyframes patchIn {
+            from { opacity: 0; transform: scale(0.8) translateY(16px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .hero h1 {
+            font-family: 'Oswald', sans-serif;
+            font-weight: 700;
+            font-size: 3.2rem;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            line-height: 1.1;
+            color: #fff;
+            animation: fadeUp 0.6s 0.2s ease-out both;
+        }
+        .hero h1 span {
+            display: block;
+            font-size: 1.8rem;
+            font-weight: 500;
+            letter-spacing: 8px;
+            color: var(--cfd-text-dim);
+            margin-top: 4px;
+        }
+        .hero-sub {
+            font-family: 'Oswald', sans-serif;
+            font-size: 1rem;
+            font-weight: 400;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--cfd-red);
+            margin-top: 12px;
+            animation: fadeUp 0.6s 0.4s ease-out both;
+        }
+        .hero-motto {
+            font-size: 0.82rem;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            color: var(--cfd-gold);
+            margin-top: 18px;
+            font-weight: 600;
+            animation: fadeUp 0.6s 0.5s ease-out both;
+        }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── GRID ── */
+        .main {
+            flex: 1;
+            max-width: 1100px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 40px 20px 60px;
+        }
+        .section-label {
+            font-family: 'Oswald', sans-serif;
+            font-size: 0.78rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: var(--cfd-text-dim);
+            margin-bottom: 20px;
+            padding-left: 4px;
+            border-left: 3px solid var(--cfd-red);
+            padding-left: 12px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+            gap: 18px;
+            margin-bottom: 44px;
+        }
+        .card {
+            background: var(--cfd-card);
+            border: 1px solid var(--cfd-border);
+            border-radius: 10px;
+            padding: 26px 24px 22px;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s, border-color 0.3s, box-shadow 0.3s;
+            position: relative;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255,255,255,0.12);
+            box-shadow: 0 12px 32px rgba(0,0,0,0.35);
+        }
+        .card-status {
+            position: absolute;
+            top: 14px;
+            right: 16px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 3px 10px;
+            border-radius: 20px;
+        }
+        .card-status.active {
+            background: rgba(52,168,83,0.15);
+            color: var(--cfd-accent-green);
+        }
+        .card-status.coming {
+            background: rgba(230,168,23,0.12);
+            color: var(--cfd-accent-amber);
+        }
+        .card-status.instructor {
+            background: var(--cfd-gold-dim);
+            color: var(--cfd-gold);
+        }
+        .card.wide { grid-column: span 2; }
+        .card-status.draft {
+            background: rgba(196,30,58,0.12);
+            color: var(--cfd-red);
+        }
+        .card h3 {
+            font-family: 'Oswald', sans-serif;
+            font-size: 1.15rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            color: #fff;
+            padding-right: 70px;
+        }
+        .card p {
+            font-size: 0.88rem;
+            color: var(--cfd-text-dim);
+            line-height: 1.45;
+            flex: 1;
+        }
+        .card-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 16px;
+            font-family: 'Oswald', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            text-decoration: none;
+            color: var(--cfd-red);
+            transition: color 0.2s, gap 0.2s;
+        }
+        .card-link:hover { color: #e8394f; gap: 10px; }
+        .card-link.disabled {
+            color: var(--cfd-text-dim);
+            pointer-events: none;
+            opacity: 0.5;
+        }
+        .card-link svg { width: 14px; height: 14px; fill: currentColor; }
+
+        /* ── MAGAZINE SPECIAL ── */
+        .mag-issues { margin-top: 10px; }
+        .mag-issue {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 16px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--cfd-border);
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--cfd-text);
+            transition: background 0.2s, border-color 0.2s;
+            margin-bottom: 8px;
+        }
+        .mag-issue:hover {
+            background: rgba(255,255,255,0.06);
+            border-color: rgba(255,255,255,0.12);
+        }
+        .mag-issue-title { font-weight: 600; font-size: 0.95rem; }
+        .mag-issue-topics { font-size: 0.78rem; color: var(--cfd-text-dim); margin-top: 3px; }
+        .mag-issue-arrow { color: var(--cfd-red); font-size: 1.1rem; font-weight: 700; }
+        .mag-all {
+            display: block;
+            text-align: center;
+            padding: 10px;
+            color: var(--cfd-text-dim);
+            text-decoration: none;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+            transition: color 0.2s;
+        }
+        .mag-all:hover { color: var(--cfd-text); }
+
+        /* ── FOOTER ── */
+        footer {
+            text-align: center;
+            padding: 32px 20px;
+            border-top: 1px solid var(--cfd-border);
+            color: var(--cfd-text-dim);
+            font-size: 0.78rem;
+            letter-spacing: 1px;
+        }
+        footer .motto {
+            color: var(--cfd-gold);
+            font-weight: 700;
+            letter-spacing: 3px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 768px) {
+            .hero { padding: 40px 16px 36px; }
+            .hero-patch { width: 90px; height: 90px; }
+            .hero h1 { font-size: 2rem; letter-spacing: 4px; }
+            .hero h1 span { font-size: 1.2rem; }
+            .grid { grid-template-columns: 1fr; gap: 14px; }
+            /* One column on a phone: a two-column card would widen the grid
+               past the screen, and the sign-in fields stack. */
+            .card.wide { grid-column: auto; }
+            #careerLoginForm { grid-template-columns: 1fr !important; }
+            .main { padding: 28px 14px 40px; }
+        }
+    </style>
+    <style>
+        /* This page only */
+        .hero img { width: 120px; height: 120px; }
+        .back { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 22px; color: var(--cfd-text-dim);
+                 text-decoration: none; font-size: .88rem; letter-spacing: .5px; }
+        .back:hover { color: var(--cfd-text); }
+        .how { background: var(--cfd-card); border: 1px solid var(--cfd-border); border-radius: 12px; padding: 18px 22px;
+                margin-bottom: 44px; color: var(--cfd-text-dim); font-size: .9rem; line-height: 1.6; }
+        .how b { color: var(--cfd-text); }
+        .how ol { margin: 6px 0 0 18px; }
+        .card-status.draft-saved { background: rgba(230,168,23,0.12); color: var(--cfd-accent-amber); }
+        .card .draft-note { font-size: .8rem; color: var(--cfd-accent-amber); margin-top: 8px; }
+    </style>
+</head>
+<body>
+
+<header class="hero">
+    <img id="patch" alt="Training Division">
+    <h1>
+        Centerville
+        <span>Fire Department</span>
+    </h1>
+    <div class="hero-sub">Monthly Position Evaluations</div>
+</header>
+
+<main class="main">
+    <a class="back" href="../">← Training Division home</a>
+
+    <div class="section-label">Choose a position</div>
+    <div class="grid">
+
+        <div class="card" data-report="cfdMonthly.firefighter">
+            <span class="card-status active">Active</span>
+            <h3>Firefighter Monthly</h3>
+            <p>All firefighter personnel. 21 items — Policies &amp; Conduct, PPE &amp; Medical, Hose &amp; Equipment, Advanced Operations, Command &amp; Scene Proficiency.</p>
+            <a href="../firefighter-report/page1.html" class="card-link">Open Report <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+
+        <div class="card" data-report="cfdMonthly.rescueDriver">
+            <span class="card-status active">Active</span>
+            <h3>Rescue Driver Monthly</h3>
+            <p>Rescue 1 driver operations. 26 items — Safe Driving &amp; Policy Compliance, PPE, SCBA &amp; Medical Equipment, Rescue Tools &amp; Equipment, MVC &amp; Technical Rescue Operations, Scene Management &amp; Decision Making.</p>
+            <a href="../rescue-driver-report/page1.html" class="card-link">Open Report <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+
+        <div class="card" data-report="cfdMonthly.engineDriver">
+            <span class="card-status active">Active</span>
+            <h3>Engine Driver Monthly</h3>
+            <p>Engine company driver/operators. 34 items — Policies &amp; Protocols, Driving &amp; Road Knowledge, Apparatus Checks &amp; Equipment, Pump Operations &amp; Hydraulics, Hose &amp; Water Supply, Scene Operations.</p>
+            <a href="../engine-driver-report/page1.html" class="card-link">Open Report <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+
+        <div class="card" data-report="cfdMonthly.aoic">
+            <span class="card-status active">Active</span>
+            <h3>AOIC Monthly</h3>
+            <p>Acting Officer in Charge. 34 items — Policy Knowledge &amp; Administration, Leadership &amp; Crew Management, Incident Command, Strategy &amp; Tactics, Communication, Daily Operations &amp; Time Management.</p>
+            <a href="../aoic-report/page1.html" class="card-link">Open Report <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+
+        <div class="card">
+            <span class="card-status coming">Coming Soon</span>
+            <h3>Aerial Monthly</h3>
+            <p>Monthly performance evaluation for aerial operations.</p>
+            <a href="#" class="card-link disabled">Coming Soon</a>
+        </div>
+
+    </div>
+
+    <div class="section-label">How it works</div>
+    <div class="how">
+        <b>One evaluation per member, per month.</b>
+        <ol>
+            <li>Pick the position and the member, and the month.</li>
+            <li>Add each day you worked with them — two days or twenty.</li>
+            <li>Rate the month overall, item by item, and give the overall rating.</li>
+            <li>Attach any incident reports, pictures, or training sheets.</li>
+            <li>Sign and submit — the PDF and attachments are emailed to Training.</li>
+        </ol>
+    </div>
+</main>
+
+<footer>
+    <div class="motto">Punctual · Valuable · Selfless</div>
+    <div>Centerville Fire Department — Training Division</div>
+</footer>
+
+<script src="../reports/monthly/assets.js?v=2026-09-17b"></script>
+<script>
+    document.getElementById('patch').src = (window.CFD_REPORT_ASSETS || {}).PATCH_IMG || '/patch.png';
+    // A report left half-done on this device says so on its tile.
+    document.querySelectorAll('[data-report]').forEach(function (card) {
+        try {
+            var d = JSON.parse(localStorage.getItem(card.dataset.report) || 'null');
+            if (!d || d.v !== 2 || !d.savedAt) return;
+            var badge = card.querySelector('.card-status');
+            badge.textContent = 'Draft saved';
+            badge.className = 'card-status draft-saved';
+            var who = (d.fields && (d.fields.Firefighter || d.fields.AOIC)) || '';
+            var note = document.createElement('div');
+            note.className = 'draft-note';
+            note.textContent = 'Unsent draft' + (who ? ' for ' + who : '') + ' · ' +
+                new Date(d.savedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            card.querySelector('p').after(note);
+        } catch (e) {}
+    });
+</script>
+</body>
+</html>
