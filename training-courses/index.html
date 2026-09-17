@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Centerville FD — Monthly Position Evaluations</title>
+    <title>Centerville FD — Interactive Training</title>
     <link rel="apple-touch-icon" sizes="180x180" href="/patch.png">
     <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
     <style>
@@ -292,8 +292,6 @@
                 margin-bottom: 44px; color: var(--cfd-text-dim); font-size: .9rem; line-height: 1.6; }
         .how b { color: var(--cfd-text); }
         .how ol { margin: 6px 0 0 18px; }
-        .card-status.draft-saved { background: rgba(230,168,23,0.12); color: var(--cfd-accent-amber); }
-        .card .draft-note { font-size: .8rem; color: var(--cfd-accent-amber); margin-top: 8px; }
     </style>
 </head>
 <body>
@@ -304,62 +302,58 @@
         Centerville
         <span>Fire Department</span>
     </h1>
-    <div class="hero-sub">Monthly Position Evaluations</div>
+    <div class="hero-sub">Interactive Training</div>
 </header>
 
 <main class="main">
     <a class="back" href="../">← Training Division home</a>
 
-    <div class="section-label">Choose a position</div>
+    <div class="section-label">Choose a course</div>
     <div class="grid">
 
-        <div class="card" data-report="cfdMonthly.firefighter">
-            <span class="card-status active">Active</span>
-            <h3>Firefighter Monthly</h3>
-            <p>All firefighter personnel. 21 items — Policies &amp; Conduct, PPE &amp; Medical, Hose &amp; Equipment, Advanced Operations, Command &amp; Scene Proficiency.</p>
-            <a href="../firefighter-report/page1.html" class="card-link">Open Report <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
-        </div>
-
-        <div class="card" data-report="cfdMonthly.rescueDriver">
-            <span class="card-status active">Active</span>
-            <h3>Rescue Driver Monthly</h3>
-            <p>Rescue 1 driver operations. 26 items — Safe Driving &amp; Policy Compliance, PPE, SCBA &amp; Medical Equipment, Rescue Tools &amp; Equipment, MVC &amp; Technical Rescue Operations, Scene Management &amp; Decision Making.</p>
-            <a href="../rescue-driver-report/page1.html" class="card-link">Open Report <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
-        </div>
-
-        <div class="card" data-report="cfdMonthly.engineDriver">
-            <span class="card-status active">Active</span>
-            <h3>Engine Driver Monthly</h3>
-            <p>Engine company driver/operators. 34 items — Policies &amp; Protocols, Driving &amp; Road Knowledge, Apparatus Checks &amp; Equipment, Pump Operations &amp; Hydraulics, Hose &amp; Water Supply, Scene Operations.</p>
-            <a href="../engine-driver-report/page1.html" class="card-link">Open Report <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
-        </div>
-
-        <div class="card" data-report="cfdMonthly.aoic">
-            <span class="card-status active">Active</span>
-            <h3>AOIC Monthly</h3>
-            <p>Acting Officer in Charge. 34 items — Policy Knowledge &amp; Administration, Leadership &amp; Crew Management, Incident Command, Strategy &amp; Tactics, Communication, Daily Operations &amp; Time Management.</p>
-            <a href="../aoic-report/page1.html" class="card-link">Open Report <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        <div class="card">
+            <span class="card-status active">Live</span>
+            <h3>Live Fire</h3>
+            <p>NFPA 1403 / 1400 course and burn-day ops: command board, checklists, rotations, settee log, gear, medical. Centerville Training Ground.</p>
+            <a href="/livefire" class="card-link">Open Live Fire <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
         </div>
 
         <div class="card">
-            <span class="card-status coming">Coming Soon</span>
-            <h3>Aerial Monthly</h3>
-            <p>Monthly performance evaluation for aerial operations.</p>
-            <a href="#" class="card-link disabled">Coming Soon</a>
+            <span class="card-status active">Course</span>
+            <h3>Modern Aggressive Size-Up</h3>
+            <p>Ten modules on reading the building and the fire before committing a crew. Sign in — your progress and answers go to your training officer.</p>
+            <a href="https://centerville-sizeup.fdtraining.org" class="card-link">Start Course <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+
+        <div class="card">
+            <span class="card-status active">Course</span>
+            <h3>Fire Dynamics</h3>
+            <p>Read the smoke. Make the building searchable. Put water on it. An eleven-module course on how fire really behaves inside a structure.</p>
+            <a href="https://firedynamics.fdtraining.org" class="card-link">Start Course <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+
+        <div class="card">
+            <span class="card-status active">Course</span>
+            <h3>Hazmat — ERG 2024</h3>
+            <p>A four-hour interactive course on the 2024 Emergency Response Guidebook: eight modules, four scenarios, and the complete ERG lookup built in.</p>
+            <a href="https://erg.fdtraining.org" class="card-link">Start Course <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+
+        <div class="card">
+            <span class="card-status active">Course</span>
+            <h3>Safety Stand Down 2026</h3>
+            <p>Firefighter FITNESS: Fit to Serve, Fit for Life. A self-paced, two-day Safety Stand Down course with a completion certificate.</p>
+            <a href="https://safetystanddown.fdtraining.org" class="card-link">Start Course <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+
+        <div class="card">
+            <span class="card-status active">Study</span>
+            <h3>Test &amp; Study Platform</h3>
+            <p>NPQ and firefighter certification practice tests, with study guides by topic.</p>
+            <a href="https://test-gen.fdtraining.org" class="card-link">Open Tests <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
         </div>
     </div>
 
-    <div class="section-label">How it works</div>
-    <div class="how">
-        <b>One evaluation per member, per month.</b>
-        <ol>
-            <li>Pick the position and the member, and the month.</li>
-            <li>Add each day you worked with them — two days or twenty.</li>
-            <li>Rate the month overall, item by item, and give the overall rating.</li>
-            <li>Attach any incident reports, pictures, or training sheets.</li>
-            <li>Sign and submit — the PDF and attachments are emailed to Training.</li>
-        </ol>
-    </div>
 </main>
 
 <footer>
@@ -370,22 +364,6 @@
 <script src="../reports/monthly/assets.js?v=2026-09-17b"></script>
 <script>
     document.getElementById('patch').src = (window.CFD_REPORT_ASSETS || {}).PATCH_IMG || '/patch.png';
-    // A report left half-done on this device says so on its tile.
-    document.querySelectorAll('[data-report]').forEach(function (card) {
-        try {
-            var d = JSON.parse(localStorage.getItem(card.dataset.report) || 'null');
-            if (!d || d.v !== 2 || !d.savedAt) return;
-            var badge = card.querySelector('.card-status');
-            badge.textContent = 'Draft saved';
-            badge.className = 'card-status draft-saved';
-            var who = (d.fields && (d.fields.Firefighter || d.fields.AOIC)) || '';
-            var note = document.createElement('div');
-            note.className = 'draft-note';
-            note.textContent = 'Unsent draft' + (who ? ' for ' + who : '') + ' · ' +
-                new Date(d.savedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            card.querySelector('p').after(note);
-        } catch (e) {}
-    });
 </script>
 </body>
 </html>
