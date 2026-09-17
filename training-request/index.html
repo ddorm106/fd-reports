@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#2c3e50">
+    <title>Centerville FD — Training Request</title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@600;700&family=Playfair+Display:wght@900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../reports/monthly/report.css?v=2026-09-17c">
+    <link rel="stylesheet" href="../reports/requests/requests.css?v=2026-09-17c">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+<noscript>This form needs JavaScript turned on.</noscript>
+<!-- Request a class. Moved here from the Career Portal (David, 2026-09-17).
+     GPSTC fire courses: ../reports/requests/gpstc-courses.js (public catalog pull).
+     Built by ../reports/requests/requests.js; recipients in staff.js. -->
+<script src="../reports/monthly/assets.js?v=2026-09-17c"></script>
+<script src="../reports/requests/staff.js?v=2026-09-17a"></script>
+<script src="../reports/requests/gpstc-courses.js?v=2026-09-17a"></script>
+<script src="../reports/requests/requests.js?v=2026-09-17c"></script>
+<script>
+(function () {
+  const F = window.CFDForm, S = window.CFD_STAFF, G = window.GPSTC_COURSES;
+  const esc = F.esc;
+  // Classes a Centerville member can drive to and home the same day.
+  const NEAR = /forsyth|byron|crawford county|pulaski county|wilkinson county|macon|warner robins|perry|houston county|peach county|bibb county|fort valley|monroe county|twiggs|bleckley/i;
+  const ui = { q: "", cat: "", open: false };   // picker search state (not saved)
+
+  const course = d => G.courses.find(c => c.c === d.f.course);
+  const today = () => F.isoDay();
+  const upcoming = c => c.o.filter(o => !o[0] || o[0] >= today());
+  const online = c => c.k === "Online (anytime)";
+  // GPSTC opens registration 90 days before a class starts, at 8:00 a.m.
+  function opensOn(start) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(start || ""); if (!m) return "";
+    const t = new Date(+m[1], +m[2] - 1, +m[3]); t.setDate(t.getDate() - 90);
+    return t.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  }
+  const shortDate = iso => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || ""); return m ? new Date(+m[1], +m[2] - 1, +m[3]).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""; };
+  const range = o => o[1] && o[1] !== o[0] ? `${shortDate(o[0])} – ${F.dayLabel(o[1])}` : F.dayLabel(o[0]);
+  const place = o => (o[2] || "").replace(/^GPSTC, /i, "GPSTC ").replace(/\s+-\s+Headquarters$/i, "");
+  function statusBadge(o) {
+    const s = o[6];
+    if (s === "Register") return `<span class="rq-b ok">Registration open</span>`;
+    if (s === "Waiting List") return `<span class="rq-b warn">Waiting list</span>`;
+    if (s === "Coming Soon") return `<span class="rq-b info">Opens ${esc(opensOn(o[0]))}</span>`;
+    return `<span class="rq-b">${esc(s || "—")}</span>`;
+  }
+  const hrs = h => h == null ? "" : `${+h % 1 ? h : Math.round(h)} hrs`;
+  // Classes not yet open are all "TBA", so a class is known by its date and place in the list.
+  const classKey = (c, o) => `${o[0]}|${o[5]}|${c.o.indexOf(o)}`;
+  const time = o => /\d/.test(o[4] || "") ? o[4] : "";
+  const classNo = o => /\d/.test(o[5] || "") ? `Class ${o[5]}` : "Class number when registration opens";
+
+  // ── course picker ──
+  function results() {
+    const words = ui.q.toLowerCase().split(/\s+/).filter(Boolean);
+    const list = G.courses.filter(c => (!ui.cat || c.k === ui.cat) &&
+      words.every(w => (c.t + " " + c.c + " " + c.k + " " + c.d).toLowerCase().includes(w)));
+    if (!list.length) return `<div class="rq-empty">No GPSTC fire course matches “${esc(ui.q)}”. Try fewer words, or choose <b>Another class</b> above.</div>`;
+    return `<div class="rq-count">${list.length} course${list.length === 1 ? "" : "s"}</div>` + list.map(c => {
+      const up = upcoming(c), next = up[0], near = up.find(o => NEAR.test(o[2] + " " + o[3]));
+      const when = online(c) ? `<span class="rq-b ok">Online · start anytime</span>`
+        : next ? `Next: <b>${esc(shortDate(next[0]))}</b> · ${esc(place(next))} ${statusBadge(next)}${up.length > 1 ? ` <span class="more">+${up.length - 1} more</span>` : ""}`
+        : `<span class="rq-b">No classes posted</span>`;
+      return `<button type="button" class="rq-course" data-code="${esc(c.c)}">
+        <span class="t">${esc(c.t)}</span>
+        <span class="m">${esc(c.c)} · ${esc(hrs(c.h))} · ${esc(c.k)}${near && !online(c) ? ` · <span class="rq-b near">Middle GA</span>` : ""}</span>
+        <span class="w">${when}</span></button>`;
+    }).join("");
+  }
+  const coursePicker = {
+    id: "course", type: "custom", label: "GPSTC course", required: true, show: d => d.f.source === "gpstc",
+    text: d => { const c = course(d); return c ? `${c.c} ${c.t} (${hrs(c.h)})` : ""; },
+    render(d) {
+      const c = course(d);
+      if (c) {
+        return `<span class="rp-label">GPSTC course *</span>
+          <div class="rq-picked">
+            <div class="t">${esc(c.t)}</div>
+            <div class="m">${esc(c.c)} · ${esc(hrs(c.h))} · ${esc(c.k)}</div>
+            ${c.d ? `<details><summary>About this course</summary><p>${esc(c.d)}</p>${c.w ? `<p><b>Who should attend:</b> ${esc(c.w)}</p>` : ""}${c.n ? `<p><b>Notes:</b> ${esc(c.n)}</p>` : ""}</details>` : ""}
+            <div class="a"><a href="${esc(c.u)}" target="_blank" rel="noopener">Course page on GPSTC ↗</a>
+              <button type="button" class="rp-btn" data-act="change">Change course</button></div>
+          </div>`;
+      }
+      return `<span class="rp-label">Find a GPSTC course *</span>
+        <input class="rq-search" type="search" data-act="search" value="${esc(ui.q)}" placeholder="Search — e.g. officer, extrication, pump, instructor, hazmat" autocomplete="off">
+        <div class="rq-cats">${["", ...G.categories].map(k => `<button type="button" class="rq-cat${ui.cat === k ? " on" : ""}" data-cat="${esc(k)}">${esc(k || "All")}</button>`).join("")}</div>
+        <div class="rq-results" data-results>${results()}</div>
+        <div class="rq-help">Fire department courses from GPSTC's public catalog, pulled ${esc(F.dayLabel(G.retrieved))}. Dates change — the course page on GPSTC always has the latest.</div>`;
+    },
+    input(e) { if (e.target.dataset.act === "search") { ui.q = e.target.value; e.target.closest(".rq-custom").querySelector("[data-results]").innerHTML = results(); } },
+    click(e, api) {
+      const cat = e.target.closest("[data-cat]");
+      if (cat) { ui.cat = cat.dataset.cat; api.redrawField("course"); return; }
+      const pick = e.target.closest("[data-code]");
+      if (pick) { api.f.classPick = ""; api.set("course", pick.dataset.code, true); document.getElementById("s-course").scrollIntoView({ behavior: "smooth", block: "start" }); return; }
+      if (e.target.closest('[data-act="change"]')) { api.f.classPick = ""; api.set("course", "", true); return; }
+      return false;
+    }
+  };
+  const classPicker = {
+    id: "classPick", type: "custom", label: "Class", required: true, show: d => d.f.source === "gpstc" && !!course(d),
+    text: d => {
+      const c = course(d), v = d.f.classPick; if (!c || !v) return "";
+      if (v === "online") return "Online — start anytime";
+      if (v === "any") return "Any scheduled class that fits the shift schedule";
+      if (v === "field") return "Ask GPSTC to deliver it at Centerville (field training request)";
+      if (v === "next") return "The next class GPSTC schedules";
+      const o = c.o.find(x => classKey(c, x) === v); return o ? [range(o), time(o), `${place(o)}${o[3] ? ", " + o[3] : ""}`, classNo(o), o[6] === "Coming Soon" ? `registration opens ${opensOn(o[0])}` : o[6]].filter(Boolean).join(" · ") : "";
+    },
+    render(d) {
+      const c = course(d), up = upcoming(c), v = d.f.classPick;
+      const opt = (val, body, cls) => `<button type="button" class="rq-class${v === val ? " on" : ""}${cls ? " " + cls : ""}" data-class="${esc(val)}">${body}</button>`;
+      let html = "";
+      if (online(c)) html += opt("online", `<b>Online — start anytime</b><span>Independent online course, open every month</span>`);
+      html += up.map(o => opt(classKey(c, o), `<b>${esc(range(o))}</b>${time(o) ? `<span>${esc(time(o))}</span>` : ""}<span>${esc(place(o))}${o[3] ? " · " + esc(o[3]) : ""}${NEAR.test(o[2] + " " + o[3]) ? ` <span class="rq-b near">Middle GA</span>` : ""}</span><span>${esc(classNo(o))} ${statusBadge(o)}</span>`,
+        o[6] === "Closed" ? "closed" : "")).join("");
+      if (up.length > 1) html += opt("any", `<b>Any of these</b><span>Whichever class fits the shift schedule</span>`);
+      if (!online(c)) html += up.length
+        ? opt("field", `<b>Bring it to Centerville</b><span>Ask GPSTC to hold a class here (field training request, 30+ days ahead)</span>`)
+        : opt("next", `<b>Next time it's scheduled</b><span>No classes are posted right now</span>`) + opt("field", `<b>Bring it to Centerville</b><span>Ask GPSTC to hold a class here (field training request)</span>`);
+      return `<span class="rp-label">Pick a class *</span><div class="rq-classes">${html}</div>
+        <div class="rq-help">GPSTC opens registration 90 days before a class starts, at 8:00 a.m. Your registration goes through the department once this is approved.</div>`;
+    },
+    click(e, api) { const b = e.target.closest("[data-class]"); if (!b) return false; api.set("classPick", b.dataset.class, true); }
+  };
+  const chosenClass = d => { const c = course(d); return c && c.o.find(x => classKey(c, x) === d.f.classPick); };
+
+  F.start({
+    id: "training-request", title: "Training Request", noun: "training request", refPrefix: "TR", storageKey: "cfd.training-request.v1",
+    intro: "Ask to attend a class — a GPSTC fire course or anything else. The sergeants and command staff get your request by email with the course details.",
+    keepOnReset: ["name", "rank", "shift", "phone", "gfstc"],
+    sections: [
+      { id: "who", step: "You", title: "Who's requesting", sub: "Your name and where you work", fields: [
+        { id: "name", label: "Name", required: true, list: () => S.roster, placeholder: "Last, First" },
+        { id: "rank", label: "Rank", type: "select", required: true, options: ["Firefighter", "Engineer", "Sergeant", "Captain", "Assistant Chief", "Fire Chief"] },
+        { id: "shift", label: "Shift", type: "select", required: true, options: () => S.shifts },
+        { id: "phone", label: "Phone", type: "tel", placeholder: "Optional" },
+        { id: "gfstc", label: "GFSTC ID #", placeholder: "Needed for GPSTC registration and state tests", full: true }
+      ] },
+      { id: "course", step: "Class", title: "The class", sub: d => course(d) ? course(d).t : "GPSTC catalog or another class", fields: [
+        { id: "source", label: "Where is the class", type: "chips", cards: true, required: true, rerender: true, options: [
+          { v: "gpstc", label: "GPSTC course", note: "Browse the fire catalog", icon: "🏛️" },
+          { v: "other", label: "Another class", note: "Conference, NFA, vendor, college, online", icon: "📚" }] },
+        coursePicker,
+        classPicker,
+        { id: "otherName", label: "Course name", required: true, full: true, show: d => d.f.source === "other", placeholder: "e.g. FDIC International, NFA Leadership in Supervision" },
+        { id: "otherProvider", label: "Offered by", required: true, show: d => d.f.source === "other", placeholder: "e.g. NFA, GFSTC, a college, a vendor" },
+        { id: "otherDates", label: "Dates", show: d => d.f.source === "other", placeholder: "e.g. Nov 4–6, 2026" },
+        { id: "otherLocation", label: "Location", show: d => d.f.source === "other", placeholder: "City, or online" },
+        { id: "otherHours", label: "Hours", type: "number", show: d => d.f.source === "other" },
+        { id: "otherUrl", label: "Link", type: "url", full: true, show: d => d.f.source === "other", placeholder: "Web page for the class (optional)" }
+      ] },
+      { id: "why", step: "Why", title: "Why this class", sub: "What it counts toward, and what it will take", fields: [
+        { id: "reason", label: "Main reason", type: "chips", required: true, options: ["Rank / promotion requirement", "State or NPQ certification", "Required by the department", "Skill development", "ISO / continuing education"] },
+        { id: "justification", label: "How it helps you and the department", type: "textarea", required: true, full: true, placeholder: "What you'll bring back, and how it fits your career path" },
+        { id: "cost", label: "Cost (tuition, fees, travel)", show: d => d.f.source === "other", placeholder: "e.g. $450 registration + hotel" },
+        { id: "gpstcCost", type: "note", show: d => d.f.source === "gpstc",
+          html: "GPSTC tuition is free for Georgia fire department members the department sponsors. Barracks rooms are free; meals are paid (meal plans run $18–$35 a day)." },
+        { id: "lodging", label: "I'll need overnight lodging", type: "check" },
+        { id: "coverage", label: "The class falls on a duty day — I'll need coverage or a shift trade", type: "check" }
+      ] },
+      { id: "prereq", step: "Prereqs", title: "Prerequisites", sub: "What the course requires before you go", show: d => d.f.source === "gpstc" ? !!course(d) : d.f.source === "other", fields: [
+        { id: "prereqText", type: "note", tone: "warn", show: d => !!(course(d) && course(d).p),
+          html: d => `<b>GPSTC lists:</b> ${esc(course(d).p)}` },
+        { id: "noPrereq", type: "note", show: d => !!(course(d) && !course(d).p), html: "GPSTC lists no prerequisites for this course." },
+        { id: "meetsPrereqs", label: "I meet these prerequisites, or will before the class starts", type: "check", required: d => !!(course(d) && course(d).p), show: d => !!(course(d) && course(d).p) },
+        { id: "prereqNotes", label: "Notes on prerequisites", type: "textarea", full: true, placeholder: "e.g. NIMS 200 finished last month; CPR card expires in March" }
+      ] },
+      { id: "photos", type: "photos", step: "Documents", title: "Certificates & documents", sub: "Optional", allowPdf: true,
+        help: "Attach prerequisite certificates (NIMS, CPR, earlier courses), a chief's letter, or the class flyer." },
+      { id: "sign", type: "sign", step: "Send", title: "Review & send", sub: "Goes to the sergeants and command staff", signature: false }
+    ],
+    summary: d => {
+      const c = course(d), o = chosenClass(d);
+      return [["Course", d.f.source === "other" ? d.f.otherName : c ? c.c : ""],
+              ["Class", o ? shortDate(o[0]) : d.f.source === "other" ? d.f.otherDates : ({ online: "Online", any: "Any", field: "At Centerville", next: "Next posted" })[d.f.classPick] || ""],
+              ["Hours", d.f.source === "other" ? d.f.otherHours : c ? hrs(c.h) : ""]];
+    },
+    status: d => {
+      const o = chosenClass(d);
+      if (o && o[6] === "Waiting List") return { text: "CLASS HAS A WAITING LIST", tone: "warn" };
+      if (o && o[6] === "Coming Soon") return { text: `REGISTRATION OPENS ${opensOn(o[0]).toUpperCase()}`, tone: "info" };
+      if (o && o[6] === "Register") return { text: "REGISTRATION OPEN NOW", tone: "ok" };
+      return null;
+    },
+    submitLabel: "Submit Training Request",
+    pdfHeader: d => {
+      const c = course(d);
+      return { title: "Training Request", line: `${d.f.name || ""}  ·  ${d.f.source === "other" ? d.f.otherName || "" : c ? `${c.c} ${c.t}` : ""}`, ref: d.ref, signer: d.f.name };
+    },
+    fileBase: d => `Training_Request_${d.ref}_${d.f.name || ""}`,
+    subject: d => {
+      const c = course(d), o = chosenClass(d);
+      const what = d.f.source === "other" ? d.f.otherName : c ? `${c.t} (${c.c})` : "";
+      return `Training request: ${what}${o ? ` — ${shortDate(o[0])}` : ""} — ${d.f.name}`;
+    },
+    emailLead: d => {
+      const c = course(d), o = chosenClass(d);
+      const what = d.f.source === "other" ? `<b>${esc(d.f.otherName)}</b> (${esc(d.f.otherProvider)})` : c ? `<b>${esc(c.t)}</b> (${esc(c.c)}, ${esc(hrs(c.h))}) — <a href="${esc(c.u)}">GPSTC course page</a>` : "";
+      const when = o ? ` ${esc(classNo(o))}, ${esc(range(o))} at ${esc(place(o))}.${o[6] === "Coming Soon" ? ` Registration opens ${esc(opensOn(o[0]))} at 8:00 a.m.` : o[6] === "Waiting List" ? " That class has a waiting list." : ""}` : "";
+      return `<b>${esc(d.f.name)}</b> (${esc(d.f.rank)}, ${esc(d.f.shift)}) is requesting ${what}.${when}`
+        + (d.f.coverage ? " <b>Needs shift coverage.</b>" : "") + (d.f.lodging ? " Needs lodging." : "");
+    },
+    done: d => {
+      const o = chosenClass(d);
+      return { title: "Training request sent", html: `<p>Request number <b>${esc(d.ref)}</b>. Once it's approved, you'll be registered through the department.${o && o[6] === "Coming Soon" ? ` GPSTC opens registration for that class on <b>${esc(opensOn(o[0]))}</b>.` : ""}</p>` };
+    }
+  });
+})();
+</script>
+</body>
+</html>

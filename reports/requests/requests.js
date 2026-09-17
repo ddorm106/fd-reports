@@ -61,6 +61,8 @@
         const v = state.f[fd.id] == null ? '' : state.f[fd.id], ph = val(fd.placeholder, d) || '', help = val(fd.help, d);
         const helpHtml = help ? `<div class="rq-help">${help}</div>` : '';
         switch (fd.type) {
+            case 'custom':      // the page draws it and handles its own clicks/typing (fd.render/click/input/change)
+                return `<div class="rp-field full rq-custom" data-field="${fd.id}" id="${id}">${fd.render(d, API)}</div>`;
             case 'note':
                 return `<div class="rp-field full rq-note ${fd.tone || ''}" data-field="${fd.id}">${val(fd.html, d)}</div>`;
             case 'chips':
@@ -111,17 +113,17 @@
 
     // ─────────────────────────── photos ───────────────────────────
     function photosHtml(sec) {
-        const help = val(sec.help, data());
+        const help = val(sec.help, data()), pdf = sec.allowPdf ? ',application/pdf,.pdf' : '';
         return `${help ? `<p class="rp-help">${help}</p>` : ''}
             <div class="rq-photos" data-photos></div>
             <div class="rq-photo-add">
                 <label class="rp-btn">📷 Take photo<input type="file" accept="image/*" capture="environment" hidden data-add-photo></label>
-                <label class="rp-btn">Choose photos<input type="file" accept="image/*,.heic,.heif" multiple hidden data-add-photo></label>
+                <label class="rp-btn">${sec.allowPdf ? 'Choose photos or PDFs' : 'Choose photos'}<input type="file" accept="image/*,.heic,.heif${pdf}" multiple hidden data-add-photo></label>
             </div>`;
     }
     function renderPhotos() {
         const box = $('[data-photos]'); if (!box) return;
-        box.innerHTML = state.photos.map((p, i) => `<div class="rq-photo">${p.thumb ? `<img src="${p.thumb}" alt="Photo ${i + 1}">` : '<div class="busy">Preparing…</div>'}<button type="button" data-photo-del="${p.id}" aria-label="Remove photo ${i + 1}">✕</button></div>`).join('');
+        box.innerHTML = state.photos.map((p, i) => `<div class="rq-photo${p.pdf ? ' pdf' : ''}">${p.pdf ? `<div class="doc"><b>PDF</b><span>${esc(p.name)}</span></div>` : p.thumb ? `<img src="${p.thumb}" alt="Photo ${i + 1}">` : '<div class="busy">Preparing…</div>'}<button type="button" data-photo-del="${p.id}" aria-label="Remove photo ${i + 1}">✕</button></div>`).join('');
     }
     function loadImage(file) {
         return new Promise((res, rej) => {
@@ -142,6 +144,11 @@
     async function addPhotos(files) {
         for (const f of Array.from(files || [])) {
             const p = { id: uid(), name: f.name };
+            if (/\.pdf$/i.test(f.name) || f.type === 'application/pdf') {
+                if (!C.sections.some(x => x.type === 'photos' && x.allowPdf)) { toast(`${f.name}: photos only`); continue; }
+                Object.assign(p, { pdf: true, blob: f });
+                state.photos.push(p); renderPhotos(); continue;
+            }
             state.photos.push(p); renderPhotos();
             try {
                 const { img, url } = await loadImage(f);
@@ -382,6 +389,7 @@
 
     // ─────────────────────────── display values ───────────────────────────
     function display(fd, v) {
+        if (fd.type === 'custom') return fd.text ? fd.text(data()) : String(v == null ? '' : v);
         if (v == null || v === '' || v === false) return '';
         if (fd.type === 'check') return 'Yes';
         if (fd.type === 'date') return dayLabel(v);
@@ -488,6 +496,8 @@
                 if (++col === 3) { col = 0; y += rowH; }
             });
             if (col) y += rowH;
+            const docs = state.photos.filter(p => p.pdf);
+            if (docs.length) { need(6 + docs.length * 5); font('bold', 8.5, DIM); pdf.text('ATTACHED DOCUMENTS', M, y + 4); font('normal', 9.4, INK); docs.forEach((p, i) => pdf.text(pdfText(`${i + 1}. ${p.name}`), M, y + 9.5 + i * 5)); y += 8 + docs.length * 5; }
             y += 2;
         }
 
@@ -524,7 +534,7 @@
                 }
                 return;
             }
-            const rows = visibleFields(sec).filter(r => r.value || val(r.fd.required, d)).map(r => ({ label: r.label, value: r.value, full: r.fd.type === 'textarea' || r.fd.type === 'chips' || r.fd.type === 'check' || r.fd.full }));
+            const rows = visibleFields(sec).filter(r => r.value || val(r.fd.required, d)).map(r => ({ label: r.label, value: r.value, full: r.fd.type === 'textarea' || r.fd.type === 'chips' || r.fd.type === 'check' || r.fd.type === 'custom' || r.fd.full }));
             if (!rows.length) return;
             heading(val(sec.pdfTitle || sec.title, d)); grid(rows); y += 2;
         });
@@ -597,7 +607,10 @@
         try {
             const pdf = buildPDF();
             const attachments = [{ filename: fileBase() + '.pdf', content: pdf.output('datauristring').split(',')[1] }];
-            for (let i = 0; i < state.photos.length; i++) attachments.push({ filename: `${fileBase()}_photo_${i + 1}.jpg`, content: await toB64(state.photos[i].blob) });
+            for (let i = 0; i < state.photos.length; i++) {
+                const ph = state.photos[i];
+                attachments.push({ filename: ph.pdf ? `${fileBase()}_${ph.name.replace(/[^A-Za-z0-9._-]+/g, '_')}` : `${fileBase()}_photo_${i + 1}.jpg`, content: await toB64(ph.blob) });
+            }
             const res = await fetch('/api/send-email', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: ctrl.signal,
                 body: JSON.stringify({ to, from_name: 'CFD Training Division', subject: C.subject(d), html: emailHtml(), attachments })
@@ -653,6 +666,7 @@
             }
             const del = e.target.closest('[data-row-del]');
             if (del) { state.items.splice(+del.dataset.rowDel, 1); renderSection(itemsSection()); return changed(); }
+            const cf = customOf(e.target); if (cf && cf.click && cf.click(e, API) !== false) return;
             const ph = e.target.closest('[data-photo-del]');
             if (ph) { state.photos.splice(state.photos.findIndex(p => p.id === ph.dataset.photoDel), 1); renderPhotos(); return changed(); }
             const open = e.target.closest('[data-open]');
@@ -684,10 +698,16 @@
             }
         };
         // Typing updates quietly; choices (selects, chips, boxes) may re-draw a section.
-        form.addEventListener('input', e => { const t = e.target; if (t.type === 'radio' || t.type === 'checkbox' || t.tagName === 'SELECT' || t.type === 'file') return; onField(t, false); changed(); });
+        const customOf = el => { const box = el.closest('.rq-custom'); return box && allFields().find(x => x.id === box.dataset.field); };
+        form.addEventListener('input', e => {
+            const t = e.target, cf = customOf(t);
+            if (cf) { if (cf.input) cf.input(e, API); return; }
+            if (t.type === 'radio' || t.type === 'checkbox' || t.tagName === 'SELECT' || t.type === 'file') return; onField(t, false); changed();
+        });
         form.addEventListener('change', e => {
             const t = e.target;
             if (t.hasAttribute('data-add-photo')) { addPhotos(t.files); t.value = ''; return; }
+            const cf = customOf(t); if (cf) { if (cf.change) cf.change(e, API); return; }
             onField(t, true); changed();
         });
         $('#btn-clear').onclick = () => modal('warn', `Clear this ${C.noun || 'form'}?`, '<p>Everything entered, photos, and the signature will be removed.</p>', [{ t: 'Keep it' }, { t: 'Clear everything', primary: true, fn: () => reset(false) }]);
@@ -697,6 +717,13 @@
         $('#modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
         window.addEventListener('beforeunload', e => { if (state.photos.length && !state.sent) { e.preventDefault(); e.returnValue = ''; } });
     }
+
+    // What a custom field's handlers get.
+    const API = {
+        get f() { return state.f; }, data, esc, isoDay, dayLabel, daysBetween, toast,
+        set(k, v, redraw) { state.f[k] = v; if (redraw) { C.sections.forEach(s => { if (s.type !== 'items' && s.type !== 'sign') renderSection(s); }); renderSteps(); } changed(); },
+        redrawField(id) { const box = document.querySelector(`.rq-custom[data-field="${id}"]`), fd = allFields().find(x => x.id === id); if (box && fd) box.innerHTML = fd.render(data(), API); }
+    };
 
     // A link can fill a form in: ../repair-request/?item=Thermal%20camera&tag=TIC-2
     function prefillFromUrl() {
