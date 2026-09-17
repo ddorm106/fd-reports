@@ -233,7 +233,7 @@
       const when = o ? ` ${esc(classNo(o))}, ${esc(range(o))} at ${esc(place(o))}.${o[6] === "Coming Soon" ? ` Registration opens ${esc(opensOn(o[0]))} at 8:00 a.m.` : o[6] === "Waiting List" ? " That class has a waiting list." : ""}` : "";
       const portal = d.f._portal
         ? ` <a href="${esc(d.f._portal)}">Approve or deny it in the Career Portal →</a>`
-        : d.f._portalErr ? ` <i>(not saved to the Career Portal: ${esc(d.f._portalErr)} — approve by reply)</i>` : "";
+        : "";   // if the portal save failed, the member is told; the email stays clean
       return `<b>${esc(d.f.name)}</b> (${esc(d.f.rank)}, ${esc(d.f.shift)}) is requesting ${what}.${when}`
         + (d.f.coverage ? " <b>Needs shift coverage.</b>" : "") + (d.f.lodging ? " Needs lodging." : "") + portal;
     },
