@@ -172,6 +172,11 @@
             background: rgba(230,168,23,0.12);
             color: var(--cfd-accent-amber);
         }
+        .card-status.instructor {
+            background: var(--cfd-gold-dim);
+            color: var(--cfd-gold);
+        }
+        .card.wide { grid-column: span 2; }
         .card-status.draft {
             background: rgba(196,30,58,0.12);
             color: var(--cfd-red);
@@ -232,6 +237,15 @@
             background: rgba(255,255,255,0.06);
             border-color: rgba(255,255,255,0.12);
         }
+        .mag-issue.disabled { opacity: 0.55; cursor: default; }
+        .mag-issue.disabled:hover { background: rgba(255,255,255,0.03); border-color: var(--cfd-border); }
+        .mag-issue-soon {
+            color: var(--cfd-accent-amber);
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
         .mag-issue-title { font-weight: 600; font-size: 0.95rem; }
         .mag-issue-topics { font-size: 0.78rem; color: var(--cfd-text-dim); margin-top: 3px; }
         .mag-issue-arrow { color: var(--cfd-red); font-size: 1.1rem; font-weight: 700; }
@@ -272,6 +286,10 @@
             .hero h1 { font-size: 2rem; letter-spacing: 4px; }
             .hero h1 span { font-size: 1.2rem; }
             .grid { grid-template-columns: 1fr; gap: 14px; }
+            /* One column on a phone: a two-column card would widen the grid
+               past the screen, and the sign-in fields stack. */
+            .card.wide { grid-column: auto; }
+            #careerLoginForm { grid-template-columns: 1fr !important; }
             .main { padding: 28px 14px 40px; }
         }
     </style>
@@ -292,53 +310,62 @@
     <div class="section-label">Reports &amp; Evaluations</div>
     <div class="grid">
 
-        <div class="card">
+        <div class="card" style="align-self:start">
             <span class="card-status active">Active</span>
             <h3>Training Sheets</h3>
-            <p>Create and submit training documentation with digital signatures, PDF generation, and cloud save.</p>
-            <a href="training-sheets/page1.html" class="card-link">Open Report <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+            <p>Prefilled training sheet templates with objectives, descriptions, and equipment loaded. Pick a sheet, add students, sign, and download.</p>
+            <a href="https://sheets.fdtraining.org" class="card-link">Open Sheets <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
         </div>
 
         <div class="card">
             <span class="card-status active">Active</span>
-            <h3>Firefighter Weekly</h3>
-            <p>Standard weekly performance evaluation for all firefighter personnel.</p>
-            <a href="firefighter-report/page1.html" class="card-link">Open Report <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
-        </div>
-
-        <div class="card">
-            <span class="card-status active">Active</span>
-            <h3>Rescue Driver Daily</h3>
-            <p>Daily performance evaluation for Rescue 1 driver operations.</p>
-            <a href="rescue-driver-report/page1.html" class="card-link">Open Report <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
-        </div>
-
-        <div class="card">
-            <span class="card-status active">Active</span>
-            <h3>Engine Driver Weekly</h3>
-            <p>Weekly performance evaluation for engine company driver/operators.</p>
-            <a href="engine-driver-report/page1.html" class="card-link">Open Report <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
-        </div>
-
-        <div class="card">
-            <span class="card-status active">Active</span>
-            <h3>AOIC Weekly</h3>
-            <p>Acting Officer in Charge weekly performance evaluation.</p>
-            <a href="aoic-report/page1.html" class="card-link">Open Report <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
-        </div>
-
-        <div class="card">
-            <span class="card-status coming">Coming Soon</span>
-            <h3>Aerial Weekly</h3>
-            <p>Weekly performance evaluation for aerial operations.</p>
-            <a href="#" class="card-link disabled">Coming Soon</a>
+            <h3>Monthly Position Evaluations</h3>
+            <p>One evaluation per member per month: log the days you worked with them, rate the month overall, and attach reports, photos, and training sheets.</p>
+            <div class="mag-issues">
+            <a href="firefighter-report/page1.html" class="mag-issue">
+                <div>
+                    <div class="mag-issue-title">Firefighter Monthly</div>
+                    <div class="mag-issue-topics">All firefighter personnel</div>
+                </div>
+                <div class="mag-issue-arrow">→</div>
+            </a>
+            <a href="rescue-driver-report/page1.html" class="mag-issue">
+                <div>
+                    <div class="mag-issue-title">Rescue Driver Monthly</div>
+                    <div class="mag-issue-topics">Rescue 1 driver operations</div>
+                </div>
+                <div class="mag-issue-arrow">→</div>
+            </a>
+            <a href="engine-driver-report/page1.html" class="mag-issue">
+                <div>
+                    <div class="mag-issue-title">Engine Driver Monthly</div>
+                    <div class="mag-issue-topics">Engine company driver/operators</div>
+                </div>
+                <div class="mag-issue-arrow">→</div>
+            </a>
+            <a href="aoic-report/page1.html" class="mag-issue">
+                <div>
+                    <div class="mag-issue-title">AOIC Monthly</div>
+                    <div class="mag-issue-topics">Acting Officer in Charge</div>
+                </div>
+                <div class="mag-issue-arrow">→</div>
+            </a>
+            <div class="mag-issue disabled">
+                <div>
+                    <div class="mag-issue-title">Aerial Monthly</div>
+                    <div class="mag-issue-topics">Aerial operations</div>
+                </div>
+                <div class="mag-issue-soon">Soon</div>
+            </div>
+            </div>
         </div>
 
     </div>
 
+    <div class="section-label">Career Portal</div>
+    <div class="grid">
 
-
-        <div class="card" style="grid-column:span 2">
+        <div class="card wide">
             <span class="card-status active">Live</span>
             <h3>🔺 Career Portal</h3>
             <p>Sign in to access your career path, task books, training requests, roster, SOPs, and daily reports.</p>
@@ -358,31 +385,84 @@
             <div id="clError" style="color:#f87171;font-size:.76rem;margin-top:6px;display:none">Invalid email or PIN.</div>
             <a href="https://career.fdtraining.org" class="card-link" style="margin-top:10px">Open full portal <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
         </div>
-    </div>
-    </div>
-            </form>
-            <div id="clError" style="color:#f87171;font-size:.78rem;margin-top:8px;display:none">Invalid email or PIN. Try again.</div>
-            <div style="margin-top:10px;font-size:.75rem;color:#8e9198">
-                <a href="https://career.fdtraining.org" style="color:#c41e3a;text-decoration:none">Open full portal</a> &nbsp;·&nbsp; Contact your Training Sergeant for access.
-            </div>
-        </div>
 
-    <div class="section-label">Resources</div>
+    </div>
+
+    <div class="section-label">Training Courses</div>
     <div class="grid">
 
         <div class="card">
-            <span class="card-status active">Active</span>
-            <h3>Prefilled Training Sheets</h3>
-            <p>Pre-built training sheet templates with objectives, descriptions, and equipment pre-loaded. Select a sheet, add students, sign, and download.</p>
-            <a href="https://sheets.fdtraining.org" class="card-link">Open Sheets <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+            <span class="card-status active">Live</span>
+            <h3>Live Fire</h3>
+            <p>NFPA 1403 / 1400 course and burn-day ops: command board, checklists, rotations, settee log, gear, medical. Centerville Training Ground.</p>
+            <a href="/livefire" class="card-link">Open Live Fire <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
         </div>
 
         <div class="card">
-            <span class="card-status active">Admin</span>
-            <h3>Training Sheets Admin</h3>
-            <p>Create, edit, and manage prefilled training sheet templates. Admin access required.</p>
-            <a href="https://sheets.fdtraining.org/admin" class="card-link">Open Admin <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+            <span class="card-status active">Course</span>
+            <h3>Modern Aggressive Size-Up</h3>
+            <p>Ten modules on reading the building and the fire before committing a crew. Sign in — your progress and answers go to your training officer.</p>
+            <a href="https://centerville-sizeup.fdtraining.org" class="card-link">Start Course <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
         </div>
+
+        <div class="card">
+            <span class="card-status active">Course</span>
+            <h3>Fire Dynamics</h3>
+            <p>Read the smoke. Make the building searchable. Put water on it. An eleven-module course on how fire really behaves inside a structure.</p>
+            <a href="https://firedynamics.fdtraining.org" class="card-link">Start Course <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+
+        <div class="card">
+            <span class="card-status active">Course</span>
+            <h3>Hazmat — ERG 2024</h3>
+            <p>A four-hour interactive course on the 2024 Emergency Response Guidebook: eight modules, four scenarios, and the complete ERG lookup built in.</p>
+            <a href="https://erg.fdtraining.org" class="card-link">Start Course <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+
+        <div class="card">
+            <span class="card-status active">Course</span>
+            <h3>Safety Stand Down 2026</h3>
+            <p>Firefighter FITNESS: Fit to Serve, Fit for Life. A self-paced, two-day Safety Stand Down course with a completion certificate.</p>
+            <a href="https://safetystanddown.fdtraining.org" class="card-link">Start Course <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+
+        <div class="card">
+            <span class="card-status active">Study</span>
+            <h3>Test &amp; Study Platform</h3>
+            <p>NPQ and firefighter certification practice tests, with study guides by topic.</p>
+            <a href="https://test-gen.fdtraining.org" class="card-link">Open Tests <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+
+    </div>
+
+    <div class="section-label">Equipment &amp; Hands-On</div>
+    <div class="grid">
+
+        <div class="card">
+            <span class="card-status active">Module</span>
+            <h3>Ponn Gladiator Hose</h3>
+            <p>Know your line. Eight stations on the attack line on our engines: what it is built from, what it asks of the pump panel, and how to load and carry it.</p>
+            <a href="https://gladiator.fdtraining.org" class="card-link">Open Module <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+
+        <div class="card">
+            <span class="card-status active">Module</span>
+            <h3>RIT-PAK Fast Attack</h3>
+            <p>3M Scott RIT-PAK Fast Attack: training objectives, what the pack is for, and how to put it to work for a down firefighter.</p>
+            <a href="https://ritpak.fdtraining.org" class="card-link">Open Module <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+
+        <div class="card">
+            <span class="card-status active">3D</span>
+            <h3>Live Fire Training Building</h3>
+            <p>The training building in 3D. Orbit and zoom through the layout before burn day.</p>
+            <a href="https://3d.fdtraining.org" class="card-link">Open 3D Model <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+
+    </div>
+
+    <div class="section-label">Pre-Plans &amp; Streets</div>
+    <div class="grid">
 
         <div class="card">
             <span class="card-status active">Active</span>
@@ -399,10 +479,17 @@
         </div>
 
         <div class="card">
-            <span class="card-status active">Admin</span>
-            <h3>Pre-Plan Admin</h3>
-            <p>Manage DivisionScan captures and published pre-plans. Delete, edit, re-send emails, unpublish. PIN 4050.</p>
-            <a href="/admin/preplans" class="card-link">Open Admin <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+            <span class="card-status active">Guide</span>
+            <h3>Pre-Plan Field Guide</h3>
+            <p>Illustrated guide for pre-planning a building: roofs, trusses, floors, alarm panels, and hazmat.</p>
+            <a href="cfd-preplan/field-guide" class="card-link">Open Guide <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+
+        <div class="card">
+            <span class="card-status active">Active</span>
+            <h3>Street Map &amp; Target Hazards</h3>
+            <p>Centerville area familiarization. Learn the streets and target hazards so the route is known before the bay door opens.</p>
+            <a href="/cfd-map" class="card-link">Open Map <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
         </div>
 
         <div class="card">
@@ -411,6 +498,72 @@
             <p>Track hydrant maintenance, flow tests, and painting. Map view, shift assignments, GPS, OOS tracking, and PDF reports.</p>
             <a href="https://hydrants.fdtraining.org" class="card-link">Open Tracker <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
         </div>
+
+    </div>
+
+    <div class="section-label">Instructors &amp; Admin</div>
+    <div class="grid">
+
+        <div class="card">
+            <span class="card-status instructor">Instructor</span>
+            <h3>Live Fire Instructor</h3>
+            <p>Burn-day instructor side of the Live Fire course.</p>
+            <a href="/livefire/instructor" class="card-link">Open Instructor <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+
+        <div class="card">
+            <span class="card-status instructor">Instructor</span>
+            <h3>Size-Up Results</h3>
+            <p>Course results and progress for Modern Aggressive Size-Up. Instructor PIN required.</p>
+            <a href="https://instructor-sizeup.fdtraining.org" class="card-link">Open Portal <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+
+        <div class="card">
+            <span class="card-status instructor">Instructor</span>
+            <h3>Fire Dynamics Results</h3>
+            <p>Course results and progress for Fire Dynamics. Instructor PIN required.</p>
+            <a href="https://instructor-firedynamics.fdtraining.org" class="card-link">Open Portal <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+
+        <div class="card">
+            <span class="card-status instructor">Instructor</span>
+            <h3>ERG 2024 Results</h3>
+            <p>Course results and progress for Hazmat — ERG 2024. Instructor PIN required.</p>
+            <a href="https://instructor-erg.fdtraining.org" class="card-link">Open Portal <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+
+        <div class="card">
+            <span class="card-status instructor">Instructor</span>
+            <h3>Safety Stand Down Dashboard</h3>
+            <p>Completions and progress for Safety Stand Down 2026. Instructor PIN required.</p>
+            <a href="https://safetystanddown.fdtraining.org/admin" class="card-link">Open Dashboard <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+
+        <div class="card">
+            <span class="card-status instructor">Admin</span>
+            <h3>Street Map Admin</h3>
+            <p>Manage the street map trainer and its target hazards. Sign-in required.</p>
+            <a href="/cfd-map/admin" class="card-link">Open Admin <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+
+        <div class="card">
+            <span class="card-status instructor">Admin</span>
+            <h3>Training Sheets Admin</h3>
+            <p>Create, edit, and manage prefilled training sheet templates. Admin access required.</p>
+            <a href="https://sheets.fdtraining.org/admin" class="card-link">Open Admin <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+
+        <div class="card">
+            <span class="card-status instructor">Admin</span>
+            <h3>Pre-Plan Admin</h3>
+            <p>Manage DivisionScan captures and published pre-plans. Delete, edit, re-send emails, unpublish. Admin PIN required.</p>
+            <a href="/admin/preplans" class="card-link">Open Admin <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+
+    </div>
+
+    <div class="section-label">Resources</div>
+    <div class="grid">
 
         <div class="card">
     <span class="card-status active">Active</span>
