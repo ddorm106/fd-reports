@@ -14,31 +14,29 @@
 (function () {
   'use strict';
 
-  /* Hold .nav-buttons clear of whatever else is fixed to the bottom.
+  /* Peach pins .nav-buttons to the foot; Centerville does NOT.
    *
-   * Centerville's Worker injects .pp-toolbar across the foot of every pre-plan
-   * page; Peach has no such bar. Rather than hardcode a height per site (and
-   * --pp-toolbar-h is referenced in places but never actually defined), measure
-   * what is there and publish it as --pp-navbar-bottom. --pp-navbar-pad then
-   * reserves room so the last field is not hidden under a bar that no longer
-   * takes part in the layout.
+   * Centerville's Worker toolbar already lives down there, with the sticky bar
+   * above it — that arrangement was already right and making it fixed broke a
+   * layout nobody asked to change. Peach has no toolbar, so sticky was all it
+   * had, and sticky only holds while the element's own containing block is in
+   * view: the bar scrolled away at the end of the page.
+   *
+   * So: flag the site by hostname for the CSS to scope against, and on Peach
+   * only, reserve the height the now-fixed bar no longer takes in the flow.
    */
   function sizeNavBar() {
     try {
-      var tb = document.querySelector('.pp-toolbar');
-      var h = 0;
-      if (tb) {
-        var r = tb.getBoundingClientRect();
-        /* Only count it when it is actually pinned at the foot. */
-        if (r.height > 0 && r.bottom >= window.innerHeight - 2) h = Math.round(r.height);
-      }
+      var peach = (location.hostname || '').toLowerCase().indexOf('pcfdmembers.org') !== -1;
+      var root = document.documentElement;
+      root.classList.toggle('pp-peach', peach);
+      if (!peach) return;
       var nav = document.querySelector('.nav-buttons');
       var navH = nav ? Math.round(nav.getBoundingClientRect().height) : 0;
-      var root = document.documentElement;
-      root.style.setProperty('--pp-navbar-bottom', h + 'px');
-      root.style.setProperty('--pp-navbar-pad', (h + navH + 24) + 'px');
+      root.style.setProperty('--pp-navbar-pad', (navH + 24) + 'px');
     } catch (e) {}
   }
+
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', sizeNavBar);
