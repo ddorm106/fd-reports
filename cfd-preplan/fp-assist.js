@@ -799,6 +799,12 @@
     '#fa-wrap{position:fixed;left:8px;z-index:9997;width:min(380px,calc(100vw - 16px));',
     '  bottom:calc(var(--pp-toolbar-h, calc(56px + env(safe-area-inset-bottom,0px))) + 10px);',
     '  font:13px system-ui,sans-serif}',
+    /* Page 11 full screen has no free corner: .fpx-zoom owns bottom left,
+       the photo FAB and ISO pill own bottom right, .fpx-hint runs along the
+       foot. The floating button sat on the zoom controls and the hint text,
+       so on that screen it is not floated at all — it moves into the \u22ef
+       menu, where page 11 keeps everything else. */
+    'body.fp-full #fa-open{display:none}',
     '#fa-open{background:#1e3a5f;color:#fff;border:0;border-radius:20px;padding:9px 16px;font-weight:700;',
     '  box-shadow:0 2px 10px rgba(0,0,0,.3);cursor:pointer}',
     '#fa-panel{display:none;background:#fff;border:1px solid #cbd5e1;border-radius:12px;',
@@ -858,17 +864,20 @@
     wrap.innerHTML = HTML;
     document.body.appendChild(wrap);
 
-    el('fa-open').addEventListener('click', function () {
+    function openPanel() {
       el('fa-panel').classList.add('open');
       el('fa-open').style.display = 'none';
       setTimeout(function () { el('fa-input').focus(); }, 40);
-    });
+    }
+    el('fa-open').addEventListener('click', openPanel);
     el('fa-close').addEventListener('click', function () {
       el('fa-panel').classList.remove('open');
       el('fa-open').style.display = '';
     });
     el('fa-send').addEventListener('click', ask);
     el('fa-clip').addEventListener('click', pickExamples);
+    var mm = el('mm-assistant');        // page 11's \u22ef menu entry
+    if (mm) mm.addEventListener('click', openPanel);
     el('fa-trace').addEventListener('click', function () { traceUnderlay(el('fa-input').value); });
     el('fa-input').addEventListener('keydown', function (e) { if (e.key === 'Enter') ask(); });
     el('fa-focus-off').addEventListener('click', function () { setFocus(null); });
@@ -882,7 +891,7 @@
   root.FPAssist = {
     describe: describe, apply: apply, focus: setFocus,
     get focused() { return focused; },
-    ask: ask, trace: traceUnderlay, boot: boot
+    ask: ask, trace: traceUnderlay, boot: boot, open: function () { var b = el('fa-open'); if (b) b.click(); }
   };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { setTimeout(boot, 500); });

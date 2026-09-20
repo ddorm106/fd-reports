@@ -57,26 +57,34 @@
     }
 
     // ── Status chip ─────────────────────────────────────────────────────────
-    /* Keep clear of the sticky step bar. Measured rather than assumed: the
-       bar is a different height on a phone and is absent on page 11. */
+    /* Keep clear of whatever bar is across the top. Measured rather than
+       assumed: the bars differ in height between phone and desktop, and which
+       one exists depends on the page. */
     function placeChip() {
         if (!chip) return;
         var top = 10;
         try {
-            var bar = document.getElementById('pp-stepbar');
-            if (bar) {
-                /* Offset from the bar's BOTTOM edge, not its height: a bar that
-                   has scrolled out of the viewport has a negative top, and
-                   testing top alone still pushed the chip down for a bar that
-                   was no longer there. bottom > 0 means it is still on screen. */
-                var r = bar.getBoundingClientRect();
-                if (r.top <= 2 && r.bottom > 0) top = Math.round(r.bottom) + 8;
+            /* Every bar that can sit across the top of the viewport. #pp-stepbar
+               is the form pages' sticky step strip; .fpx-top is page 11's
+               full-screen header, which carries Import / Save / Next — the chip
+               landed straight on those when it only knew about the step bar.
+               Take the LOWEST bottom edge of whatever is actually up there. */
+            var bars = [document.getElementById('pp-stepbar'),
+                        document.querySelector('.fpx-top')];
+            for (var i = 0; i < bars.length; i++) {
+                if (!bars[i]) continue;
+                /* Offset from the BOTTOM edge, not the height: a bar scrolled out
+                   of the viewport has a negative top, and testing top alone still
+                   pushed the chip down for a bar that was no longer on screen. */
+                var r = bars[i].getBoundingClientRect();
+                if (r.top <= 2 && r.bottom > 0) top = Math.max(top, Math.round(r.bottom) + 8);
             }
         } catch (e) {}
         chip.style.top = 'calc(' + top + 'px + env(safe-area-inset-top,0px))';
         chip.style.bottom = 'auto';
     }
     var chip = null;
+    var fadeTimer = null;
     function status(text, tone) {
         if (!chip) {
             chip = document.createElement('div');
@@ -84,10 +92,10 @@
             /* Bottom-right is taken. `.pp-toolbar` is fixed across the whole
                bottom at z-index 9999, so a chip at bottom:10px sat ON TOP of it
                and covered the Next button; the photo FAB and the ISO pill are
-               there too. Top-right is free EXCEPT that #pp-stepbar is sticky at
-               top:0 on the form pages, so the chip places itself under the bar
-               when there is one and at the top when there is not (page 11's
-               full-screen shell has no step bar). */
+               there too. Top-right is not free either — #pp-stepbar is sticky on
+               the form pages and .fpx-top carries page 11's Import/Save/Next —
+               so placeChip() measures whichever is there and sits below it, and
+               a settled "Saved" fades out rather than parking over anything. */
             chip.style.cssText =
                 'position:fixed;right:10px;top:10px;z-index:9998;font:600 11px/1.2 system-ui,Arial;' +
                 'padding:6px 10px;border-radius:20px;background:#1e3a5f;color:#fff;opacity:.92;' +
@@ -103,6 +111,17 @@
         chip.style.background = tone === 'err' ? '#c0392b'
                               : tone === 'ok'  ? '#1e7e34'
                               : '#1e3a5f';
+        placeChip();
+        /* Fade a settled "Saved" away. An error stays: that one is worth
+           reading. Any later status brings it straight back. */
+        chip.style.transition = 'opacity .4s';
+        chip.style.opacity = '.92';
+        if (fadeTimer) { clearTimeout(fadeTimer); fadeTimer = null; }
+        if (tone === 'ok') {
+            fadeTimer = setTimeout(function () {
+                if (chip) chip.style.opacity = '0';
+            }, 4000);
+        }
     }
 
     function shareLink() {
