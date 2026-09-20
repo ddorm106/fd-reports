@@ -14,6 +14,47 @@
 (function () {
   'use strict';
 
+  /* Hold .nav-buttons clear of whatever else is fixed to the bottom.
+   *
+   * Centerville's Worker injects .pp-toolbar across the foot of every pre-plan
+   * page; Peach has no such bar. Rather than hardcode a height per site (and
+   * --pp-toolbar-h is referenced in places but never actually defined), measure
+   * what is there and publish it as --pp-navbar-bottom. --pp-navbar-pad then
+   * reserves room so the last field is not hidden under a bar that no longer
+   * takes part in the layout.
+   */
+  function sizeNavBar() {
+    try {
+      var tb = document.querySelector('.pp-toolbar');
+      var h = 0;
+      if (tb) {
+        var r = tb.getBoundingClientRect();
+        /* Only count it when it is actually pinned at the foot. */
+        if (r.height > 0 && r.bottom >= window.innerHeight - 2) h = Math.round(r.height);
+      }
+      var nav = document.querySelector('.nav-buttons');
+      var navH = nav ? Math.round(nav.getBoundingClientRect().height) : 0;
+      var root = document.documentElement;
+      root.style.setProperty('--pp-navbar-bottom', h + 'px');
+      root.style.setProperty('--pp-navbar-pad', (h + navH + 24) + 'px');
+    } catch (e) {}
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', sizeNavBar);
+  } else {
+    sizeNavBar();
+  }
+  window.addEventListener('resize', sizeNavBar);
+  window.addEventListener('orientationchange', sizeNavBar);
+  /* preplan-flow.js rebuilds the bar after us, which changes its height. */
+  setTimeout(sizeNavBar, 400);
+  setTimeout(sizeNavBar, 1200);
+})();
+
+(function () {
+  'use strict';
+
   function fields() {
     return Array.prototype.slice.call(document.querySelectorAll('.form-field'));
   }
