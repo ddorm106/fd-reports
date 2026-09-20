@@ -57,18 +57,47 @@
     }
 
     // ── Status chip ─────────────────────────────────────────────────────────
+    /* Keep clear of the sticky step bar. Measured rather than assumed: the
+       bar is a different height on a phone and is absent on page 11. */
+    function placeChip() {
+        if (!chip) return;
+        var top = 10;
+        try {
+            var bar = document.getElementById('pp-stepbar');
+            if (bar) {
+                /* Offset from the bar's BOTTOM edge, not its height: a bar that
+                   has scrolled out of the viewport has a negative top, and
+                   testing top alone still pushed the chip down for a bar that
+                   was no longer there. bottom > 0 means it is still on screen. */
+                var r = bar.getBoundingClientRect();
+                if (r.top <= 2 && r.bottom > 0) top = Math.round(r.bottom) + 8;
+            }
+        } catch (e) {}
+        chip.style.top = 'calc(' + top + 'px + env(safe-area-inset-top,0px))';
+        chip.style.bottom = 'auto';
+    }
     var chip = null;
     function status(text, tone) {
         if (!chip) {
             chip = document.createElement('div');
             chip.id = 'ppCloudChip';
+            /* Bottom-right is taken. `.pp-toolbar` is fixed across the whole
+               bottom at z-index 9999, so a chip at bottom:10px sat ON TOP of it
+               and covered the Next button; the photo FAB and the ISO pill are
+               there too. Top-right is free EXCEPT that #pp-stepbar is sticky at
+               top:0 on the form pages, so the chip places itself under the bar
+               when there is one and at the top when there is not (page 11's
+               full-screen shell has no step bar). */
             chip.style.cssText =
-                'position:fixed;right:10px;bottom:10px;z-index:9999;font:600 11px/1.2 system-ui,Arial;' +
+                'position:fixed;right:10px;top:10px;z-index:9998;font:600 11px/1.2 system-ui,Arial;' +
                 'padding:6px 10px;border-radius:20px;background:#1e3a5f;color:#fff;opacity:.92;' +
                 'box-shadow:0 2px 8px rgba(0,0,0,.25);cursor:pointer';
             chip.title = 'Tap to copy this plan’s link';
             chip.onclick = shareLink;
             document.body.appendChild(chip);
+            placeChip();
+            window.addEventListener('resize', placeChip);
+            window.addEventListener('orientationchange', placeChip);
         }
         chip.textContent = text;
         chip.style.background = tone === 'err' ? '#c0392b'
