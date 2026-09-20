@@ -1,5 +1,5 @@
 // sw.js - Service Worker for Centerville FD Reports & Training
-// Version: 1.19 (keep this line and CACHE_NAME below in step) — 1.19: revert Centerville's nav bar to sticky; pin it on Peach only
+// Version: 1.20 (keep this line and CACHE_NAME below in step) — 1.20: Peach nav bar sits over the card, not the viewport; ISO pill lifted clear
 // inspections and training sheets file their PDF into the member's Career Portal documents
 // (reports/portal-file.js). 1.14: boot drawings on the
 // gear inspection (outside/front/heel/sole); tile detail moved to chips so iOS Safari stops
@@ -12,7 +12,7 @@
 // Request, Aerial Operator monthly evaluation. 1.8: one login; Career Portal on top.
 
 // Cache name - change version number to force update
-const CACHE_NAME = 'centerville-fd-v1.19';
+const CACHE_NAME = 'centerville-fd-v1.20';
 
 // Files to cache for offline use
 const FILES_TO_CACHE = [

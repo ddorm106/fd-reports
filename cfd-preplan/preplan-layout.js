@@ -31,11 +31,26 @@
       var root = document.documentElement;
       root.classList.toggle('pp-peach', peach);
       if (!peach) return;
+
       var nav = document.querySelector('.nav-buttons');
       var navH = nav ? Math.round(nav.getBoundingClientRect().height) : 0;
+      root.style.setProperty('--pp-navbar-h', navH + 'px');
       root.style.setProperty('--pp-navbar-pad', (navH + 24) + 'px');
+
+      /* Pin the bar over the card, not the viewport. .container is the 900px
+         centred white box; left:0/right:0 put the way-out button out on the
+         page background beside it. */
+      var box = document.querySelector('.container');
+      if (box) {
+        var r = box.getBoundingClientRect();
+        if (r.width > 0) {
+          root.style.setProperty('--pp-navbar-left', Math.round(r.left) + 'px');
+          root.style.setProperty('--pp-navbar-width', Math.round(r.width) + 'px');
+        }
+      }
     } catch (e) {}
   }
+
 
 
   if (document.readyState === 'loading') {
