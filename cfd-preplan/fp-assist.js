@@ -43,6 +43,7 @@
   var focused = null;            // the zone being focused on, or null
   var printDimmed = false;       // does the dimming go into the PDF too
   var lastBatch = null;          // what the last answer did, for the Undo chip
+  var pendingTrace = null;       // underlay geometry, set only by traceUnderlay()
 
   function doc() { return FP.doc ? FP.doc() : null; }
   function scale() { var d = doc(); return (d && d.data.scale_px_per_ft) || 12; }
@@ -678,6 +679,53 @@
     ensurePicker().click();
   }
 
+
+  /* ------------------------------------------------------- tracing an underlay
+   * The operator has already loaded the scanned sketch as a tracing underlay and
+   * scaled it against a dimension written on the paper. That image is ALREADY in
+   * the plan, so tracing it needs no second upload — and because the underlay has
+   * been placed on the canvas, we know exactly which rectangle of the building it
+   * covers. That is what makes a trace come out the right SIZE: without it the
+   * model is looking at a picture with no idea whether the box is 30 ft across or
+   * 300, and every wall it draws is a guess at scale.
+   */
+  function traceUnderlay(extra) {
+    if (busy) return;
+    var d = doc();
+    var f = d && d.floor();
+    var u = f && f.underlay;
+    if (!u) {
+      say('Load the sketch as a tracing underlay first (\u22ef \u2192 Underlay), then scale it ' +
+          'against a dimension written on the drawing.', true);
+      return;
+    }
+    /* A rotated underlay makes the image->plan mapping a rotation the model would
+       have to undo in its head, and it gets that wrong. Cheaper to ask. */
+    if (Math.abs(u.rot || 0) > 1) {
+      say('Straighten the underlay (rotation back to 0) before tracing it.', true);
+      return;
+    }
+    if (!u.w || !u.h) { say('That underlay has no size yet.', true); return; }
+
+    pendingTrace = {
+      left_ft: r1(px2ft(u.x)), top_ft: r1(px2ft(u.y)),
+      width_ft: r1(px2ft(u.w)), height_ft: r1(px2ft(u.h)),
+      calibrated: !!u.calibrated
+    };
+    /* The underlay is stored as a downscaled JPEG data URL; the worker wants raw
+       base64, the same shape the clip attachments arrive in. */
+    var src = String(u.src || '');
+    var comma = src.indexOf(',');
+    var b64 = comma >= 0 ? src.slice(comma + 1) : src;
+    if (b64.length < 512) { say('That underlay image is unreadable.', true); pendingTrace = null; return; }
+    attached = [{ name: 'underlay', b64: b64, w: u.natural_w || 0, h: u.natural_h || 0 }];
+    drawChips();
+
+    var t = (extra && extra.trim) ? extra.trim() : '';
+    el('fa-input').value = t || 'Trace this hand-drawn plan into the drawing.';
+    ask();
+  }
+
   function ask() {
     var inp = el('fa-input');
     var text = (inp.value || '').trim();
@@ -702,6 +750,8 @@
     var shot = planImage();
     var examples = attached.map(function (a) { return a.b64; });
     var exampleNames = attached.map(function (a) { return a.name; }).join(', ');
+    var trace = pendingTrace;    // set only by traceUnderlay(), for this message only
+    pendingTrace = null;
     attached = [];               // the example belongs to this message only
     drawChips();
 
@@ -709,7 +759,8 @@
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ page: '11', instruction: text, plan: plan,
-                             history: sending, image_b64: shot, examples: examples })
+                             history: sending, image_b64: shot, examples: examples,
+                             trace: trace })
     }).then(function (r) {
       return r.json().then(function (j) {
         if (!r.ok || !j.ok) {
@@ -790,6 +841,7 @@
       '<div id="fa-clips" style="display:none"></div>' +
       '<div id="fa-ask">' +
         '<button type="button" id="fa-clip" title="Attach an example picture">\ud83d\udcce</button>' +
+        '<button type="button" id="fa-trace" title="Trace the loaded underlay">\u270f\ufe0f</button>' +
         '<input id="fa-input" type="text" placeholder="What do you want changed?" autocomplete="off">' +
         '<button type="button" id="fa-send">Go</button>' +
       '</div>' +
@@ -817,6 +869,7 @@
     });
     el('fa-send').addEventListener('click', ask);
     el('fa-clip').addEventListener('click', pickExamples);
+    el('fa-trace').addEventListener('click', function () { traceUnderlay(el('fa-input').value); });
     el('fa-input').addEventListener('keydown', function (e) { if (e.key === 'Enter') ask(); });
     el('fa-focus-off').addEventListener('click', function () { setFocus(null); });
     el('fa-focus-print').addEventListener('change', function () {
@@ -829,7 +882,7 @@
   root.FPAssist = {
     describe: describe, apply: apply, focus: setFocus,
     get focused() { return focused; },
-    ask: ask, boot: boot
+    ask: ask, trace: traceUnderlay, boot: boot
   };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { setTimeout(boot, 500); });

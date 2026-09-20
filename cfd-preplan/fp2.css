@@ -547,7 +547,13 @@ body.fp-full.show-sheets #fpUpWrap { display: block; }
   background: var(--slate-200); z-index: 15; }
 .fpx .fp-empty.hidden { display: none; }
 .fpx .fp-empty p { margin: 0 0 10px; font-size: .85rem; color: var(--slate-500); max-width: 30rem; }
-.fp-empty-acts { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.fp-empty-acts { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+  /* .fp-empty is pointer-events:none — a v4 rule, from when the empty state was
+     only a message lying over the canvas and taps had to pass through to it.
+     v5 put three real buttons inside it and never re-enabled events, so they
+     rendered and could not be clicked. Turn them back on HERE rather than on
+     .fp-empty, so the rest of the overlay still lets a tap reach the canvas. */
+  pointer-events: auto; }
 
 /* ------------------------------------------------------------------ narrow */
 @media (max-width: 760px) {

@@ -151,6 +151,13 @@
     }
   }
 
+  /* Which department's front door this copy of the form belongs to. */
+  function mainSite() {
+    var h = (location.hostname || '').toLowerCase();
+    if (h.indexOf('pcfdmembers.org') !== -1) return 'https://pcfdmembers.org/';
+    return 'https://fdtraining.org/';
+  }
+
   function rewireNav(idx) {
     var wrap = document.querySelector('.nav-buttons');
     if (!wrap) return;
@@ -168,6 +175,22 @@
     // Previous is gone deliberately. The strip goes back, and so does the
     // iPad's edge swipe.
     wrap.innerHTML = '';
+
+    /* Way out of the form. Both departments serve these same pages, so the
+       destination is chosen by hostname rather than baked in — Peach reaches
+       them at preplans.pcfdmembers.org and must not be sent to Centerville.
+       Leaving is safe: preplan-cloud.js flushes on pagehide/beforeunload. */
+    var home = document.createElement('button');
+    home.type = 'button';
+    home.className = 'pp-home';
+    home.textContent = '\u2302  Main Site';
+    home.title = 'Return to the main site';
+    home.style.cssText = 'background:#24242a;border:1px solid #44444e;color:#e8e8ea;' +
+        'border-radius:8px;padding:10px 16px;font-family:inherit;font-size:14px;' +
+        'font-weight:600;cursor:pointer;flex:0 0 auto';
+    home.addEventListener('click', function () { location.href = mainSite(); });
+    wrap.appendChild(home);
+
     var fwd = document.createElement('button');
     fwd.type = 'button';
     fwd.className = 'btn-primary pp-next';

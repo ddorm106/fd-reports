@@ -112,6 +112,20 @@
     railSymbol = $('rail-symbol');
     if (!moreMenu || !scrim) return;
 
+    /* Way out of the drawing screen. The form's own Return to Main button is
+       parked off-screen here by `body.fp-full .fp-formchrome`, so page 11 needs
+       its own. Same hostname rule as preplan-flow.js: both departments are
+       served this one file, and Peach must not be sent to Centerville. */
+    var mainBtn = $('btn-main-site');
+    if (mainBtn) {
+      mainBtn.addEventListener('click', function () {
+        var h = (location.hostname || '').toLowerCase();
+        location.href = h.indexOf('pcfdmembers.org') !== -1
+          ? 'https://pcfdmembers.org/'
+          : 'https://fdtraining.org/';
+      });
+    }
+
     $('fpx-more').addEventListener('click', function (e) {
       e.stopPropagation();
       if (openMenu === moreMenu) { closeMenus(); return; }
