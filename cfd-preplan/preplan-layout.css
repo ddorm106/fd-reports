@@ -200,12 +200,25 @@ textarea { min-height: 92px !important; resize: vertical; }
  * layout that was already right.
  */
 html.pp-peach .nav-buttons {
-  position: fixed; left: 0; right: 0; bottom: 0;
+  position: fixed; bottom: 0; right: auto;
+  /* NOT left:0/right:0. Full-bleed put the way-out button off the left edge of
+     the card, floating over the page background. preplan-layout.js measures
+     .container — the 900px centred card — so the pinned bar sits exactly over
+     its footprint, the way the sticky one did inside it. */
+  left: var(--pp-navbar-left, 0px);
+  width: var(--pp-navbar-width, 100%);
   margin: 0;
+  /* The theme blanks the bar's background, which is right when it scrolls with
+     the page and wrong when it is pinned over moving content. */
+  background: rgba(255, 255, 255, .94) !important;
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  border-radius: 14px 14px 0 0;
+  box-shadow: 0 -6px 18px -12px rgba(15, 23, 42, .5);
 }
-/* Fixed takes the bar out of the flow, so nothing holds the page open and the
-   last field would sit under it. preplan-layout.js measures the bar. */
 html.pp-peach body { padding-bottom: var(--pp-navbar-pad, 104px); }
+/* #iso-pill is fixed at bottom:14px and the pinned bar now occupies that
+   corner, so the score sat on top of Next. Lift it clear of the bar. */
+html.pp-peach #iso-pill { bottom: calc(var(--pp-navbar-h, 76px) + 14px); }
 .btn-primary {
   background: var(--pp-navy) !important; color: #fff !important;
   border: 0 !important; border-radius: 11px !important;
