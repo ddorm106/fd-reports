@@ -182,18 +182,21 @@
        Leaving is safe: preplan-cloud.js flushes on pagehide/beforeunload. */
     var home = document.createElement('button');
     home.type = 'button';
-    home.className = 'pp-home';
+    /* btn-secondary is the Next button's own partner style — same 11px radius,
+       same family, matching height. The hand-rolled inline styles it used
+       before were 8px and 14px, which is why it read as a square next to a
+       rounded Next. */
+    home.className = 'btn-secondary pp-home';
     home.textContent = '\u2302  Main Site';
     home.title = 'Return to the main site';
-    home.style.cssText = 'background:#24242a;border:1px solid #44444e;color:#e8e8ea;' +
-        'border-radius:8px;padding:10px 16px;font-family:inherit;font-size:14px;' +
-        'font-weight:600;cursor:pointer;flex:0 0 auto';
+    home.style.flex = '0 0 auto';
     home.addEventListener('click', function () { location.href = mainSite(); });
     wrap.appendChild(home);
 
     var fwd = document.createElement('button');
     fwd.type = 'button';
     fwd.className = 'btn-primary pp-next';
+    fwd.style.flex = '0 0 auto';
     fwd.textContent = next ? 'Next: ' + next.title + '  \u2192' : 'Finish  \u2192';
     fwd.addEventListener('click', function () { go(next ? next.file : 'preplan-index.html'); });
     wrap.appendChild(fwd);

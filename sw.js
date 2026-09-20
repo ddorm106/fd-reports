@@ -1,5 +1,5 @@
 // sw.js - Service Worker for Centerville FD Reports & Training
-// Version: 1.17 (keep this line and CACHE_NAME below in step) — 1.17: chip clears page 11's top bar and fades; Assistant moved into the ⋯ menu
+// Version: 1.18 (keep this line and CACHE_NAME below in step) — 1.18: nav bar fixed to the foot on both sites; Main Site button uses the shared style
 // inspections and training sheets file their PDF into the member's Career Portal documents
 // (reports/portal-file.js). 1.14: boot drawings on the
 // gear inspection (outside/front/heel/sole); tile detail moved to chips so iOS Safari stops
@@ -12,7 +12,7 @@
 // Request, Aerial Operator monthly evaluation. 1.8: one login; Career Portal on top.
 
 // Cache name - change version number to force update
-const CACHE_NAME = 'centerville-fd-v1.17';
+const CACHE_NAME = 'centerville-fd-v1.18';
 
 // Files to cache for offline use
 const FILES_TO_CACHE = [
