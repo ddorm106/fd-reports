@@ -20,9 +20,18 @@
  * ~/cfd-map-build/build_peach_occupancies.py from Peach's occupant sheet merged
  * with the inspection app. It is an extra: parcels work if it fails to load.
  *
- * Clicks are NOT swallowed: a parcel opens its popup and the click still
- * reaches the map, so a page that uses map clicks (the radar's arrival
- * estimate) keeps working with parcels switched on.
+ * TAPS (rebuilt 2026-09-21 after "sometimes the parcels won't let me click"):
+ * nothing the plugin draws takes pointer events. Its canvas lies UNDER the host
+ * page's own layers, and any of them -- a second canvas, a filled polygon such
+ * as the radar's NWS alerts -- would otherwise catch the tap first. Instead the
+ * plugin listens to the MAP's click and works out what is under the finger
+ * itself: a main within TAP_PX, else a known-size marker, else the lot. If the
+ * page's own feature answered the same tap with a popup (a hydrant, an alert),
+ * the plugin stays out of the way. Nothing is ever swallowed, so a page that
+ * uses map clicks (the radar's arrival estimate) keeps working.
+ * The buttons move themselves down out from under any page panel that covers
+ * them (the radar's header sits on the top-left corner). data-position picks
+ * the corner (default topleft).
  *
  * WATER (added 2026-09-21): a second button, "Water", from water-peach.js
  * (data-water overrides). Lines only where real pipe geometry exists -- FVUC's
@@ -50,6 +59,8 @@
   var base = src ? src.slice(0, src.lastIndexOf('/') + 1) : '';
   var DATA = (me && me.getAttribute('data-parcels')) || (base + 'parcels-peach.js?v=1');
   var MIN_ZOOM = 15;
+  var TAP_PX = 10;              // how near a main a finger has to land, in screen pixels
+  var POSITION = (me && me.getAttribute('data-position')) || 'topleft';
   var KEY = 'pcfd_parcels_on';
   var pending = null;
 
@@ -246,13 +257,11 @@
        radar tile and track the page already draws. */
     map.createPane('pcfdParcels');
     map.getPane('pcfdParcels').style.zIndex = 350;
-    /* ONE canvas for parcels AND water. Two canvases broke parcel taps: a Leaflet
-       canvas takes every pointer event over the whole map and never passes a miss
-       to the canvas below, so once Water had been on, parcels stopped answering.
-       On one canvas Leaflet hit-tests topmost first -- a tap on a main opens the
-       main, anywhere else in the lot opens the parcel (waterToFront keeps water on
-       top). tolerance: a 2-px main is hard to hit with a finger on an iPad. */
-    var renderer = L.canvas({ pane: 'pcfdParcels', padding: 0.3, tolerance: 6 });
+    /* Draw-only: ONE canvas for parcels and water that never takes a pointer event
+       (a Leaflet canvas otherwise swallows every tap over the whole map). Taps are
+       answered by onTap() below from the map's own click. */
+    map.getPane('pcfdParcels').style.pointerEvents = 'none';
+    var renderer = L.canvas({ pane: 'pcfdParcels', padding: 0.3 });
     var group = L.layerGroup();
     var on = false, btn = null;
 
@@ -270,26 +279,18 @@
       for (var i = 0; i < P.length; i++) {
         var r = P[i];
         if (r[2] > e || r[4] < w || r[3] > n || r[5] < s) continue;
-        var poly = L.polygon(latlngs(r), {
-          pane: 'pcfdParcels', renderer: renderer,
+        group.addLayer(L.polygon(latlngs(r), {
+          pane: 'pcfdParcels', renderer: renderer, interactive: false,
           color: '#7c3aed', weight: 1, opacity: 0.6,
           fillColor: '#7c3aed', fillOpacity: 0.04
-        });
-        /* Not bindPopup: its handler calls DomEvent.stop(), which would eat the
-           click before the page's own map-click handler ever sees it. */
-        poly.on('click', (function (rec) {
-          return function (ev) {
-            /* maxHeight: a strip centre can list five tenants; scroll rather than cover the map. */
-            L.popup({ maxWidth: 280, maxHeight: 380 }).setLatLng(ev.latlng).setContent(popupHtml(rec)).openOn(map);
-          };
-        })(r));
-        group.addLayer(poly);
+        }));
       }
       waterToFront();
     }
 
     /* Parcels are rebuilt on every move and land on top of the shared canvas; put
-       the mains and the known-size markers back over them. */
+       the mains and the known-size markers back over them (drawing order only --
+       taps are decided by onTap). */
     function waterToFront() {
       if (!won || !mains || !map.hasLayer(wgroup)) return;
       mains.forEach(function (l) { l.bringToFront(); });
@@ -347,14 +348,10 @@
           pane: 'pcfdParcels', renderer: wrenderer, interactive: false,
           color: '#ffffff', weight: st.weight + 3, opacity: 0.92, lineCap: 'round', lineJoin: 'round'
         }));
-        var pl = L.polyline(g.parts, {
-          pane: 'pcfdParcels', renderer: wrenderer,
+        pipes.push(L.polyline(g.parts, {
+          pane: 'pcfdParcels', renderer: wrenderer, interactive: false,
           color: st.color, weight: st.weight, opacity: 1, lineCap: 'round', lineJoin: 'round'
-        });
-        pl.on('click', function (ev) {         // opened by hand: the map click still gets through
-          L.popup({ maxWidth: 260 }).setLatLng(ev.latlng).setContent(waterPopup(g.r, W)).openOn(map);
-        });
-        pipes.push(pl);
+        }));
       });
       return edges.concat(pipes);
     }
@@ -384,14 +381,10 @@
       fgroup.clearLayers();
       if (z >= FACT_ZOOM) {
         (W.facts || []).forEach(function (f) {
-          var m = L.circleMarker([f.lat, f.lng], {
-            pane: 'pcfdParcels', renderer: wrenderer, radius: 7,
+          fgroup.addLayer(L.circleMarker([f.lat, f.lng], {
+            pane: 'pcfdParcels', renderer: wrenderer, radius: 7, interactive: false,
             color: '#fff', weight: 2, fillColor: '#0369a1', fillOpacity: 1
-          });
-          m.on('click', function (ev) {
-            L.popup({ maxWidth: 270 }).setLatLng(ev.latlng).setContent(factPopup(f)).openOn(map);
-          });
-          fgroup.addLayer(m);
+          }));
         });
       }
       if (z < WATER_ZOOM) {
@@ -416,6 +409,7 @@
         wbtn.style.background = won ? '#e0f2fe' : '#fff';
       }
       if (legend) legend.style.display = won ? 'block' : 'none';
+      setTimeout(clearOfPage, 0);                // the legend changes the box's height
       if (!won) {
         if (map.hasLayer(wgroup)) map.removeLayer(wgroup);
         fgroup.clearLayers(); if (map.hasLayer(fgroup)) map.removeLayer(fgroup);
@@ -426,10 +420,11 @@
       loadWater().then(wdraw).catch(function () { wlabel('&#128167; Water <small>unavailable</small>'); });
     }
 
+    var ctlBox = null;
     var Ctl = L.Control.extend({
-      options: { position: 'topleft' },
+      options: { position: POSITION },
       onAdd: function () {
-        var box = L.DomUtil.create('div', 'leaflet-bar');
+        var box = ctlBox = L.DomUtil.create('div', 'leaflet-bar');
         var css = 'display:block;width:auto;padding:0 8px;font:600 12px/30px -apple-system,Segoe UI,Roboto,sans-serif;white-space:nowrap;background:#fff';
         btn = L.DomUtil.create('a', '', box);
         btn.href = '#';
@@ -462,6 +457,119 @@
     });
     new Ctl().addTo(map);
 
+    /* ------------------------------------------------------------ taps */
+    function ringHas(f, x, y) {                  // f = [lng,lat,...]
+      var ins = false, n = f.length / 2;
+      for (var i = 0, j = n - 1; i < n; j = i++) {
+        var xi = f[2 * i], yi = f[2 * i + 1], xj = f[2 * j], yj = f[2 * j + 1];
+        if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) ins = !ins;
+      }
+      return ins;
+    }
+    function parcelAt(ll) {
+      var P = window.CV_PARCELS && window.CV_PARCELS.p, x = ll.lng, y = ll.lat;
+      if (!P) return null;
+      for (var i = 0; i < P.length; i++) {
+        var r = P[i];
+        if (x < r[2] || x > r[4] || y < r[3] || y > r[5]) continue;
+        for (var k = 0; k < r[6].length; k++) {
+          var poly = r[6][k];
+          if (!poly.length || !ringHas(poly[0], x, y)) continue;
+          var hole = false;
+          for (var h = 1; h < poly.length && !hole; h++) hole = ringHas(poly[h], x, y);
+          if (!hole) return r;
+        }
+      }
+      return null;
+    }
+    function segPx(p, a, b) {
+      var dx = b.x - a.x, dy = b.y - a.y, L2 = dx * dx + dy * dy;
+      var t = L2 ? Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / L2)) : 0;
+      return Math.sqrt(Math.pow(p.x - a.x - t * dx, 2) + Math.pow(p.y - a.y - t * dy, 2));
+    }
+    function mainAt(cp) {
+      var W = window.PCFD_WATER;
+      if (!W) return null;
+      var a = map.containerPointToLatLng([cp.x - TAP_PX, cp.y - TAP_PX]);
+      var b = map.containerPointToLatLng([cp.x + TAP_PX, cp.y + TAP_PX]);
+      var w = Math.min(a.lng, b.lng), e = Math.max(a.lng, b.lng), s = Math.min(a.lat, b.lat), n = Math.max(a.lat, b.lat);
+      var best = null, bd = TAP_PX;
+      for (var i = 0; i < W.lines.length; i++) {
+        var r = W.lines[i];
+        if (r[3] > e || r[5] < w || r[4] > n || r[6] < s) continue;
+        var f = r[7], p0 = map.latLngToContainerPoint([f[1], f[0]]);
+        for (var k = 2; k < f.length; k += 2) {
+          var p1 = map.latLngToContainerPoint([f[k + 1], f[k]]), d = segPx(cp, p0, p1);
+          if (d < bd || (best && d === bd && r[0] > best[0])) { bd = d; best = r; }
+          p0 = p1;
+        }
+      }
+      return best;
+    }
+    function factAt(cp) {
+      var F = (window.PCFD_WATER && window.PCFD_WATER.facts) || [];
+      for (var i = 0; i < F.length; i++) {
+        var p = map.latLngToContainerPoint([F[i].lat, F[i].lng]);
+        if (Math.abs(p.x - cp.x) <= TAP_PX && Math.abs(p.y - cp.y) <= TAP_PX) return F[i];
+      }
+      return null;
+    }
+    /* The page's own features win: if a hydrant, alert or marker opened its popup on
+       this same tap, leave it alone. Our popups carry options.pcfd to tell them apart. */
+    var foreignPopupAt = 0;
+    map.on('popupopen', function (e) {
+      if (!(e.popup && e.popup.options && e.popup.options.pcfd)) foreignPopupAt = Date.now();
+    });
+    function onTap(ev) {
+      if (!on && !won) return;
+      var cp = ev.containerPoint, ll = ev.latlng;
+      setTimeout(function () {                   // after the page's own handlers for this tap
+        if (Date.now() - foreignPopupAt < 400) return;
+        var z = map.getZoom(), html = null;
+        if (won && window.PCFD_WATER) {
+          var f = z >= FACT_ZOOM ? factAt(cp) : null;
+          if (f) html = factPopup(f);
+          else if (z >= WATER_ZOOM) { var r = mainAt(cp); if (r) html = waterPopup(r, window.PCFD_WATER); }
+        }
+        if (!html && on && z >= MIN_ZOOM) { var p = parcelAt(ll); if (p) html = popupHtml(p); }
+        /* maxHeight: a strip centre can list five tenants; scroll rather than cover the map. */
+        if (html) L.popup({ maxWidth: 280, maxHeight: 380, pcfd: true }).setLatLng(ll).setContent(html).openOn(map);
+      }, 0);
+    }
+    map.on('click', onTap);
+
+    /* ------------------------------------------------------------ keep the buttons visible */
+    /* A page panel sitting on our corner (the radar's header) would hide the buttons.
+       Push the box down below whatever covers it; re-checked because pages open and
+       close their panels. Gives up rather than push the box off the map. */
+    function clearOfPage() {
+      if (!ctlBox || !ctlBox.parentNode) return;
+      var ctr = map.getContainer(), cr = ctr.getBoundingClientRect();
+      ctlBox.style.marginTop = '';
+      var shift = 0;
+      for (var n = 0; n < 8; n++) {
+        var r = ctlBox.getBoundingClientRect();
+        if (!r.width) return;
+        var pts = [[r.left + 6, r.top + 6], [r.right - 6, r.top + 6], [r.left + 6, r.bottom - 6], [r.right - 6, r.bottom - 6]];
+        var cover = null;
+        for (var i = 0; i < pts.length && !cover; i++) {
+          var el = document.elementFromPoint(pts[i][0], pts[i][1]);
+          if (!el || ctlBox.contains(el)) continue;
+          if (ctr.contains(el) && !(el.closest && el.closest('.leaflet-control'))) continue;   // the map itself
+          cover = el;
+        }
+        if (!cover) return;
+        var need = cover.getBoundingClientRect().bottom - r.top + 8;
+        if (need <= 0) return;
+        shift += need;
+        if (r.top + need + r.height > cr.bottom - 4) { ctlBox.style.marginTop = ''; return; }
+        ctlBox.style.marginTop = shift + 'px';
+      }
+    }
+    map.whenReady(function () { setTimeout(clearOfPage, 300); });
+    window.addEventListener('resize', clearOfPage);
+    setInterval(clearOfPage, 1500);
+
     map.on('moveend zoomend', function () { if (on) draw(); if (won) wdraw(); });
 
     var was = false, wwas = false;
@@ -473,5 +581,5 @@
   L.Map.addInitHook(function () { attach(this); });
 
   window.PCFDParcels = { load: load, loadWater: loadWater, loadOcc: loadOcc, attach: attach,
-                         data: DATA, water: WATER, occupancies: OCC };
+                         data: DATA, water: WATER, occupancies: OCC, version: 'taps-2026-09-21' };
 })();
