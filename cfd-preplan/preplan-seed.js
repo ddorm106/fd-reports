@@ -159,13 +159,105 @@
         cnt = box.querySelector('#psCount');
     list.innerHTML = '<div style="padding:14px;color:#64748b">Loading…</div>';
     load().then(function (j) {
-      cnt.textContent = j.count + ' businesses with no pre-plan yet · seeded from desk data, verify on site';
-      render(list, j.seeds, '');
-      q.addEventListener('input', function () { render(list, j.seeds, q.value); });
+      /* Only offer businesses with no plan. Starting a second plan for one
+         that is already written is how duplicates get into the Book. */
+      var open = j.seeds.filter(function (s) { return !s.has_plan; });
+      cnt.textContent = open.length + ' businesses with no pre-plan yet (' +
+        (j.count - open.length) + ' already done) · seeded from desk data, verify on site';
+      render(list, open, '');
+      q.addEventListener('input', function () { render(list, open, q.value); });
       q.focus();
     }).catch(function () {
       list.innerHTML = '<div style="padding:14px;color:#b91c1c">Business list could not be loaded.</div>';
     });
+  }
+
+
+  /* ---------------------------------------------- update an existing plan */
+
+  function norm(s) { return String(s == null ? '' : s).replace(/\s+/g, '').toUpperCase(); }
+
+  /* Match the plan on the desk to a business we know. Tax ID is exact;
+     coordinates are next best; the name is the weakest and needs the
+     address to agree too. */
+  function matchOpenPlan(seeds, plan) {
+    if (plan.tax_id) {
+      var byPin = seeds.filter(function (s) { return s.tax_id && norm(s.tax_id) === norm(plan.tax_id); });
+      if (byPin.length === 1) return { seed: byPin[0], how: 'tax ID' };
+      /* A strip mall is one parcel with twenty tenants, so a shared PIN is
+         normal and not on its own an answer. Narrow it with the name. */
+      if (byPin.length > 1 && plan.business_name) {
+        var n2 = norm(plan.business_name);
+        var narrowed = byPin.filter(function (s) { return norm(s.name) === n2; });
+        if (narrowed.length === 1) return { seed: narrowed[0], how: 'tax ID + name' };
+      }
+    }
+    var lat = parseFloat(plan.latitude), lng = parseFloat(plan.longitude);
+    if (isFinite(lat) && isFinite(lng)) {
+      var best = null, bestFt = 1e9;
+      seeds.forEach(function (s) {
+        if (!s.lat || !s.lng) return;
+        var fl = 364000 * Math.cos(lat * Math.PI / 180);
+        var ft = Math.hypot((s.lng - lng) * fl, (s.lat - lat) * 364000);
+        if (ft < bestFt) { bestFt = ft; best = s; }
+      });
+      if (best && bestFt < 200) return { seed: best, how: 'position (' + Math.round(bestFt) + ' ft)' };
+    }
+    var nm = norm(plan.business_name);
+    if (nm.length > 3) {
+      var byName = seeds.filter(function (s) { return norm(s.name) === nm; });
+      if (byName.length === 1) return { seed: byName[0], how: 'business name' };
+    }
+    return null;
+  }
+
+  /* Fill ONLY empty fields. Anything already on the plan was put there by a
+     person who had been to the building; desk data does not get to argue. */
+  function fillBlanks(plan, s) {
+    var filled = [];
+    function put(k, v, label) {
+      if (v == null || v === '') return;
+      if (plan[k] != null && String(plan[k]).trim() !== '') return;
+      plan[k] = String(v); filled.push(label || k);
+    }
+    put('tax_id', s.tax_id, 'Tax ID');
+    put('latitude', s.lat, 'latitude'); put('longitude', s.lng, 'longitude');
+    put('occupancy_types', s.occupancy_types, 'occupancy');
+    put('occupant_load_day', s.occupant_load, 'occupant load');
+    put('total_sq_ft', s.sq_ft, 'square footage');
+    put('nff_area', s.sq_ft, 'fire-flow area');
+    (s.hydrants || []).slice(0, 3).forEach(function (h, i) {
+      var n = i + 1;
+      if (plan['hyd_num_' + n] || plan['hyd_loc_' + n]) return;
+      plan['hyd_num_' + n] = h.id; plan['hyd_loc_' + n] = h.loc;
+      plan['hyd_dist_' + n] = String(h.ft);
+      plan['hyd_flow_' + n] = h.flow || ''; plan['hyd_static_' + n] = h.static || '';
+      plan['hyd_res_' + n] = h.resid || '';
+      filled.push('hydrant ' + n);
+    });
+    return filled;
+  }
+
+  function updateOpenPlan() {
+    var plan = {};
+    try { plan = JSON.parse(localStorage.getItem('preFirePlan') || '{}'); } catch (e) {}
+    if (!plan.business_name && !plan.address) { alert('Open a pre-plan first.'); return; }
+    load().then(function (j) {
+      var m = matchOpenPlan(j.seeds, plan);
+      if (!m) { alert('Could not match this plan to a business in our list.'); return; }
+      var filled = fillBlanks(plan, m.seed);
+      if (!filled.length) {
+        alert('Matched "' + m.seed.name + '" on ' + m.how + ', but every field we could fill already has a value. Nothing changed.');
+        return;
+      }
+      plan.additional_notes = (plan.additional_notes || '') +
+        ' GAPS FILLED FROM DESK DATA ' + new Date().toISOString().slice(0, 10) +
+        ' (matched "' + m.seed.name + '" on ' + m.how + '): ' + filled.join(', ') +
+        '. Blank fields only - nothing already recorded was changed. Verify on site.';
+      localStorage.setItem('preFirePlan', JSON.stringify(plan));
+      alert('Filled ' + filled.length + ' blank field(s) from "' + m.seed.name + '":\n\n' +
+            filled.join(', ') + '\n\nReload the page to see them.');
+    }).catch(function () { alert('Business list could not be loaded.'); });
   }
 
   function boot() {
@@ -177,10 +269,17 @@
     b.textContent = '🏢 Start from business list';
     b.addEventListener('click', openPicker);
     row.parentNode.insertBefore(b, row);
+    var u = document.createElement('button');
+    u.type = 'button'; u.className = 'btn-secondary';
+    u.textContent = '↻ Fill gaps in the open plan';
+    u.title = 'Fills only blank fields on the plan currently open. Never overwrites.';
+    u.addEventListener('click', updateOpenPlan);
+    row.parentNode.insertBefore(u, row);
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
 
-  window.PreplanSeed = { load: load, open: openPicker, toPlan: toPlan };
+  window.PreplanSeed = { load: load, open: openPicker, toPlan: toPlan,
+    update: updateOpenPlan, match: matchOpenPlan, fillBlanks: fillBlanks };
 })();
