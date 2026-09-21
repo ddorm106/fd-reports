@@ -71,7 +71,7 @@
     return opending;
   }
 
-  var WATER = (me && me.getAttribute('data-water')) || (base + 'water-peach.js?v=1');
+  var WATER = (me && me.getAttribute('data-water')) || (base + 'water-peach.js?v=2');
   var WATER_ZOOM = 15;          // same as parcels: at 14, downtown Fort Valley alone is ~5,800 mains (0.5 s per pan)
   var FACT_ZOOM = 11;           // the few known-size markers show from further out
   var WKEY = 'pcfd_water_on';
