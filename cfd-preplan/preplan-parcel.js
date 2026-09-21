@@ -10,22 +10,24 @@
  * copy a number off a qPublic printout, we look up which polygon contains the
  * building and read the PIN straight off it.
  *
- * The data (3,410 Centerville polygons, ~135 KB gzipped) is a SEPARATE file
- * loaded on demand — never on pages that do not need it, and never before the
- * plan actually has coordinates.
+ * The data (6,474 parcels, ~275 KB gzipped) is a SEPARATE file loaded on
+ * demand — never on pages that do not need it, and never before the plan
+ * actually has coordinates.
  *
- * The set is the parcels Houston County codes 0C, which is NOT the same as
- * "inside the city limits". The prefix is the county's tax coding and it lags
- * annexation: 1101 Dunbar Road (Lighthouse Baptist) and 219 Jewellie Road
- * (Parkland Cabana) are in the city, but Dunbar Road still carries the county
- * PIN 000450 022000, so neither is in here. A lookup there returns nothing and
- * the field is left alone -- the message says why, so nobody concludes the
- * building is out of the city.
+ * It is every parcel touching CFD's response area, pulled BY AREA -- city,
+ * county and the Warner Robins lots along the line. The first version was a
+ * city-only list and it was quietly missing 860 city parcels, whole map sheets
+ * of newer development (0C0320, 0C0350, 0C0360...). 1101 Dunbar Road
+ * (0C0180 109000) and 219 Jewellie Road (0C0350 01C000) were among them, so the
+ * lookup said "outside the city limits" about buildings inside it. Dunbar's
+ * assessor card in the archive shows 000450 022000; that is its number from
+ * before annexation, not today's.
  */
 (function () {
   'use strict';
 
-  var DATA = 'parcels-centerville.js';
+  /* Versioned so a browser holding the old city-only file fetches the wider one. */
+  var DATA = 'parcels-centerville.js?v=3';
   var pending = null;
 
   function load() {
@@ -41,9 +43,11 @@
     return pending;
   }
 
-  /* rec = [pin, acres, minLng, minLat, maxLng, maxLat, polygons]
+  /* rec = [pin, acres, minLng, minLat, maxLng, maxLat, polygons, addresses?]
      polygons -> rings -> [lng,lat,lng,lat,...]. Ring 0 is the outline and any
      further rings are holes, which is how GeoJSON and Leaflet both say it.
+     addresses is the county's address points on the parcel, absent when there
+     are none -- the parcel's address, not necessarily a tenant's suite.
 
      Flat coordinate pairs rather than objects: 24,000 vertices, and [[x,y],[x,y]]
      triples the file for no gain.
@@ -139,10 +143,11 @@
       load().then(function () {
         var rec = findAt(c.lat, c.lng);
         if (!rec) {
-          /* Not "outside the city limits": annexed property can still carry a
-             county PIN, and those parcels are not in this set. */
-          if (!quiet) say('No parcel on file for this spot. Only city-coded (0C) parcels are ' +
-                          'loaded, so recently annexed property can be missing. Type the tax ID in.', true);
+          /* Never "outside the city limits" -- that guess was wrong for annexed
+             property. The set covers CFD's response area, so a miss usually
+             means the coordinates are off. */
+          if (!quiet) say('No parcel on file for this spot. Parcels cover CFD\'s response area, ' +
+                          'so check the latitude and longitude, or type the tax ID in.', true);
           return;
         }
         /* Never overwrite a value somebody typed; only fill a blank one. */
@@ -151,7 +156,11 @@
           input.dispatchEvent(new Event('input', { bubbles: true }));
           input.dispatchEvent(new Event('change', { bubbles: true }));
         }
-        say('Parcel ' + rec[0] + ' · ' + rec[1] + ' acres' +
+        /* The county address is how you know it found the right parcel. */
+        var ad = rec[7] && rec[7].length
+          ? ' · County address ' + rec[7][0] + (rec[7].length > 1 ? ' (+' + (rec[7].length - 1) + ' more)' : '')
+          : '';
+        say('Parcel ' + rec[0] + ' · ' + rec[1] + ' acres' + ad +
             (input.value.trim() === rec[0] ? '' : ' (field left as typed)'));
       }).catch(function () { if (!quiet) say('Parcel data could not be loaded.', true); });
     }
