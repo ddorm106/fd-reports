@@ -37,18 +37,40 @@
     return pending;
   }
 
-  /* rec = [pin, acres, minLng, minLat, maxLng, maxLat, [lng,lat,lng,lat,...]]
-     Flat coordinate pairs rather than objects: 3,410 rings is 24,000 vertices,
-     and [[x,y],[x,y]] triples the file for no gain. */
-  function hit(rec, lng, lat) {
-    if (lng < rec[2] || lng > rec[4] || lat < rec[3] || lat > rec[5]) return false;
-    var f = rec[6], inside = false, n = f.length;
+  /* rec = [pin, acres, minLng, minLat, maxLng, maxLat, polygons]
+     polygons -> rings -> [lng,lat,lng,lat,...]. Ring 0 is the outline and any
+     further rings are holes, which is how GeoJSON and Leaflet both say it.
+
+     Flat coordinate pairs rather than objects: 24,000 vertices, and [[x,y],[x,y]]
+     triples the file for no gain.
+
+     The nesting is not theoretical. 0C0200 009000 is the 47-acre Watson Blvd
+     shopping centre with four out-parcels cut out of it; reading only the outer
+     ring put Ole Times Country Buffet -- which has its own 1.03-acre parcel,
+     0C0200 018000, sitting in one of those holes -- on the mall's tax id. */
+  function inRing(f, lng, lat) {
+    var inside = false, n = f.length;
     for (var i = 0, j = n - 2; i < n; j = i, i += 2) {
       var xi = f[i], yi = f[i + 1], xj = f[j], yj = f[j + 1];
       if (((yi > lat) !== (yj > lat)) &&
           (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi)) inside = !inside;
     }
     return inside;
+  }
+
+  function hit(rec, lng, lat) {
+    if (lng < rec[2] || lng > rec[4] || lat < rec[3] || lat > rec[5]) return false;
+    var polys = rec[6];
+    for (var p = 0; p < polys.length; p++) {
+      var rings = polys[p];
+      if (!inRing(rings[0], lng, lat)) continue;
+      var inHole = false;
+      for (var k = 1; k < rings.length; k++) {
+        if (inRing(rings[k], lng, lat)) { inHole = true; break; }
+      }
+      if (!inHole) return true;
+    }
+    return false;
   }
 
   function findAt(lat, lng) {
@@ -68,11 +90,17 @@
     return null;
   }
 
-  /* Leaflet wants [lat,lng]; the data is stored [lng,lat] like GeoJSON. */
+  /* Leaflet wants [lat,lng]; the data is stored [lng,lat] like GeoJSON.
+     The polygon -> ring -> point nesting is handed straight to L.polygon, which
+     reads it as parts and holes, so a cut-out parcel draws as a ring. */
   function latlngs(rec) {
-    var f = rec[6], out = [];
-    for (var i = 0; i < f.length; i += 2) out.push([f[i + 1], f[i]]);
-    return out;
+    return rec[6].map(function (rings) {
+      return rings.map(function (f) {
+        var out = [];
+        for (var i = 0; i < f.length; i += 2) out.push([f[i + 1], f[i]]);
+        return out;
+      });
+    });
   }
 
   function planCoords() {
