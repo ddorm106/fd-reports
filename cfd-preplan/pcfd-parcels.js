@@ -14,10 +14,11 @@
  * polygons -> rings -> [lng,lat,...]; ring 0 is the outline, the rest holes.
  *
  * WHAT STANDS ON IT (2026-09-21): like Centerville's street map, a parcel's popup
- * lists the occupancies on it -- tier swatch, name, address and a link to the
- * pre-plan in the Peach Book -- from occupancies-peach.js (data-occupancies
- * overrides), built by ~/cfd-map-build/build_peach_occupancies.py from the
- * inspection app's businesses. It is an extra: parcels work if it fails to load.
+ * lists the occupancies on it -- tier swatch, name, occupancy, station, sq ft,
+ * occupant load, NFA fire flow, address and a link to the pre-plan in the Peach
+ * Book -- from occupancies-peach.js (data-occupancies overrides), built by
+ * ~/cfd-map-build/build_peach_occupancies.py from Peach's occupant sheet merged
+ * with the inspection app. It is an extra: parcels work if it fails to load.
  *
  * Clicks are NOT swallowed: a parcel opens its popup and the click still
  * reaches the map, so a page that uses map clicks (the radar's arrival
@@ -52,7 +53,7 @@
   var KEY = 'pcfd_parcels_on';
   var pending = null;
 
-  var OCC = (me && me.getAttribute('data-occupancies')) || (base + 'occupancies-peach.js?v=1');
+  var OCC = (me && me.getAttribute('data-occupancies')) || (base + 'occupancies-peach.js?v=2');
   var TIER_COLOR = { 1: '#c62828', 2: '#e07b00', 3: '#5b7c99' };   // same as Centerville
   var opending = null;
 
@@ -216,11 +217,20 @@
       h += '<div style="margin-top:8px;font-size:10.5px;font-weight:700;letter-spacing:.4px;color:#64748b">' +
            'ON THIS PARCEL (' + occ.length + ')</div>';
       occ.forEach(function (o) {
-        h += '<div style="margin-top:5px;font-size:12.5px"><span style="display:inline-block;width:10px;height:10px;' +
+        h += '<div style="margin-top:6px;font-size:12.5px"><span style="display:inline-block;width:10px;height:10px;' +
              'border-radius:3px;border:1.5px solid #fff;box-shadow:0 0 0 1px #94a3b8;vertical-align:-1px;background:' +
-             (TIER_COLOR[o[3]] || '#5b7c99') + '"></span> <b>' + esc(o[0]) + '</b>';
+             (TIER_COLOR[o[3]] || '#5b7c99') + '"></span> <b>' + esc(o[0]) + '</b>' +
+             (o[10] ? ' <span style="color:#94a3b8;font-size:11px">#' + esc(o[10]) + '</span>' : '');
+        /* Same facts the Centerville map shows for a target hazard. */
+        var cls = [o[4], o[6]].filter(Boolean).map(esc).join(' &middot; ');
+        if (cls) h += '<div style="font-size:11.5px;margin-left:16px">' + cls + '</div>';
+        var facts = [];
+        if (o[7]) facts.push(Number(o[7]).toLocaleString() + ' sq ft');
+        if (o[8]) facts.push('load ' + Number(o[8]).toLocaleString());
+        if (o[9]) facts.push('fire flow ' + Number(o[9]).toLocaleString() + ' gpm');
+        if (facts.length) h += '<div style="font-size:11.5px;margin-left:16px;color:#334155">' + facts.join(' &middot; ') + '</div>';
         if (o[1]) h += '<div style="color:#64748b;font-size:11px;margin-left:16px">' + esc(o[1]) + '</div>';
-        h += '<div style="margin-left:16px">' + (o[2]
+        h += '<div style="margin-left:16px;font-size:12.5px">' + (o[2]
           ? '<a target="_blank" rel="noopener" href="' + esc(O.book + encodeURIComponent(o[2])) + '">Pre-plan &rarr;</a>'
           : '<span style="color:#b45309;font-weight:600">no pre-plan yet</span>') + '</div></div>';
       });
@@ -236,7 +246,13 @@
        radar tile and track the page already draws. */
     map.createPane('pcfdParcels');
     map.getPane('pcfdParcels').style.zIndex = 350;
-    var renderer = L.canvas({ pane: 'pcfdParcels', padding: 0.3 });
+    /* ONE canvas for parcels AND water. Two canvases broke parcel taps: a Leaflet
+       canvas takes every pointer event over the whole map and never passes a miss
+       to the canvas below, so once Water had been on, parcels stopped answering.
+       On one canvas Leaflet hit-tests topmost first -- a tap on a main opens the
+       main, anywhere else in the lot opens the parcel (waterToFront keeps water on
+       top). tolerance: a 2-px main is hard to hit with a finger on an iPad. */
+    var renderer = L.canvas({ pane: 'pcfdParcels', padding: 0.3, tolerance: 6 });
     var group = L.layerGroup();
     var on = false, btn = null;
 
@@ -263,11 +279,21 @@
            click before the page's own map-click handler ever sees it. */
         poly.on('click', (function (rec) {
           return function (ev) {
-            L.popup({ maxWidth: 260 }).setLatLng(ev.latlng).setContent(popupHtml(rec)).openOn(map);
+            /* maxHeight: a strip centre can list five tenants; scroll rather than cover the map. */
+            L.popup({ maxWidth: 280, maxHeight: 380 }).setLatLng(ev.latlng).setContent(popupHtml(rec)).openOn(map);
           };
         })(r));
         group.addLayer(poly);
       }
+      waterToFront();
+    }
+
+    /* Parcels are rebuilt on every move and land on top of the shared canvas; put
+       the mains and the known-size markers back over them. */
+    function waterToFront() {
+      if (!won || !mains || !map.hasLayer(wgroup)) return;
+      mains.forEach(function (l) { l.bringToFront(); });
+      fgroup.eachLayer(function (l) { if (l.bringToFront) l.bringToFront(); });
     }
 
     function setOn(v) {
@@ -284,14 +310,11 @@
     }
 
     /* ------------------------------------------------------------ water */
-    /* Just above the parcels (350), still under the page's own overlays (400).
-       tolerance: a 2-px main is hard to hit with a finger on an iPad. */
-    map.createPane('pcfdWater');
-    map.getPane('pcfdWater').style.zIndex = 355;
+    /* On the parcels' canvas (350, under the page's own overlays at 400). */
     /* Size labels ride on the mains but stay under the page's markers (400). */
     map.createPane('pcfdWaterLbl');
     map.getPane('pcfdWaterLbl').style.zIndex = 390;
-    var wrenderer = L.canvas({ pane: 'pcfdWater', padding: 0.3, tolerance: 6 });
+    var wrenderer = renderer;
     var wgroup = L.layerGroup();        // mains: built once, kept, only toggled by zoom
     var fgroup = L.layerGroup();        // the few known-size markers
     var lgroup = L.layerGroup();        // size labels on screen, rebuilt each move at LABEL_ZOOM+
@@ -321,11 +344,11 @@
       order.forEach(function (key) {
         var g = groups[key], st = waterStyle(g.r);
         edges.push(L.polyline(g.parts, {
-          pane: 'pcfdWater', renderer: wrenderer, interactive: false,
+          pane: 'pcfdParcels', renderer: wrenderer, interactive: false,
           color: '#ffffff', weight: st.weight + 3, opacity: 0.92, lineCap: 'round', lineJoin: 'round'
         }));
         var pl = L.polyline(g.parts, {
-          pane: 'pcfdWater', renderer: wrenderer,
+          pane: 'pcfdParcels', renderer: wrenderer,
           color: st.color, weight: st.weight, opacity: 1, lineCap: 'round', lineJoin: 'round'
         });
         pl.on('click', function (ev) {         // opened by hand: the map click still gets through
@@ -362,7 +385,7 @@
       if (z >= FACT_ZOOM) {
         (W.facts || []).forEach(function (f) {
           var m = L.circleMarker([f.lat, f.lng], {
-            pane: 'pcfdWater', renderer: wrenderer, radius: 7,
+            pane: 'pcfdParcels', renderer: wrenderer, radius: 7,
             color: '#fff', weight: 2, fillColor: '#0369a1', fillOpacity: 1
           });
           m.on('click', function (ev) {
