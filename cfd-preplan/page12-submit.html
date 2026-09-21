@@ -855,7 +855,10 @@ function renderV4Floorplan(d,pdfW,pdfH){
     // Zone names and areas, over the geometry so a wall cannot cross the text.
     (d.zones||[]).forEach(function(z){
         if(!z.poly||z.poly.length<3) return;
-        if(!z.name && !z.area_sqft) return;
+        /* Mirrors zoneShownArea() in fp2-render.js — keep the two in step. */
+        var zArea = z.hide_area ? null
+                  : (z.area_override != null && z.area_override !== '' ? Number(z.area_override) : z.area_sqft);
+        if(!z.name && !zArea) return;
         var cx=z.cx, cy=z.cy;
         if(cx==null||cy==null){
             var sx=0, sy=0;
@@ -865,7 +868,7 @@ function renderV4Floorplan(d,pdfW,pdfH){
         cx+=(z.label_dx||0); cy+=(z.label_dy||0);
         var lines=[];
         if(z.name) lines.push({t:z.name,s:13/scale,c:'#0f172a',b:true});
-        if(z.area_sqft) lines.push({t:Math.round(z.area_sqft).toLocaleString()+' sq ft',s:11/scale,c:'#334155',b:false});
+        if(zArea) lines.push({t:Math.round(zArea).toLocaleString()+' sq ft',s:11/scale,c:'#334155',b:false});
         var totalH=lines.reduce(function(t,l){return t+l.s*1.25;},0);
         var maxW=0;
         ctx.textAlign='center'; ctx.textBaseline='middle';

@@ -180,6 +180,12 @@
             </select>
             <label class="fld">Colour</label>
             <div class="fp-swatches" id="zp-colors"></div>
+            <label class="fld">Area shown on the plan</label>
+            <div class="row">
+                <input type="number" id="zp-area-override" step="any" min="0" placeholder="measured">
+                <label class="fp-layer-row"><input type="checkbox" id="zp-hide-area">Hide</label>
+            </div>
+            <div class="hint" id="zp-area-hint"></div>
             <label class="fp-layer-row"><input type="checkbox" id="zp-exclude">Leave out of the area total</label>
             <div class="row">
                 <button class="fp-tbtn sm" id="zp-recompute">Re-solve</button>
