@@ -961,6 +961,19 @@ function drawFreehand(f, sel) {
       return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + alpha + ')';
     }
 
+    /* What a room LABEL shows can differ from what its polygon measures.
+     * A traced plan is only as good as the trace, and the figure the IC
+     * should read is often the leasable area off the lease or the
+     * architect's sheet. So: area_sqft stays the measured truth and keeps
+     * driving the floor total and the fire-flow push; area_override only
+     * changes the printed number; hide_area drops the line altogether and
+     * leaves the room's colour and name alone. */
+    function zoneShownArea(z) {
+      if (z.hide_area) return null;
+      if (z.area_override != null && z.area_override !== '') return Number(z.area_override);
+      return z.area_sqft;
+    }
+
     function drawZone(z, sel) {
       if (!z.poly || z.poly.length < 3) return;
       ctx.save();
@@ -981,7 +994,7 @@ function drawFreehand(f, sel) {
     function drawZoneLabel(z) {
       if (!z.poly || z.poly.length < 3) return;
       var name = z.name || '';
-      var area = z.area_sqft;
+      var area = zoneShownArea(z);
       if (!name && !area) return;
       var cx = (z.cx == null ? G.polyCentroid(z.poly).x : z.cx) + (z.label_dx || 0);
       var cy = (z.cy == null ? G.polyCentroid(z.poly).y : z.cy) + (z.label_dy || 0);

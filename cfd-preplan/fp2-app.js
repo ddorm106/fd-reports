@@ -1345,6 +1345,12 @@
     $('zp-name').value = z.name || '';
     $('zp-use').value = z.use || '';
     $('zp-exclude').checked = !!z.exclude_from_total;
+    $('zp-area-override').value = (z.area_override == null ? '' : z.area_override);
+    $('zp-hide-area').checked = !!z.hide_area;
+    $('zp-area-hint').textContent = z.hide_area ? 'Area hidden — colour and name still show.'
+      : (z.area_override != null && z.area_override !== ''
+         ? 'Showing your figure. Measured ' + fmtSqFt(z.area_sqft) + '.'
+         : 'Showing the measured area. Type a figure to override it.');
     var host = $('zp-colors');
     host.innerHTML = '';
     ZONE_COLORS.forEach(function (c) {
@@ -1385,6 +1391,18 @@
       doc.recomputeZone(z);
       showZonePanel(); commit('Re-solved — ' + fmtSqFt(z.area_sqft));
       renderFloors();
+    });
+    /* Typing an override must NOT touch area_sqft: Re-solve recomputes that
+     * from the polygon, which would silently wipe whatever was typed. */
+    $('zp-area-override').addEventListener('input', function () {
+      var z = currentZone(); if (!z) return;
+      var v = String(this.value).trim();
+      z.area_override = (v === '' ? null : Math.max(0, parseFloat(v) || 0));
+      saveSoon(); draw(); showZonePanel();
+    });
+    $('zp-hide-area').addEventListener('change', function () {
+      var z = currentZone(); if (!z) return;
+      doc.pushUndo(); z.hide_area = this.checked; commit(); showZonePanel();
     });
     $('zp-delete').addEventListener('click', deleteSelected);
   }
