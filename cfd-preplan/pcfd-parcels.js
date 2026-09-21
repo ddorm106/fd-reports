@@ -13,6 +13,12 @@
  * Record: [pin, acres, minLng, minLat, maxLng, maxLat, polygons, addresses?]
  * polygons -> rings -> [lng,lat,...]; ring 0 is the outline, the rest holes.
  *
+ * WHAT STANDS ON IT (2026-09-21): like Centerville's street map, a parcel's popup
+ * lists the occupancies on it -- tier swatch, name, address and a link to the
+ * pre-plan in the Peach Book -- from occupancies-peach.js (data-occupancies
+ * overrides), built by ~/cfd-map-build/build_peach_occupancies.py from the
+ * inspection app's businesses. It is an extra: parcels work if it fails to load.
+ *
  * Clicks are NOT swallowed: a parcel opens its popup and the click still
  * reaches the map, so a page that uses map clicks (the radar's arrival
  * estimate) keeps working with parcels switched on.
@@ -45,6 +51,25 @@
   var MIN_ZOOM = 15;
   var KEY = 'pcfd_parcels_on';
   var pending = null;
+
+  var OCC = (me && me.getAttribute('data-occupancies')) || (base + 'occupancies-peach.js?v=1');
+  var TIER_COLOR = { 1: '#c62828', 2: '#e07b00', 3: '#5b7c99' };   // same as Centerville
+  var opending = null;
+
+  /* Resolves null on failure rather than rejecting: the occupancy list is an extra,
+     and a parcel popup without it is still a working parcel popup. */
+  function loadOcc() {
+    if (window.PCFD_OCC) return Promise.resolve(window.PCFD_OCC);
+    if (opending) return opending;
+    opending = new Promise(function (res) {
+      var s = document.createElement('script');
+      s.src = OCC;
+      s.onload = function () { res(window.PCFD_OCC || null); };
+      s.onerror = function () { opending = null; res(null); };
+      document.head.appendChild(s);
+    });
+    return opending;
+  }
 
   var WATER = (me && me.getAttribute('data-water')) || (base + 'water-peach.js?v=1');
   var WATER_ZOOM = 15;          // same as parcels: at 14, downtown Fort Valley alone is ~5,800 mains (0.5 s per pan)
@@ -182,6 +207,24 @@
     h += '<div style="font-size:12px;color:#475569;margin-top:3px">Tax ID <b>' + esc(rec[0]) +
          '</b>' + (rec[1] != null ? ' &middot; ' + rec[1] + ' ac' : '') + '</div>';
     if (ad.length) h += '<div style="font-size:10.5px;color:#94a3b8;margin-top:2px">County address</div>';
+
+    /* What stands on it, the way the Centerville map lists it. */
+    var O = window.PCFD_OCC, occ = (O && O.by && O.by[rec[0]]) || [];
+    if (O && !occ.length) {
+      h += '<div style="font-size:11.5px;color:#94a3b8;margin-top:6px">No mapped occupancy on this parcel.</div>';
+    } else if (occ.length) {
+      h += '<div style="margin-top:8px;font-size:10.5px;font-weight:700;letter-spacing:.4px;color:#64748b">' +
+           'ON THIS PARCEL (' + occ.length + ')</div>';
+      occ.forEach(function (o) {
+        h += '<div style="margin-top:5px;font-size:12.5px"><span style="display:inline-block;width:10px;height:10px;' +
+             'border-radius:3px;border:1.5px solid #fff;box-shadow:0 0 0 1px #94a3b8;vertical-align:-1px;background:' +
+             (TIER_COLOR[o[3]] || '#5b7c99') + '"></span> <b>' + esc(o[0]) + '</b>';
+        if (o[1]) h += '<div style="color:#64748b;font-size:11px;margin-left:16px">' + esc(o[1]) + '</div>';
+        h += '<div style="margin-left:16px">' + (o[2]
+          ? '<a target="_blank" rel="noopener" href="' + esc(O.book + encodeURIComponent(o[2])) + '">Pre-plan &rarr;</a>'
+          : '<span style="color:#b45309;font-weight:600">no pre-plan yet</span>') + '</div></div>';
+      });
+    }
     return h + '</div>';
   }
 
@@ -237,7 +280,7 @@
       if (!on) { group.clearLayers(); if (map.hasLayer(group)) map.removeLayer(group); label('&#9638; Parcels'); return; }
       if (!map.hasLayer(group)) group.addTo(map);
       label('&#9638; Parcels <small>loading</small>');
-      load().then(draw).catch(function () { label('&#9638; Parcels <small>unavailable</small>'); });
+      Promise.all([load(), loadOcc()]).then(draw).catch(function () { label('&#9638; Parcels <small>unavailable</small>'); });
     }
 
     /* ------------------------------------------------------------ water */
@@ -406,5 +449,6 @@
 
   L.Map.addInitHook(function () { attach(this); });
 
-  window.PCFDParcels = { load: load, loadWater: loadWater, attach: attach, data: DATA, water: WATER };
+  window.PCFDParcels = { load: load, loadWater: loadWater, loadOcc: loadOcc, attach: attach,
+                         data: DATA, water: WATER, occupancies: OCC };
 })();
