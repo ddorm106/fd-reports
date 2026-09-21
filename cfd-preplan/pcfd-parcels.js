@@ -92,7 +92,7 @@
     return opending;
   }
 
-  var WATER = (me && me.getAttribute('data-water')) || (base + 'water-peach.js?v=2');
+  var WATER = (me && me.getAttribute('data-water')) || (base + 'water-peach.js?v=3');
   var NHYD = (me && me.getAttribute('data-hydrants')) || (base + 'neighbor-hydrants-peach.js?v=2');
   var WFAC = (me && me.getAttribute('data-facilities')) || (base + 'water-facilities.js?v=1');
   var WFAC_ZOOM = 12;
@@ -229,7 +229,15 @@
 
   var WARN = '<div style="font-size:10.5px;color:#b45309;margin-top:4px">Approximate &mdash; not for excavation. Call 811.</div>';
 
+  /* Grey = inferred from the hydrants on the street (build_probable_mains.py), never a utility record. */
+  function isProbable(W, r) { return String((W.srcs || [])[r[1]] || '').indexOf('Probable main') === 0; }
   function waterPopup(r, W) {
+    if (isProbable(W, r)) {
+      return '<div style="font:13px/1.4 -apple-system,Segoe UI,Roboto,sans-serif;min-width:200px;max-width:250px">' +
+        '<div style="font-weight:700">Probable water main</div>' +
+        '<div style="font-size:12px">Hydrants stand on this street but no utility has published the pipe here, so a main almost certainly runs along it. Size and exact route unknown.</div>' +
+        '<div style="font-size:10.5px;color:#b45309;margin-top:4px">Not a utility record &mdash; not for excavation. Call 811.</div></div>';
+    }
     var mat = (W.mats && W.mats[r[2]]) || '';
     var h = '<div style="font:13px/1.4 -apple-system,Segoe UI,Roboto,sans-serif;min-width:180px">';
     h += r[0] ? '<div style="font-weight:700">' + r[0] + '&quot; water main</div>'
@@ -420,7 +428,7 @@
       order.sort(function (a, b) { return groups[a].r[0] - groups[b].r[0]; });
       var edges = [], pipes = [];
       order.forEach(function (key) {
-        var g = groups[key], st = waterStyle(g.r);
+        var g = groups[key], st = isProbable(W, g.r) ? { color: '#64748b', weight: 3 } : waterStyle(g.r);
         edges.push(L.polyline(g.parts, {
           pane: 'pcfdParcels', renderer: wrenderer, interactive: false,
           color: '#ffffff', weight: st.weight + 3, opacity: 0.92, lineCap: 'round', lineJoin: 'round'
@@ -548,6 +556,7 @@
           '<div><span style="' + PIPE_CSS + ';height:4px;background:#1d4ed8"></span>8&ndash;10&quot;</div>' +
           '<div><span style="' + PIPE_CSS + ';height:3px;background:#2563eb"></span>6&quot;, or size not on file</div>' +
           '<div><span style="' + PIPE_CSS + ';height:2px;background:#3b82f6"></span>smaller than 6&quot;</div>' +
+          '<div><span style="' + PIPE_CSS + ';height:3px;background:#64748b"></span>probable main (from hydrants)</div>' +
           '<div><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#0369a1;vertical-align:middle;margin:0 12px 0 7px"></span>known size, route not public</div>' +
           '<div><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#27ae60;border:2px solid #fff;box-shadow:0 0 0 1px #94a3b8;vertical-align:middle;margin:0 10px 0 5px"></span>neighbours&rsquo; hydrants (by flow class)</div>' +
           '<div><span style="display:inline-block;vertical-align:middle;margin:0 6px 0 2px">' + TOWER_SVG.replace('width="22" height="28"', 'width="16" height="20"') + '</span>water tower / tank &nbsp;<span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#0f766e;vertical-align:middle"></span> pump station</div>' +
