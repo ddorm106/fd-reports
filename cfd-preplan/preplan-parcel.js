@@ -14,9 +14,13 @@
  * loaded on demand — never on pages that do not need it, and never before the
  * plan actually has coordinates.
  *
- * Centerville parcels carry the 0C prefix. Note that is not the same as "in
- * CFD's response area": 1101 Dunbar Road is 000450 022000, outside the city
- * limits, so a lookup there returns nothing and the field is simply left alone.
+ * The set is the parcels Houston County codes 0C, which is NOT the same as
+ * "inside the city limits". The prefix is the county's tax coding and it lags
+ * annexation: 1101 Dunbar Road (Lighthouse Baptist) and 219 Jewellie Road
+ * (Parkland Cabana) are in the city, but Dunbar Road still carries the county
+ * PIN 000450 022000, so neither is in here. A lookup there returns nothing and
+ * the field is left alone -- the message says why, so nobody concludes the
+ * building is out of the city.
  */
 (function () {
   'use strict';
@@ -135,7 +139,10 @@
       load().then(function () {
         var rec = findAt(c.lat, c.lng);
         if (!rec) {
-          if (!quiet) say('No Centerville parcel contains that point. Outside the city limits?', true);
+          /* Not "outside the city limits": annexed property can still carry a
+             county PIN, and those parcels are not in this set. */
+          if (!quiet) say('No parcel on file for this spot. Only city-coded (0C) parcels are ' +
+                          'loaded, so recently annexed property can be missing. Type the tax ID in.', true);
           return;
         }
         /* Never overwrite a value somebody typed; only fill a blank one. */
