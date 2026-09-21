@@ -47,6 +47,11 @@
  * Coverage runs ~3 mi past the Peach line: Macon Water Authority (sized, with install
  * decade), Warner Robins, Centerville and Houston County (location only). Perry,
  * Crawford and Macon County publish no mains.
+ * NEIGHBOURS' HYDRANTS (2026-09-21): the same button also shows the other departments'
+ * hydrants in that zone (Centerville FD's own records, Macon Water Authority, ...) from
+ * neighbor-hydrants-peach.js (data-hydrants overrides), as Centerville-style dots --
+ * NFPA 291 class colour from the flow test, else the painted bonnet, grey if neither.
+ * Reference only: they are not in PCFD's hydrant book, and the popup says whose they are.
  */
 (function () {
   'use strict';
@@ -84,6 +89,42 @@
   }
 
   var WATER = (me && me.getAttribute('data-water')) || (base + 'water-peach.js?v=2');
+  var NHYD = (me && me.getAttribute('data-hydrants')) || (base + 'neighbor-hydrants-peach.js?v=1');
+  var npending = null;
+  /* An extra like the occupancy list: resolves null on failure, never breaks Water. */
+  function loadNhyd() {
+    if (window.PCFD_NHYD) return Promise.resolve(window.PCFD_NHYD);
+    if (npending) return npending;
+    npending = new Promise(function (res) {
+      var s = document.createElement('script');
+      s.src = NHYD;
+      s.onload = function () { res(window.PCFD_NHYD || null); };
+      s.onerror = function () { npending = null; res(null); };
+      document.head.appendChild(s);
+    });
+    return npending;
+  }
+  /* NFPA 291 class, the Centerville map's colours: flow test first, else the bonnet. */
+  var HYD_CLS = { AA: ['#3498db', 'Class AA (blue) 1,500+ gpm'], A: ['#27ae60', 'Class A (green) 1,000-1,499 gpm'],
+                  B: ['#e67e22', 'Class B (orange) 500-999 gpm'], C: ['#e74c3c', 'Class C (red) under 500 gpm'] };
+  function hydClass(flow, paint) {
+    if (flow > 0) return flow >= 1500 ? 'AA' : flow >= 1000 ? 'A' : flow >= 500 ? 'B' : 'C';
+    var p = String(paint || '').toLowerCase();
+    return (p === 'blue' || p === 'light blue') ? 'AA' : p === 'green' ? 'A' : p === 'orange' ? 'B' : p === 'red' ? 'C' : '';
+  }
+  function nhydPopup(h, N) {
+    var c = hydClass(h[4], h[5]), who = (N.srcs || [])[h[2]] || '';
+    var x = '<div style="font:13px/1.4 -apple-system,Segoe UI,Roboto,sans-serif;min-width:180px">' +
+      '<div style="font-weight:700">Hydrant' + (h[3] ? ' #' + esc(h[3]) : '') + '</div>' +
+      (h[6] ? '<div style="font-size:12px">' + esc(h[6]) + '</div>' : '') +
+      '<div style="font-size:12px;margin-top:2px">' + (c ? esc(HYD_CLS[c][1]) : 'Flow not on file') +
+      (h[4] > 0 ? ' &middot; tested ' + Number(h[4]).toLocaleString() + ' gpm' : '') + '</div>' +
+      (h[8] ? '<div style="font-size:12px">On a ' + esc(h[8]) + '&quot; main</div>' : '') +
+      (h[7] ? '<div style="font-size:12px;font-weight:700;color:#c62828">OUT OF SERVICE</div>' : '') +
+      (h[9] ? '<div style="font-size:11px;color:#64748b">' + esc(h[9]) + '</div>' : '') +
+      '<div style="font-size:11px;color:#64748b;margin-top:3px">' + esc(who) + ' &mdash; not a PCFD hydrant</div></div>';
+    return x;
+  }
   var WATER_ZOOM = 15;          // same as parcels: at 14, downtown Fort Valley alone is ~5,800 mains (0.5 s per pan)
   var FACT_ZOOM = 11;           // the few known-size markers show from further out
   var WKEY = 'pcfd_water_on';
@@ -294,6 +335,7 @@
     function waterToFront() {
       if (!won || !mains || !map.hasLayer(wgroup)) return;
       mains.forEach(function (l) { l.bringToFront(); });
+      if (nhyd) nhyd.forEach(function (l) { l.bringToFront(); });
       fgroup.eachLayer(function (l) { if (l.bringToFront) l.bringToFront(); });
     }
 
@@ -319,6 +361,8 @@
     var wgroup = L.layerGroup();        // mains: built once, kept, only toggled by zoom
     var fgroup = L.layerGroup();        // the few known-size markers
     var lgroup = L.layerGroup();        // size labels on screen, rebuilt each move at LABEL_ZOOM+
+    var hgroup = L.layerGroup();        // neighbours' hydrants, built once
+    var nhyd = null;
     var won = false, wbtn = null, legend = null, mains = null, labels = null;
 
     function wlabel(t) { if (wbtn) wbtn.innerHTML = t; }
@@ -396,6 +440,19 @@
         mains = buildMains(W); mains.forEach(function (l) { wgroup.addLayer(l); });
         labels = waterLabels(W); wgroup.addLayer(lgroup);
       }
+      if (!nhyd && window.PCFD_NHYD) {
+        /* The Centerville dot: class colour in a white ring; out of service black with a red ring. */
+        nhyd = window.PCFD_NHYD.h.map(function (h) {
+          var c = hydClass(h[4], h[5]);
+          return L.circleMarker([h[0], h[1]], {
+            pane: 'pcfdParcels', renderer: wrenderer, interactive: false, radius: 6,
+            color: h[7] ? '#e74c3c' : '#fff', weight: h[7] ? 2.5 : 2, opacity: 1,
+            fillColor: h[7] ? '#111' : (c ? HYD_CLS[c][0] : '#7f8c8d'), fillOpacity: 1
+          });
+        });
+        nhyd.forEach(function (m) { hgroup.addLayer(m); });
+        wgroup.addLayer(hgroup);
+      }
       if (!map.hasLayer(wgroup)) wgroup.addTo(map);
       drawLabels();
       wlabel('&#128167; Water');
@@ -417,7 +474,7 @@
       }
       if (!map.hasLayer(fgroup)) fgroup.addTo(map);
       wlabel('&#128167; Water <small>loading</small>');
-      loadWater().then(wdraw).catch(function () { wlabel('&#128167; Water <small>unavailable</small>'); });
+      Promise.all([loadWater(), loadNhyd()]).then(wdraw).catch(function () { wlabel('&#128167; Water <small>unavailable</small>'); });
     }
 
     var ctlBox = null;
@@ -446,6 +503,7 @@
           '<div><span style="' + PIPE_CSS + ';height:3px;background:#2563eb"></span>6&quot;, or size not on file</div>' +
           '<div><span style="' + PIPE_CSS + ';height:2px;background:#3b82f6"></span>smaller than 6&quot;</div>' +
           '<div><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#0369a1;vertical-align:middle;margin:0 12px 0 7px"></span>known size, route not public</div>' +
+          '<div><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#27ae60;border:2px solid #fff;box-shadow:0 0 0 1px #94a3b8;vertical-align:middle;margin:0 10px 0 5px"></span>neighbours&rsquo; hydrants (by flow class)</div>' +
           '<div style="margin-top:3px">Every solid blue line is a water main. Sizes print on the line up close ' +
           '<span style="' + LABEL_CSS.replace('position:absolute;transform:translate(-50%,-50%);', '') + '">8&quot;</span> where the utility recorded them.</div>' +
           '<div style="color:#b45309;margin-top:2px">Approximate. Not for excavation.</div>';
@@ -506,6 +564,16 @@
       }
       return best;
     }
+    function nhydAt(cp) {
+      var N = window.PCFD_NHYD, best = null, bd = TAP_PX + 1;
+      if (!N) return null;
+      for (var i = 0; i < N.h.length; i++) {
+        var p = map.latLngToContainerPoint([N.h[i][0], N.h[i][1]]);
+        var d = Math.max(Math.abs(p.x - cp.x), Math.abs(p.y - cp.y));
+        if (d < bd) { bd = d; best = N.h[i]; }
+      }
+      return best;
+    }
     function factAt(cp) {
       var F = (window.PCFD_WATER && window.PCFD_WATER.facts) || [];
       for (var i = 0; i < F.length; i++) {
@@ -527,8 +595,10 @@
         if (Date.now() - foreignPopupAt < 400) return;
         var z = map.getZoom(), html = null;
         if (won && window.PCFD_WATER) {
-          var f = z >= FACT_ZOOM ? factAt(cp) : null;
-          if (f) html = factPopup(f);
+          var nh = z >= WATER_ZOOM ? nhydAt(cp) : null;
+          var f = !nh && z >= FACT_ZOOM ? factAt(cp) : null;
+          if (nh) html = nhydPopup(nh, window.PCFD_NHYD);
+          else if (f) html = factPopup(f);
           else if (z >= WATER_ZOOM) { var r = mainAt(cp); if (r) html = waterPopup(r, window.PCFD_WATER); }
         }
         if (!html && on && z >= MIN_ZOOM) { var p = parcelAt(ll); if (p) html = popupHtml(p); }
@@ -580,6 +650,6 @@
 
   L.Map.addInitHook(function () { attach(this); });
 
-  window.PCFDParcels = { load: load, loadWater: loadWater, loadOcc: loadOcc, attach: attach,
+  window.PCFDParcels = { load: load, loadWater: loadWater, loadOcc: loadOcc, loadNhyd: loadNhyd, attach: attach,
                          data: DATA, water: WATER, occupancies: OCC, version: 'taps-2026-09-21' };
 })();
