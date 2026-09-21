@@ -52,6 +52,10 @@
  * neighbor-hydrants-peach.js (data-hydrants overrides), as Centerville-style dots --
  * NFPA 291 class colour from the flow test, else the painted bonnet, grey if neither.
  * Reference only: they are not in PCFD's hydrant book, and the popup says whose they are.
+ * WATER TOWERS & PUMP HOUSES (2026-09-21): water-facilities.js (data-facilities overrides) --
+ * OpenStreetMap towers, FAA obstacle-file tanks (height) and Macon Water Authority tanks/pumps
+ * (name, capacity), merged by build_water_facilities.py. Shown from FAC_ZOOM so towers work as
+ * landmarks; DOM icons that take no pointer events -- taps are still decided by onTap.
  */
 (function () {
   'use strict';
@@ -90,6 +94,33 @@
 
   var WATER = (me && me.getAttribute('data-water')) || (base + 'water-peach.js?v=2');
   var NHYD = (me && me.getAttribute('data-hydrants')) || (base + 'neighbor-hydrants-peach.js?v=2');
+  var WFAC = (me && me.getAttribute('data-facilities')) || (base + 'water-facilities.js?v=1');
+  var WFAC_ZOOM = 12;
+  var fpending = null;
+  function loadWfac() {
+    if (window.PCFD_WFAC) return Promise.resolve(window.PCFD_WFAC);
+    if (fpending) return fpending;
+    fpending = new Promise(function (res) {
+      var s = document.createElement('script');
+      s.src = WFAC;
+      s.onload = function () { res(window.PCFD_WFAC || null); };
+      s.onerror = function () { fpending = null; res(null); };
+      document.head.appendChild(s);
+    });
+    return fpending;
+  }
+  var TOWER_SVG = '<svg width="22" height="28" viewBox="0 0 22 28" style="filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.5))">' +
+    '<path d="M6 13 L4 27 M16 13 L18 27 M11 14 L11 27 M5 20 L17 20" stroke="#0c4a6e" stroke-width="1.6" fill="none"/>' +
+    '<ellipse cx="11" cy="8" rx="9.5" ry="6.5" fill="#0369a1" stroke="#fff" stroke-width="1.6"/></svg>';
+  var PUMP_HTML = '<div style="width:18px;height:18px;border-radius:4px;background:#0f766e;border:2px solid #fff;' +
+    'box-shadow:0 1px 4px rgba(0,0,0,.45);color:#fff;font:800 11px/18px -apple-system,Segoe UI,Roboto,sans-serif;text-align:center">P</div>';
+  function facPopup(f) {
+    return '<div style="font:13px/1.4 -apple-system,Segoe UI,Roboto,sans-serif;min-width:180px">' +
+      '<div style="font-weight:700">' + (f[2] === 'pump' ? 'Pump station' : 'Water tower / tank') + (f[3] ? ' &mdash; ' + esc(f[3]) : '') + '</div>' +
+      (f[4] ? '<div style="font-size:12px">' + esc(f[4]) + '</div>' : '') +
+      '<div style="font-size:11px;color:#64748b;margin-top:3px">Source: ' + esc(f[5]) + '</div>' +
+      '<div style="font-size:10.5px;color:#b45309;margin-top:4px">From public records &mdash; confirm with the utility.</div></div>';
+  }
   var npending = null;
   /* An extra like the occupancy list: resolves null on failure, never breaks Water. */
   function loadNhyd() {
@@ -362,6 +393,8 @@
     var fgroup = L.layerGroup();        // the few known-size markers
     var lgroup = L.layerGroup();        // size labels on screen, rebuilt each move at LABEL_ZOOM+
     var hgroup = L.layerGroup();        // neighbours' hydrants, built once
+    var cgroup = L.layerGroup();        // water towers + pump houses (from WFAC_ZOOM)
+    var facs = null;
     var nhyd = null;
     var won = false, wbtn = null, legend = null, mains = null, labels = null;
 
@@ -422,6 +455,18 @@
     function wdraw() {
       if (!won || !window.PCFD_WATER) return;
       var W = window.PCFD_WATER, z = map.getZoom();
+      if (!facs && window.PCFD_WFAC) {
+        facs = window.PCFD_WFAC.f.map(function (f) {
+          var tower = f[2] !== 'pump';
+          return L.marker([f[0], f[1]], { interactive: false, keyboard: false, zIndexOffset: -500,
+            icon: L.divIcon({ className: '', html: tower ? TOWER_SVG : PUMP_HTML,
+                              iconSize: tower ? [22, 28] : [22, 22], iconAnchor: tower ? [11, 27] : [11, 11] }) });
+        });
+      }
+      if (facs) {
+        if (z >= WFAC_ZOOM) { if (!cgroup.getLayers().length) facs.forEach(function (m) { cgroup.addLayer(m); }); if (!map.hasLayer(cgroup)) cgroup.addTo(map); }
+        else if (map.hasLayer(cgroup)) map.removeLayer(cgroup);
+      }
       fgroup.clearLayers();
       if (z >= FACT_ZOOM) {
         (W.facts || []).forEach(function (f) {
@@ -468,13 +513,14 @@
       if (legend) legend.style.display = won ? 'block' : 'none';
       setTimeout(clearOfPage, 0);                // the legend changes the box's height
       if (!won) {
+        if (map.hasLayer(cgroup)) map.removeLayer(cgroup);
         if (map.hasLayer(wgroup)) map.removeLayer(wgroup);
         fgroup.clearLayers(); if (map.hasLayer(fgroup)) map.removeLayer(fgroup);
         wlabel('&#128167; Water'); return;
       }
       if (!map.hasLayer(fgroup)) fgroup.addTo(map);
       wlabel('&#128167; Water <small>loading</small>');
-      Promise.all([loadWater(), loadNhyd()]).then(wdraw).catch(function () { wlabel('&#128167; Water <small>unavailable</small>'); });
+      Promise.all([loadWater(), loadNhyd(), loadWfac()]).then(wdraw).catch(function () { wlabel('&#128167; Water <small>unavailable</small>'); });
     }
 
     var ctlBox = null;
@@ -496,7 +542,7 @@
         wbtn.style.cssText = css + ';color:#075985';
         wbtn.innerHTML = '&#128167; Water';
         legend = L.DomUtil.create('div', '', box);
-        legend.style.cssText = 'display:none;padding:5px 8px;font:11px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;color:#334155;background:#fff;border-top:1px solid #ccc;max-width:190px;white-space:normal';
+        legend.style.cssText = 'display:none;padding:5px 8px;font:11px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;color:#334155;background:#fff;border-top:1px solid #ccc;max-width:190px;white-space:normal;max-height:38vh;overflow-y:auto';
         legend.innerHTML =
           '<div><span style="' + PIPE_CSS + ';height:6px;background:#1e3a8a"></span>12&quot; and bigger</div>' +
           '<div><span style="' + PIPE_CSS + ';height:4px;background:#1d4ed8"></span>8&ndash;10&quot;</div>' +
@@ -504,6 +550,7 @@
           '<div><span style="' + PIPE_CSS + ';height:2px;background:#3b82f6"></span>smaller than 6&quot;</div>' +
           '<div><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#0369a1;vertical-align:middle;margin:0 12px 0 7px"></span>known size, route not public</div>' +
           '<div><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#27ae60;border:2px solid #fff;box-shadow:0 0 0 1px #94a3b8;vertical-align:middle;margin:0 10px 0 5px"></span>neighbours&rsquo; hydrants (by flow class)</div>' +
+          '<div><span style="display:inline-block;vertical-align:middle;margin:0 6px 0 2px">' + TOWER_SVG.replace('width="22" height="28"', 'width="16" height="20"') + '</span>water tower / tank &nbsp;<span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#0f766e;vertical-align:middle"></span> pump station</div>' +
           '<div style="margin-top:3px">Every solid blue line is a water main. Sizes print on the line up close ' +
           '<span style="' + LABEL_CSS.replace('position:absolute;transform:translate(-50%,-50%);', '') + '">8&quot;</span> where the utility recorded them.</div>' +
           '<div style="color:#b45309;margin-top:2px">Approximate. Not for excavation.</div>';
@@ -574,6 +621,15 @@
       }
       return best;
     }
+    function facAt(cp) {
+      var F = (window.PCFD_WFAC && window.PCFD_WFAC.f) || [];
+      for (var i = 0; i < F.length; i++) {
+        var p = map.latLngToContainerPoint([F[i][0], F[i][1]]);
+        var dy = F[i][2] === 'pump' ? p.y - cp.y : (p.y - 13) - cp.y;     // a tower's icon stands above its point
+        if (Math.abs(p.x - cp.x) <= 13 && Math.abs(dy) <= 14) return F[i];
+      }
+      return null;
+    }
     function factAt(cp) {
       var F = (window.PCFD_WATER && window.PCFD_WATER.facts) || [];
       for (var i = 0; i < F.length; i++) {
@@ -594,7 +650,8 @@
       setTimeout(function () {                   // after the page's own handlers for this tap
         if (Date.now() - foreignPopupAt < 400) return;
         var z = map.getZoom(), html = null;
-        if (won && window.PCFD_WATER) {
+        if (won && window.PCFD_WFAC && z >= WFAC_ZOOM) { var fc = facAt(cp); if (fc) html = facPopup(fc); }
+        if (!html && won && window.PCFD_WATER) {
           var nh = z >= WATER_ZOOM ? nhydAt(cp) : null;
           var f = !nh && z >= FACT_ZOOM ? factAt(cp) : null;
           if (nh) html = nhydPopup(nh, window.PCFD_NHYD);
@@ -620,7 +677,11 @@
       for (var n = 0; n < 8; n++) {
         var r = ctlBox.getBoundingClientRect();
         if (!r.width) return;
-        var pts = [[r.left + 6, r.top + 6], [r.right - 6, r.top + 6], [r.left + 6, r.bottom - 6], [r.right - 6, r.bottom - 6]];
+        /* Only the two buttons must be clear; the legend under them may overlap a page
+           panel near the bottom (it scrolls). Checking the whole box made a tall legend
+           collide with the radar's reflectivity key and give up. */
+        var rb = (wbtn || ctlBox).getBoundingClientRect();
+        var pts = [[r.left + 6, r.top + 6], [r.right - 6, r.top + 6], [rb.left + 6, rb.bottom - 6], [rb.right - 6, rb.bottom - 6]];
         var cover = null;
         for (var i = 0; i < pts.length && !cover; i++) {
           var el = document.elementFromPoint(pts[i][0], pts[i][1]);
@@ -632,7 +693,7 @@
         var need = cover.getBoundingClientRect().bottom - r.top + 8;
         if (need <= 0) return;
         shift += need;
-        if (r.top + need + r.height > cr.bottom - 4) { ctlBox.style.marginTop = ''; return; }
+        if (rb.bottom + need > cr.bottom - 4) { ctlBox.style.marginTop = ''; return; }
         ctlBox.style.marginTop = shift + 'px';
       }
     }
@@ -650,6 +711,6 @@
 
   L.Map.addInitHook(function () { attach(this); });
 
-  window.PCFDParcels = { load: load, loadWater: loadWater, loadOcc: loadOcc, loadNhyd: loadNhyd, attach: attach,
+  window.PCFDParcels = { load: load, loadWater: loadWater, loadOcc: loadOcc, loadNhyd: loadNhyd, loadWfac: loadWfac, attach: attach,
                          data: DATA, water: WATER, occupancies: OCC, version: 'taps-2026-09-21' };
 })();
