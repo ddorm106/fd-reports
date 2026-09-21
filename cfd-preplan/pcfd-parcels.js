@@ -24,7 +24,10 @@
  * industrial-site listings, the 2018 FVSU project) it is a marker, never a
  * drawn pipe. Every popup names its source and says it is not for digging.
  * Knox / lock-box data is deliberately NOT here: it stays on the Centerville side.
- * Line record: [inches|0, src, material, minLng, minLat, maxLng, maxLat, [lng,lat,...]]
+ * Line record: [inches|0, src, material, minLng, minLat, maxLng, maxLat, [lng,lat,...], year?]
+ * Coverage runs ~3 mi past the Peach line: Macon Water Authority (sized, with install
+ * decade), Warner Robins, Centerville and Houston County (location only). Perry,
+ * Crawford and Macon County publish no mains.
  */
 (function () {
   'use strict';
@@ -41,7 +44,7 @@
   var pending = null;
 
   var WATER = (me && me.getAttribute('data-water')) || (base + 'water-peach.js?v=1');
-  var WATER_ZOOM = 14;          // mains read at a street's-worth of detail
+  var WATER_ZOOM = 15;          // same as parcels: at 14, downtown Fort Valley alone is ~5,800 mains (0.5 s per pan)
   var FACT_ZOOM = 11;           // the few known-size markers show from further out
   var WKEY = 'pcfd_water_on';
   var wpending = null;
@@ -77,7 +80,8 @@
     var h = '<div style="font:13px/1.4 -apple-system,Segoe UI,Roboto,sans-serif;min-width:180px">';
     h += r[0] ? '<div style="font-weight:700">' + r[0] + '&quot; water main</div>'
               : '<div style="font-weight:700">Water main &mdash; size not recorded</div>';
-    if (mat) h += '<div style="font-size:12px">' + esc(mat) + '</div>';
+    if (mat || r[8]) h += '<div style="font-size:12px">' + esc(mat) +
+      (r[8] ? (mat ? ' &middot; ' : '') + 'installed about ' + r[8] : '') + '</div>';
     h += '<div style="font-size:11px;color:#64748b;margin-top:3px">' + esc((W.srcs || [])[r[1]] || '') + '</div>';
     return h + WARN + '</div>';
   }
@@ -197,19 +201,46 @@
     map.createPane('pcfdWater');
     map.getPane('pcfdWater').style.zIndex = 355;
     var wrenderer = L.canvas({ pane: 'pcfdWater', padding: 0.3, tolerance: 6 });
-    var wgroup = L.layerGroup();
-    var won = false, wbtn = null, legend = null;
+    var wgroup = L.layerGroup();        // mains: built once, kept, only toggled by zoom
+    var fgroup = L.layerGroup();        // the few known-size markers
+    var won = false, wbtn = null, legend = null, mains = null;
 
     function wlabel(t) { if (wbtn) wbtn.innerHTML = t; }
 
+    /* The FVUC map is CAD-converted into thousands of tiny segments; drawing them
+       one layer each, rebuilt every pan, cost half a second per move in Fort Valley.
+       But every segment with the same size, source, material and install decade
+       gets the SAME popup, so each such group becomes ONE multi-line layer built
+       once: ~14,000 objects become a few dozen, and Leaflet's canvas clips to the
+       screen by itself. Nothing a firefighter can see or tap is lost. */
+    function buildMains(W) {
+      var groups = {}, order = [];
+      for (var i = 0; i < W.lines.length; i++) {
+        var r = W.lines[i], key = r[0] + '|' + r[1] + '|' + r[2] + '|' + (r[8] || '');
+        if (!groups[key]) { groups[key] = { r: r, parts: [] }; order.push(key); }
+        var f = r[7], ll = [];
+        for (var k = 0; k < f.length; k += 2) ll.push([f[k + 1], f[k]]);
+        groups[key].parts.push(ll);
+      }
+      /* Small first, big last: a 16" trunk is drawn over the 6" main it crosses. */
+      order.sort(function (a, b) { return groups[a].r[0] - groups[b].r[0]; });
+      return order.map(function (key) {
+        var g = groups[key], st = waterStyle(g.r);
+        st.pane = 'pcfdWater'; st.renderer = wrenderer;
+        var pl = L.polyline(g.parts, st);
+        pl.on('click', function (ev) {         // opened by hand: the map click still gets through
+          L.popup({ maxWidth: 260 }).setLatLng(ev.latlng).setContent(waterPopup(g.r, W)).openOn(map);
+        });
+        return pl;
+      });
+    }
+
     function wdraw() {
-      wgroup.clearLayers();
       if (!won || !window.PCFD_WATER) return;
       var W = window.PCFD_WATER, z = map.getZoom();
-      var b = map.getBounds(), w = b.getWest(), e = b.getEast(), s = b.getSouth(), n = b.getNorth();
+      fgroup.clearLayers();
       if (z >= FACT_ZOOM) {
         (W.facts || []).forEach(function (f) {
-          if (f.lng < w || f.lng > e || f.lat < s || f.lat > n) return;
           var m = L.circleMarker([f.lat, f.lng], {
             pane: 'pcfdWater', renderer: wrenderer, radius: 7,
             color: '#fff', weight: 2, fillColor: '#0369a1', fillOpacity: 1
@@ -217,27 +248,17 @@
           m.on('click', function (ev) {
             L.popup({ maxWidth: 270 }).setLatLng(ev.latlng).setContent(factPopup(f)).openOn(map);
           });
-          wgroup.addLayer(m);
+          fgroup.addLayer(m);
         });
       }
-      if (z < WATER_ZOOM) { wlabel('&#128167; Water <small>zoom in for mains</small>'); return; }
-      wlabel('&#128167; Water');
-      var R = W.lines;
-      for (var i = 0; i < R.length; i++) {
-        var r = R[i];
-        if (r[3] > e || r[5] < w || r[4] > n || r[6] < s) continue;
-        var f = r[7], ll = [];
-        for (var k = 0; k < f.length; k += 2) ll.push([f[k + 1], f[k]]);
-        var st = waterStyle(r);
-        st.pane = 'pcfdWater'; st.renderer = wrenderer;
-        var line = L.polyline(ll, st);
-        line.on('click', (function (rec) {        // opened by hand: the map click still gets through
-          return function (ev) {
-            L.popup({ maxWidth: 260 }).setLatLng(ev.latlng).setContent(waterPopup(rec, W)).openOn(map);
-          };
-        })(r));
-        wgroup.addLayer(line);
+      if (z < WATER_ZOOM) {
+        if (map.hasLayer(wgroup)) map.removeLayer(wgroup);
+        wlabel('&#128167; Water <small>zoom in for mains</small>');
+        return;
       }
+      if (!mains) { mains = buildMains(W); mains.forEach(function (l) { wgroup.addLayer(l); }); }
+      if (!map.hasLayer(wgroup)) wgroup.addTo(map);
+      wlabel('&#128167; Water');
     }
 
     function wsetOn(v) {
@@ -248,8 +269,12 @@
         wbtn.style.background = won ? '#e0f2fe' : '#fff';
       }
       if (legend) legend.style.display = won ? 'block' : 'none';
-      if (!won) { wgroup.clearLayers(); if (map.hasLayer(wgroup)) map.removeLayer(wgroup); wlabel('&#128167; Water'); return; }
-      if (!map.hasLayer(wgroup)) wgroup.addTo(map);
+      if (!won) {
+        if (map.hasLayer(wgroup)) map.removeLayer(wgroup);
+        fgroup.clearLayers(); if (map.hasLayer(fgroup)) map.removeLayer(fgroup);
+        wlabel('&#128167; Water'); return;
+      }
+      if (!map.hasLayer(fgroup)) fgroup.addTo(map);
       wlabel('&#128167; Water <small>loading</small>');
       loadWater().then(wdraw).catch(function () { wlabel('&#128167; Water <small>unavailable</small>'); });
     }
