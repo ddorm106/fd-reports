@@ -19,8 +19,11 @@
  *
  * WATER (added 2026-09-21): a second button, "Water", from water-peach.js
  * (data-water overrides). Lines only where real pipe geometry exists -- FVUC's
- * 2019 map and Warner Robins' lines in Peach -- styled by size, unknown sizes
- * dashed. Where public records state a main size but no route (Byron's bids,
+ * 2019 map and Warner Robins' lines in Peach -- solid blue pipes with a white
+ * edge, thicker = bigger, the recorded size printed on the line at zoom 17+.
+ * Never dashed (2026-09-21, David: "the dotted line is confusing" -- most mains
+ * have no size, so nearly everything was dashed and read as a boundary).
+ * Where public records state a main size but no route (Byron's bids,
  * industrial-site listings, the 2018 FVSU project) it is a marker, never a
  * drawn pipe. Every popup names its source and says it is not for digging.
  * Knox / lock-box data is deliberately NOT here: it stays on the Centerville side.
@@ -62,16 +65,58 @@
     return wpending;
   }
 
-  /* Bigger main, heavier line. Unknown size is dashed so nobody reads it as small. */
+  /* Every main is a solid blue pipe with a white edge -- the edge is what keeps
+     it from reading as a boundary line. Thicker = bigger. A main with no size on
+     file draws as a standard pipe; where the size IS on file it is printed on the
+     line once you are close enough to read it (LABEL_ZOOM). Same look as the
+     Centerville street map. */
+  var LABEL_ZOOM = 17;
   function waterStyle(r) {
-    var sz = r[0], wr = r[1] === 1;
-    if (!sz) return { color: wr ? '#0e7490' : '#0284c7', weight: 1.6, opacity: 0.85, dashArray: '5,4' };
-    if (sz >= 16) return { color: '#1e3a8a', weight: 4.5, opacity: 0.95 };
-    if (sz >= 12) return { color: '#1d4ed8', weight: 3.5, opacity: 0.95 };
-    if (sz >= 8)  return { color: '#2563eb', weight: 2.6, opacity: 0.9 };
-    if (sz >= 6)  return { color: '#3b82f6', weight: 2.0, opacity: 0.9 };
-    return { color: '#60a5fa', weight: 1.3, opacity: 0.85 };
+    var sz = r[0];
+    if (!sz) return { color: '#2563eb', weight: 2.8 };
+    if (sz >= 16) return { color: '#172554', weight: 6 };
+    if (sz >= 12) return { color: '#1e3a8a', weight: 5 };
+    if (sz >= 8)  return { color: '#1d4ed8', weight: 3.8 };
+    if (sz >= 6)  return { color: '#2563eb', weight: 2.8 };
+    return { color: '#3b82f6', weight: 1.8 };
   }
+
+  /* Half-way along a main, and how long it is -- where its size label sits. */
+  function waterMid(f) {
+    var c = Math.cos(f[1] * Math.PI / 180), seg = [], tot = 0, k;
+    for (k = 2; k < f.length; k += 2) {
+      var dx = (f[k] - f[k - 2]) * c, dy = f[k + 1] - f[k - 1], d = Math.sqrt(dx * dx + dy * dy) * 111320;
+      seg.push(d); tot += d;
+    }
+    var half = tot / 2, acc = 0;
+    for (k = 0; k < seg.length; k++) {
+      if (acc + seg[k] >= half) {
+        var t = seg[k] ? (half - acc) / seg[k] : 0, i = k * 2;
+        return { len: tot, lat: f[i + 1] + (f[i + 3] - f[i + 1]) * t, lng: f[i] + (f[i + 2] - f[i]) * t };
+      }
+      acc += seg[k];
+    }
+    return { len: tot, lat: f[1], lng: f[0] };
+  }
+
+  function waterLabels(W) {
+    var out = [];
+    for (var i = 0; i < W.lines.length; i++) {
+      var r = W.lines[i];
+      if (!r[0]) continue;
+      var m = waterMid(r[7]);
+      if (m.len < 30) continue;          // stubs and hydrant leads would bury the street in labels
+      out.push({ lat: m.lat, lng: m.lng, sz: r[0] });
+    }
+    out.sort(function (a, b) { return b.sz - a.sz; });   // the trunk wins a crowded corner
+    return out;
+  }
+
+  var LABEL_CSS = 'position:absolute;transform:translate(-50%,-50%);display:inline-block;background:#1e3a8a;' +
+    'color:#fff;font:700 10px/1.25 -apple-system,Segoe UI,Roboto,sans-serif;padding:0 4px;border-radius:3px;' +
+    'border:1px solid #fff;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,.35)';
+  var PIPE_CSS = 'display:inline-block;width:24px;vertical-align:middle;margin-right:5px;border-radius:3px;' +
+    'box-shadow:0 0 0 1.5px #fff,0 0 0 2.5px #cbd5e1';
 
   var WARN = '<div style="font-size:10.5px;color:#b45309;margin-top:4px">Approximate &mdash; not for excavation. Call 811.</div>';
 
@@ -200,10 +245,14 @@
        tolerance: a 2-px main is hard to hit with a finger on an iPad. */
     map.createPane('pcfdWater');
     map.getPane('pcfdWater').style.zIndex = 355;
+    /* Size labels ride on the mains but stay under the page's markers (400). */
+    map.createPane('pcfdWaterLbl');
+    map.getPane('pcfdWaterLbl').style.zIndex = 390;
     var wrenderer = L.canvas({ pane: 'pcfdWater', padding: 0.3, tolerance: 6 });
     var wgroup = L.layerGroup();        // mains: built once, kept, only toggled by zoom
     var fgroup = L.layerGroup();        // the few known-size markers
-    var won = false, wbtn = null, legend = null, mains = null;
+    var lgroup = L.layerGroup();        // size labels on screen, rebuilt each move at LABEL_ZOOM+
+    var won = false, wbtn = null, legend = null, mains = null, labels = null;
 
     function wlabel(t) { if (wbtn) wbtn.innerHTML = t; }
 
@@ -222,17 +271,45 @@
         for (var k = 0; k < f.length; k += 2) ll.push([f[k + 1], f[k]]);
         groups[key].parts.push(ll);
       }
-      /* Small first, big last: a 16" trunk is drawn over the 6" main it crosses. */
+      /* Small first, big last: a 16" trunk is drawn over the 6" main it crosses.
+         Every white edge goes down before any blue, so crossings read as one network. */
       order.sort(function (a, b) { return groups[a].r[0] - groups[b].r[0]; });
-      return order.map(function (key) {
+      var edges = [], pipes = [];
+      order.forEach(function (key) {
         var g = groups[key], st = waterStyle(g.r);
-        st.pane = 'pcfdWater'; st.renderer = wrenderer;
-        var pl = L.polyline(g.parts, st);
+        edges.push(L.polyline(g.parts, {
+          pane: 'pcfdWater', renderer: wrenderer, interactive: false,
+          color: '#ffffff', weight: st.weight + 3, opacity: 0.92, lineCap: 'round', lineJoin: 'round'
+        }));
+        var pl = L.polyline(g.parts, {
+          pane: 'pcfdWater', renderer: wrenderer,
+          color: st.color, weight: st.weight, opacity: 1, lineCap: 'round', lineJoin: 'round'
+        });
         pl.on('click', function (ev) {         // opened by hand: the map click still gets through
           L.popup({ maxWidth: 260 }).setLatLng(ev.latlng).setContent(waterPopup(g.r, W)).openOn(map);
         });
-        return pl;
+        pipes.push(pl);
       });
+      return edges.concat(pipes);
+    }
+
+    function drawLabels() {
+      lgroup.clearLayers();
+      if (!labels || map.getZoom() < LABEL_ZOOM) return;
+      var b = map.getBounds().pad(0.1), taken = {}, n = 0;
+      for (var i = 0; i < labels.length && n < 300; i++) {
+        var w = labels[i];
+        if (!b.contains([w.lat, w.lng])) continue;
+        var p = map.latLngToLayerPoint([w.lat, w.lng]);
+        var cell = Math.floor(p.x / 125) + ',' + Math.floor(p.y / 64);
+        if (taken[cell]) continue;
+        taken[cell] = 1; n++;
+        lgroup.addLayer(L.marker([w.lat, w.lng], {
+          pane: 'pcfdWaterLbl', interactive: false, keyboard: false,
+          icon: L.divIcon({ className: 'pcfd-wlab', iconSize: null,
+                            html: '<span style="' + LABEL_CSS + '">' + w.sz + '&quot;</span>' })
+        }));
+      }
     }
 
     function wdraw() {
@@ -256,8 +333,12 @@
         wlabel('&#128167; Water <small>zoom in for mains</small>');
         return;
       }
-      if (!mains) { mains = buildMains(W); mains.forEach(function (l) { wgroup.addLayer(l); }); }
+      if (!mains) {
+        mains = buildMains(W); mains.forEach(function (l) { wgroup.addLayer(l); });
+        labels = waterLabels(W); wgroup.addLayer(lgroup);
+      }
       if (!map.hasLayer(wgroup)) wgroup.addTo(map);
+      drawLabels();
       wlabel('&#128167; Water');
     }
 
@@ -299,11 +380,13 @@
         legend = L.DomUtil.create('div', '', box);
         legend.style.cssText = 'display:none;padding:5px 8px;font:11px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;color:#334155;background:#fff;border-top:1px solid #ccc;max-width:190px;white-space:normal';
         legend.innerHTML =
-          '<div><span style="display:inline-block;width:22px;border-top:4px solid #1d4ed8;vertical-align:middle"></span> 12&quot;+</div>' +
-          '<div><span style="display:inline-block;width:22px;border-top:3px solid #2563eb;vertical-align:middle"></span> 8&ndash;10&quot;</div>' +
-          '<div><span style="display:inline-block;width:22px;border-top:2px solid #3b82f6;vertical-align:middle"></span> 6&quot; &middot; <span style="color:#60a5fa">thin</span> under 6&quot;</div>' +
-          '<div><span style="display:inline-block;width:22px;border-top:2px dashed #0284c7;vertical-align:middle"></span> size not recorded</div>' +
-          '<div><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#0369a1;vertical-align:middle"></span> known main size, no route</div>' +
+          '<div><span style="' + PIPE_CSS + ';height:6px;background:#1e3a8a"></span>12&quot; and bigger</div>' +
+          '<div><span style="' + PIPE_CSS + ';height:4px;background:#1d4ed8"></span>8&ndash;10&quot;</div>' +
+          '<div><span style="' + PIPE_CSS + ';height:3px;background:#2563eb"></span>6&quot;, or size not on file</div>' +
+          '<div><span style="' + PIPE_CSS + ';height:2px;background:#3b82f6"></span>smaller than 6&quot;</div>' +
+          '<div><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#0369a1;vertical-align:middle;margin:0 12px 0 7px"></span>known size, route not public</div>' +
+          '<div style="margin-top:3px">Every solid blue line is a water main. Sizes print on the line up close ' +
+          '<span style="' + LABEL_CSS.replace('position:absolute;transform:translate(-50%,-50%);', '') + '">8&quot;</span> where the utility recorded them.</div>' +
           '<div style="color:#b45309;margin-top:2px">Approximate. Not for excavation.</div>';
         L.DomEvent.disableClickPropagation(box);
         L.DomEvent.on(btn, 'click', function (ev) { L.DomEvent.preventDefault(ev); setOn(!on); });
