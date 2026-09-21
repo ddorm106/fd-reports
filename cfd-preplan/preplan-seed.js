@@ -15,7 +15,7 @@
 (function () {
   'use strict';
 
-  var SEEDS = 'preplan-seeds.json';
+  var SEEDS = 'preplan-seeds.json?v=2';
   var data = null, pending = null;
 
   function load() {
