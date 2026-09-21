@@ -89,7 +89,7 @@
   }
 
   var WATER = (me && me.getAttribute('data-water')) || (base + 'water-peach.js?v=2');
-  var NHYD = (me && me.getAttribute('data-hydrants')) || (base + 'neighbor-hydrants-peach.js?v=1');
+  var NHYD = (me && me.getAttribute('data-hydrants')) || (base + 'neighbor-hydrants-peach.js?v=2');
   var npending = null;
   /* An extra like the occupancy list: resolves null on failure, never breaks Water. */
   function loadNhyd() {
