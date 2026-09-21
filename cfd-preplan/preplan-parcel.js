@@ -26,8 +26,16 @@
 (function () {
   'use strict';
 
-  /* Versioned so a browser holding the old city-only file fetches the wider one. */
-  var DATA = 'parcels-centerville.js?v=3';
+  /* Peach pages (pcfdmembers.org) read Peach County's parcels -- same record
+     format, built by build_peach_parcels.py from MGRC's public county layer.
+     They are fetched by absolute URL because Peach serves this script from its
+     own worker and NAS, where a relative path would name a file Peach lacks.
+     Versioned so a browser holding an old copy refetches. */
+  var PEACH = /(^|\.)pcfdmembers\.org$/i.test(location.hostname);
+  var DATA = PEACH
+    ? 'https://ddorm106.github.io/fd-reports/cfd-preplan/parcels-peach.js?v=1'
+    : 'parcels-centerville.js?v=3';
+  var AREA = PEACH ? 'Peach County' : 'CFD\'s response area';
   var pending = null;
 
   function load() {
@@ -146,7 +154,7 @@
           /* Never "outside the city limits" -- that guess was wrong for annexed
              property. The set covers CFD's response area, so a miss usually
              means the coordinates are off. */
-          if (!quiet) say('No parcel on file for this spot. Parcels cover CFD\'s response area, ' +
+          if (!quiet) say('No parcel on file for this spot. Parcels cover ' + AREA + ', ' +
                           'so check the latitude and longitude, or type the tax ID in.', true);
           return;
         }
