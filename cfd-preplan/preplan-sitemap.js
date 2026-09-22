@@ -230,8 +230,11 @@
       minY = Math.min(minY, pt.y - pad); maxY = Math.max(maxY, pt.y + pad + 26);
     });
     var W = maxX - minX, H = maxY - minY;
-    // A letterbox strip prints as a sliver on a portrait page.
+    // A letterbox strip prints as a sliver even on a landscape page.
     if (W / H > 1.75) { var nh = W / 1.75; minY -= (nh - H) / 2; H = nh; }
+    /* Markers can stretch the frame back to tall; the page is landscape, so
+       widen around the centre until it is at least 1.4 : 1. */
+    if (W / H < 1.4) { var nw = H * 1.4; minX -= (nw - W) / 2; W = nw; }
     return { tl: { x: minX, y: minY }, w: Math.round(W), h: Math.round(H) };
   }
 
@@ -240,6 +243,12 @@
     var box = document.getElementById('smMap');
     if (!box) return Promise.resolve(null);
     var bw = box.clientWidth || 900, bh = box.clientHeight || 560;
+    /* The report prints this on a landscape page. On an iPad in portrait the
+     * map box is tall, so the picture came out tall and small on the sheet.
+     * Widen the frame (never narrow it) to landscape around the same centre:
+     * everything the user framed is still in it, plus more on either side. */
+    var LANDSCAPE = 1.4;
+    if (bw / bh < LANDSCAPE) bw = Math.round(bh * LANDSCAPE);
     var dz = map.getZoom();
     var c = map.getCenter();
 
