@@ -92,8 +92,8 @@
     return opending;
   }
 
-  var WATER = (me && me.getAttribute('data-water')) || (base + 'water-peach.js?v=5');
-  var NHYD = (me && me.getAttribute('data-hydrants')) || (base + 'neighbor-hydrants-peach.js?v=2');
+  var WATER = (me && me.getAttribute('data-water')) || (base + 'water-peach.js?v=6');
+  var NHYD = (me && me.getAttribute('data-hydrants')) || (base + 'neighbor-hydrants-peach.js?v=3');
   var WFAC = (me && me.getAttribute('data-facilities')) || (base + 'water-facilities.js?v=1');
   var WFAC_ZOOM = 12;
   var fpending = null;
@@ -729,5 +729,5 @@
   L.Map.addInitHook(function () { attach(this); });
 
   window.PCFDParcels = { load: load, loadWater: loadWater, loadOcc: loadOcc, loadNhyd: loadNhyd, loadWfac: loadWfac, attach: attach,
-                         data: DATA, water: WATER, occupancies: OCC, version: 'traced-osm-2026-09-21' };
+                         data: DATA, water: WATER, occupancies: OCC, version: 'dedup-2026-09-22' };
 })();
