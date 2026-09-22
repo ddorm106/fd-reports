@@ -473,8 +473,11 @@ function buildPDFDoc(data){
         var pages=doc.internal.getNumberOfPages();
         for(var i=1;i<=pages;i++){
             doc.setPage(i);doc.setFontSize(7);doc.setTextColor(150);
-            doc.text('Centerville Fire Department Pre-Plan — '+(data.business_name||'')+' — Generated '+new Date().toLocaleDateString(),M,H-8);
-            doc.text('Page '+i+' of '+pages,W-M,H-8,{align:'right'});
+            /* The site and floor plan pages are landscape, so measure each
+               page rather than assuming the portrait sheet. */
+            var pW=doc.internal.pageSize.getWidth(), pH=doc.internal.pageSize.getHeight();
+            doc.text('Centerville Fire Department Pre-Plan — '+(data.business_name||'')+' — Generated '+new Date().toLocaleDateString(),M,pH-8);
+            doc.text('Page '+i+' of '+pages,pW-M,pH-8,{align:'right'});
         }
     }
 
@@ -982,16 +985,23 @@ function addPlanPages(pdfObj,data){
         try{floorAll=typeof data.floor_plan_data==='string'?JSON.parse(data.floor_plan_data):data.floor_plan_data}catch(e){floorAll=null}
         if(floorAll){
             fpEachFloor(floorAll).forEach(function(fl){
+                /* Rendered at the landscape sheet's shape (usable area is
+                   about 250 x 176 mm, 1.42 : 1) and at twice the old size, so
+                   a big site drawing stays readable when it fills the page. */
                 planRenders.push({
                     label: fl.label,
-                    promise: renderCanvasToImage(fl.data, 900, 600)
+                    promise: renderCanvasToImage(fl.data, 1600, 1128)
                 });
             });
         }
     }
     if(planRenders.length===0)return Promise.resolve();
     return Promise.all(planRenders.map(function(p){return p.promise})).then(function(images){
-        var doc=pdfObj.doc,M=pdfObj.M,pw=pdfObj.pw,H=279.4;
+        /* Site plan and floor plans print on LANDSCAPE letter pages: both are
+           wider than they are tall, and on a portrait sheet they were drawn
+           across the top third of the page. Pages added after these (photos)
+           go back to the document's portrait default. */
+        var doc=pdfObj.doc,M=pdfObj.M,LW=279.4,H=215.9,pw=LW-2*M;
         /* Measure each image rather than assuming its shape. The old code drew
            every plan at a hardcoded pw x pw*0.65 — the floor plan is rendered
            900x600 (0.667) and the site map is a screen-shaped PNG, so both were
@@ -1008,7 +1018,7 @@ function addPlanPages(pdfObj,data){
         }
         return Promise.all(images.map(measure)).then(function(sized){
             for(var i=0;i<planRenders.length;i++){
-                doc.addPage();var y=M;
+                doc.addPage('letter','landscape');var y=M;
                 doc.setFillColor(30,58,95);doc.rect(M,y,pw,8,'F');
                 doc.setTextColor(255);doc.setFontSize(11);doc.setFont('helvetica','bold');
                 doc.text(planRenders[i].label,M+3,y+5.5);doc.setTextColor(0);y+=10;
@@ -1021,8 +1031,12 @@ function addPlanPages(pdfObj,data){
                     // Centre it on the sheet instead of pinning it to the margin.
                     var dx=M+(availW-dw)/2, dy=y+(availH-dh)/2;
                     var fmt=/^data:image\/jpe?g/i.test(im.src)?'JPEG':'PNG';
-                    try{ doc.addImage(im.src,fmt,dx,dy,dw,dh); }
-                    catch(e){ try{ doc.addImage(im.src,'PNG',dx,dy,dw,dh); }catch(e2){} }
+                    /* 'FAST' = Flate-compress the pixels. Without it jsPDF
+                       stores a PNG raw (width x height x 3 bytes): the 1600 px
+                       floor plan alone added ~5 MB to every report. A line
+                       drawing compresses to a small fraction of that, lossless. */
+                    try{ doc.addImage(im.src,fmt,dx,dy,dw,dh,undefined,'FAST'); }
+                    catch(e){ try{ doc.addImage(im.src,'PNG',dx,dy,dw,dh,undefined,'FAST'); }catch(e2){} }
                 }else{
                     doc.setFontSize(10);doc.setTextColor(150);
                     doc.text(planRenders[i].label+' could not be rendered',M+2,y+5);
@@ -1129,7 +1143,10 @@ function addPhotoPages(pdfObj,data){
             var y=0,col=0,shown=0,lastCat=null;
 
             function header(cont){
-                doc.addPage();y=M;
+                /* Explicitly portrait: jsPDF's bare addPage() repeats the
+                   PREVIOUS page's orientation, and the plan pages before this
+                   are landscape. */
+                doc.addPage('letter','portrait');y=M;
                 doc.setFillColor(30,58,95);doc.rect(M,y,pw,8,'F');
                 doc.setTextColor(255);doc.setFontSize(11);doc.setFont('helvetica','bold');
                 doc.text('Site Photos ('+loaded.length+')'+(cont?' cont.':''),M+3,y+5.5);

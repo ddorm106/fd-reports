@@ -83,17 +83,39 @@
      * comes through this one function, so suppressing it here covers the PDF,
      * the Book and the copy pushed to the record — and the flag is cleared in a
      * finally, so a failed capture cannot leave the grid switched off. */
+    /* The picture is framed on the DRAWING, not on whatever the screen happens
+     * to show. It used to be a copy of the current view, so a big site plan
+     * saved while zoomed in (or before the view had settled) printed cut off and
+     * off-centre, and an iPad in portrait always produced a portrait picture for
+     * a landscape page. Now: a fixed landscape frame, fitted and centred on
+     * everything drawn, then the user's own view is put back exactly. It all
+     * happens inside one task, so the screen never shows the export frame. */
+    var v = state.view;
+    var saved = { width: v.width, height: v.height, zoom: v.zoom, panX: v.panX, panY: v.panY,
+                  dpr: state.dpr, cw: canvas.width, ch: canvas.height, fit: fitSig };
     try {
       state.printing = true;
+      var EW = SNAP_W, EH = SNAP_H, EDPR = 2;
+      v.width = EW; v.height = EH;
+      state.dpr = EDPR;
+      canvas.width = EW * EDPR; canvas.height = EH * EDPR;
+      renderer.fitToView();
       draw();
       return canvas.toDataURL('image/jpeg', 0.72);
     } catch (e) {
       return null;
     } finally {
       state.printing = false;
+      v.width = saved.width; v.height = saved.height;
+      v.zoom = saved.zoom; v.panX = saved.panX; v.panY = saved.panY;
+      state.dpr = saved.dpr;
+      canvas.width = saved.cw; canvas.height = saved.ch;
+      fitSig = saved.fit;
       draw();
     }
   }
+  /* Landscape, close to a letter sheet on its side (10 x 7.5 in usable). */
+  var SNAP_W = 1400, SNAP_H = 1000;
 
   function sheetIsUploaded() {
     try { return M.readPlan().floor_plan_src_1 === 'upload'; } catch (e) { return false; }
@@ -2493,9 +2515,23 @@
     });
   }
 
+  /* The view stays fitted and centred until the user moves it. init() fits
+   * once, but the full-screen shell keeps resizing the canvas for a few hundred
+   * ms after that (and on every rotation), and a resize only redrew — so on a
+   * big site plan the drawing ended up off-centre or cut off, and the saved
+   * picture with it. fitSig remembers the view fitToView produced; while the
+   * view still matches it, a resize fits again. */
+  var fitSig = null;
+  function viewSig() {
+    var v = state.view;
+    return [v.zoom, v.panX, v.panY, v.rotation].join('|');
+  }
+
   function resize() {
+    var wasFitted = fitSig !== null && fitSig === viewSig();
     renderer.resizeCanvas(wrap);
     if (three && state.threeD) three.resize(state.view.width, state.view.height);
+    if (wasFitted) renderer.fitToView();
     draw();
   }
 
@@ -2524,6 +2560,14 @@
       getDoc: function () { return doc; },
       onStatus: function () {}
     });
+    /* Every fit — Fit button, import, floor switch, start-up — records the view
+     * it produced, so resize() can tell "still fitted" from "user has moved". */
+    var rawFit = renderer.fitToView;
+    renderer.fitToView = function () {
+      var r = rawFit.apply(renderer, arguments);
+      fitSig = viewSig();
+      return r;
+    };
 
     registerCustomSymbols();
     retireSupersededSymbols();
