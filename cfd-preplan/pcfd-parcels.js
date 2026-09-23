@@ -471,13 +471,21 @@
      within ~60 m -> the slot stays hidden. Any page can use it: the plugin fills any
      `.pcfd-sv` slot in a popup that opens on a map it is attached to. */
   function svSlot(lat, lng) {
+    var b = 'border:0;width:26px;height:24px;font:700 14px/24px -apple-system,Segoe UI,Roboto,sans-serif;' +
+      'background:rgba(255,255,255,.92);color:#1e293b;cursor:pointer;padding:0;';
     return '<div class="pcfd-sv" data-lat="' + (+lat).toFixed(6) + '" data-lng="' + (+lng).toFixed(6) + '" ' +
       'style="display:none;margin:0 0 6px;position:relative;border-radius:6px;overflow:hidden;background:#cbd5e1;' +
       'aspect-ratio:' + PHOTO_W + '/' + PHOTO_H + ';min-width:230px">' +
       '<a target="_blank" rel="noopener" title="Open Street View here" style="display:block;width:100%;height:100%">' +
       '<img alt="Street View of the hydrant" style="display:block;width:100%;height:100%;object-fit:cover"></a>' +
       '<span class="sv-tag" style="position:absolute;right:5px;top:5px;font-size:10px;font-weight:600;color:#fff;' +
-      'background:rgba(15,23,42,.6);padding:1px 6px;border-radius:9px;pointer-events:none"></span></div>';
+      'background:rgba(15,23,42,.6);padding:1px 6px;border-radius:9px;pointer-events:none"></span>' +
+      '<div class="sv-ctl" style="position:absolute;left:5px;bottom:5px;display:flex;gap:1px;border-radius:6px;' +
+      'overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.4)">' +
+      '<button type="button" data-a="out" title="Zoom out" style="' + b + '">&minus;</button>' +
+      '<button type="button" data-a="in" title="Zoom in" style="' + b + '">+</button>' +
+      '<button type="button" data-a="left" title="Turn left" style="' + b + '">&#9664;</button>' +
+      '<button type="button" data-a="right" title="Turn right" style="' + b + '">&#9654;</button></div></div>';
   }
   var svPtCache = {};
   function findPanoAt(lat, lng) {
@@ -509,14 +517,18 @@
         var j = b.j, d = b.d;
         return {
           pano: j.pano_id, date: j.date || '', dist: d,
-          heading: Math.round(bearing(j.location.lat, j.location.lng, lat, lng)),
-          fov: Math.round(Math.min(90, Math.max(45, 2 * Math.atan(10 / d) * 180 / Math.PI))),  // ~20 m across: book coords can be metres off
+          heading: Math.round(bearing(j.location.lat, j.location.lng, lat, lng)),   // zoom: SV_ACROSS
           pitch: Math.round(Math.max(-20, -Math.atan(2 / d) * 180 / Math.PI))                  // camera ~2.5 m up, hydrant ~0.5 m
         };
       });
     }
     return svPtCache[ck];
   }
+  /* Zoom steps, as metres across the frame at the hydrant. Opens at 12 m: tighter
+     than that and a hydrant whose book point is a few metres off falls out of frame
+     (tested on three: at 8 m one was cut, at 6 m two were), so the crew zooms in and
+     turns the camera with the buttons instead. Each press is one more picture. */
+  var SV_ACROSS = [24, 12, 7, 4];
   function svHydrate(root, resized) {
     var slots = root && root.querySelectorAll ? root.querySelectorAll('.pcfd-sv') : [];
     Array.prototype.forEach.call(slots, function (el) {
@@ -525,14 +537,37 @@
       var lat = +el.getAttribute('data-lat'), lng = +el.getAttribute('data-lng');
       findPanoAt(lat, lng).then(function (p) {
         if (!p) return;
-        var img = el.querySelector('img');
-        img.onload = function () { el.style.display = 'block'; if (resized) resized(); };
-        el.querySelector('a').href = 'https://www.google.com/maps/@?api=1&map_action=pano&pano=' +
-          encodeURIComponent(p.pano) + '&heading=' + p.heading + '&pitch=' + p.pitch + '&fov=' + p.fov;
+        var img = el.querySelector('img'), a = el.querySelector('a');
+        var zi = 1, heading = p.heading, first = true;
+        function fov() {
+          return Math.round(Math.min(90, Math.max(20, 2 * Math.atan(SV_ACROSS[zi] / 2 / p.dist) * 180 / Math.PI)));
+        }
+        function load() {
+          var h = Math.round((heading + 360) % 360), f = fov();
+          a.href = 'https://www.google.com/maps/@?api=1&map_action=pano&pano=' +
+            encodeURIComponent(p.pano) + '&heading=' + h + '&pitch=' + p.pitch + '&fov=' + f;
+          img.style.opacity = first ? '1' : '.6';
+          img.src = SV_BASE + 'img?pano=' + encodeURIComponent(p.pano) + '&heading=' + h +
+            '&pitch=' + p.pitch + '&fov=' + f;
+        }
+        img.onload = function () {
+          img.style.opacity = '1';
+          if (first) { first = false; el.style.display = 'block'; if (resized) resized(); }
+        };
+        Array.prototype.forEach.call(el.querySelectorAll('.sv-ctl button'), function (btn) {
+          btn.addEventListener('click', function (ev) {
+            ev.preventDefault(); ev.stopPropagation();
+            var act = btn.getAttribute('data-a');
+            if (act === 'in' && zi < SV_ACROSS.length - 1) zi++;
+            else if (act === 'out' && zi > 0) zi--;
+            else if (act === 'left' || act === 'right') heading += (act === 'left' ? -1 : 1) * Math.max(4, fov() / 4);
+            else return;
+            load();
+          });
+        });
         var dt = svDate(p.date);
         el.querySelector('.sv-tag').textContent = (dt ? 'Street View ' + dt + ' · ' : '') + Math.round(p.dist * 3.28084) + ' ft away';
-        img.src = SV_BASE + 'img?pano=' + encodeURIComponent(p.pano) + '&heading=' + p.heading +
-          '&pitch=' + p.pitch + '&fov=' + p.fov;
+        load();
       });
     });
   }
