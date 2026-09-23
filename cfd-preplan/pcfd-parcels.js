@@ -410,6 +410,8 @@
       '<button type="button" data-a="in" title="Zoom in" style="' + b + '">+</button>' +
       '<button type="button" data-a="left" title="Turn left" style="' + b + '">&#9664;</button>' +
       '<button type="button" data-a="right" title="Turn right" style="' + b + '">&#9654;</button>' +
+      '<button type="button" data-a="fwd" title="Move the camera forward (the way it is facing)" style="' + b + '">&#9650;</button>' +
+      '<button type="button" data-a="back" title="Move the camera back" style="' + b + '">&#9660;</button>' +
       (SV_EDIT ? '<button type="button" data-a="set" title="Set the view everyone sees (PIN)" style="' + b + 'font-size:13px">&#9881;</button>' : '') + '</div>' +
       '<div class="sv-adm" style="position:absolute;left:5px;right:5px;bottom:34px;display:none;flex-wrap:wrap;gap:4px;align-items:center;' +
       'background:rgba(15,23,42,.88);color:#fff;border-radius:6px;padding:5px 6px;font:12px -apple-system,Segoe UI,Roboto,sans-serif"></div>';
@@ -446,7 +448,32 @@
           '<button type="button" data-b="reset" style="' + ab + 'background:#fff;color:#0f172a">Reset</button><span class="sv-say"></span>';
       }
     }
-    function moveCamera() {
+    /* ▲ ▼ (David: "add an up and down arrow to move the camera down the road"): like Google's Street View arrows --
+     step to the next pano the way the camera faces (▲) or behind it (▼), keeping the heading. Face down the road
+     with ◀ ▶, step, then turn back to the building. Tries 12, 20, 30 m so it gets past the pano it stands on. */
+  var stepping = false;
+  function step(dir) {
+    if (stepping) return; stepping = true;
+    var at = cam.lat != null ? Promise.resolve({ lat: cam.lat, lng: cam.lng }) : svPanoAt(cam.pano);
+    at.then(function (o) {
+      if (!o) { stepping = false; return; }
+      cam.lat = o.lat; cam.lng = o.lng;
+      var k = Math.PI / 180, hd = ((cam.heading % 360) + 360) % 360 + (dir < 0 ? 180 : 0);
+      function tryAt(i) {
+        var dists = [12, 20, 30];
+        if (i >= dists.length) { stepping = false; if (adm.style.display === 'flex') say('No street photo further that way.', true); return; }
+        var m = dists[i], la = o.lat + m * Math.cos(hd * k) / 110540, lo = o.lng + m * Math.sin(hd * k) / (111320 * Math.cos(o.lat * k));
+        svMeta(la.toFixed(6) + ',' + lo.toFixed(6), Math.round(m * 0.6)).then(function (j) {
+          if (!j || j.pano_id === cam.pano || distM(j.location.lat, j.location.lng, o.lat, o.lng) < 4) return tryAt(i + 1);
+          cam.pano = j.pano_id; cam.date = j.date || cam.date; cam.lat = j.location.lat; cam.lng = j.location.lng;
+          if (marker) marker.setLatLng([cam.lat, cam.lng]);
+          stepping = false; load();
+        });
+      }
+      tryAt(0);
+    });
+  }
+  function moveCamera() {
       var map = SV_MAP; if (!map || !window.L) return;
       (cam.lat != null ? Promise.resolve({ lat: cam.lat, lng: cam.lng }) : svPanoAt(cam.pano)).then(function (at) {
         if (!at) return;
@@ -476,6 +503,7 @@
       else if (act === 'out') cam.fov = Math.min(110, Math.round(cam.fov / 0.7));
       else if (act === 'left' || act === 'right') cam.heading += (act === 'left' ? -1 : 1) * Math.max(4, cam.fov / 4);
       else if (act === 'set') { var open = adm.style.display === 'flex'; adm.style.display = open ? 'none' : 'flex'; if (!open) adminBar(); return; }
+    else if (act === 'fwd' || act === 'back') { step(act === 'fwd' ? 1 : -1); return; }
       else return;
       load();
     });
