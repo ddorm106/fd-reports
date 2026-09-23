@@ -90,6 +90,10 @@
     return apending;
   }
   var TIER_COLOR = { 1: '#c62828', 2: '#e07b00', 3: '#5b7c99' };   // same as Centerville
+  /* The same plugin also runs the Centerville map site (2026-09-23): these three say whose map it is.
+     Defaults are Peach's, so every Peach page is unchanged. */
+  var DEPT = (me && me.getAttribute('data-dept')) || 'PCFD';
+  var COUNTY = (me && me.getAttribute('data-county')) || 'Peach County, GA';
   var opending = null;
 
   /* Resolves null on failure rather than rejecting: the occupancy list is an extra,
@@ -169,7 +173,7 @@
       (h[8] ? '<div style="font-size:12px">On a ' + esc(h[8]) + '&quot; main</div>' : '') +
       (h[7] ? '<div style="font-size:12px;font-weight:700;color:#c62828">OUT OF SERVICE</div>' : '') +
       (h[9] ? '<div style="font-size:11px;color:#64748b">' + esc(h[9]) + '</div>' : '') +
-      '<div style="font-size:11px;color:#64748b;margin-top:3px">' + esc(who) + ' &mdash; not a PCFD hydrant</div></div>';
+      '<div style="font-size:11px;color:#64748b;margin-top:3px">' + esc(who) + ' &mdash; not a ' + esc(DEPT) + ' hydrant</div></div>';
     return x;
   }
   var WATER_ZOOM = 15;          // same as parcels: at 14, downtown Fort Valley alone is ~5,800 mains (0.5 s per pan)
@@ -328,7 +332,7 @@
     return ESRI_EXPORT + '?bbox=' + box.map(function (v) { return v.toFixed(1); }).join(',') +
       '&bboxSR=3857&imageSR=3857&size=' + w + ',' + h + '&format=jpg&f=image';
   }
-  var SV_BASE = 'https://pcfdmembers.org/sv/';   // fd-streetview Worker
+  var SV_BASE = (me && me.getAttribute('data-sv')) || 'https://pcfdmembers.org/sv/';   // fd-streetview Worker
   /* STREET VIEW FIRST (2026-09-22, David: "default the image to the street view"):
      the photo opens on Google Street View aimed at the lot, with a Street | Aerial
      switch; the aerial is the fallback wherever Google has no street photo. The
@@ -586,7 +590,7 @@
         d += 'Z';
       });
     });
-    var ad = rec[7] || [], q = ad.length ? ad[0] + ', Peach County, GA' : '';
+    var ad = rec[7] || [], q = ad.length ? ad[0] + ', ' + COUNTY : '';
     var aim = window.PCFD_AIM && window.PCFD_AIM.by[rec[0]];
     return photoFrame(bb, box, d, q, q || ((bb[1] + bb[3]) / 2).toFixed(6) + ',' + ((bb[0] + bb[2]) / 2).toFixed(6), aim);
   }
