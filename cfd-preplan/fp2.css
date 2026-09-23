@@ -440,7 +440,24 @@ body.fp-full.show-sheets #fpUpWrap { display: block; }
 .fpx-stat button:hover { background: rgba(255,255,255,.18); }
 
 /* --------------------------------------------------------------- body + rail */
-.fpx-body { flex: 1 1 auto; display: flex; min-height: 0; }
+.fpx-body { flex: 1 1 auto; display: flex; min-height: 0; position: relative; }
+
+/* Wall thickness, face, and opening type. Sits over the canvas, under the
+   navy bar, and does not steal pans from the drawing around it. */
+.fpx-arch { position: absolute; z-index: 30; top: 8px; left: 74px; right: 8px;
+  display: flex; justify-content: center; pointer-events: none; }
+.fpx-arch.hidden { display: none; }
+.fpx-arch .box { pointer-events: auto; display: flex; flex-wrap: wrap; gap: 4px;
+  align-items: center; justify-content: center; max-width: 100%;
+  background: rgba(255,255,255,.96); border: 1px solid var(--slate-200);
+  border-radius: 10px; padding: 4px; box-shadow: 0 6px 18px rgba(15,23,42,.14); }
+.fpx-arch .lab { font-size: .62rem; font-weight: 800; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--slate-500); padding: 0 6px; }
+.fpx-arch button { height: 28px; padding: 0 9px; border-radius: 7px; cursor: pointer;
+  border: 1px solid var(--slate-200); background: #fff; color: var(--navy-blue);
+  font-family: var(--font-body); font-size: .72rem; font-weight: 700; }
+.fpx-arch button.on { background: var(--navy-blue); color: #fff; border-color: var(--navy-blue); }
+.fp-tbtn.on { background: var(--navy-blue); color: #fff; border-color: var(--navy-blue); }
 
 .fpx-rail { flex: 0 0 auto; width: 66px; display: flex; flex-direction: column; gap: 3px;
   padding: 6px 5px; background: var(--white); border-right: 1px solid var(--slate-200);

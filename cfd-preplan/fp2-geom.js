@@ -809,6 +809,142 @@
     return (neg ? '-' : '') + s;
   }
 
+  /* ------------------------------------------------- architectural walls
+   *
+   * A wall is a thick body, not a stroke. `thickness` is in feet; walls drawn
+   * before that field existed stay at the old 8px body (4px each side) so a
+   * saved plan does not change width under them. Corners miter: two walls that
+   * share an end meet on a clean joint instead of two rectangles crossing. */
+
+  function wallHalfPx(w, scale) {
+    var s = scale > 0 ? scale : 12;
+    if (w && typeof w.thickness === 'number' && isFinite(w.thickness) && w.thickness > 0) {
+      return Math.max(1.25, (w.thickness * s) / 2);
+    }
+    return 4;
+  }
+
+  /* Shift a polyline off the line the operator clicked, so that line can be
+   * the center, the left face, or the right face. `side` is +1 left, -1 right,
+   * 0 center. Closed chains miter every corner; an open chain leaves the two
+   * free ends square. */
+  function offsetChain(points, half, side, closed) {
+    var pts = [];
+    (points || []).forEach(function (p) {
+      if (!p || !isFinite(p.x) || !isFinite(p.y)) return;
+      var prev = pts[pts.length - 1];
+      if (!prev || dist(prev.x, prev.y, p.x, p.y) > 0.5) pts.push(p);
+    });
+    var nSeg = closed ? pts.length : pts.length - 1;
+    if (pts.length < 2 || nSeg < 1) return [];
+    function at(i) {
+      if (closed) {
+        i = ((i % pts.length) + pts.length) % pts.length;
+        return pts[i];
+      }
+      return pts[i];
+    }
+    if (!side || !(half > 0)) {
+      var raw = [];
+      for (var r = 0; r < nSeg; r++) {
+        var ra = at(r), rb = at(r + 1);
+        raw.push({ x1: ra.x, y1: ra.y, x2: rb.x, y2: rb.y });
+      }
+      return raw;
+    }
+    var lines = [];
+    for (var i = 0; i < nSeg; i++) {
+      var a = at(i), b = at(i + 1);
+      var dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy);
+      if (len < EPS) { lines.push(null); continue; }
+      var nx = -dy / len, ny = dx / len;
+      lines.push({
+        p: { x: a.x + nx * half * side, y: a.y + ny * half * side },
+        d: { x: dx, y: dy },
+        a: { x: a.x + nx * half * side, y: a.y + ny * half * side },
+        b: { x: b.x + nx * half * side, y: b.y + ny * half * side }
+      });
+    }
+    var out = [];
+    for (var k = 0; k < lines.length; k++) {
+      var ln = lines[k];
+      if (!ln) continue;
+      var prev = k > 0 ? lines[k - 1] : (closed ? lines[lines.length - 1] : null);
+      var next = k < lines.length - 1 ? lines[k + 1] : (closed ? lines[0] : null);
+      var start = prev ? lineIntersect(ln.p, ln.d, prev.p, prev.d, 4) : null;
+      var end = next ? lineIntersect(ln.p, ln.d, next.p, next.d, 4) : null;
+      if (start && dist(start.x, start.y, ln.a.x, ln.a.y) > half * 4) start = null;
+      if (end && dist(end.x, end.y, ln.b.x, ln.b.y) > half * 4) end = null;
+      out.push({
+        x1: start ? start.x : ln.a.x, y1: start ? start.y : ln.a.y,
+        x2: end ? end.x : ln.b.x, y2: end ? end.y : ln.b.y
+      });
+    }
+    return out;
+  }
+
+  /* Four corners of one wall body. `halfOf(wall)` is that wall's half-width
+   * in plan pixels. A neighbor that shares an end supplies the other side of
+   * the miter; a dead end is cut square. */
+  function wallQuad(w, walls, halfOf, tol) {
+    var dx = w.x2 - w.x1, dy = w.y2 - w.y1;
+    var len = Math.hypot(dx, dy);
+    if (len < EPS) return null;
+    var half = halfOf(w);
+    var ux = dx / len, uy = dy / len;
+    var nx = -uy, ny = ux;
+    var join = tol == null ? 2.5 : tol;
+
+    function cap(which, side) {
+      var px = which === 1 ? w.x1 : w.x2;
+      var py = which === 1 ? w.y1 : w.y2;
+      var ox = px + nx * half * side;
+      var oy = py + ny * half * side;
+      var butt = { x: ox, y: oy };
+      /* `away` points from this joint back down the wall. `side` is left of
+       * the stored direction; flip it when stored direction faces the joint. */
+      var awayX = which === 1 ? ux : -ux;
+      var awayY = which === 1 ? uy : -uy;
+      var awaySide = -side;
+      var neighbors = [];
+      for (var i = 0; i < walls.length; i++) {
+        var o = walls[i];
+        if (o === w || (w.id && o.id && o.id === w.id)) continue;
+        var d1 = dist(o.x1, o.y1, px, py), d2 = dist(o.x2, o.y2, px, py);
+        if (Math.min(d1, d2) <= join) neighbors.push({ o: o, atStart: d1 <= d2 });
+      }
+      var best = null, bestD = Infinity;
+      for (var n = 0; n < neighbors.length; n++) {
+        var nb = neighbors[n], ow = nb.o;
+        var odx = ow.x2 - ow.x1, ody = ow.y2 - ow.y1;
+        var olen = Math.hypot(odx, ody);
+        if (olen < EPS) continue;
+        var oux = odx / olen, ouy = ody / olen;
+        var vx = nb.atStart ? oux : -oux;
+        var vy = nb.atStart ? ouy : -ouy;
+        var turn = awayX * vy - awayY * vx;
+        if (Math.abs(turn) < Math.sin(4 * Math.PI / 180)) continue;
+        var leaveSide = turn >= 0 ? awaySide : -awaySide;
+        var oside = nb.atStart ? leaveSide : -leaveSide;
+        var onx = -ouy, ony = oux;
+        var oh = halfOf(ow);
+        var hit = lineIntersect(
+          { x: ox, y: oy }, { x: ux, y: uy },
+          { x: px + onx * oh * oside, y: py + ony * oh * oside },
+          { x: odx, y: ody },
+          4
+        );
+        if (!hit) continue;
+        var hd = dist(hit.x, hit.y, ox, oy);
+        if (hd > Math.max(half, oh) * 4) continue;
+        if (hd < bestD) { bestD = hd; best = hit; }
+      }
+      return best || butt;
+    }
+
+    return [cap(1, 1), cap(2, 1), cap(2, -1), cap(1, -1)];
+  }
+
   return {
     EPS: EPS,
     dist: dist, wallLength: wallLength, projT: projT, pointToSeg: pointToSeg, segMid: segMid,
@@ -824,6 +960,7 @@
     resolveOpening: resolveOpening, hostOpening: hostOpening,
     weldCorners: weldCorners, chainWalls: chainWalls,
     straightenWalls: straightenWalls,
+    wallHalfPx: wallHalfPx, offsetChain: offsetChain, wallQuad: wallQuad,
     pxToFeet: pxToFeet, areaPxToSqFt: areaPxToSqFt, formatFeet: formatFeet
   };
 });

@@ -38,8 +38,20 @@
     snapping: true,
     ortho: false,          // Shift, held
     orthoLock: false,      // the button, until it is pressed again
-    pendingCalibration: null
+    pendingCalibration: null,
+    /* How the wall and opening tools behave. Thickness is feet. align is which
+     * part of the wall the line you click is: center, or either face. */
+    arch: { thicknessFt: 8 / 12, align: 'center', opening: 'single' },
+    ghostOpening: null
   };
+  try {
+    var savedArch = JSON.parse(localStorage.getItem('fp2Arch') || 'null');
+    if (savedArch && savedArch.thicknessFt > 0) state.arch.thicknessFt = savedArch.thicknessFt;
+    if (savedArch && (savedArch.align === 'left' || savedArch.align === 'right' || savedArch.align === 'center')) {
+      state.arch.align = savedArch.align;
+    }
+    if (savedArch && savedArch.opening) state.arch.opening = savedArch.opening;
+  } catch (e) {}
 
   var doc = null;          // FPModel.Doc
   var renderer = null;
@@ -291,10 +303,10 @@
     select: 'Drag to move. Drag a wall end to reshape it. <kbd>Del</kbd> removes the selection.',
     pan: 'Drag to pan. Pinch or scroll to zoom.',
     wall: 'Drag out one wall. Hold <kbd>Shift</kbd> for straight. Type a length after drawing to set it exactly.',
-    chain: 'Tap corner to corner around the building. Tap the green dot to close it. <kbd>Enter</kbd> finishes, <kbd>Esc</kbd> cancels, <kbd>Backspace</kbd> undoes a corner.',
-    room: 'Drag out a rectangle — it becomes four walls.',
-    door: 'Tap a wall to drop a door into it. It stays in that wall when the wall moves.',
-    window: 'Tap a wall to drop a window into it.',
+    chain: 'Click corner to corner. The wall has thickness and joins the last one. <kbd>Shift</kbd> keeps it square. Click the green dot to close the room. <kbd>Enter</kbd> finishes, <kbd>Backspace</kbd> undoes a corner.',
+    room: 'Drag out a rectangle — it becomes four walls with the thickness set above.',
+    door: 'Move along a wall. The door follows it and cuts an opening when you click. Flip the swing from the panel.',
+    window: 'Move along a wall and click to set a window. It stays in that wall when the wall moves.',
     zone: 'Tap inside any closed room to measure and name it. Areas need the walls to actually meet — use Weld corners if a room will not take.',
     place: 'Tap to place the selected symbol.',
     text: 'Tap where the label goes.',
@@ -641,6 +653,10 @@
     state.drawing = null;
     state.snap = null;
     state.guides = [];
+    state.ghostOpening = null;
+    if (t === 'door' && (state.arch.opening === 'window' || state.arch.opening === 'window6')) state.arch.opening = 'single';
+    if (t === 'window' && state.arch.opening !== 'window' && state.arch.opening !== 'window6') state.arch.opening = 'window';
+    syncArchBar();
     Array.prototype.forEach.call(document.querySelectorAll('[data-tool]'), function (b) {
       b.classList.toggle('active', b.getAttribute('data-tool') === t);
     });
@@ -698,12 +714,7 @@
     if (pts.length >= 2) {
       doc.pushUndo();
       var walls = doc.list('walls');
-      for (var i = 1; i < pts.length; i++) {
-        walls.push({ id: uid('w_'), x1: pts[i - 1].x, y1: pts[i - 1].y, x2: pts[i].x, y2: pts[i].y });
-      }
-      if (close && pts.length >= 3) {
-        walls.push({ id: uid('w_'), x1: pts[pts.length - 1].x, y1: pts[pts.length - 1].y, x2: pts[0].x, y2: pts[0].y });
-      }
+      commitWallChain(pts, !!(close && pts.length >= 3)).forEach(function (w) { walls.push(w); });
       state.drawing = null;
       hideEmpty();
       commit(close ? 'Outline closed — tap inside it with the Zone tool to measure it' : 'Walls added');
@@ -711,6 +722,62 @@
       state.drawing = null;
       draw();
     }
+  }
+
+  /* The line you click is the center or one face. Stored walls are the
+   * centerline, so a door dropped later sits in the middle of the body. */
+  function archSide() {
+    return state.arch.align === 'left' ? 1 : state.arch.align === 'right' ? -1 : 0;
+  }
+  function archHalfPx() {
+    var scale = doc.data.scale_px_per_ft || 12;
+    return (state.arch.thicknessFt > 0 ? state.arch.thicknessFt : 8 / 12) * scale / 2;
+  }
+  function commitWallChain(pts, closed) {
+    return G.offsetChain(pts, archHalfPx(), archSide(), closed).map(function (seg) {
+      return {
+        id: uid('w_'),
+        x1: seg.x1, y1: seg.y1, x2: seg.x2, y2: seg.y2,
+        thickness: state.arch.thicknessFt
+      };
+    });
+  }
+  function chainAim(pt, e) {
+    var d = state.drawing;
+    var last = d && d.points && d.points.length ? d.points[d.points.length - 1] : null;
+    var ortho = !!(e && (e.shiftKey || state.ortho || state.orthoLock));
+    var aim = pt;
+    if (ortho && last) {
+      var c = G.constrainAngle(last.x, last.y, pt.x, pt.y, { ortho: true });
+      aim = { x: c.x, y: c.y };
+    }
+    var sp = snapped(aim);
+    if (ortho && last && state.snap && state.snap.snap !== 'endpoint' && state.snap.snap !== 'intersection') {
+      sp = { x: aim.x, y: aim.y };
+      state.snap = null;
+      state.guides = [];
+    }
+    if (d && d.points && d.points.length) {
+      var first = d.points[0];
+      if (G.dist(pt.x, pt.y, first.x, first.y) <= 16 / state.view.zoom) {
+        sp = { x: first.x, y: first.y };
+      }
+    }
+    return sp;
+  }
+
+  var OPENINGS = {
+    single: { kind: 'door', type: 'single', widthFt: 3, label: 'Door 3\'' },
+    double: { kind: 'door', type: 'double', widthFt: 6, label: 'Double 6\'' },
+    opening: { kind: 'door', type: 'entryway', widthFt: 3, label: 'Opening' },
+    window: { kind: 'window', type: undefined, widthFt: 4, label: 'Window 4\'' },
+    window6: { kind: 'window', type: undefined, widthFt: 6, label: 'Window 6\'' }
+  };
+  function openingPreset() {
+    return OPENINGS[state.arch.opening] || OPENINGS.single;
+  }
+  function rememberArch() {
+    try { localStorage.setItem('fp2Arch', JSON.stringify(state.arch)); } catch (e) {}
   }
 
   /* Typed dimension: re-place the last corner at an exact distance while
@@ -883,7 +950,7 @@
     if (t === 'select') { beginSelectDrag(p, pt); return; }
 
     if (t === 'chain' || t === 'zone') {
-      var sp = snapped(pt);
+      var sp = t === 'chain' ? chainAim(pt, e) : snapped(pt);
       /* Provenance, so a palm that lands a fraction before the pencil can have
        * its stray corner taken back out again. */
       sp._pt = e.pointerType; sp._t = Date.now();
@@ -1041,7 +1108,7 @@
     var d = state.drawing;
     if (d) {
       if (d.kind === 'chain' || d.kind === 'zone') {
-        d.cursor = snapped(pt);
+        d.cursor = d.kind === 'chain' ? chainAim(pt, e) : snapped(pt);
       } else if (d.kind === 'pen') {
         d.points.push(pt);
       } else if (d.kind === 'calibrate') {
@@ -1063,8 +1130,13 @@
     /* Idle hover: show the snap the next click would take. */
     if (state.tool === 'chain' || state.tool === 'wall' || state.tool === 'zone' || state.tool === 'room') {
       snapped(pt);
+      state.ghostOpening = null;
       draw();
-    } else if (state.snap || (state.guides && state.guides.length)) {
+    } else if (state.tool === 'door' || state.tool === 'window') {
+      updateOpeningGhost(pt);
+      draw();
+    } else if (state.snap || (state.guides && state.guides.length) || state.ghostOpening) {
+      state.ghostOpening = null;
       state.snap = null; state.guides = []; draw();
     }
   }
@@ -1231,7 +1303,9 @@
     if (d.kind === 'wall') {
       if (G.dist(d.x1, d.y1, d.x2, d.y2) > 4) {
         doc.pushUndo();
-        doc.list('walls').push({ id: uid('w_'), x1: d.x1, y1: d.y1, x2: d.x2, y2: d.y2 });
+        commitWallChain([{ x: d.x1, y: d.y1 }, { x: d.x2, y: d.y2 }], false).forEach(function (w) {
+          doc.list('walls').push(w);
+        });
         state.drawing = null;
         hideEmpty();
         commit();
@@ -1246,10 +1320,10 @@
         var ax = Math.min(d.x1, d.x2), ay = Math.min(d.y1, d.y2);
         var bx = Math.max(d.x1, d.x2), by = Math.max(d.y1, d.y2);
         var walls = doc.list('walls');
-        walls.push({ id: uid('w_'), x1: ax, y1: ay, x2: bx, y2: ay });
-        walls.push({ id: uid('w_'), x1: bx, y1: ay, x2: bx, y2: by });
-        walls.push({ id: uid('w_'), x1: bx, y1: by, x2: ax, y2: by });
-        walls.push({ id: uid('w_'), x1: ax, y1: by, x2: ax, y2: ay });
+        commitWallChain(
+          [{ x: ax, y: ay }, { x: bx, y: ay }, { x: bx, y: by }, { x: ax, y: by }],
+          true
+        ).forEach(function (w) { walls.push(w); });
         state.drawing = null;
         hideEmpty();
         /* A rectangle drawn as a room is unambiguously a room, so measure it
@@ -1301,9 +1375,30 @@
 
   /* --------------------------------------------------- openings on walls */
 
+  function updateOpeningGhost(pt) {
+    var f = doc.floor();
+    var preset = openingPreset();
+    var host = G.hostOpening(pt.x, pt.y, f.walls || [], 28 / state.view.zoom + (archHalfPx() || 8));
+    if (!host) { state.ghostOpening = null; state.snap = null; return; }
+    var scale = doc.data.scale_px_per_ft || 12;
+    var rec = {
+      wallId: host.wallId,
+      t: host.t,
+      width: preset.widthFt * scale,
+      type: preset.type,
+      swing: 1,
+      hinge: 'start',
+      kind: preset.kind
+    };
+    var r = G.resolveOpening(rec, doc.wallsById());
+    state.ghostOpening = r ? Object.assign(rec, { x: r.x, y: r.y, angle: r.angle, width: r.width }) : null;
+  }
+
   function placeOpening(kind, pt) {
     var f = doc.floor();
-    var host = G.hostOpening(pt.x, pt.y, f.walls || [], 26 / state.view.zoom + 12);
+    var preset = openingPreset();
+    if (preset.kind !== kind) preset = kind === 'window' ? OPENINGS.window : OPENINGS.single;
+    var host = G.hostOpening(pt.x, pt.y, f.walls || [], 28 / state.view.zoom + (archHalfPx() || 8));
     if (!host) { showToast('Tap on a wall to put a ' + kind + ' in it', 'err'); return; }
     doc.pushUndo();
     var scale = doc.data.scale_px_per_ft || 12;
@@ -1311,8 +1406,10 @@
       id: uid(kind === 'door' ? 'd_' : 'n_'),
       wallId: host.wallId,
       t: host.t,
-      width: (kind === 'door' ? 3 : 3.5) * scale,
-      type: kind === 'door' ? 'single' : undefined
+      width: preset.widthFt * scale,
+      type: preset.type,
+      swing: 1,
+      hinge: 'start'
     };
     var r = G.resolveOpening(rec, doc.wallsById());
     if (r) { rec.x = r.x; rec.y = r.y; rec.angle = r.angle; }
@@ -1770,7 +1867,27 @@
       body.appendChild(straighten);
 
       var len = G.pxToFeet(G.dist(el.x1, el.y1, el.x2, el.y2), scale);
-      sub = G.formatFeet(len);
+      sub = G.formatFeet(len) + ' · ' + Math.round((el.thickness || 8 / 12) * 12) + '" thick';
+      var thickRow = document.createElement('div');
+      thickRow.className = 'row';
+      [4, 6, 8, 12].forEach(function (inches) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'fp-tbtn sm' + (Math.round((el.thickness || 8 / 12) * 12) === inches ? ' on' : '');
+        b.textContent = inches + '"';
+        b.addEventListener('click', function () {
+          doc.pushUndo();
+          el.thickness = inches / 12;
+          commit();
+          showEditPanel(hit);
+        });
+        thickRow.appendChild(b);
+      });
+      var tl = document.createElement('label');
+      tl.className = 'fld';
+      tl.textContent = 'Thickness';
+      body.appendChild(tl);
+      body.appendChild(thickRow);
       field('Length (ft)', Math.round(len * 100) / 100, function (v) {
         var ft = parseFloat(v);
         if (!(ft > 0)) return;
@@ -2112,12 +2229,78 @@
     paint();
   }
 
+  /* The bar over the drawing: wall thickness and which face you are drawing,
+   * or the opening you are about to drop. Same idea as an architectural CAD
+   * tool — the wall and the door are properties, not just a stroke. */
+  function syncArchBar() {
+    var host = document.querySelector('.fpx-body');
+    if (!host) return;
+    var bar = document.getElementById('fpx-arch');
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.id = 'fpx-arch';
+      bar.className = 'fpx-arch hidden';
+      host.appendChild(bar);
+    }
+    var tool = state.tool;
+    var showWall = tool === 'chain' || tool === 'wall' || tool === 'room';
+    var showOpen = tool === 'door' || tool === 'window';
+    if (!showWall && !showOpen) { bar.classList.add('hidden'); return; }
+    bar.classList.remove('hidden');
+    bar.innerHTML = '';
+    var box = document.createElement('div');
+    box.className = 'box';
+    function chip(label, on, fn) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = on ? 'on' : '';
+      b.textContent = label;
+      b.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        fn();
+        rememberArch();
+        syncArchBar();
+        draw();
+      });
+      box.appendChild(b);
+    }
+    if (showWall) {
+      var lab = document.createElement('span');
+      lab.className = 'lab';
+      lab.textContent = 'Wall';
+      box.appendChild(lab);
+      [4, 6, 8, 12].forEach(function (inches) {
+        chip(inches + '"', Math.round(state.arch.thicknessFt * 12) === inches, function () {
+          state.arch.thicknessFt = inches / 12;
+        });
+      });
+      chip('Center', state.arch.align === 'center', function () { state.arch.align = 'center'; });
+      chip('Left face', state.arch.align === 'left', function () { state.arch.align = 'left'; });
+      chip('Right face', state.arch.align === 'right', function () { state.arch.align = 'right'; });
+    } else {
+      var lab2 = document.createElement('span');
+      lab2.className = 'lab';
+      lab2.textContent = 'Opening';
+      box.appendChild(lab2);
+      ['single', 'double', 'opening', 'window', 'window6'].forEach(function (key) {
+        chip(OPENINGS[key].label, state.arch.opening === key, function () {
+          state.arch.opening = key;
+          if (OPENINGS[key].kind === 'window') setTool('window');
+          else if (state.tool !== 'door') setTool('door');
+        });
+      });
+    }
+    bar.appendChild(box);
+  }
+
   function initPanelCloses() {
     Array.prototype.forEach.call(document.querySelectorAll('[data-close]'), function (el) {
       el.addEventListener('click', function () { closePanel(el.getAttribute('data-close')); });
     });
     initPanelDrag();
     initOrthoLock();
+    syncArchBar();
   }
 
   /* ============================================================ keyboard */

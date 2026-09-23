@@ -234,40 +234,47 @@
      * 'modernise' these: the PDF renderer in page12 and the iOS app
      * draw the same shapes, and all three must agree.
      * ============================================================ */
+function wallScale() {
+  return (state.data && state.data.scale_px_per_ft) || 12;
+}
+function halfOfWall(w) {
+  return G.wallHalfPx(w, wallScale());
+}
+function traceQuad(q) {
+  if (!q) return false;
+  ctx.beginPath();
+  ctx.moveTo(q[0].x, q[0].y);
+  for (var i = 1; i < q.length; i++) ctx.lineTo(q[i].x, q[i].y);
+  ctx.closePath();
+  return true;
+}
 function drawWallsAsPolygons(walls) {
-  /* 8 px at 12 px/ft — drawn heavier than the ~6 inches a wall measures, so the
-     building reads over the graph paper at arm's length. Openings are cut from
-     the same geometry, so they widen with it. */
-  const WALL_HALF = 4;
+  /* Thickness is real (feet on the wall) and corners miter. A wall with no
+     thickness keeps the old 8px body, so plans drawn before this do not jump. */
   ctx.fillStyle = COL.wall;
   walls.forEach(w => {
-    const dx = w.x2 - w.x1, dy = w.y2 - w.y1;
-    const len = Math.hypot(dx, dy);
-    if (len < 0.01) return;
-    const nx = -dy / len * WALL_HALF, ny = dx / len * WALL_HALF;
-    ctx.beginPath();
-    ctx.moveTo(w.x1 + nx, w.y1 + ny);
-    ctx.lineTo(w.x2 + nx, w.y2 + ny);
-    ctx.lineTo(w.x2 - nx, w.y2 - ny);
-    ctx.lineTo(w.x1 - nx, w.y1 - ny);
-    ctx.closePath();
+    if (!traceQuad(G.wallQuad(w, walls, halfOfWall, 2.5))) return;
     ctx.fill();
   });
 }
 function drawWallHighlight(w) {
-  const WALL_HALF = 5;
-  const dx = w.x2 - w.x1, dy = w.y2 - w.y1;
-  const len = Math.hypot(dx, dy); if (len < 0.01) return;
-  const nx = -dy / len * WALL_HALF, ny = dx / len * WALL_HALF;
+  var walls = (state.data && state.data.walls) || [w];
+  var q = G.wallQuad(w, walls, function (ww) {
+    return halfOfWall(ww) + (ww === w || (w.id && ww.id === w.id) ? 1.25 : 0);
+  }, 2.5);
+  if (!traceQuad(q)) return;
   ctx.strokeStyle = COL.selection;
-  ctx.lineWidth = 3 / state.view.zoom;
-  ctx.beginPath();
-  ctx.moveTo(w.x1 + nx, w.y1 + ny);
-  ctx.lineTo(w.x2 + nx, w.y2 + ny);
-  ctx.lineTo(w.x2 - nx, w.y2 - ny);
-  ctx.lineTo(w.x1 - nx, w.y1 - ny);
-  ctx.closePath();
+  ctx.lineWidth = 2.5 / state.view.zoom;
   ctx.stroke();
+}
+function openingHalf(op) {
+  var walls = (state.data && state.data.walls) || [];
+  if (op && op.wallId) {
+    for (var i = 0; i < walls.length; i++) {
+      if (walls[i].id === op.wallId) return halfOfWall(walls[i]) + 0.75;
+    }
+  }
+  return 4;
 }
 
 // Door gap — cleared white quad in wall (matches iOS). Runs BEFORE door symbol
@@ -290,7 +297,7 @@ function drawDoorGap(d, sel) {
   const a = d.angle ? degToRad(d.angle) : findNearestWallAngle(d.x, d.y);
   const cosA = Math.cos(a), sinA = Math.sin(a);
   const half = w / 2;
-  const WALL_HALF = 4;
+  const WALL_HALF = openingHalf(d);
   const nx = -sinA * WALL_HALF, ny = cosA * WALL_HALF;
   const p1x = cx - half*cosA, p1y = cy - half*sinA;
   const p2x = cx + half*cosA, p2y = cy + half*sinA;
@@ -405,7 +412,7 @@ function drawWindowGap(w, sel) {
   const a = w.angle ? degToRad(w.angle) : findNearestWallAngle(w.x, w.y);
   const cosA = Math.cos(a), sinA = Math.sin(a);
   const half = width/2;
-  const WALL_HALF = 4;
+  const WALL_HALF = openingHalf(w);
   const nx = -sinA * WALL_HALF, ny = cosA * WALL_HALF;
   const p1x = cx - half*cosA, p1y = cy - half*sinA;
   const p2x = cx + half*cosA, p2y = cy + half*sinA;
@@ -426,7 +433,8 @@ function drawWindowSymbol(w, sel) {
   const half = width/2;
   const p1x = cx - half*cosA, p1y = cy - half*sinA;
   const p2x = cx + half*cosA, p2y = cy + half*sinA;
-  const offs = [-2.4, 0, 2.4];
+  const face = Math.max(2.4, openingHalf(w) * 0.72);
+  const offs = [-face, 0, face];
   ctx.strokeStyle = COL.windowLine;
   offs.forEach(off => {
     const lw = off === 0 ? 1.5/state.view.zoom : 0.75/state.view.zoom;
@@ -1128,6 +1136,19 @@ function drawFreehand(f, sel) {
       ctx.setLineDash([8 / z, 4 / z]);
 
       if (d.kind === 'wall' || d.kind === 'measure') {
+        if (d.kind === 'wall') {
+          var wh = (state.arch && state.arch.thicknessFt > 0) ? state.arch.thicknessFt * wallScale() / 2 : 4;
+          var wside = state.arch && state.arch.align === 'left' ? 1
+            : state.arch && state.arch.align === 'right' ? -1 : 0;
+          var one = G.offsetChain([{ x: d.x1, y: d.y1 }, { x: d.x2, y: d.y2 }], wh, wside, false);
+          ctx.setLineDash([]);
+          ctx.fillStyle = 'rgba(30,58,95,0.45)';
+          one.forEach(function (seg) {
+            var body = { x1: seg.x1, y1: seg.y1, x2: seg.x2, y2: seg.y2 };
+            if (!traceQuad(G.wallQuad(body, [body], function () { return wh; }, 2.5))) return;
+            ctx.fill();
+          });
+        }
         ctx.beginPath(); ctx.moveTo(d.x1, d.y1); ctx.lineTo(d.x2, d.y2); ctx.stroke();
         ctx.setLineDash([]);
         drawLiveDimension(d.x1, d.y1, d.x2, d.y2);
@@ -1149,23 +1170,29 @@ function drawFreehand(f, sel) {
         ctx.fillText(Math.round(sqft).toLocaleString() + ' sq ft', 0, 0);
         ctx.restore();
       } else if (d.kind === 'chain') {
-        /* The wall chain: committed segments solid, the live one dashed. */
+        /* Thick wall following the cursor, mitered, with the length you are
+         * about to commit. The thin centerline is only the reference. */
         var pts = d.points || [];
         if (pts.length) {
+          var previewPts = pts.slice();
+          if (d.cursor) previewPts.push(d.cursor);
+          var half = (state.arch && state.arch.thicknessFt > 0)
+            ? state.arch.thicknessFt * wallScale() / 2 : 4;
+          var side = state.arch && state.arch.align === 'left' ? 1
+            : state.arch && state.arch.align === 'right' ? -1 : 0;
+          var segs = G.offsetChain(previewPts, half, side, false).map(function (seg) {
+            return { x1: seg.x1, y1: seg.y1, x2: seg.x2, y2: seg.y2 };
+          });
           ctx.setLineDash([]);
+          ctx.fillStyle = 'rgba(30,58,95,0.45)';
           ctx.strokeStyle = COL.selection;
-          ctx.lineWidth = 2.5 / z;
-          ctx.beginPath();
-          ctx.moveTo(pts[0].x, pts[0].y);
-          for (var i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
-          ctx.stroke();
-          if (d.cursor) {
-            ctx.setLineDash([8 / z, 4 / z]);
-            ctx.beginPath();
-            ctx.moveTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
-            ctx.lineTo(d.cursor.x, d.cursor.y);
+          ctx.lineWidth = 1.25 / z;
+          segs.forEach(function (body) {
+            if (!traceQuad(G.wallQuad(body, segs, function () { return half; }, 2.5))) return;
+            ctx.fill();
             ctx.stroke();
-            ctx.setLineDash([]);
+          });
+          if (d.cursor) {
             drawLiveDimension(pts[pts.length - 1].x, pts[pts.length - 1].y, d.cursor.x, d.cursor.y);
           }
           /* The green start dot — tapping it closes the loop, which is how a
@@ -1425,6 +1452,14 @@ function drawFreehand(f, sel) {
 
       drawGuides();
       if (state.drawing) drawInProgress(state.drawing);
+      if (state.ghostOpening) {
+        ctx.save();
+        ctx.globalAlpha = 0.9;
+        var ghost = state.ghostOpening;
+        if (ghost.kind === 'window') drawWindowSymbol(ghost, true);
+        else drawDoorSymbol(ghost, true);
+        ctx.restore();
+      }
       drawSnapIndicator();
 
       ctx.restore();

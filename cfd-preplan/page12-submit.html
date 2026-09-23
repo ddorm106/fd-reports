@@ -688,19 +688,55 @@ function renderV4Floorplan(d,pdfW,pdfH){
         ctx.restore();
     });
     ctx.fillStyle='#2D2D2D';
+    /* Same miter as the editor (fp2-geom wallQuad), at the print thickness WH
+       so a corner is one joint on the sheet the IC carries, not two slabs. */
+    function fpQuad(w, walls, half){
+        var dx=w.x2-w.x1, dy=w.y2-w.y1, len=Math.hypot(dx,dy);
+        if(len<0.01) return null;
+        var ux=dx/len, uy=dy/len, nx=-uy, ny=ux;
+        function cap(which, side){
+            var px=which===1?w.x1:w.x2, py=which===1?w.y1:w.y2;
+            var ox=px+nx*half*side, oy=py+ny*half*side;
+            var awayX=which===1?ux:-ux, awayY=which===1?uy:-uy, awaySide=-side;
+            var best=null, bestD=1e9;
+            (walls||[]).forEach(function(o){
+                if(o===w) return;
+                var d1=Math.hypot(o.x1-px,o.y1-py), d2=Math.hypot(o.x2-px,o.y2-py);
+                if(Math.min(d1,d2)>2.5) return;
+                var odx=o.x2-o.x1, ody=o.y2-o.y1, olen=Math.hypot(odx,ody); if(olen<0.01) return;
+                var oux=odx/olen, ouy=ody/olen, atStart=d1<=d2;
+                var vx=atStart?oux:-oux, vy=atStart?ouy:-ouy;
+                var turn=awayX*vy-awayY*vx;
+                if(Math.abs(turn)<Math.sin(4*Math.PI/180)) return;
+                var leaveSide=turn>=0?awaySide:-awaySide;
+                var oside=atStart?leaveSide:-leaveSide;
+                var onx=-ouy, ony=oux;
+                var p2x=px+onx*half*oside, p2y=py+ony*half*oside;
+                var n1=1, n2=olen;
+                var u1x=ux, u1y=uy, u2x=odx/n2, u2y=ody/n2;
+                var cross=u1x*u2y-u1y*u2x;
+                if(Math.abs(cross)<Math.sin(4*Math.PI/180)) return;
+                var t=((p2x-ox)*u2y-(p2y-oy)*u2x)/cross;
+                var hx=ox+u1x*t, hy=oy+u1y*t, hd=Math.hypot(hx-ox,hy-oy);
+                if(hd>half*4 || hd>=bestD) return;
+                bestD=hd; best={x:hx,y:hy};
+            });
+            return best||{x:ox,y:oy};
+        }
+        return [cap(1,1), cap(2,1), cap(2,-1), cap(1,-1)];
+    }
     (d.walls||[]).forEach(function(w){
-        var dx=w.x2-w.x1, dy=w.y2-w.y1, len=Math.hypot(dx,dy); if(len<0.01) return;
-        var nx=-dy/len*WH, ny=dx/len*WH;
+        var q=fpQuad(w, d.walls||[], WH); if(!q) return;
         ctx.beginPath();
-        ctx.moveTo(w.x1+nx,w.y1+ny); ctx.lineTo(w.x2+nx,w.y2+ny);
-        ctx.lineTo(w.x2-nx,w.y2-ny); ctx.lineTo(w.x1-nx,w.y1-ny);
+        ctx.moveTo(q[0].x,q[0].y);
+        for(var qi=1;qi<q.length;qi++) ctx.lineTo(q[qi].x,q[qi].y);
         ctx.closePath(); ctx.fill();
     });
     (d.windows||[]).forEach(function(wn){
         var a=(wn.angle||0)*Math.PI/180, cosA=Math.cos(a), sinA=Math.sin(a);
         var half=(wn.width||30)/2;
         var p1x=wn.x-half*cosA, p1y=wn.y-half*sinA, p2x=wn.x+half*cosA, p2y=wn.y+half*sinA;
-        var nx=-sinA*4, ny=cosA*4;
+        var nx=-sinA*WH, ny=cosA*WH;
         ctx.fillStyle='#DCEBFA';
         ctx.beginPath(); ctx.moveTo(p1x+nx,p1y+ny); ctx.lineTo(p2x+nx,p2y+ny);
         ctx.lineTo(p2x-nx,p2y-ny); ctx.lineTo(p1x-nx,p1y-ny); ctx.closePath(); ctx.fill();
@@ -717,7 +753,7 @@ function renderV4Floorplan(d,pdfW,pdfH){
         var a=(dr.angle||0)*Math.PI/180, cosA=Math.cos(a), sinA=Math.sin(a);
         var w=dr.width||30, half=w/2;
         var p1x=dr.x-half*cosA, p1y=dr.y-half*sinA, p2x=dr.x+half*cosA, p2y=dr.y+half*sinA;
-        var nx=-sinA*4, ny=cosA*4;
+        var nx=-sinA*WH, ny=cosA*WH;
         ctx.fillStyle='#F5F3EF';
         ctx.beginPath(); ctx.moveTo(p1x+nx,p1y+ny); ctx.lineTo(p2x+nx,p2y+ny);
         ctx.lineTo(p2x-nx,p2y-ny); ctx.lineTo(p1x-nx,p1y-ny); ctx.closePath(); ctx.fill();
