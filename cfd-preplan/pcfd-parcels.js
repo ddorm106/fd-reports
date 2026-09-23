@@ -291,11 +291,65 @@
     });
   }
 
+  /* PROPERTY PHOTO (2026-09-22): an aerial of the lot with its line drawn on.
+     Esri World Imagery's export cuts one image to any box without a key; asking
+     for it in Web Mercator (3857) lets the outline be projected onto the same
+     pixels. Padded so the neighbours show, never tighter than ~70 m across. */
+  var PHOTO_W = 480, PHOTO_H = 300;
+  var ESRI_EXPORT = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export';
+  function merc(lng, lat) {
+    var R = 6378137, y = Math.max(-85, Math.min(85, lat)) * Math.PI / 180;
+    return [R * lng * Math.PI / 180, R * Math.log(Math.tan(Math.PI / 4 + y / 2))];
+  }
+  function photoBox(minLng, minLat, maxLng, maxLat, w, h) {
+    var a = merc(minLng, minLat), b = merc(maxLng, maxLat);
+    var cx = (a[0] + b[0]) / 2, cy = (a[1] + b[1]) / 2;
+    var bw = Math.max((b[0] - a[0]) * 1.35, 70), bh = Math.max((b[1] - a[1]) * 1.35, 70 * h / w);
+    if (bw / bh < w / h) bw = bh * w / h; else bh = bw * h / w;
+    return [cx - bw / 2, cy - bh / 2, cx + bw / 2, cy + bh / 2];
+  }
+  function photoUrl(box, w, h) {
+    return ESRI_EXPORT + '?bbox=' + box.map(function (v) { return v.toFixed(1); }).join(',') +
+      '&bboxSR=3857&imageSR=3857&size=' + w + ',' + h + '&format=jpg&f=image';
+  }
+  function photoHtml(rec) {
+    var box = photoBox(rec[2], rec[3], rec[4], rec[5], PHOTO_W, PHOTO_H);
+    var sx = PHOTO_W / (box[2] - box[0]), sy = PHOTO_H / (box[3] - box[1]), d = '';
+    rec[6].forEach(function (rings) {
+      rings.forEach(function (f) {
+        for (var i = 0; i + 1 < f.length; i += 2) {
+          var m = merc(f[i], f[i + 1]);
+          d += (i ? 'L' : 'M') + ((m[0] - box[0]) * sx).toFixed(1) + ' ' + ((box[3] - m[1]) * sy).toFixed(1);
+        }
+        d += 'Z';
+      });
+    });
+    var cLat = (rec[3] + rec[5]) / 2, cLng = (rec[2] + rec[4]) / 2, ad = rec[7] || [];
+    var big = photoUrl(photoBox(rec[2], rec[3], rec[4], rec[5], 1600, 1000), 1600, 1000);
+    var q = ad.length ? encodeURIComponent(ad[0] + ', GA') : cLat.toFixed(6) + ',' + cLng.toFixed(6);
+    return '<a href="' + esc(big) + '" target="_blank" rel="noopener" title="Open a larger photo" ' +
+      'style="display:block;position:relative;margin:0 0 7px;border-radius:6px;overflow:hidden;' +
+      'background:#cbd5e1;aspect-ratio:' + PHOTO_W + '/' + PHOTO_H + '">' +
+      '<img src="' + esc(photoUrl(box, PHOTO_W, PHOTO_H)) + '" alt="Aerial photo of the parcel" loading="lazy" ' +
+      'style="display:block;width:100%;height:100%;object-fit:cover" onerror="this.style.visibility=\'hidden\'">' +
+      '<svg viewBox="0 0 ' + PHOTO_W + ' ' + PHOTO_H + '" style="position:absolute;inset:0;width:100%;height:100%">' +
+      '<path d="' + d + '" fill="rgba(250,204,21,.10)" fill-rule="evenodd" stroke="#facc15" stroke-width="3" ' +
+      'stroke-linejoin="round"/></svg>' +
+      '<span style="position:absolute;right:4px;bottom:3px;font-size:9px;color:#fff;text-shadow:0 0 2px #000">' +
+      'Imagery &copy; Esri</span></a>' +
+      '<div style="font-size:12px;margin:-2px 0 6px">' +
+      '<a target="_blank" rel="noopener" href="https://www.google.com/maps/@?api=1&amp;map_action=pano&amp;viewpoint=' +
+      cLat.toFixed(6) + ',' + cLng.toFixed(6) + '">Street View &rarr;</a> &nbsp; ' +
+      '<a target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&amp;query=' + q +
+      '">Google Maps &rarr;</a></div>';
+  }
+
   /* The county's address for the PARCEL. On a strip centre that is one number
      for the whole lot, not each tenant's suite -- hence the label. */
   function popupHtml(rec) {
     var ad = rec[7] || [];
-    var h = '<div style="font:13px/1.4 -apple-system,Segoe UI,Roboto,sans-serif;min-width:170px">';
+    var h = '<div style="font:13px/1.4 -apple-system,Segoe UI,Roboto,sans-serif;width:250px">';
+    h += photoHtml(rec);
     h += ad.length
       ? '<div style="font-weight:700">' + esc(ad[0]) + '</div>'
       : '<div style="font-weight:700;color:#64748b">No county address on file</div>';
