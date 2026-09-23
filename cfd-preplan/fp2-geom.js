@@ -945,6 +945,73 @@
     return [cap(1, 1), cap(2, 1), cap(2, -1), cap(1, -1)];
   }
 
+  /* An interior wall drawn into another wall used to run through it. Pull each
+   * end that lands on a wall out to that wall's face, or stretch a short one
+   * until it meets. Corners that already share an endpoint are left for the
+   * miter. `_cap` is false on a trimmed end so the face it meets is the joint. */
+  function connectWalls(walls, halfOf) {
+    var src = walls || [];
+    var out = src.map(function (w) {
+      return {
+        id: w.id, x1: w.x1, y1: w.y1, x2: w.x2, y2: w.y2,
+        thickness: w.thickness, _cap1: true, _cap2: true
+      };
+    });
+    function trimEnd(self, which) {
+      var px = which === 1 ? self.x1 : self.x2;
+      var py = which === 1 ? self.y1 : self.y2;
+      var rx = which === 1 ? self.x2 : self.x1;
+      var ry = which === 1 ? self.y2 : self.y1;
+      var rdx = px - rx, rdy = py - ry;
+      var rlen = Math.hypot(rdx, rdy);
+      if (rlen < 4) return;
+      var ux = rdx / rlen, uy = rdy / rlen;
+      var best = null;
+      for (var i = 0; i < src.length; i++) {
+        var h = src[i];
+        if (h === src[out.indexOf(self)] || (h.id && self.id && h.id === self.id)) continue;
+        var hdx = h.x2 - h.x1, hdy = h.y2 - h.y1;
+        var hlen = Math.hypot(hdx, hdy);
+        if (hlen < 4) continue;
+        var hit = lineIntersect(
+          { x: rx, y: ry }, { x: ux, y: uy },
+          { x: h.x1, y: h.y1 }, { x: hdx, y: hdy },
+          14
+        );
+        if (!hit) continue;
+        var ht = projT(hit.x, hit.y, h.x1, h.y1, h.x2, h.y2);
+        if (ht <= 0.04 || ht >= 0.96) continue;
+        var along = (hit.x - rx) * ux + (hit.y - ry) * uy;
+        if (along < rlen * 0.35) continue;
+        var sinA = Math.abs(ux * hdy - uy * hdx) / hlen;
+        if (sinA < 0.35) continue;
+        var hh = halfOf(h);
+        var selfH = halfOf(self);
+        var dend = dist(px, py, hit.x, hit.y);
+        var dSeg = pointToSeg(px, py, h.x1, h.y1, h.x2, h.y2);
+        /* Far enough to catch a wall drawn through the one it meets, not so
+           far that a wall merely aimed at a distant one gets stretched. */
+        var reach = hh * 2 + selfH + 36;
+        if (dend > reach && dSeg > reach) continue;
+        if (!best || dSeg < best.dSeg) {
+          best = { hit: hit, hh: hh, along: along, sinA: sinA, dSeg: dSeg };
+        }
+      }
+      if (!best) return;
+      var setback = best.hh / best.sinA;
+      if (best.along - setback < 6) return;
+      var nx = best.hit.x - ux * setback;
+      var ny = best.hit.y - uy * setback;
+      if (which === 1) { self.x1 = nx; self.y1 = ny; self._cap1 = false; }
+      else { self.x2 = nx; self.y2 = ny; self._cap2 = false; }
+    }
+    for (var i = 0; i < out.length; i++) {
+      trimEnd(out[i], 1);
+      trimEnd(out[i], 2);
+    }
+    return out;
+  }
+
   return {
     EPS: EPS,
     dist: dist, wallLength: wallLength, projT: projT, pointToSeg: pointToSeg, segMid: segMid,
@@ -961,6 +1028,7 @@
     weldCorners: weldCorners, chainWalls: chainWalls,
     straightenWalls: straightenWalls,
     wallHalfPx: wallHalfPx, offsetChain: offsetChain, wallQuad: wallQuad,
+    connectWalls: connectWalls,
     pxToFeet: pxToFeet, areaPxToSqFt: areaPxToSqFt, formatFeet: formatFeet
   };
 });

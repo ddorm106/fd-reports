@@ -742,8 +742,45 @@ function renderV4Floorplan(d,pdfW,pdfH){
         var x1=op.x-half*c, y1=op.y-half*s, x2=op.x+half*c, y2=op.y+half*s;
         return [{x:x1+nx,y:y1+ny},{x:x2+nx,y:y2+ny},{x:x2-nx,y:y2-ny},{x:x1-nx,y:y1-ny}];
     }
-    (d.walls||[]).forEach(function(w){
-        var q=fpQuad(w, d.walls||[], WH); if(!q) return;
+    var drawWalls=(function(){
+        var src=d.walls||[];
+        var out=src.map(function(w){
+            return {id:w.id,x1:w.x1,y1:w.y1,x2:w.x2,y2:w.y2,_cap1:true,_cap2:true};
+        });
+        function trimEnd(self, which, idx){
+            var px=which===1?self.x1:self.x2, py=which===1?self.y1:self.y2;
+            var rx=which===1?self.x2:self.x1, ry=which===1?self.y2:self.y1;
+            var rdx=px-rx, rdy=py-ry, rlen=Math.hypot(rdx,rdy);
+            if(rlen<4) return;
+            var ux=rdx/rlen, uy=rdy/rlen, best=null;
+            src.forEach(function(h,i){
+                if(i===idx) return;
+                var hdx=h.x2-h.x1, hdy=h.y2-h.y1, hlen=Math.hypot(hdx,hdy);
+                if(hlen<4) return;
+                var cross=ux*hdy-uy*hdx, sinA=Math.abs(cross)/hlen;
+                if(sinA<0.35) return;
+                var t=((h.x1-rx)*hdy-(h.y1-ry)*hdx)/cross;
+                var hit={x:rx+ux*t, y:ry+uy*t};
+                var ht=((hit.x-h.x1)*hdx+(hit.y-h.y1)*hdy)/(hlen*hlen);
+                if(ht<=0.04||ht>=0.96) return;
+                var along=(hit.x-rx)*ux+(hit.y-ry)*uy;
+                if(along<rlen*0.35) return;
+                var dend=Math.hypot(px-hit.x, py-hit.y);
+                if(dend>WH*3+36) return;
+                if(!best||dend<best.dend) best={hit:hit, along:along, sinA:sinA, dend:dend};
+            });
+            if(!best) return;
+            var setback=WH/best.sinA;
+            if(best.along-setback<6) return;
+            var nx=best.hit.x-ux*setback, ny=best.hit.y-uy*setback;
+            if(which===1){ self.x1=nx; self.y1=ny; self._cap1=false; }
+            else { self.x2=nx; self.y2=ny; self._cap2=false; }
+        }
+        out.forEach(function(w,i){ trimEnd(w,1,i); trimEnd(w,2,i); });
+        return out;
+    })();
+    drawWalls.forEach(function(w){
+        var q=fpQuad(w, drawWalls, WH); if(!q) return;
         ctx.beginPath();
         ctx.moveTo(q[0].x,q[0].y);
         for(var qi=1;qi<q.length;qi++) ctx.lineTo(q[qi].x,q[qi].y);
@@ -757,8 +794,8 @@ function renderV4Floorplan(d,pdfW,pdfH){
     });
     ctx.save();
     ctx.strokeStyle='#1a1a1a'; ctx.lineWidth=1.15/scale; ctx.lineJoin='miter'; ctx.lineCap='butt';
-    (d.walls||[]).forEach(function(w){
-        var q=fpQuad(w, d.walls||[], WH); if(!q) return;
+    drawWalls.forEach(function(w){
+        var q=fpQuad(w, drawWalls, WH); if(!q) return;
         var ops=fpOps(w);
         function broken(p0,p1){
             var dx=p1.x-p0.x, dy=p1.y-p0.y, len2=dx*dx+dy*dy, len=Math.sqrt(len2);
@@ -781,13 +818,13 @@ function renderV4Floorplan(d,pdfW,pdfH){
         }
         function joined(which){
             var px=which===1?w.x1:w.x2, py=which===1?w.y1:w.y2;
-            return (d.walls||[]).some(function(o){
+            return drawWalls.some(function(o){
                 return o!==w && (Math.hypot(o.x1-px,o.y1-py)<=2.5 || Math.hypot(o.x2-px,o.y2-py)<=2.5);
             });
         }
         broken(q[0],q[1]); broken(q[3],q[2]);
-        if(!joined(1)){ ctx.beginPath(); ctx.moveTo(q[0].x,q[0].y); ctx.lineTo(q[3].x,q[3].y); ctx.stroke(); }
-        if(!joined(2)){ ctx.beginPath(); ctx.moveTo(q[1].x,q[1].y); ctx.lineTo(q[2].x,q[2].y); ctx.stroke(); }
+        if(w._cap1!==false && !joined(1)){ ctx.beginPath(); ctx.moveTo(q[0].x,q[0].y); ctx.lineTo(q[3].x,q[3].y); ctx.stroke(); }
+        if(w._cap2!==false && !joined(2)){ ctx.beginPath(); ctx.moveTo(q[1].x,q[1].y); ctx.lineTo(q[2].x,q[2].y); ctx.stroke(); }
         ops.forEach(function(op){
             var a=(op.angle||0)*Math.PI/180, c=Math.cos(a), s=Math.sin(a);
             var half=(op.width||30)/2, nx=-s*WH, ny=c*WH;

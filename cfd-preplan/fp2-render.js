@@ -330,8 +330,9 @@ function openingCut(op, wallHalf) {
 }
 function drawWallsAsPolygons(walls) {
   /* Rayon-style wall: white body, a hairline on each face, corners mitered so
-     the two lines meet. Openings cut the faces and get a jamb at each side.
-     A wall with no thickness keeps the old 8px body. */
+     the two lines meet. An end that lands on another wall stops at that face
+     instead of running through it. Openings cut the faces and get a jamb. */
+  walls = G.connectWalls(walls, halfOfWall);
   var lw = Math.max(1, 1.15 / state.view.zoom);
   walls.forEach(function (w) {
     var q = G.wallQuad(w, walls, halfOfWall, 2.5);
@@ -363,8 +364,8 @@ function drawWallsAsPolygons(walls) {
     var ops = openingsForWall(w);
     strokeBroken(q[0], q[1], ops);
     strokeBroken(q[3], q[2], ops);
-    if (!endIsJoined(w, walls, 1)) strokeSeg(q[0], q[3]);
-    if (!endIsJoined(w, walls, 2)) strokeSeg(q[1], q[2]);
+    if (w._cap1 !== false && !endIsJoined(w, walls, 1)) strokeSeg(q[0], q[3]);
+    if (w._cap2 !== false && !endIsJoined(w, walls, 2)) strokeSeg(q[1], q[2]);
     ops.forEach(function (op) {
       var r = openingCut(op, halfOfWall(w));
       strokeSeg(r[0], r[3]);
@@ -375,7 +376,13 @@ function drawWallsAsPolygons(walls) {
 }
 /* The wall under the cursor, same faces as a committed wall, no openings yet. */
 function paintWallPreview(walls, half) {
-  function hof() { return half; }
+  function hof(w) {
+    if (w && typeof w.thickness === 'number' && w.thickness > 0) return G.wallHalfPx(w, wallScale());
+    return half;
+  }
+  var hosts = ((state.data && state.data.walls) || []).concat(walls);
+  var joined = G.connectWalls(hosts, hof);
+  walls = joined.slice(joined.length - walls.length);
   walls.forEach(function (w) {
     var q = G.wallQuad(w, walls, hof, 2.5);
     if (!traceQuad(q)) return;
@@ -392,13 +399,14 @@ function paintWallPreview(walls, half) {
     if (!q) return;
     strokeSeg(q[0], q[1]);
     strokeSeg(q[3], q[2]);
-    if (!endIsJoined(w, walls, 1)) strokeSeg(q[0], q[3]);
-    if (!endIsJoined(w, walls, 2)) strokeSeg(q[1], q[2]);
+    if (w._cap1 !== false && !endIsJoined(w, walls, 1)) strokeSeg(q[0], q[3]);
+    if (w._cap2 !== false && !endIsJoined(w, walls, 2)) strokeSeg(q[1], q[2]);
   });
   ctx.restore();
 }
 function drawWallHighlight(w) {
-  var walls = (state.data && state.data.walls) || [w];
+  var walls = G.connectWalls((state.data && state.data.walls) || [w], halfOfWall);
+  w = walls.filter(function (ww) { return w.id && ww.id === w.id; })[0] || w;
   var q = G.wallQuad(w, walls, function (ww) {
     return halfOfWall(ww) + (ww === w || (w.id && ww.id === w.id) ? 1.25 : 0);
   }, 2.5);
