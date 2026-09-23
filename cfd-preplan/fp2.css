@@ -450,8 +450,9 @@ body.fp-full.show-sheets #fpUpWrap { display: block; }
 .fpx-arch { position: absolute; z-index: 30; top: 8px; left: 74px; right: 8px;
   display: flex; justify-content: center; pointer-events: none; }
 .fpx-arch.hidden { display: none; }
-.fpx-arch .box { pointer-events: auto; display: flex; flex-wrap: wrap; gap: 4px;
-  align-items: center; justify-content: center; max-width: 100%;
+.fpx-arch .box { pointer-events: auto; display: flex; flex-wrap: nowrap; gap: 4px;
+  align-items: center; justify-content: flex-start; max-width: min(980px, 100%);
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
   background: rgba(255,255,255,.96); border: 1px solid var(--slate-200);
   border-radius: 10px; padding: 4px; box-shadow: 0 6px 18px rgba(15,23,42,.14); }
 .fpx-arch .lab { font-size: .62rem; font-weight: 800; letter-spacing: .06em;

@@ -654,8 +654,8 @@
     state.snap = null;
     state.guides = [];
     state.ghostOpening = null;
-    if (t === 'door' && (state.arch.opening === 'window' || state.arch.opening === 'window6')) state.arch.opening = 'single';
-    if (t === 'window' && state.arch.opening !== 'window' && state.arch.opening !== 'window6') state.arch.opening = 'window';
+    if (t === 'door' && isWindowOpening(state.arch.opening)) state.arch.opening = 'single';
+    if (t === 'window' && !isWindowOpening(state.arch.opening)) state.arch.opening = 'window';
     syncArchBar();
     Array.prototype.forEach.call(document.querySelectorAll('[data-tool]'), function (b) {
       b.classList.toggle('active', b.getAttribute('data-tool') === t);
@@ -767,12 +767,25 @@
   }
 
   var OPENINGS = {
-    single: { kind: 'door', type: 'single', widthFt: 3, label: 'Door 3\'' },
-    double: { kind: 'door', type: 'double', widthFt: 6, label: 'Double 6\'' },
-    opening: { kind: 'door', type: 'entryway', widthFt: 3, label: 'Opening' },
-    window: { kind: 'window', type: undefined, widthFt: 4, label: 'Window 4\'' },
-    window6: { kind: 'window', type: undefined, widthFt: 6, label: 'Window 6\'' }
+    single:  { kind: 'door', type: 'single', widthFt: 3, label: 'Single', group: 'Doors' },
+    double:  { kind: 'door', type: 'double', widthFt: 6, label: 'Double', group: 'Doors' },
+    glass:   { kind: 'door', type: 'glass', widthFt: 3, label: 'Glass', group: 'Doors' },
+    glass2:  { kind: 'door', type: 'glass-double', widthFt: 6, label: 'Glass pair', group: 'Doors' },
+    sliding: { kind: 'door', type: 'sliding', widthFt: 6, label: 'Sliding', group: 'Doors' },
+    pocket:  { kind: 'door', type: 'pocket', widthFt: 3, label: 'Pocket', group: 'Doors' },
+    bifold:  { kind: 'door', type: 'bifold', widthFt: 5, label: 'Bifold', group: 'Doors' },
+    rollup:  { kind: 'door', type: 'rollup', widthFt: 10, label: 'Roll-up', group: 'Doors' },
+    opening: { kind: 'door', type: 'entryway', widthFt: 3, label: 'Opening', group: 'Doors' },
+    window:  { kind: 'window', type: 'fixed', widthFt: 4, label: 'Fixed', group: 'Windows' },
+    wslide:  { kind: 'window', type: 'slider', widthFt: 6, label: 'Slider', group: 'Windows' },
+    whung:   { kind: 'window', type: 'hung', widthFt: 3, label: 'Hung', group: 'Windows' },
+    wcase:   { kind: 'window', type: 'casement', widthFt: 2.5, label: 'Casement', group: 'Windows' },
+    wawning: { kind: 'window', type: 'awning', widthFt: 3, label: 'Awning', group: 'Windows' },
+    wstore:  { kind: 'window', type: 'storefront', widthFt: 8, label: 'Storefront', group: 'Windows' }
   };
+  function isWindowOpening(key) {
+    return !!(OPENINGS[key] && OPENINGS[key].kind === 'window');
+  }
   function openingPreset() {
     return OPENINGS[state.arch.opening] || OPENINGS.single;
   }
@@ -1913,7 +1926,10 @@
       }, 'number');
       if (hit.kind === 'door') {
         var sel = document.createElement('select');
-        [['single', 'Single'], ['double', 'Double'], ['rollup', 'Roll-up / overhead'],
+        [['single', 'Single'], ['double', 'Double'],
+         ['glass', 'Glass'], ['glass-double', 'Glass pair'],
+         ['sliding', 'Sliding'], ['pocket', 'Pocket'], ['bifold', 'Bifold'],
+         ['rollup', 'Roll-up / overhead'],
          ['entryway', 'Open doorway (no leaf)']].forEach(function (t) {
           var o = document.createElement('option');
           o.value = t[0]; o.textContent = t[1];
@@ -1931,7 +1947,9 @@
         /* Which way the door swings. A roll-up has no leaf and an open doorway
          * has no door, so neither has a swing to set. */
         var t = el.type || 'single';
-        if (t === 'single' || t === 'double') {
+        var swingBoth = t === 'single' || t === 'glass';
+        var swingSide = swingBoth || t === 'double' || t === 'glass-double' || t === 'bifold';
+        if (swingSide) {
           var sl = document.createElement('label');
           sl.className = 'fld';
           sl.textContent = 'Swing';
@@ -1944,7 +1962,7 @@
            * nothing to most people, and the door visibly moves on the plan the
            * moment you tap, which explains itself. A single door has both; a
            * double swings as a pair, so only the side applies. */
-          if (t === 'single') {
+          if (swingBoth) {
             var hb = document.createElement('button');
             hb.className = 'fp-tbtn sm';
             hb.textContent = '⇄ Hinge side';
@@ -1977,6 +1995,34 @@
             ' end, opening ' + ((el.swing === -1) ? 'one' : 'the other') + ' way. ' +
             'Tap to flip — the plan updates as you go.';
           body.appendChild(state_);
+        }
+      } else {
+        var wsel = document.createElement('select');
+        [['fixed', 'Fixed'], ['slider', 'Sliding'], ['hung', 'Double hung'],
+         ['casement', 'Casement'], ['awning', 'Awning'], ['storefront', 'Storefront']].forEach(function (t) {
+          var o = document.createElement('option');
+          o.value = t[0]; o.textContent = t[1];
+          if ((el.type || 'fixed') === t[0]) o.selected = true;
+          wsel.appendChild(o);
+        });
+        wsel.addEventListener('change', function () {
+          doc.pushUndo(); el.type = wsel.value; commit();
+          showEditPanel(hit);
+        });
+        var wl = document.createElement('label');
+        wl.className = 'fld'; wl.textContent = 'Type';
+        body.appendChild(wl); body.appendChild(wsel);
+        if (el.type === 'casement' || el.type === 'awning') {
+          var wsb = document.createElement('button');
+          wsb.className = 'fp-tbtn sm';
+          wsb.textContent = '⤺ Swing side';
+          wsb.addEventListener('click', function () {
+            doc.pushUndo();
+            el.swing = (el.swing === -1) ? 1 : -1;
+            commit();
+            draw();
+          });
+          body.appendChild(wsb);
         }
       }
       if (!el.wallId) {
@@ -2280,15 +2326,19 @@
       chip('Left face', state.arch.align === 'left', function () { state.arch.align = 'left'; });
       chip('Right face', state.arch.align === 'right', function () { state.arch.align = 'right'; });
     } else {
-      var lab2 = document.createElement('span');
-      lab2.className = 'lab';
-      lab2.textContent = 'Opening';
-      box.appendChild(lab2);
-      ['single', 'double', 'opening', 'window', 'window6'].forEach(function (key) {
-        chip(OPENINGS[key].label, state.arch.opening === key, function () {
-          state.arch.opening = key;
-          if (OPENINGS[key].kind === 'window') setTool('window');
-          else if (state.tool !== 'door') setTool('door');
+      ['Doors', 'Windows'].forEach(function (group) {
+        var lab2 = document.createElement('span');
+        lab2.className = 'lab';
+        lab2.textContent = group;
+        box.appendChild(lab2);
+        Object.keys(OPENINGS).forEach(function (key) {
+          if (OPENINGS[key].group !== group) return;
+          chip(OPENINGS[key].label, state.arch.opening === key, function () {
+            state.arch.opening = key;
+            if (OPENINGS[key].kind === 'window') {
+              if (state.tool !== 'window') setTool('window');
+            } else if (state.tool !== 'door') setTool('door');
+          });
         });
       });
     }

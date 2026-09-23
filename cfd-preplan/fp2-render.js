@@ -20,6 +20,7 @@
 
   var COL = {
     bg: '#F5F3EF', wall: '#2D2D2D', doorLeaf: '#1E1E1E', doorArc: '#555',
+    doorRoll: '#c2410c',
     window: '#C8E0F0', windowEdge: '#5A8CA8', selection: '#2563eb',
     /* The drawing code reads windowLine/windowGap — which this palette never
      * defined, so the canvas silently kept the previous style and windows
@@ -444,13 +445,29 @@ function drawDoorGap(d, sel) {
      floor that shows through. Kept so the draw order stays the same. */
   void d; void sel;
 }
+function glassAlong(x1, y1, x2, y2) {
+  var dx = x2 - x1, dy = y2 - y1, len = Math.hypot(dx, dy);
+  if (len < 1) return;
+  var z = state.view.zoom;
+  var nx = -dy / len * (2.4 / z), ny = dx / len * (2.4 / z);
+  ctx.save();
+  ctx.strokeStyle = '#2563eb';
+  ctx.lineWidth = 1.1 / z;
+  ctx.beginPath();
+  ctx.moveTo(x1 + nx, y1 + ny);
+  ctx.lineTo(x2 + nx, y2 + ny);
+  ctx.stroke();
+  ctx.restore();
+}
 function drawDoorSymbol(d, sel) {
   const cx = d.x, cy = d.y;
   const w = d.width || 30;
   const a = d.angle ? degToRad(d.angle) : findNearestWallAngle(d.x, d.y);
   const cosA = Math.cos(a), sinA = Math.sin(a);
+  const glass = d.type === 'glass' || d.type === 'glass-double';
+  const kind = d.type === 'glass' ? 'single' : d.type === 'glass-double' ? 'double' : d.type;
   ctx.save();
-  if (d.type === 'entryway' || d.type === 'opening') {
+  if (kind === 'entryway' || kind === 'opening') {
     // An open doorway with no leaf — a cased opening, an arch, the gap
     // between a sales floor and a vestibule. drawDoorGap has already cut the
     // wall, so there is nothing more to draw. Showing a swing panel here
@@ -463,7 +480,51 @@ function drawDoorSymbol(d, sel) {
     ctx.restore();
     return;
   }
-  if (d.type === 'rollup') {
+  if (kind === 'sliding') {
+    var sSign = (d.swing === -1) ? -1 : 1;
+    var snx = -sinA * (3.4 / state.view.zoom) * sSign;
+    var sny = cosA * (3.4 / state.view.zoom) * sSign;
+    var mx = cx, my = cy;
+    ctx.strokeStyle = COL.doorLeaf;
+    ctx.lineWidth = 2.2 / state.view.zoom;
+    ctx.beginPath();
+    ctx.moveTo(cx - w / 2 * cosA, cy - w / 2 * sinA);
+    ctx.lineTo(mx, my);
+    ctx.moveTo(mx + snx, my + sny);
+    ctx.lineTo(cx + w / 2 * cosA + snx, cy + w / 2 * sinA + sny);
+    ctx.stroke();
+  } else if (kind === 'pocket') {
+    var px0 = cx - w / 2 * cosA, py0 = cy - w / 2 * sinA;
+    ctx.strokeStyle = COL.doorLeaf;
+    ctx.lineWidth = 2.2 / state.view.zoom;
+    ctx.beginPath();
+    ctx.moveTo(px0, py0);
+    ctx.lineTo(cx + w * 0.15 * cosA, cy + w * 0.15 * sinA);
+    ctx.stroke();
+    ctx.setLineDash([4 / state.view.zoom, 3 / state.view.zoom]);
+    ctx.strokeStyle = '#64748b';
+    ctx.beginPath();
+    ctx.moveTo(px0, py0);
+    ctx.lineTo(px0 - w * 0.55 * cosA, py0 - w * 0.55 * sinA);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  } else if (kind === 'bifold') {
+    var bSign = (d.swing === -1) ? -1 : 1;
+    var bnx = -sinA * bSign, bny = cosA * bSign;
+    var folds = 4;
+    ctx.strokeStyle = COL.doorLeaf;
+    ctx.lineWidth = 2.1 / state.view.zoom;
+    ctx.beginPath();
+    for (var fi = 0; fi <= folds; fi++) {
+      var ft = fi / folds;
+      var fx = cx + (ft - 0.5) * w * cosA;
+      var fy = cy + (ft - 0.5) * w * sinA;
+      var kick = (fi % 2 === 0) ? 0 : w * 0.22;
+      fx += bnx * kick; fy += bny * kick;
+      if (fi === 0) ctx.moveTo(fx, fy); else ctx.lineTo(fx, fy);
+    }
+    ctx.stroke();
+  } else if (kind === 'rollup') {
     ctx.strokeStyle = COL.doorRoll;
     ctx.lineWidth = 3.4 / state.view.zoom;
     ctx.setLineDash([6/state.view.zoom, 3/state.view.zoom]);
@@ -472,7 +533,7 @@ function drawDoorSymbol(d, sel) {
     ctx.lineTo(cx + w/2*cosA, cy + w/2*sinA);
     ctx.stroke();
     ctx.setLineDash([]);
-  } else if (d.type === 'double') {
+  } else if (kind === 'double') {
     // Two panels meeting in middle. Both leaves mirror together when the swing
     // is flipped — a double that opens the other way opens BOTH ways.
     const dblSign = (d.swing === -1) ? -1 : 1;
@@ -488,6 +549,7 @@ function drawDoorSymbol(d, sel) {
     const pR_y = hR_y + (w/2)*Math.sin(swingA + Math.PI);
     ctx.beginPath(); ctx.moveTo(hL_x, hL_y); ctx.lineTo(pL_x, pL_y); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(hR_x, hR_y); ctx.lineTo(pR_x, pR_y); ctx.stroke();
+    if (glass) { glassAlong(hL_x, hL_y, pL_x, pL_y); glassAlong(hR_x, hR_y, pR_x, pR_y); }
     // Dashed arcs
     ctx.strokeStyle = COL.doorArc;
     ctx.lineWidth = 1.2 / state.view.zoom;
@@ -518,6 +580,7 @@ function drawDoorSymbol(d, sel) {
     ctx.strokeStyle = COL.doorLeaf;
     ctx.lineWidth = 2.4 / state.view.zoom;
     ctx.beginPath(); ctx.moveTo(hx, hy); ctx.lineTo(px_, py_); ctx.stroke();
+    if (glass) glassAlong(hx, hy, px_, py_);
     // Arc
     ctx.strokeStyle = COL.doorArc;
     ctx.lineWidth = 1.2 / state.view.zoom;
@@ -569,6 +632,7 @@ function drawWindowSymbol(w, sel) {
   const p2x = cx + half*cosA, p2y = cy + half*sinA;
   const face = Math.max(2.4, openingHalf(w) * 0.72);
   const offs = [-face, 0, face];
+  const wtype = w.type || 'fixed';
   ctx.strokeStyle = COL.windowLine;
   offs.forEach(off => {
     const lw = off === 0 ? 1.5/state.view.zoom : 0.75/state.view.zoom;
@@ -578,6 +642,53 @@ function drawWindowSymbol(w, sel) {
     ctx.lineTo(p2x + (-sinA*off), p2y + (cosA*off));
     ctx.stroke();
   });
+  if (wtype === 'slider') {
+    var sSign = (w.swing === -1) ? -1 : 1;
+    var snx = -sinA * (2.6 / state.view.zoom) * sSign;
+    var sny = cosA * (2.6 / state.view.zoom) * sSign;
+    ctx.lineWidth = 1.6 / state.view.zoom;
+    ctx.beginPath();
+    ctx.moveTo(cx + snx, cy + sny);
+    ctx.lineTo(p2x + snx, p2y + sny);
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx - sinA * face, cy + cosA * face);
+    ctx.stroke();
+  } else if (wtype === 'hung') {
+    ctx.lineWidth = 1.5 / state.view.zoom;
+    ctx.beginPath();
+    ctx.moveTo(cx - sinA * face, cy + cosA * face);
+    ctx.lineTo(cx + sinA * face, cy - cosA * face);
+    ctx.stroke();
+  } else if (wtype === 'storefront') {
+    var scale = (state.data && state.data.scale_px_per_ft) || 12;
+    var bays = Math.max(2, Math.round((width / scale) / 3));
+    ctx.lineWidth = 1.3 / state.view.zoom;
+    for (var bi = 1; bi < bays; bi++) {
+      var bt = bi / bays;
+      var bx = p1x + (p2x - p1x) * bt;
+      var by = p1y + (p2y - p1y) * bt;
+      ctx.beginPath();
+      ctx.moveTo(bx - sinA * face, by + cosA * face);
+      ctx.lineTo(bx + sinA * face, by - cosA * face);
+      ctx.stroke();
+    }
+  } else if (wtype === 'casement' || wtype === 'awning') {
+    var cSign = (w.swing === -1) ? -1 : 1;
+    var hx = p1x, hy = p1y;
+    var swingA = a + cSign * Math.PI / 2;
+    ctx.strokeStyle = '#1d4ed8';
+    ctx.lineWidth = 1.6 / state.view.zoom;
+    ctx.beginPath();
+    ctx.moveTo(hx, hy);
+    ctx.lineTo(hx + width * Math.cos(swingA), hy + width * Math.sin(swingA));
+    ctx.stroke();
+    ctx.setLineDash([4 / state.view.zoom, 2 / state.view.zoom]);
+    ctx.lineWidth = 1 / state.view.zoom;
+    ctx.beginPath();
+    ctx.arc(hx, hy, width, a, swingA, cSign < 0);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
   if (sel) {
     ctx.strokeStyle = COL.selection;
     ctx.lineWidth = 2.7 / state.view.zoom;

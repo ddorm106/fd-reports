@@ -850,26 +850,93 @@ function renderV4Floorplan(d,pdfW,pdfH){
             ctx.lineTo(p2x+(-sinA*off),p2y+(cosA*off));
             ctx.stroke();
         });
+        var wt=wn.type||'fixed';
+        var face=Math.max(2.4, WH*0.72);
+        if(wt==='slider'){
+            var sSign=(wn.swing===-1)?-1:1;
+            var snx=-sinA*(2.6/scale)*sSign, sny=cosA*(2.6/scale)*sSign;
+            ctx.strokeStyle='#2563eb'; ctx.lineWidth=1.4/scale;
+            ctx.beginPath(); ctx.moveTo(wn.x+snx,wn.y+sny); ctx.lineTo(p2x+snx,p2y+sny); ctx.stroke();
+        } else if(wt==='hung'){
+            ctx.strokeStyle='#2563eb'; ctx.lineWidth=1.3/scale;
+            ctx.beginPath();
+            ctx.moveTo(wn.x-sinA*face, wn.y+cosA*face);
+            ctx.lineTo(wn.x+sinA*face, wn.y-cosA*face);
+            ctx.stroke();
+        } else if(wt==='storefront'){
+            var bays=Math.max(2, Math.round(((wn.width||30)/(d.scale_px_per_ft||12))/3));
+            ctx.strokeStyle='#2563eb'; ctx.lineWidth=1.2/scale;
+            for(var bi=1;bi<bays;bi++){
+                var bt=bi/bays, bx=p1x+(p2x-p1x)*bt, by=p1y+(p2y-p1y)*bt;
+                ctx.beginPath();
+                ctx.moveTo(bx-sinA*face, by+cosA*face);
+                ctx.lineTo(bx+sinA*face, by-cosA*face);
+                ctx.stroke();
+            }
+        } else if(wt==='casement'||wt==='awning'){
+            var cSign=(wn.swing===-1)?-1:1, swingA=a+cSign*Math.PI/2;
+            ctx.strokeStyle='#1d4ed8'; ctx.lineWidth=1.4/scale;
+            ctx.beginPath(); ctx.moveTo(p1x,p1y);
+            ctx.lineTo(p1x+(wn.width||30)*Math.cos(swingA), p1y+(wn.width||30)*Math.sin(swingA));
+            ctx.stroke();
+            ctx.setLineDash([4/scale,2/scale]);
+            ctx.beginPath(); ctx.arc(p1x,p1y,wn.width||30,a,swingA,cSign<0); ctx.stroke();
+            ctx.setLineDash([]);
+        }
     });
     (d.doors||[]).forEach(function(dr){
         var a=(dr.angle||0)*Math.PI/180, cosA=Math.cos(a), sinA=Math.sin(a);
         var w=dr.width||30, half=w/2;
         var p1x=dr.x-half*cosA, p1y=dr.y-half*sinA, p2x=dr.x+half*cosA, p2y=dr.y+half*sinA;
-        if(dr.type==='rollup'){
+        var glass=dr.type==='glass'||dr.type==='glass-double';
+        var typ=dr.type==='glass'?'single':dr.type==='glass-double'?'double':dr.type;
+        if(typ==='sliding'){
+            var sSign=(dr.swing===-1)?-1:1;
+            var snx=-sinA*(3.2/scale)*sSign, sny=cosA*(3.2/scale)*sSign;
+            ctx.strokeStyle='#1E1E1E'; ctx.lineWidth=1.8/scale;
+            ctx.beginPath(); ctx.moveTo(p1x,p1y); ctx.lineTo(dr.x,dr.y); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(dr.x+snx,dr.y+sny); ctx.lineTo(p2x+snx,p2y+sny); ctx.stroke();
+        } else if(typ==='pocket'){
+            ctx.strokeStyle='#1E1E1E'; ctx.lineWidth=1.8/scale;
+            ctx.beginPath(); ctx.moveTo(p1x,p1y); ctx.lineTo(dr.x+w*0.15*cosA, dr.y+w*0.15*sinA); ctx.stroke();
+            ctx.setLineDash([4/scale,3/scale]); ctx.strokeStyle='#64748b';
+            ctx.beginPath(); ctx.moveTo(p1x,p1y); ctx.lineTo(p1x-w*0.55*cosA, p1y-w*0.55*sinA); ctx.stroke();
+            ctx.setLineDash([]);
+        } else if(typ==='bifold'){
+            var bSign=(dr.swing===-1)?-1:1, bnx=-sinA*bSign, bny=cosA*bSign;
+            ctx.strokeStyle='#1E1E1E'; ctx.lineWidth=1.6/scale; ctx.beginPath();
+            for(var fi=0;fi<=4;fi++){
+                var ft=fi/4;
+                var fx=dr.x+(ft-0.5)*w*cosA, fy=dr.y+(ft-0.5)*w*sinA;
+                if(fi%2){ fx+=bnx*w*0.22; fy+=bny*w*0.22; }
+                if(fi===0) ctx.moveTo(fx,fy); else ctx.lineTo(fx,fy);
+            }
+            ctx.stroke();
+        } else if(typ==='rollup'){
             ctx.strokeStyle='#C05020'; ctx.lineWidth=2.5/scale;
             ctx.setLineDash([6/scale,3/scale]);
             ctx.beginPath(); ctx.moveTo(p1x,p1y); ctx.lineTo(p2x,p2y); ctx.stroke();
             ctx.setLineDash([]);
-        } else if(dr.type==='entryway'||dr.type==='opening'){
+        } else if(typ==='entryway'||typ==='opening'){
             /* A cased opening has no leaf. The gap in the wall above is the
                whole drawing — the old code fell through to the swing branch and
                printed a door that is not there. */
-        } else if(dr.type==='double'){
+        } else if(typ==='double'){
             var dblSign=(dr.swing===-1)?-1:1, dblA=a+dblSign*Math.PI/2;
             var lx=p1x, ly=p1y, rx=p2x, ry=p2y;
             ctx.strokeStyle='#1E1E1E'; ctx.lineWidth=1.8/scale;
             ctx.beginPath(); ctx.moveTo(lx,ly); ctx.lineTo(lx+half*Math.cos(dblA), ly+half*Math.sin(dblA)); ctx.stroke();
             ctx.beginPath(); ctx.moveTo(rx,ry); ctx.lineTo(rx+half*Math.cos(dblA+Math.PI), ry+half*Math.sin(dblA+Math.PI)); ctx.stroke();
+            if(glass){
+                function gline(x1,y1,x2,y2){
+                    var dx=x2-x1, dy=y2-y1, len=Math.hypot(dx,dy); if(len<1) return;
+                    var nx=-dy/len*(2.2/scale), ny=dx/len*(2.2/scale);
+                    ctx.strokeStyle='#2563eb'; ctx.lineWidth=1/scale;
+                    ctx.beginPath(); ctx.moveTo(x1+nx,y1+ny); ctx.lineTo(x2+nx,y2+ny); ctx.stroke();
+                }
+                gline(lx,ly, lx+half*Math.cos(dblA), ly+half*Math.sin(dblA));
+                gline(rx,ry, rx+half*Math.cos(dblA+Math.PI), ry+half*Math.sin(dblA+Math.PI));
+            }
             ctx.strokeStyle='#555'; ctx.lineWidth=0.9/scale;
             ctx.setLineDash([4/scale,2/scale]);
             ctx.beginPath(); ctx.arc(lx,ly,half,a,a+dblSign*Math.PI/2,dblSign<0); ctx.stroke();
@@ -894,6 +961,14 @@ function renderV4Floorplan(d,pdfW,pdfH){
             var pex=hx+w*Math.cos(swingA), pey=hy+w*Math.sin(swingA);
             ctx.strokeStyle='#1E1E1E'; ctx.lineWidth=1.8/scale;
             ctx.beginPath(); ctx.moveTo(hx,hy); ctx.lineTo(pex,pey); ctx.stroke();
+            if(glass){
+                var gdx=pex-hx, gdy=pey-hy, glen=Math.hypot(gdx,gdy);
+                if(glen>1){
+                    var gnx=-gdy/glen*(2.2/scale), gny=gdx/glen*(2.2/scale);
+                    ctx.strokeStyle='#2563eb'; ctx.lineWidth=1/scale;
+                    ctx.beginPath(); ctx.moveTo(hx+gnx,hy+gny); ctx.lineTo(pex+gnx,pey+gny); ctx.stroke();
+                }
+            }
             ctx.strokeStyle='#555'; ctx.lineWidth=0.9/scale;
             ctx.setLineDash([4/scale,2/scale]);
             ctx.beginPath(); ctx.arc(hx,hy,w,closedDir,swingA,effSign<0); ctx.stroke();
