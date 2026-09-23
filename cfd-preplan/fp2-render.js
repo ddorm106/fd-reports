@@ -248,14 +248,154 @@ function traceQuad(q) {
   ctx.closePath();
   return true;
 }
+function lerpPt(a, b, t) {
+  return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
+}
+function strokeSeg(a, b) {
+  ctx.beginPath();
+  ctx.moveTo(a.x, a.y);
+  ctx.lineTo(b.x, b.y);
+  ctx.stroke();
+}
+/* Where an opening sits along a face, as fractions of that face. */
+function openingRanges(p0, p1, ops) {
+  var dx = p1.x - p0.x, dy = p1.y - p0.y;
+  var len2 = dx * dx + dy * dy;
+  var len = Math.sqrt(len2);
+  if (len < 1e-6) return [];
+  var ranges = [];
+  ops.forEach(function (op) {
+    var t = ((op.x - p0.x) * dx + (op.y - p0.y) * dy) / len2;
+    var half = ((op.width || 30) / 2) / len;
+    var a = t - half, b = t + half;
+    if (b < 0 || a > 1) return;
+    ranges.push([Math.max(0, a), Math.min(1, b)]);
+  });
+  ranges.sort(function (a, b) { return a[0] - b[0]; });
+  var merged = [];
+  ranges.forEach(function (r) {
+    var last = merged[merged.length - 1];
+    if (!last || r[0] > last[1] + 0.002) merged.push([r[0], r[1]]);
+    else last[1] = Math.max(last[1], r[1]);
+  });
+  return merged;
+}
+function strokeBroken(p0, p1, ops) {
+  var cuts = openingRanges(p0, p1, ops);
+  var cursor = 0;
+  cuts.forEach(function (c) {
+    if (c[0] > cursor + 0.004) strokeSeg(lerpPt(p0, p1, cursor), lerpPt(p0, p1, c[0]));
+    cursor = Math.max(cursor, c[1]);
+  });
+  if (cursor < 0.996) strokeSeg(lerpPt(p0, p1, cursor), p1);
+}
+function endIsJoined(w, walls, which) {
+  var px = which === 1 ? w.x1 : w.x2;
+  var py = which === 1 ? w.y1 : w.y2;
+  for (var i = 0; i < walls.length; i++) {
+    var o = walls[i];
+    if (o === w || (w.id && o.id === w.id)) continue;
+    if (Math.hypot(o.x1 - px, o.y1 - py) <= 2.5 || Math.hypot(o.x2 - px, o.y2 - py) <= 2.5) return true;
+  }
+  return false;
+}
+function openingsForWall(w) {
+  var doors = (state.data && state.data.doors) || [];
+  var wins = (state.data && state.data.windows) || [];
+  var out = [];
+  doors.concat(wins).forEach(function (op) {
+    if (!op) return;
+    if (op.wallId) {
+      if (w.id && op.wallId === w.id) out.push(op);
+      return;
+    }
+    if (G.pointToSeg(op.x, op.y, w.x1, w.y1, w.x2, w.y2) <= halfOfWall(w) + 1) out.push(op);
+  });
+  return out;
+}
+/* The rectangle an opening cuts through the wall, across the full thickness. */
+function openingCut(op, wallHalf) {
+  var a = op.angle ? degToRad(op.angle) : findNearestWallAngle(op.x, op.y);
+  var cosA = Math.cos(a), sinA = Math.sin(a);
+  var half = (op.width || 30) / 2;
+  var nx = -sinA * wallHalf, ny = cosA * wallHalf;
+  var p1x = op.x - half * cosA, p1y = op.y - half * sinA;
+  var p2x = op.x + half * cosA, p2y = op.y + half * sinA;
+  return [
+    { x: p1x + nx, y: p1y + ny },
+    { x: p2x + nx, y: p2y + ny },
+    { x: p2x - nx, y: p2y - ny },
+    { x: p1x - nx, y: p1y - ny }
+  ];
+}
 function drawWallsAsPolygons(walls) {
-  /* Thickness is real (feet on the wall) and corners miter. A wall with no
-     thickness keeps the old 8px body, so plans drawn before this do not jump. */
-  ctx.fillStyle = COL.wall;
-  walls.forEach(w => {
-    if (!traceQuad(G.wallQuad(w, walls, halfOfWall, 2.5))) return;
+  /* Rayon-style wall: white body, a hairline on each face, corners mitered so
+     the two lines meet. Openings cut the faces and get a jamb at each side.
+     A wall with no thickness keeps the old 8px body. */
+  var lw = Math.max(1, 1.15 / state.view.zoom);
+  walls.forEach(function (w) {
+    var q = G.wallQuad(w, walls, halfOfWall, 2.5);
+    if (!q) return;
+    var ops = openingsForWall(w);
+    ctx.beginPath();
+    ctx.moveTo(q[0].x, q[0].y);
+    for (var i = 1; i < q.length; i++) ctx.lineTo(q[i].x, q[i].y);
+    ctx.closePath();
+    ops.forEach(function (op) {
+      var r = openingCut(op, halfOfWall(w) + 0.9);
+      ctx.moveTo(r[0].x, r[0].y);
+      ctx.lineTo(r[3].x, r[3].y);
+      ctx.lineTo(r[2].x, r[2].y);
+      ctx.lineTo(r[1].x, r[1].y);
+      ctx.closePath();
+    });
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fill('evenodd');
+  });
+  ctx.save();
+  ctx.strokeStyle = '#1a1a1a';
+  ctx.lineWidth = lw;
+  ctx.lineJoin = 'miter';
+  ctx.lineCap = 'butt';
+  walls.forEach(function (w) {
+    var q = G.wallQuad(w, walls, halfOfWall, 2.5);
+    if (!q) return;
+    var ops = openingsForWall(w);
+    strokeBroken(q[0], q[1], ops);
+    strokeBroken(q[3], q[2], ops);
+    if (!endIsJoined(w, walls, 1)) strokeSeg(q[0], q[3]);
+    if (!endIsJoined(w, walls, 2)) strokeSeg(q[1], q[2]);
+    ops.forEach(function (op) {
+      var r = openingCut(op, halfOfWall(w));
+      strokeSeg(r[0], r[3]);
+      strokeSeg(r[1], r[2]);
+    });
+  });
+  ctx.restore();
+}
+/* The wall under the cursor, same faces as a committed wall, no openings yet. */
+function paintWallPreview(walls, half) {
+  function hof() { return half; }
+  walls.forEach(function (w) {
+    var q = G.wallQuad(w, walls, hof, 2.5);
+    if (!traceQuad(q)) return;
+    ctx.fillStyle = '#FFFFFF';
     ctx.fill();
   });
+  ctx.save();
+  ctx.strokeStyle = '#1a1a1a';
+  ctx.lineWidth = Math.max(1, 1.15 / state.view.zoom);
+  ctx.lineJoin = 'miter';
+  ctx.lineCap = 'butt';
+  walls.forEach(function (w) {
+    var q = G.wallQuad(w, walls, hof, 2.5);
+    if (!q) return;
+    strokeSeg(q[0], q[1]);
+    strokeSeg(q[3], q[2]);
+    if (!endIsJoined(w, walls, 1)) strokeSeg(q[0], q[3]);
+    if (!endIsJoined(w, walls, 2)) strokeSeg(q[1], q[2]);
+  });
+  ctx.restore();
 }
 function drawWallHighlight(w) {
   var walls = (state.data && state.data.walls) || [w];
@@ -292,23 +432,9 @@ function findNearestWallAngle(x, y){
   return bestAngle;
 }
 function drawDoorGap(d, sel) {
-  const cx = d.x, cy = d.y;
-  const w = d.width || 30;
-  const a = d.angle ? degToRad(d.angle) : findNearestWallAngle(d.x, d.y);
-  const cosA = Math.cos(a), sinA = Math.sin(a);
-  const half = w / 2;
-  const WALL_HALF = openingHalf(d);
-  const nx = -sinA * WALL_HALF, ny = cosA * WALL_HALF;
-  const p1x = cx - half*cosA, p1y = cy - half*sinA;
-  const p2x = cx + half*cosA, p2y = cy + half*sinA;
-  ctx.fillStyle = COL.bg;  // cream — matches iOS background
-  ctx.beginPath();
-  ctx.moveTo(p1x + nx, p1y + ny);
-  ctx.lineTo(p2x + nx, p2y + ny);
-  ctx.lineTo(p2x - nx, p2y - ny);
-  ctx.lineTo(p1x - nx, p1y - ny);
-  ctx.closePath();
-  ctx.fill();
+  /* The wall painter cuts the opening. Filling it here would cover the
+     floor that shows through. Kept so the draw order stays the same. */
+  void d; void sel;
 }
 function drawDoorSymbol(d, sel) {
   const cx = d.x, cy = d.y;
@@ -1142,14 +1268,10 @@ function drawFreehand(f, sel) {
             : state.arch && state.arch.align === 'right' ? -1 : 0;
           var one = G.offsetChain([{ x: d.x1, y: d.y1 }, { x: d.x2, y: d.y2 }], wh, wside, false);
           ctx.setLineDash([]);
-          ctx.fillStyle = 'rgba(30,58,95,0.45)';
-          one.forEach(function (seg) {
-            var body = { x1: seg.x1, y1: seg.y1, x2: seg.x2, y2: seg.y2 };
-            if (!traceQuad(G.wallQuad(body, [body], function () { return wh; }, 2.5))) return;
-            ctx.fill();
-          });
+          paintWallPreview(one.map(function (seg) {
+            return { x1: seg.x1, y1: seg.y1, x2: seg.x2, y2: seg.y2, thickness: state.arch && state.arch.thicknessFt };
+          }), wh);
         }
-        ctx.beginPath(); ctx.moveTo(d.x1, d.y1); ctx.lineTo(d.x2, d.y2); ctx.stroke();
         ctx.setLineDash([]);
         drawLiveDimension(d.x1, d.y1, d.x2, d.y2);
       } else if (d.kind === 'room') {
@@ -1184,14 +1306,7 @@ function drawFreehand(f, sel) {
             return { x1: seg.x1, y1: seg.y1, x2: seg.x2, y2: seg.y2 };
           });
           ctx.setLineDash([]);
-          ctx.fillStyle = 'rgba(30,58,95,0.45)';
-          ctx.strokeStyle = COL.selection;
-          ctx.lineWidth = 1.25 / z;
-          segs.forEach(function (body) {
-            if (!traceQuad(G.wallQuad(body, segs, function () { return half; }, 2.5))) return;
-            ctx.fill();
-            ctx.stroke();
-          });
+          paintWallPreview(segs, half);
           if (d.cursor) {
             drawLiveDimension(pts[pts.length - 1].x, pts[pts.length - 1].y, d.cursor.x, d.cursor.y);
           }
