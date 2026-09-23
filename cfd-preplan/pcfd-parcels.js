@@ -74,6 +74,21 @@
   var pending = null;
 
   var OCC = (me && me.getAttribute('data-occupancies')) || (base + 'occupancies-peach.js?v=2');
+  /* Street View aim point per parcel (the main building), from build_parcel_aim.py. */
+  var AIM = (me && me.getAttribute('data-aim')) || (base + 'parcel-aim-peach.js?v=1');
+  var apending = null;
+  function loadAim() {
+    if (window.PCFD_AIM) return Promise.resolve(window.PCFD_AIM);
+    if (apending) return apending;
+    apending = new Promise(function (res) {
+      var s = document.createElement('script');
+      s.src = AIM;
+      s.onload = function () { res(window.PCFD_AIM || null); };
+      s.onerror = function () { apending = null; res(null); };
+      document.head.appendChild(s);
+    });
+    return apending;
+  }
   var TIER_COLOR = { 1: '#c62828', 2: '#e07b00', 3: '#5b7c99' };   // same as Centerville
   var opending = null;
 
@@ -291,7 +306,7 @@
     });
   }
 
-  /* PROPERTY PHOTO (2026-09-22): an aerial of the lot with its line drawn on.
+  /* PROPERTY PHOTO (2026-09-22): Street View first (see STREET VIEW FIRST), and an aerial of the lot with its line drawn on.
      Esri World Imagery's export cuts one image to any box without a key; asking
      for it in Web Mercator (3857) lets the outline be projected onto the same
      pixels. Padded so the neighbours show, never tighter than ~70 m across. */
@@ -312,8 +327,145 @@
     return ESRI_EXPORT + '?bbox=' + box.map(function (v) { return v.toFixed(1); }).join(',') +
       '&bboxSR=3857&imageSR=3857&size=' + w + ',' + h + '&format=jpg&f=image';
   }
+  var SV_BASE = 'https://pcfdmembers.org/sv/';   // fd-streetview Worker
+  /* STREET VIEW FIRST (2026-09-22, David: "default the image to the street view"):
+     the photo opens on Google Street View aimed at the lot, with a Street | Aerial
+     switch; the aerial is the fallback wherever Google has no street photo. The
+     camera is the pano Google finds for the county ADDRESS (so it stands on the
+     street the building faces), else the pano nearest the middle of the lot; one
+     more than ~120 m past the lot is a bad geocode and is ignored.
+     Google is reached through the fd-streetview Worker (~/fd-streetview): it holds
+     the key as a secret, answers only our sites and caches every photo, so the
+     key never ships in page code. */
+  var svCache = {};
+  function distM(la1, lo1, la2, lo2) {
+    var k = Math.PI / 180, x = (lo2 - lo1) * k * Math.cos((la1 + la2) / 2 * k), y = (la2 - la1) * k;
+    return 6371000 * Math.sqrt(x * x + y * y);
+  }
+  function bearing(la1, lo1, la2, lo2) {
+    var k = Math.PI / 180, dl = (lo2 - lo1) * k;
+    var y = Math.sin(dl) * Math.cos(la2 * k);
+    var x = Math.cos(la1 * k) * Math.sin(la2 * k) - Math.sin(la1 * k) * Math.cos(la2 * k) * Math.cos(dl);
+    return (Math.atan2(y, x) / k + 360) % 360;
+  }
+  function svMeta(loc, radius) {
+    return fetch(SV_BASE + 'meta?loc=' + encodeURIComponent(loc) + '&r=' + radius)
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { return j && j.status === 'OK' && j.location ? j : null; })
+      .catch(function () { return null; });
+  }
+  function findPano(bb, q, aim) {
+    var ck = bb.join(',');
+    if (svCache[ck]) return svCache[ck];
+    /* look at the main building when one is known (build_parcel_aim.py), else the lot */
+    var cLat = aim ? aim[1] : (bb[1] + bb[3]) / 2, cLng = aim ? aim[0] : (bb[0] + bb[2]) / 2;
+    var half = distM(bb[1], bb[0], bb[3], bb[2]) / 2;
+    function near(j) { return j && distM(j.location.lat, j.location.lng, cLat, cLng) <= half + 120 ? j : null; }
+    function byCentre() {
+      return svMeta(cLat.toFixed(6) + ',' + cLng.toFixed(6), Math.round(Math.min(300, Math.max(50, half + 30)))).then(near);
+    }
+    svCache[ck] = (q ? svMeta(q, 50).then(near).then(function (j) { return j || byCentre(); }) : byCentre())
+      .then(function (j) {
+        if (!j) return null;
+        var d = Math.max(8, distM(j.location.lat, j.location.lng, cLat, cLng));
+        var fit = aim && aim[2] ? aim[2] * 1.7 : Math.max(half, 15) * 0.8;   // building ~60% of the width
+        var fov = Math.round(Math.min(100, Math.max(40, 2 * Math.atan(fit / d) * 180 / Math.PI)));
+        return { pano: j.pano_id, date: j.date || '', heading: Math.round(bearing(j.location.lat, j.location.lng, cLat, cLng)), fov: fov };
+      });
+    return svCache[ck];
+  }
+  function svDate(s) {
+    var m = /^(\d{4})-(\d{2})/.exec(s || '');
+    return m ? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][+m[2] - 1] + ' ' + m[1] : '';
+  }
+  /* Both views stacked in one box; hydratePhoto() decides which shows.
+     bb = [minLng, minLat, maxLng, maxLat]; d = the lot line as an SVG path in
+     the aerial's pixels; q = the address Street View looks up. */
+  function photoFrame(bb, box, d, q, mapsQ, aim) {
+    var cLat = (bb[1] + bb[3]) / 2, cLng = (bb[0] + bb[2]) / 2;
+    var big = photoUrl(photoBox(bb[0], bb[1], bb[2], bb[3], 1600, 1000), 1600, 1000);
+    var lay = 'display:none;position:absolute;inset:0';
+    var btn = 'border:0;padding:3px 9px;font:700 11px -apple-system,Segoe UI,Roboto,sans-serif;cursor:pointer;';
+    return '<div class="pcfd-photo" data-bb="' + bb.join(',') + '" data-q="' + esc(q) + '" data-aim="' + (aim ? aim.join(',') : '') + '" ' +
+      'style="position:relative;margin:0 0 7px;border-radius:6px;overflow:hidden;background:#cbd5e1;' +
+      'aspect-ratio:' + PHOTO_W + '/' + PHOTO_H + '">' +
+      '<a class="ph-aer" href="' + esc(big) + '" target="_blank" rel="noopener" title="Open a larger photo" style="' + lay + '">' +
+      '<img src="' + esc(photoUrl(box, PHOTO_W, PHOTO_H)) + '" alt="Aerial photo of the parcel" ' +
+      'style="display:block;width:100%;height:100%;object-fit:cover">' +
+      '<svg viewBox="0 0 ' + PHOTO_W + ' ' + PHOTO_H + '" style="position:absolute;inset:0;width:100%;height:100%">' +
+      '<path d="' + d + '" fill="rgba(250,204,21,.10)" fill-rule="evenodd" stroke="#facc15" stroke-width="3" ' +
+      'stroke-linejoin="round"/></svg>' +
+      '<span style="position:absolute;right:4px;bottom:3px;font-size:9px;color:#fff;text-shadow:0 0 2px #000">' +
+      'Imagery &copy; Esri</span></a>' +
+      '<a class="ph-sv" target="_blank" rel="noopener" title="Open Street View here" style="' + lay + '">' +
+      '<img alt="Street View of the property" style="display:block;width:100%;height:100%;object-fit:cover">' +
+      '<span class="ph-date" style="position:absolute;right:5px;top:5px;font-size:10px;font-weight:600;color:#fff;' +
+      'background:rgba(15,23,42,.6);padding:1px 6px;border-radius:9px"></span></a>' +
+      '<div class="ph-msg" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;' +
+      'font-size:11px;color:#475569">Loading photo&hellip;</div>' +
+      '<div class="ph-tg" style="position:absolute;left:5px;top:5px;display:none;border-radius:7px;overflow:hidden;' +
+      'box-shadow:0 1px 3px rgba(0,0,0,.4)">' +
+      '<button type="button" data-v="sv" style="' + btn + '">Street</button>' +
+      '<button type="button" data-v="aer" style="' + btn + 'border-left:1px solid #cbd5e1">Aerial</button></div>' +
+      '</div>' +
+      '<div style="font-size:12px;margin:-2px 0 6px">' +
+      '<a class="ph-svlink" target="_blank" rel="noopener" href="https://www.google.com/maps/@?api=1&amp;map_action=pano&amp;viewpoint=' +
+      cLat.toFixed(6) + ',' + cLng.toFixed(6) + '">Street View &rarr;</a> &nbsp; ' +
+      '<a target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&amp;query=' +
+      encodeURIComponent(mapsQ) + '">Google Maps &rarr;</a></div>';
+  }
+  function hydratePhoto(root) {
+    var el = root && root.querySelector && root.querySelector('.pcfd-photo');
+    if (!el || el.__pcfdPhoto) return;
+    el.__pcfdPhoto = true;
+    var bb = el.getAttribute('data-bb').split(',').map(Number), q = el.getAttribute('data-q');
+  var aim = (el.getAttribute('data-aim') || '').split(',').filter(Boolean).map(Number);
+    var aer = el.querySelector('.ph-aer'), sv = el.querySelector('.ph-sv'), msg = el.querySelector('.ph-msg');
+    var tg = el.querySelector('.ph-tg'), btns = tg.querySelectorAll('button');
+    function show(v) {
+      msg.style.display = 'none';
+      aer.style.display = v === 'aer' ? 'block' : 'none';
+      sv.style.display = v === 'sv' ? 'block' : 'none';
+      for (var i = 0; i < btns.length; i++) {
+        var on = btns[i].getAttribute('data-v') === v;
+        btns[i].style.background = on ? '#1e3a8a' : '#fff';
+        btns[i].style.color = on ? '#fff' : '#1e293b';
+      }
+    }
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].addEventListener('click', function (ev) {
+        ev.preventDefault(); ev.stopPropagation();
+        show(this.getAttribute('data-v'));
+      });
+    }
+    var settled = false;
+    function aerialOnly() { if (settled) return; settled = true; show('aer'); }
+    var t = setTimeout(aerialOnly, 8000);
+    findPano(bb, q, aim.length === 3 ? aim : null).then(function (p) {
+      if (!p) { clearTimeout(t); aerialOnly(); return; }
+      var img = sv.querySelector('img');
+      img.onload = function () {
+        if (settled) return;
+        settled = true; clearTimeout(t);
+        tg.style.display = 'flex';
+        show('sv');
+      };
+      img.onerror = function () { clearTimeout(t); aerialOnly(); };
+      var link = 'https://www.google.com/maps/@?api=1&map_action=pano&pano=' + encodeURIComponent(p.pano) +
+        '&heading=' + p.heading + '&pitch=0&fov=' + p.fov;
+      sv.href = link;
+      var sl = el.parentNode && el.parentNode.querySelector('.ph-svlink');
+      if (sl) sl.href = link;
+      var dt = svDate(p.date), tag = sv.querySelector('.ph-date');
+      if (dt) tag.textContent = 'Street View ' + dt; else tag.style.display = 'none';
+      img.src = SV_BASE + 'img?pano=' + encodeURIComponent(p.pano) + '&heading=' + p.heading +
+        '&pitch=3&fov=' + p.fov;
+    });
+  }
+
   function photoHtml(rec) {
-    var box = photoBox(rec[2], rec[3], rec[4], rec[5], PHOTO_W, PHOTO_H);
+    var bb = [rec[2], rec[3], rec[4], rec[5]];
+    var box = photoBox(bb[0], bb[1], bb[2], bb[3], PHOTO_W, PHOTO_H);
     var sx = PHOTO_W / (box[2] - box[0]), sy = PHOTO_H / (box[3] - box[1]), d = '';
     rec[6].forEach(function (rings) {
       rings.forEach(function (f) {
@@ -324,24 +476,9 @@
         d += 'Z';
       });
     });
-    var cLat = (rec[3] + rec[5]) / 2, cLng = (rec[2] + rec[4]) / 2, ad = rec[7] || [];
-    var big = photoUrl(photoBox(rec[2], rec[3], rec[4], rec[5], 1600, 1000), 1600, 1000);
-    var q = ad.length ? encodeURIComponent(ad[0] + ', GA') : cLat.toFixed(6) + ',' + cLng.toFixed(6);
-    return '<a href="' + esc(big) + '" target="_blank" rel="noopener" title="Open a larger photo" ' +
-      'style="display:block;position:relative;margin:0 0 7px;border-radius:6px;overflow:hidden;' +
-      'background:#cbd5e1;aspect-ratio:' + PHOTO_W + '/' + PHOTO_H + '">' +
-      '<img src="' + esc(photoUrl(box, PHOTO_W, PHOTO_H)) + '" alt="Aerial photo of the parcel" loading="lazy" ' +
-      'style="display:block;width:100%;height:100%;object-fit:cover" onerror="this.style.visibility=\'hidden\'">' +
-      '<svg viewBox="0 0 ' + PHOTO_W + ' ' + PHOTO_H + '" style="position:absolute;inset:0;width:100%;height:100%">' +
-      '<path d="' + d + '" fill="rgba(250,204,21,.10)" fill-rule="evenodd" stroke="#facc15" stroke-width="3" ' +
-      'stroke-linejoin="round"/></svg>' +
-      '<span style="position:absolute;right:4px;bottom:3px;font-size:9px;color:#fff;text-shadow:0 0 2px #000">' +
-      'Imagery &copy; Esri</span></a>' +
-      '<div style="font-size:12px;margin:-2px 0 6px">' +
-      '<a target="_blank" rel="noopener" href="https://www.google.com/maps/@?api=1&amp;map_action=pano&amp;viewpoint=' +
-      cLat.toFixed(6) + ',' + cLng.toFixed(6) + '">Street View &rarr;</a> &nbsp; ' +
-      '<a target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&amp;query=' + q +
-      '">Google Maps &rarr;</a></div>';
+    var ad = rec[7] || [], q = ad.length ? ad[0] + ', Peach County, GA' : '';
+    var aim = window.PCFD_AIM && window.PCFD_AIM.by[rec[0]];
+    return photoFrame(bb, box, d, q, q || ((bb[1] + bb[3]) / 2).toFixed(6) + ',' + ((bb[0] + bb[2]) / 2).toFixed(6), aim);
   }
 
   /* The county's address for the PARCEL. On a strip centre that is one number
@@ -449,7 +586,7 @@
       if (!on) { group.clearLayers(); if (map.hasLayer(group)) map.removeLayer(group); label('&#9638; Parcels'); return; }
       if (!map.hasLayer(group)) group.addTo(map);
       label('&#9638; Parcels <small>loading</small>');
-      Promise.all([load(), loadOcc()]).then(draw).catch(function () { label('&#9638; Parcels <small>unavailable</small>'); });
+      Promise.all([load(), loadOcc(), loadAim()]).then(draw).catch(function () { label('&#9638; Parcels <small>unavailable</small>'); });
     }
 
     /* ------------------------------------------------------------ water */
@@ -731,7 +868,7 @@
         }
         if (!html && on && z >= MIN_ZOOM) { var p = parcelAt(ll); if (p) html = popupHtml(p); }
         /* maxHeight: a strip centre can list five tenants; scroll rather than cover the map. */
-        if (html) L.popup({ maxWidth: 280, maxHeight: 380, pcfd: true }).setLatLng(ll).setContent(html).openOn(map);
+        if (html) hydratePhoto(L.popup({ maxWidth: 280, maxHeight: 380, pcfd: true }).setLatLng(ll).setContent(html).openOn(map).getElement());
       }, 0);
     }
     map.on('click', onTap);
