@@ -161,6 +161,7 @@
   function nhydPopup(h, N) {
     var c = hydClass(h[4], h[5]), who = (N.srcs || [])[h[2]] || '';
     var x = '<div style="font:13px/1.4 -apple-system,Segoe UI,Roboto,sans-serif;min-width:180px">' +
+      svSlot(h[0], h[1]) +
       '<div style="font-weight:700">Hydrant' + (h[3] ? ' #' + esc(h[3]) : '') + '</div>' +
       (h[6] ? '<div style="font-size:12px">' + esc(h[6]) + '</div>' : '') +
       '<div style="font-size:12px;margin-top:2px">' + (c ? esc(HYD_CLS[c][1]) : 'Flow not on file') +
@@ -462,6 +463,80 @@
         '&pitch=3&fov=' + p.fov;
     });
   }
+
+  /* HYDRANT STREET VIEW (2026-09-22, David: "street view of the hydrants when clicked
+     on them"). A hydrant popup carries an empty slot, svSlot(lat, lng); svHydrate()
+     fills it with the Street View picture from the pano ~16 m up the street from the hydrant,
+     aimed back at it, zoomed to ~14 m across the hydrant (book coordinates can be a few metres off), tilted down to it. No pano
+     within ~60 m -> the slot stays hidden. Any page can use it: the plugin fills any
+     `.pcfd-sv` slot in a popup that opens on a map it is attached to. */
+  function svSlot(lat, lng) {
+    return '<div class="pcfd-sv" data-lat="' + (+lat).toFixed(6) + '" data-lng="' + (+lng).toFixed(6) + '" ' +
+      'style="display:none;margin:0 0 6px;position:relative;border-radius:6px;overflow:hidden;background:#cbd5e1;' +
+      'aspect-ratio:' + PHOTO_W + '/' + PHOTO_H + ';min-width:230px">' +
+      '<a target="_blank" rel="noopener" title="Open Street View here" style="display:block;width:100%;height:100%">' +
+      '<img alt="Street View of the hydrant" style="display:block;width:100%;height:100%;object-fit:cover"></a>' +
+      '<span class="sv-tag" style="position:absolute;right:5px;top:5px;font-size:10px;font-weight:600;color:#fff;' +
+      'background:rgba(15,23,42,.6);padding:1px 6px;border-radius:9px;pointer-events:none"></span></div>';
+  }
+  var svPtCache = {};
+  function findPanoAt(lat, lng) {
+    var ck = lat.toFixed(6) + ',' + lng.toFixed(6);
+    if (!svPtCache[ck]) {
+      /* Hydrant coordinates sit on or beside the street, so the nearest pano is usually
+         right on top of the hydrant and "aim at it" looks at pavement. Stand back
+         instead: ask for panos ~16 m away in eight directions (panos only exist on
+         streets, so hits are up/down the street or on a cross street) and look back
+         at the hydrant from the one nearest 16 m. Looking along the street keeps the
+         hydrant in frame even when the book puts it a few metres off. Metadata calls
+         are free and cached. */
+      var k = Math.PI / 180, R0 = 111320;
+      var probes = [0, 45, 90, 135, 180, 225, 270, 315].map(function (b) {
+        var la = lat + 16 * Math.cos(b * k) / R0, lo = lng + 16 * Math.sin(b * k) / (R0 * Math.cos(lat * k));
+        return svMeta(la.toFixed(6) + ',' + lo.toFixed(6), 8);
+      });
+      svPtCache[ck] = Promise.all(probes).then(function (js) {
+        var best = null;
+        js.forEach(function (j) {
+          if (!j) return;
+          var d = distM(j.location.lat, j.location.lng, lat, lng);
+          if (d < 9 || d > 35) return;
+          if (!best || Math.abs(d - 16) < Math.abs(best.d - 16)) best = { j: j, d: d };
+        });
+        return best;
+      }).then(function (b) {
+        if (!b) return null;
+        var j = b.j, d = b.d;
+        return {
+          pano: j.pano_id, date: j.date || '', dist: d,
+          heading: Math.round(bearing(j.location.lat, j.location.lng, lat, lng)),
+          fov: Math.round(Math.min(90, Math.max(45, 2 * Math.atan(10 / d) * 180 / Math.PI))),  // ~20 m across: book coords can be metres off
+          pitch: Math.round(Math.max(-20, -Math.atan(2 / d) * 180 / Math.PI))                  // camera ~2.5 m up, hydrant ~0.5 m
+        };
+      });
+    }
+    return svPtCache[ck];
+  }
+  function svHydrate(root, resized) {
+    var slots = root && root.querySelectorAll ? root.querySelectorAll('.pcfd-sv') : [];
+    Array.prototype.forEach.call(slots, function (el) {
+      if (el.__pcfdSv) return;
+      el.__pcfdSv = true;
+      var lat = +el.getAttribute('data-lat'), lng = +el.getAttribute('data-lng');
+      findPanoAt(lat, lng).then(function (p) {
+        if (!p) return;
+        var img = el.querySelector('img');
+        img.onload = function () { el.style.display = 'block'; if (resized) resized(); };
+        el.querySelector('a').href = 'https://www.google.com/maps/@?api=1&map_action=pano&pano=' +
+          encodeURIComponent(p.pano) + '&heading=' + p.heading + '&pitch=' + p.pitch + '&fov=' + p.fov;
+        var dt = svDate(p.date);
+        el.querySelector('.sv-tag').textContent = (dt ? 'Street View ' + dt + ' · ' : '') + Math.round(p.dist * 3.28084) + ' ft away';
+        img.src = SV_BASE + 'img?pano=' + encodeURIComponent(p.pano) + '&heading=' + p.heading +
+          '&pitch=' + p.pitch + '&fov=' + p.fov;
+      });
+    });
+  }
+  window.PCFD_SV = { slot: svSlot, hydrate: svHydrate };   // for pages' own hydrant popups
 
   function photoHtml(rec) {
     var bb = [rec[2], rec[3], rec[4], rec[5]];
@@ -872,6 +947,17 @@
       }, 0);
     }
     map.on('click', onTap);
+    /* Street View for any hydrant popup on this map -- ours or the page's own -- that
+       carries a .pcfd-sv slot; the popup re-lays itself out once the picture is in. */
+    map.on('popupopen', function (e) {
+      var pp = e.popup;
+      /* re-measure only: update() would re-run a function-content popup and throw the
+         picture away (the radar's and inspections' hydrant popups are built on open) */
+      svHydrate(pp.getElement(), function () {
+        if (!pp.isOpen || !pp.isOpen()) return;
+        if (pp._updateLayout) { pp._updateLayout(); pp._updatePosition(); if (pp._adjustPan) pp._adjustPan(); }
+      });
+    });
 
     /* ------------------------------------------------------------ keep the buttons visible */
     /* A page panel sitting on our corner (the radar's header) would hide the buttons.
