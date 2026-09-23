@@ -616,7 +616,7 @@
   /* HYDRANT slot: a page's hydrant popup carries svSlot(lat, lng); the plugin fills it when the popup opens. */
   function svSlot(lat, lng) {
     return '<div class="pcfd-sv" data-lat="' + (+lat).toFixed(6) + '" data-lng="' + (+lng).toFixed(6) + '" ' +
-      'style="display:none;margin:0 0 6px;width:340px;max-width:100%">' +
+      'style="display:none;margin:0 0 6px;width:var(--pcfd-pop-w,340px);max-width:100%">' +
       '<div style="position:relative;border-radius:6px;overflow:hidden;background:#cbd5e1;aspect-ratio:' + PHOTO_W + '/' + PHOTO_H + '">' +
       '<a target="_blank" rel="noopener" title="Open Street View here" style="display:block;width:100%;height:100%">' +
       '<img alt="Street View of the hydrant" style="display:block;width:100%;height:100%;object-fit:cover"></a>' +
@@ -697,7 +697,7 @@
      for the whole lot, not each tenant's suite -- hence the label. */
   function popupHtml(rec) {
     var ad = rec[7] || [];
-    var h = '<div style="font:13px/1.4 -apple-system,Segoe UI,Roboto,sans-serif;width:340px;max-width:78vw">';
+    var h = '<div style="font:13px/1.4 -apple-system,Segoe UI,Roboto,sans-serif;width:var(--pcfd-pop-w,340px)">';
     h += photoHtml(rec);
     h += ad.length
       ? '<div style="font-weight:700">' + esc(ad[0]) + '</div>'
@@ -742,6 +742,17 @@
   function attach(map) {
     if (map.__pcfdParcels || map.options.pcfdParcels === false) return;
     SV_MAP = map;   // the Street View camera pin (Move camera) goes on this map
+    /* Photo popups size with the MAP zoom (David 2026-09-23: "need the modal to size with the zoom"): zoomed in you are
+       looking at one lot, so the photo gets bigger; zoomed out, smaller. Never wider than ~90% of the screen.
+       Parcel and hydrant popups read the width from --pcfd-pop-w on the map container; an open one re-lays itself out. */
+    function popWidth() {
+      var z = map.getZoom(), w = z <= 14 ? 240 : z >= 20 ? 520 : { 15: 280, 16: 320, 17: 360, 18: 420, 19: 480 }[Math.round(z)] || 340;
+      map.getContainer().style.setProperty('--pcfd-pop-w', Math.min(w, Math.round(window.innerWidth * 0.9) - 40) + 'px');
+      var pp = map._popup;
+      if (pp && pp.isOpen && pp.isOpen() && pp._updateLayout) { pp._updateLayout(); pp._updatePosition(); }
+    }
+    map.on('zoomend', popWidth); window.addEventListener('resize', popWidth);
+    map.whenReady(popWidth);
     map.__pcfdParcels = true;
 
     /* Own pane below the overlay pane (400): parcels sit under every marker,
@@ -1081,7 +1092,7 @@
         }
         if (!html && on && z >= MIN_ZOOM) { var p = parcelAt(ll); if (p) html = popupHtml(p); }
         /* maxHeight: a strip centre can list five tenants; scroll rather than cover the map. */
-        if (html) hydratePhoto(L.popup({ maxWidth: 380, maxHeight: 460, pcfd: true }).setLatLng(ll).setContent(html).openOn(map).getElement());
+        if (html) hydratePhoto(L.popup({ maxWidth: 640, maxHeight: 560, pcfd: true }).setLatLng(ll).setContent(html).openOn(map).getElement());
       }, 0);
     }
     map.on('click', onTap);
