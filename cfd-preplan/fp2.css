@@ -308,8 +308,11 @@
   cursor: pointer; font-family: var(--font-body); }
 .fp-panel .ep-rot-b:active { background: var(--slate-200); }
 .fp-panel .hint { font-size: 0.7rem; color: var(--slate-500); line-height: 1.35; margin: 4px 0 8px; }
-.fp-panel .close { float: right; cursor: pointer; color: var(--slate-400);
-  font-weight: 700; font-size: 0.9rem; line-height: 1; }
+.fp-panel .close { float: none; flex: 0 0 auto; display: inline-flex; align-items: center;
+  justify-content: center; width: 32px; height: 32px; margin: -6px -6px -6px 0;
+  cursor: pointer; color: var(--slate-400); font-weight: 700; font-size: 0.9rem;
+  line-height: 1; border-radius: 6px; }
+.fp-panel .close:hover { background: var(--slate-100); color: var(--slate-700); }
 .fp-panel.hidden { display: none; }
 
 #import-panel { left: 50%; top: 50%; transform: translate(-50%,-50%); width: 380px; max-width: 92%; }

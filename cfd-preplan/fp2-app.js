@@ -2164,8 +2164,9 @@
 
     var drag = null;
     head.addEventListener('pointerdown', function (e) {
-      /* The close button and any field in the header keep working. */
-      if (e.target.closest && e.target.closest('button, input, select, textarea')) return;
+      /* The close control is a span, not a button. preventDefault on this
+       * pointerdown cancels the click that follows, so the X did nothing. */
+      if (e.target.closest && e.target.closest('button, input, select, textarea, .close')) return;
       var r = editPanel.getBoundingClientRect(), h = host();
       drag = { dx: e.clientX - r.left, dy: e.clientY - r.top, hx: h.left, hy: h.top };
       try { head.setPointerCapture(e.pointerId); } catch (err) {}
@@ -2454,7 +2455,14 @@
 
     $('btn-3d').addEventListener('click', toggle3D);
 
-    $('ep-close').addEventListener('click', function () { hideEditPanel(); state.selected = null; draw(); });
+    function dismissEdit(e) {
+      if (e) { e.preventDefault(); e.stopPropagation(); }
+      hideEditPanel();
+      state.selected = null;
+      draw();
+    }
+    $('ep-close').addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+    $('ep-close').addEventListener('click', dismissEdit);
     $('ep-delete').addEventListener('click', deleteSelected);
     $('text-confirm').addEventListener('click', commitText);
     $('text-cancel').addEventListener('click', function () {
