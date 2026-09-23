@@ -107,7 +107,7 @@
     return opending;
   }
 
-  var WATER = (me && me.getAttribute('data-water')) || (base + 'water-peach.js?v=7');
+  var WATER = (me && me.getAttribute('data-water')) || (base + 'water-peach.js?v=8');
   var NHYD = (me && me.getAttribute('data-hydrants')) || (base + 'neighbor-hydrants-peach.js?v=6');
   var WFAC = (me && me.getAttribute('data-facilities')) || (base + 'water-facilities.js?v=1');
   var WFAC_ZOOM = 12;
