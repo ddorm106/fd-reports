@@ -402,10 +402,10 @@
     return m ? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][+m[2] - 1] + ' ' + m[1] : '';
   }
   function svCtlHtml() {
-    var b = 'border:0;width:26px;height:24px;font:700 14px/24px -apple-system,Segoe UI,Roboto,sans-serif;' +
-      'background:rgba(255,255,255,.92);color:#1e293b;cursor:pointer;padding:0;';
-    return '<div class="sv-ctl" style="position:absolute;left:5px;bottom:5px;display:none;gap:1px;border-radius:6px;' +
-      'overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.4)">' +
+    var b = 'border:1px solid #cbd5e1;width:34px;height:30px;font:700 15px/28px -apple-system,Segoe UI,Roboto,sans-serif;' +
+      'background:#fff;color:#1e293b;cursor:pointer;padding:0;border-radius:6px;';
+    // a row UNDER the photo (David: "put the arrows below the image")
+    return '<div class="sv-ctl" style="display:none;gap:4px;justify-content:center;flex-wrap:wrap;margin:5px 0 2px">' +
       '<button type="button" data-a="out" title="Zoom out" style="' + b + '">&minus;</button>' +
       '<button type="button" data-a="in" title="Zoom in" style="' + b + '">+</button>' +
       '<button type="button" data-a="left" title="Turn left" style="' + b + '">&#9664;</button>' +
@@ -413,8 +413,8 @@
       '<button type="button" data-a="fwd" title="Move the camera forward (the way it is facing)" style="' + b + '">&#9650;</button>' +
       '<button type="button" data-a="back" title="Move the camera back" style="' + b + '">&#9660;</button>' +
       (SV_EDIT ? '<button type="button" data-a="set" title="Set the view everyone sees (PIN)" style="' + b + 'font-size:13px">&#9881;</button>' : '') + '</div>' +
-      '<div class="sv-adm" style="position:absolute;left:5px;right:5px;bottom:34px;display:none;flex-wrap:wrap;gap:4px;align-items:center;' +
-      'background:rgba(15,23,42,.88);color:#fff;border-radius:6px;padding:5px 6px;font:12px -apple-system,Segoe UI,Roboto,sans-serif"></div>';
+      '<div class="sv-adm" style="display:none;flex-wrap:wrap;gap:4px;align-items:center;margin:2px 0 4px;' +
+      'background:#0f172a;color:#fff;border-radius:6px;padding:6px 7px;font:12px -apple-system,Segoe UI,Roboto,sans-serif"></div>';
   }
   /* One camera: cam = {pano, lat?, lng?, heading, pitch, fov, date}; target = [lat, lng] it looks at; key = saved-view key.
      ui = {box (holds .sv-ctl/.sv-adm), img, link (<a> to Google), tag (date label), tagText(cam)}. */
@@ -553,14 +553,14 @@
       '<a class="ph-sv" target="_blank" rel="noopener" title="Open Street View here" style="display:block;width:100%;height:100%">' +
       '<img alt="Street View of the property" style="display:block;width:100%;height:100%;object-fit:cover"></a>' +
       '<span class="ph-date" style="position:absolute;right:5px;top:5px;font-size:10px;font-weight:600;color:#fff;' +
-      'background:rgba(15,23,42,.6);padding:1px 6px;border-radius:9px;pointer-events:none"></span>' + svCtlHtml() + '</div>' +
+      'background:rgba(15,23,42,.6);padding:1px 6px;border-radius:9px;pointer-events:none"></span></div>' +
       '<div class="ph-msg" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;' +
       'font-size:11px;color:#475569">Loading photo&hellip;</div>' +
       '<div class="ph-tg" style="position:absolute;left:5px;top:5px;display:none;border-radius:7px;overflow:hidden;' +
       'box-shadow:0 1px 3px rgba(0,0,0,.4)">' +
       '<button type="button" data-v="sv" style="' + btn + '">Street</button>' +
       '<button type="button" data-v="aer" style="' + btn + 'border-left:1px solid #cbd5e1">Aerial</button></div>' +
-      '</div>' +
+      '</div>' + '<div class="ph-ctlbox">' + svCtlHtml() + '</div>' +
       '<div style="font-size:12px;margin:-2px 0 6px">' +
       '<a class="ph-svlink" target="_blank" rel="noopener" href="https://www.google.com/maps/@?api=1&amp;map_action=pano&amp;viewpoint=' +
       cLat.toFixed(6) + ',' + cLng.toFixed(6) + '">Street View &rarr;</a> &nbsp; ' +
@@ -575,11 +575,13 @@
     var aim = (el.getAttribute('data-aim') || '').split(',').filter(Boolean).map(Number);
     var target = aim.length === 3 ? [aim[1], aim[0]] : [(bb[1] + bb[3]) / 2, (bb[0] + bb[2]) / 2];
     var aer = el.querySelector('.ph-aer'), svb = el.querySelector('.ph-svbox'), msg = el.querySelector('.ph-msg');
+    var ctlbox = el.nextElementSibling && el.nextElementSibling.classList.contains('ph-ctlbox') ? el.nextElementSibling : null;
     var tg = el.querySelector('.ph-tg'), btns = tg.querySelectorAll('button');
     function show(v) {
       msg.style.display = 'none';
       aer.style.display = v === 'aer' ? 'block' : 'none';
       svb.style.display = v === 'sv' ? 'block' : 'none';
+      if (ctlbox) ctlbox.style.display = v === 'sv' ? '' : 'none';
       for (var i = 0; i < btns.length; i++) {
         var on = btns[i].getAttribute('data-v') === v;
         btns[i].style.background = on ? '#1e3a8a' : '#fff';
@@ -600,7 +602,7 @@
       var cam = { pano: p.pano, lat: p.lat, lng: p.lng, heading: p.heading, pitch: p.pitch == null ? 3 : p.pitch, fov: p.fov, date: p.date };
       var sl = el.parentNode && el.parentNode.querySelector('.ph-svlink');
       var link = svb.querySelector('.ph-sv');
-      svCamera(cam, target, key, { box: svb, img: link.querySelector('img'), link: link, tag: svb.querySelector('.ph-date'),
+      svCamera(cam, target, key, { box: ctlbox || svb, img: link.querySelector('img'), link: link, tag: svb.querySelector('.ph-date'),
         tagText: function (c, dt) { if (sl) sl.href = link.href; return (dt || '') + (p.saved ? ' · set view' : ''); } },
         function (ok) {
           if (settled) return;
@@ -614,12 +616,12 @@
   /* HYDRANT slot: a page's hydrant popup carries svSlot(lat, lng); the plugin fills it when the popup opens. */
   function svSlot(lat, lng) {
     return '<div class="pcfd-sv" data-lat="' + (+lat).toFixed(6) + '" data-lng="' + (+lng).toFixed(6) + '" ' +
-      'style="display:none;margin:0 0 6px;position:relative;border-radius:6px;overflow:hidden;background:#cbd5e1;' +
-      'aspect-ratio:' + PHOTO_W + '/' + PHOTO_H + ';min-width:230px">' +
+      'style="display:none;margin:0 0 6px;width:340px;max-width:100%">' +
+      '<div style="position:relative;border-radius:6px;overflow:hidden;background:#cbd5e1;aspect-ratio:' + PHOTO_W + '/' + PHOTO_H + '">' +
       '<a target="_blank" rel="noopener" title="Open Street View here" style="display:block;width:100%;height:100%">' +
       '<img alt="Street View of the hydrant" style="display:block;width:100%;height:100%;object-fit:cover"></a>' +
       '<span class="sv-tag" style="position:absolute;right:5px;top:5px;font-size:10px;font-weight:600;color:#fff;' +
-      'background:rgba(15,23,42,.6);padding:1px 6px;border-radius:9px;pointer-events:none"></span>' + svCtlHtml() + '</div>';
+      'background:rgba(15,23,42,.6);padding:1px 6px;border-radius:9px;pointer-events:none"></span></div>' + svCtlHtml() + '</div>';
   }
   var svPtCache = {};
   function findPanoAt(lat, lng) {
@@ -695,7 +697,7 @@
      for the whole lot, not each tenant's suite -- hence the label. */
   function popupHtml(rec) {
     var ad = rec[7] || [];
-    var h = '<div style="font:13px/1.4 -apple-system,Segoe UI,Roboto,sans-serif;width:250px">';
+    var h = '<div style="font:13px/1.4 -apple-system,Segoe UI,Roboto,sans-serif;width:340px;max-width:78vw">';
     h += photoHtml(rec);
     h += ad.length
       ? '<div style="font-weight:700">' + esc(ad[0]) + '</div>'
@@ -1079,7 +1081,7 @@
         }
         if (!html && on && z >= MIN_ZOOM) { var p = parcelAt(ll); if (p) html = popupHtml(p); }
         /* maxHeight: a strip centre can list five tenants; scroll rather than cover the map. */
-        if (html) hydratePhoto(L.popup({ maxWidth: 280, maxHeight: 380, pcfd: true }).setLatLng(ll).setContent(html).openOn(map).getElement());
+        if (html) hydratePhoto(L.popup({ maxWidth: 380, maxHeight: 460, pcfd: true }).setLatLng(ll).setContent(html).openOn(map).getElement());
       }, 0);
     }
     map.on('click', onTap);
