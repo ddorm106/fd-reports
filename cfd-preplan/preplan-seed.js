@@ -15,7 +15,7 @@
 (function () {
   'use strict';
 
-  var SEEDS = 'preplan-seeds.json?v=3';
+  var SEEDS = 'preplan-seeds.json?v=4';
   var data = null, pending = null;
 
   function load() {
@@ -61,7 +61,17 @@
     });
     if ((s.hydrants || []).length) p.hydCount = String(Math.min(3, s.hydrants.length));
 
+    /* Plan-set details (2026-09-23): a seed built from a building's construction plans carries `form`, extra
+       preFirePlan fields keyed by the app's own ids (construction type, stories, sprinkler, utilities...). They fill
+       only what the fields above did not, and the notes name the plan set so crews verify them on the walk. */
+    if (s.form) Object.keys(s.form).forEach(function (k) {
+      var v = s.form[k];
+      if (p[k] !== undefined && p[k] !== '' || v === null || v === undefined || v === '') return;
+      p[k] = (typeof v === 'number' || typeof v === 'boolean') ? String(v) : v;
+    });
+
     var seeded = [];
+    if (s.form) seeded.push(Object.keys(s.form).length + ' fields from ' + (s.form_source || 'the construction plans'));
     if (s.tax_id) seeded.push('Tax ID ' + s.tax_id + ' (Houston County parcel' +
       (s.parcel_acres ? ', ' + s.parcel_acres + ' ac' : '') + ')');
     if (s.sq_ft) seeded.push(s.sq_ft + ' sq ft');
@@ -75,6 +85,7 @@
       'Pre-filled: ' + seeded.join('; ') + '. ' +
       'Sources: CFD hazard inventory, Houston County parcel layer, CFD + county hydrant list. ' +
       (s.notes ? 'Inventory note: ' + s.notes + '. ' : '') +
+      (s.crew_notes ? 'From the plans: ' + s.crew_notes + ' ' : '') +
       'Walk the building and correct anything that does not match.';
     return p;
   }
