@@ -710,6 +710,9 @@
          '</b>' + (rec[1] != null ? ' &middot; ' + rec[1] + ' ac' : '') + '</div>';
     if (ad.length) h += '<div style="font-size:10.5px;color:#94a3b8;margin-top:2px">County address</div>';
 
+    /* A host page can add its own lines under the parcel facts (the Centerville map site: nearest hydrants). */
+    if (typeof window.PCFD_PARCEL_EXTRA === 'function') { try { h += window.PCFD_PARCEL_EXTRA(rec) || ''; } catch (e) {} }
+
     /* What stands on it, the way the Centerville map lists it. */
     var O = window.PCFD_OCC, occ = (O && O.by && O.by[rec[0]]) || [];
     if (O && !occ.length) {
@@ -826,7 +829,16 @@
     var cgroup = L.layerGroup();        // water towers + pump houses (from WFAC_ZOOM)
     var facs = null;
     var nhyd = null;
-    var won = false, wbtn = null, legend = null, mains = null, labels = null;
+    var won = false, wbtn = null, legend = null, mains = null, labels = null, keyHd = null, keyBody = null;
+    function keyIsOpen() { try { return localStorage.getItem('pcfd_water_key') === 'open'; } catch (e) { return false; } }
+    function keyOpen(o) {
+      try { localStorage.setItem('pcfd_water_key', o ? 'open' : 'closed'); } catch (e) {}
+      if (!keyBody) return;
+      keyBody.style.display = o ? 'block' : 'none';
+      keyHd.innerHTML = (o ? '&#9662;' : '&#9656;') + ' Water key';
+      keyHd.setAttribute('aria-expanded', o ? 'true' : 'false');
+      setTimeout(clearOfPage, 0);
+    }
 
     function wlabel(t) { if (wbtn) wbtn.innerHTML = t; }
 
@@ -942,6 +954,7 @@
         wbtn.style.background = won ? '#e0f2fe' : '#fff';
       }
       if (legend) legend.style.display = won ? 'block' : 'none';
+      if (legend) keyOpen(keyIsOpen());
       setTimeout(clearOfPage, 0);                // the legend changes the box's height
       if (!won) {
         if (map.hasLayer(cgroup)) map.removeLayer(cgroup);
@@ -972,9 +985,17 @@
         wbtn.title = 'Show known water mains (approximate, from public records)';
         wbtn.style.cssText = css + ';color:#075985';
         wbtn.innerHTML = '&#128167; Water';
+        /* the water KEY folds away (David 2026-09-25: "can we collapse the parcels and water modal -- when i select water
+           it stays popped up"): with Water on only a "Key" row shows; tap it to open / close. Starts closed; remembered. */
         legend = L.DomUtil.create('div', '', box);
-        legend.style.cssText = 'display:none;padding:5px 8px;font:11px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;color:#334155;background:#fff;border-top:1px solid #ccc;max-width:190px;white-space:normal;max-height:38vh;overflow-y:auto';
-        legend.innerHTML =
+        legend.style.cssText = 'display:none;background:#fff;border-top:1px solid #ccc;max-width:190px';
+        keyHd = L.DomUtil.create('a', '', legend);
+        keyHd.href = '#'; keyHd.setAttribute('role', 'button');
+        keyHd.style.cssText = 'display:block;padding:0 8px;font:600 11px/26px -apple-system,Segoe UI,Roboto,sans-serif;color:#475569;text-decoration:none;white-space:nowrap';
+        keyBody = L.DomUtil.create('div', '', legend);
+        keyBody.style.cssText = 'padding:0 8px 6px;font:11px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;color:#334155;white-space:normal;max-height:38vh;overflow-y:auto';
+        L.DomEvent.on(keyHd, 'click', function (ev) { L.DomEvent.preventDefault(ev); keyOpen(!keyIsOpen()); });
+        keyBody.innerHTML =
           '<div><span style="' + PIPE_CSS + ';height:6px;background:#1e3a8a"></span>12&quot; and bigger</div>' +
           '<div><span style="' + PIPE_CSS + ';height:4px;background:#1d4ed8"></span>8&ndash;10&quot;</div>' +
           '<div><span style="' + PIPE_CSS + ';height:3px;background:#2563eb"></span>6&quot;, or size not on file</div>' +
@@ -1095,7 +1116,7 @@
         if (html) hydratePhoto(L.popup({ maxWidth: 640, maxHeight: 560, pcfd: true }).setLatLng(ll).setContent(html).openOn(map).getElement());
       }, 0);
     }
-    map.on('click', onTap);
+    map.on('click', function (e) { if (!window.PCFD_TAP_OFF) onTap(e); });   // a host tool (measure) can pause lot taps
     /* Street View for any hydrant popup on this map -- ours or the page's own -- that
        carries a .pcfd-sv slot; the popup re-lays itself out once the picture is in. */
     map.on('popupopen', function (e) {
