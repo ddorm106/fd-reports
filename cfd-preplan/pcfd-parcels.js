@@ -74,7 +74,7 @@
   var TILES = me && me.getAttribute('data-parcel-tiles'), TIDX = null, TGOT = {}, TPIN = null;
   function tilesFor(map, done) {
     if (!TILES || !window.CV_PARCELS || map.getZoom() < MIN_ZOOM) return;
-    (TIDX ? Promise.resolve(TIDX) : fetch(TILES + 'index.json?v=1', { credentials: 'same-origin' }).then(function (r) { return r.ok ? r.json() : null; })
+    (TIDX ? Promise.resolve(TIDX) : fetch(TILES + 'index.json?v=2', { credentials: 'same-origin' }).then(function (r) { return r.ok ? r.json() : null; })
       .then(function (j) { TIDX = j || { t: 0.02, tiles: [] }; TIDX.set = {}; TIDX.tiles.forEach(function (k) { TIDX.set[k] = 1; }); return TIDX; }))
       .then(function (ix) {
         var b = map.getBounds(), t = ix.t, need = [];
@@ -84,7 +84,7 @@
           }
         if (!need.length) return;
         if (!TPIN) { TPIN = {}; window.CV_PARCELS.p.forEach(function (r) { TPIN[r[0]] = 1; }); }
-        Promise.all(need.map(function (k) { return fetch(TILES + k + '.json?v=1', { credentials: 'same-origin' }).then(function (r) { return r.ok ? r.json() : { p: [] }; }).catch(function () { TGOT[k] = 0; return { p: [] }; }); }))
+        Promise.all(need.map(function (k) { return fetch(TILES + k + '.json?v=2', { credentials: 'same-origin' }).then(function (r) { return r.ok ? r.json() : { p: [] }; }).catch(function () { TGOT[k] = 0; return { p: [] }; }); }))
           .then(function (all) {
             var P = window.CV_PARCELS.p, added = 0;
             all.forEach(function (j) { (j.p || []).forEach(function (r) { if (!TPIN[r[0]]) { TPIN[r[0]] = 1; P.push(r); added++; } }); });
