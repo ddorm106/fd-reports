@@ -68,6 +68,30 @@
   var base = src ? src.slice(0, src.lastIndexOf('/') + 1) : '';
   var DATA = (me && me.getAttribute('data-parcels')) || (base + 'parcels-peach.js?v=1');
   var MIN_ZOOM = 15;
+  /* COUNTY TILES (optional, 2026-09-26): data-parcel-tiles="<dir>/" = the rest of the county as 0.02-deg tiles
+     (build_county_parcels.py) loaded for whatever is on screen at zoom 15+ and merged into CV_PARCELS (de-duped by
+     pin). No attribute = off, so every page that doesn't ask is unchanged. */
+  var TILES = me && me.getAttribute('data-parcel-tiles'), TIDX = null, TGOT = {}, TPIN = null;
+  function tilesFor(map, done) {
+    if (!TILES || !window.CV_PARCELS || map.getZoom() < MIN_ZOOM) return;
+    (TIDX ? Promise.resolve(TIDX) : fetch(TILES + 'index.json?v=1', { credentials: 'same-origin' }).then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { TIDX = j || { t: 0.02, tiles: [] }; TIDX.set = {}; TIDX.tiles.forEach(function (k) { TIDX.set[k] = 1; }); return TIDX; }))
+      .then(function (ix) {
+        var b = map.getBounds(), t = ix.t, need = [];
+        for (var gx = Math.floor((b.getWest() - t / 2) / t); gx <= Math.floor((b.getEast() + t / 2) / t); gx++)
+          for (var gy = Math.floor((b.getSouth() - t / 2) / t); gy <= Math.floor((b.getNorth() + t / 2) / t); gy++) {
+            var k = gx + '_' + gy; if (ix.set[k] && !TGOT[k]) { TGOT[k] = 1; need.push(k); }
+          }
+        if (!need.length) return;
+        if (!TPIN) { TPIN = {}; window.CV_PARCELS.p.forEach(function (r) { TPIN[r[0]] = 1; }); }
+        Promise.all(need.map(function (k) { return fetch(TILES + k + '.json?v=1', { credentials: 'same-origin' }).then(function (r) { return r.ok ? r.json() : { p: [] }; }).catch(function () { TGOT[k] = 0; return { p: [] }; }); }))
+          .then(function (all) {
+            var P = window.CV_PARCELS.p, added = 0;
+            all.forEach(function (j) { (j.p || []).forEach(function (r) { if (!TPIN[r[0]]) { TPIN[r[0]] = 1; P.push(r); added++; } }); });
+            if (added && done) done();
+          });
+      }).catch(function () {});
+  }
   var TAP_PX = 10;              // how near a main a finger has to land, in screen pixels
   var POSITION = (me && me.getAttribute('data-position')) || 'topleft';
   var KEY = 'pcfd_parcels_on';
@@ -779,6 +803,7 @@
       label('&#9638; Parcels');
       /* Only what is on screen: 14,000 lots is too many to hand Leaflet at
          once and nobody can look at them all anyway. */
+      tilesFor(map, draw);
       var b = map.getBounds(), w = b.getWest(), e = b.getEast(), s = b.getSouth(), n = b.getNorth();
       var P = window.CV_PARCELS.p;
       for (var i = 0; i < P.length; i++) {
