@@ -775,6 +775,7 @@
     pocket:  { kind: 'door', type: 'pocket', widthFt: 3, label: 'Pocket', group: 'Doors' },
     bifold:  { kind: 'door', type: 'bifold', widthFt: 5, label: 'Bifold', group: 'Doors' },
     rollup:  { kind: 'door', type: 'rollup', widthFt: 10, label: 'Roll-up', group: 'Doors' },
+    baybi:   { kind: 'door', type: 'bifold-bay', widthFt: 12, label: 'Bay bifold', group: 'Doors' },
     opening: { kind: 'door', type: 'entryway', widthFt: 3, label: 'Opening', group: 'Doors' },
     window:  { kind: 'window', type: 'fixed', widthFt: 4, label: 'Fixed', group: 'Windows' },
     wslide:  { kind: 'window', type: 'slider', widthFt: 6, label: 'Slider', group: 'Windows' },
@@ -857,6 +858,95 @@
     refreshEmptyState();
     renderFloors();
     commit('Deleted');
+  }
+
+  /* Copy the selected item (David 9/27: "add me a copy button on walls, room,
+   * doors, windows, symbols, and text"). The copy lands 2 ft over and becomes the
+   * selection, so it can be dragged straight into place. A door or window stays
+   * in its wall and steps along it. A room (zone) brings the walls on its
+   * outline and their openings with it, and lands beside the original, which is
+   * what you want for the next suite in a strip. */
+  var COPY_OFF = 24;                                   // 2 ft at 12 px/ft
+  function shiftEl(el, dx, dy) {
+    ['x', 'x1', 'x2'].forEach(function (k) { if (typeof el[k] === 'number') el[k] += dx; });
+    ['y', 'y1', 'y2'].forEach(function (k) { if (typeof el[k] === 'number') el[k] += dy; });
+    (el.points || []).forEach(function (p) { p.x += dx; p.y += dy; });
+    (el.poly || []).forEach(function (p) { p.x += dx; p.y += dy; });
+  }
+  function onSeg(px, py, ax, ay, bx, by, tol) {
+    var vx = bx - ax, vy = by - ay, L2 = vx * vx + vy * vy;
+    var t = L2 ? ((px - ax) * vx + (py - ay) * vy) / L2 : 0;
+    if (t < -0.01 || t > 1.01) return false;
+    var qx = ax + t * vx - px, qy = ay + t * vy - py;
+    return qx * qx + qy * qy <= tol * tol;
+  }
+  function copyOpenings(fromWallId, toWall) {
+    ['doors', 'windows'].forEach(function (lk) {
+      var list = doc.list(lk), add = [];
+      list.forEach(function (op) {
+        if (op.wallId !== fromWallId) return;
+        var c = JSON.parse(JSON.stringify(op));
+        c.id = uid(lk === 'doors' ? 'd_' : 'n_'); c.wallId = toWall.id;
+        if (typeof c.t === 'number') {
+          c.x = toWall.x1 + (toWall.x2 - toWall.x1) * c.t;
+          c.y = toWall.y1 + (toWall.y2 - toWall.y1) * c.t;
+        }
+        add.push(c);
+      });
+      add.forEach(function (c) { list.push(c); });
+    });
+  }
+  function copySelected() {
+    if (!state.selected || !doc) return;
+    var k = state.selected.kind;
+    if (k === 'side') return;                          // A/B/C/D labels are one per side
+    var arr = doc.list(k);
+    var src = arr && arr[state.selected.index];
+    if (!src) return;
+    doc.pushUndo();
+    var c = JSON.parse(JSON.stringify(src));
+    var pre = { wall: 'w_', door: 'd_', window: 'n_', symbol: 's_', text: 't_', object: 'o_',
+                zone: 'z_', measurement: 'm_', freehand: 'f_' }[k] || 'x_';
+    c.id = uid(pre);
+    if ((k === 'door' || k === 'window') && c.wallId) {
+      var host = doc.wallsById()[c.wallId];
+      var L = host ? Math.hypot(host.x2 - host.x1, host.y2 - host.y1) : 0;
+      if (host && L > 0) {
+        var step = ((c.width || 36) + COPY_OFF / 2) / L;
+        var t0 = typeof c.t === 'number' ? c.t : 0.5;
+        var t1 = t0 + step <= 0.98 ? t0 + step : Math.max(0.02, t0 - step);
+        c.t = t1;
+        c.x = host.x1 + (host.x2 - host.x1) * t1;
+        c.y = host.y1 + (host.y2 - host.y1) * t1;
+      } else { delete c.wallId; shiftEl(c, COPY_OFF, COPY_OFF); }
+    } else if (k === 'zone' && (c.poly || []).length) {
+      var xs = c.poly.map(function (p) { return p.x; });
+      var dx = Math.max.apply(null, xs) - Math.min.apply(null, xs) + COPY_OFF;
+      var walls = doc.list('walls'), made = [];
+      walls.forEach(function (w) {
+        var on = function (px, py) {
+          for (var i = 0; i < src.poly.length; i++) {
+            var p = src.poly[i], q = src.poly[(i + 1) % src.poly.length];
+            if (onSeg(px, py, p.x, p.y, q.x, q.y, 3)) return true;
+          }
+          return false;
+        };
+        if (on(w.x1, w.y1) && on(w.x2, w.y2)) {
+          var wc = JSON.parse(JSON.stringify(w));
+          wc.id = uid('w_'); shiftEl(wc, dx, 0); made.push([w.id, wc]);
+        }
+      });
+      made.forEach(function (m) { walls.push(m[1]); copyOpenings(m[0], m[1]); });
+      shiftEl(c, dx, 0);
+    } else {
+      shiftEl(c, COPY_OFF, COPY_OFF);
+    }
+    arr.push(c);
+    state.selected = { kind: k, index: arr.length - 1 };
+    if (k === 'zone') { hideEditPanel(); showZonePanel(); } else { hideZonePanel(); showEditPanel(state.selected); }
+    refreshEmptyState();
+    renderFloors();
+    commit(k === 'zone' ? 'Room copied' : 'Copied');
   }
 
   /* ============================================================= pointer */
@@ -1537,6 +1627,7 @@
       doc.pushUndo(); z.hide_area = this.checked; commit(); showZonePanel();
     });
     $('zp-delete').addEventListener('click', deleteSelected);
+    if ($('zp-copy')) $('zp-copy').addEventListener('click', copySelected);
   }
 
   function currentZone() {
@@ -1784,6 +1875,7 @@
     if (!el) return;
     var scale = doc.data.scale_px_per_ft || 12;
     $('ep-title').textContent = hit.kind.charAt(0).toUpperCase() + hit.kind.slice(1);
+    if ($('ep-copy')) $('ep-copy').style.display = hit.kind === 'side' ? 'none' : '';
     var body = $('ep-body');
     body.innerHTML = '';
     var sub = '';
@@ -1930,6 +2022,7 @@
          ['glass', 'Glass'], ['glass-double', 'Glass pair'],
          ['sliding', 'Sliding'], ['pocket', 'Pocket'], ['bifold', 'Bifold'],
          ['rollup', 'Roll-up / overhead'],
+         ['bifold-bay', 'Bifold bay door (apparatus)'],
          ['entryway', 'Open doorway (no leaf)']].forEach(function (t) {
           var o = document.createElement('option');
           o.value = t[0]; o.textContent = t[1];
@@ -1948,7 +2041,7 @@
          * has no door, so neither has a swing to set. */
         var t = el.type || 'single';
         var swingBoth = t === 'single' || t === 'glass';
-        var swingSide = swingBoth || t === 'double' || t === 'glass-double' || t === 'bifold';
+        var swingSide = swingBoth || t === 'double' || t === 'glass-double' || t === 'bifold' || t === 'bifold-bay';
         if (swingSide) {
           var sl = document.createElement('label');
           sl.className = 'fld';
@@ -2384,6 +2477,11 @@
         else { state.selected = null; hideEditPanel(); hideZonePanel(); draw(); }
         return;
       }
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'd' || e.key === 'D')) {
+        /* Cmd/Ctrl-D copies the selection (the browser's bookmark shortcut is not wanted here). */
+        if (state.selected) { e.preventDefault(); copySelected(); }
+        return;
+      }
       if (e.key === 'Enter') {
         if (state.drawing && (state.drawing.kind === 'chain' || state.drawing.kind === 'zone')) {
           e.preventDefault();
@@ -2514,6 +2612,7 @@
     $('ep-close').addEventListener('pointerdown', function (e) { e.stopPropagation(); });
     $('ep-close').addEventListener('click', dismissEdit);
     $('ep-delete').addEventListener('click', deleteSelected);
+    if ($('ep-copy')) $('ep-copy').addEventListener('click', copySelected);
     $('text-confirm').addEventListener('click', commitText);
     $('text-cancel').addEventListener('click', function () {
       textOverlay.classList.remove('open');
@@ -2720,6 +2819,7 @@
     selectSymbol: selectSymbol,
     hitTest: function (sx, sy) { return renderer ? renderer.hitTest(sx, sy) : null; },
     deleteElement: function (hit) { state.selected = hit; deleteSelected(); },
+    copyElement: function (hit) { state.selected = hit; copySelected(); },
     showEditPanel: showEditPanel,
     /* v5 additions, for anything that wants them later. */
     doc: function () { return doc; },

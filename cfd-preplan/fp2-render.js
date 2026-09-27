@@ -524,6 +524,45 @@ function drawDoorSymbol(d, sel) {
       if (fi === 0) ctx.moveTo(fx, fy); else ctx.lineTo(fx, fy);
     }
     ctx.stroke();
+  } else if (kind === 'bifold-bay') {
+    /* Apparatus-bay bifold (four-fold, bi-parting): each half is two heavy
+     * leaves hinged at the jamb, folding OUT to the swing side. Drawn part-open
+     * so it reads as a bay door, with the dashed opening line a roll-up has,
+     * because the whole width is the opening when the door is up. */
+    var ySign = (d.swing === -1) ? -1 : 1;
+    var nX = -sinA * ySign, nY = cosA * ySign;
+    var leaf = w / 4, th = Math.PI / 3;               // leaves at 60 deg
+    var z2 = state.view.zoom;
+    ctx.strokeStyle = COL.doorRoll;
+    ctx.lineWidth = 1.2 / z2;
+    ctx.setLineDash([6 / z2, 3 / z2]);
+    ctx.beginPath();
+    ctx.moveTo(cx - w / 2 * cosA, cy - w / 2 * sinA);
+    ctx.lineTo(cx + w / 2 * cosA, cy + w / 2 * sinA);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.strokeStyle = COL.doorLeaf;
+    ctx.lineWidth = 3 / z2;
+    ctx.lineJoin = 'round';
+    [-1, 1].forEach(function (side) {                  // -1 = left jamb, +1 = right jamb
+      var jx = cx + side * w / 2 * cosA, jy = cy + side * w / 2 * sinA;
+      var inX = -side * cosA, inY = -side * sinA;      // along the wall, toward the centre
+      var k1x = jx + inX * leaf * Math.cos(th) + nX * leaf * Math.sin(th);
+      var k1y = jy + inY * leaf * Math.cos(th) + nY * leaf * Math.sin(th);
+      var k2x = jx + inX * 2 * leaf * Math.cos(th), k2y = jy + inY * 2 * leaf * Math.cos(th);
+      ctx.beginPath(); ctx.moveTo(jx, jy); ctx.lineTo(k1x, k1y); ctx.lineTo(k2x, k2y); ctx.stroke();
+      ctx.fillStyle = COL.doorLeaf;
+      ctx.beginPath(); ctx.arc(jx, jy, 2.4 / z2, 0, Math.PI * 2); ctx.fill();
+    });
+    ctx.fillStyle = COL.doorRoll;
+    ctx.font = 'bold ' + (9 / z2) + 'px -apple-system, Helvetica, Arial, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.save();
+    ctx.translate(cx - nX * 14 / z2, cy - nY * 14 / z2);
+    var ta = a; if (ta > Math.PI / 2 || ta < -Math.PI / 2) ta += Math.PI;
+    ctx.rotate(ta);
+    ctx.fillText('BI-FOLD BAY', 0, 0);
+    ctx.restore();
   } else if (kind === 'rollup') {
     ctx.strokeStyle = COL.doorRoll;
     ctx.lineWidth = 3.4 / state.view.zoom;
