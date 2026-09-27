@@ -912,6 +912,18 @@ function renderV4Floorplan(d,pdfW,pdfH){
                 if(fi===0) ctx.moveTo(fx,fy); else ctx.lineTo(fx,fy);
             }
             ctx.stroke();
+        } else if(typ==='bifold-bay'){
+            /* Apparatus-bay bifold: dashed opening line + two leaf pairs folding out (page 11 draws the same). */
+            var ys=(dr.swing===-1)?-1:1, nX=-sinA*ys, nY=cosA*ys, lf=w/4, th=Math.PI/3;
+            ctx.strokeStyle='#C05020'; ctx.lineWidth=1/scale; ctx.setLineDash([6/scale,3/scale]);
+            ctx.beginPath(); ctx.moveTo(p1x,p1y); ctx.lineTo(p2x,p2y); ctx.stroke(); ctx.setLineDash([]);
+            ctx.strokeStyle='#1E1E1E'; ctx.lineWidth=2.4/scale;
+            [-1,1].forEach(function(sd){
+                var jx=dr.x+sd*half*cosA, jy=dr.y+sd*half*sinA, ix=-sd*cosA, iy=-sd*sinA;
+                ctx.beginPath(); ctx.moveTo(jx,jy);
+                ctx.lineTo(jx+ix*lf*Math.cos(th)+nX*lf*Math.sin(th), jy+iy*lf*Math.cos(th)+nY*lf*Math.sin(th));
+                ctx.lineTo(jx+ix*2*lf*Math.cos(th), jy+iy*2*lf*Math.cos(th)); ctx.stroke();
+            });
         } else if(typ==='rollup'){
             ctx.strokeStyle='#C05020'; ctx.lineWidth=2.5/scale;
             ctx.setLineDash([6/scale,3/scale]);
