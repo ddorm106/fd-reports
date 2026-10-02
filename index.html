@@ -153,6 +153,7 @@
             border-color: rgba(255,255,255,0.12);
             box-shadow: 0 12px 32px rgba(0,0,0,0.35);
         }
+        .card[hidden] { display: none !important; }      /* the Message Board card stays hidden for those who may not post */
         .card-status {
             position: absolute;
             top: 14px;
@@ -311,6 +312,15 @@
             <p>You're already signed in — the same fdtraining.org login opens it.</p>
                     <ul class="card-chips"><li>Career path</li><li>Task books</li><li>Training requests</li><li>Roster</li><li>SOPs</li><li>Daily reports</li></ul>
             <a href="https://career.fdtraining.org/" class="card-link">Open Career Portal <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+
+        <!-- MESSAGE BOARD (David 2026-10-02: "make the message for the tv and map a card on the main site that is easier to find and
+             only sergeants and up can see"). Hidden until the board says this person may post (Sergeant and up, fdtraining login). -->
+        <div class="card" id="boardCard" hidden>
+            <span class="card-status instructor">Sergeant +</span>
+            <h3>📢 Message Board &mdash; TV &amp; Map</h3>
+            <p>Post a notice, training, event or urgent message. It scrolls across the station TV and every map screen.</p>
+            <a href="/centerville-map/board" class="card-link">Post a message <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
         </div>
 
     </div>
@@ -491,5 +501,13 @@
     <div class="motto">Punctual · Valuable · Selfless</div>
     <div>Centerville Fire Department — Training Division</div>
 </footer>
+<script>
+/* the Message Board card: only for those the board lets post (Sergeant and up); everyone else never sees it */
+(function () {
+  var c = document.getElementById('boardCard'); if (!c || !window.fetch) return;
+  fetch('/centerville-map/api/board/me', { credentials: 'include', cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (me) { if (me && me.may) c.hidden = false; }).catch(function () {});
+})();
+</script>
 </body>
 </html>
