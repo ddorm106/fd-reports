@@ -293,6 +293,10 @@
      strip (board messages + rescue/injury/fatality ticker, from career.fdtraining.org/safety/embed.js) takes its place.
      The bar still shows on the pre-plan pages. -->
 <style>.fd-topnav{display:none!important}</style>
+<!-- Staff-only items (chiefs, officers, Training): hidden by default, shown when the Career Portal says this person is
+     staff (career.fdtraining.org/safety/board.json -> staff). David 10/4: firefighters don't need these. -->
+<style>html:not(.fd-staff) [data-staff-only]{display:none!important}</style>
+<script>(function(){if(!window.fetch)return;fetch("https://career.fdtraining.org/safety/board.json",{credentials:"include",cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(d){if(d&&d.staff)document.documentElement.classList.add("fd-staff")}).catch(function(){})})();</script>
 </head>
 <body>
 
@@ -306,6 +310,12 @@
 </header>
 
 <main class="main">
+
+    <div class="section-label">Firefighter Safety</div>
+    <!-- Live line-of-duty death / NIOSH / Secret List / Rescue Survey numbers + the Georgia alert banner.
+         Served by the Career Portal worker (src/r1/safety.js), refreshed every 6 hours. -->
+    <div class="card wide" id="fd-safety" style="display:block;margin-bottom:36px"><p style="color:#889">Loading firefighter safety numbers…</p></div>
+    <script src="https://career.fdtraining.org/safety/embed.js" defer></script>
 
     <div class="section-label">Career Portal</div>
     <div class="grid">
@@ -328,12 +338,6 @@
         </div>
 
     </div>
-
-    <div class="section-label">Firefighter Safety</div>
-    <!-- Live line-of-duty death / NIOSH / Secret List / Rescue Survey numbers + the Georgia alert banner.
-         Served by the Career Portal worker (src/r1/safety.js), refreshed every 6 hours. -->
-    <div class="card wide" id="fd-safety" style="display:block;margin-bottom:36px"><p style="color:#889">Loading firefighter safety numbers…</p></div>
-    <script src="https://career.fdtraining.org/safety/embed.js" defer></script>
 
     <div class="section-label">Reports &amp; Evaluations</div>
     <div class="grid">
@@ -471,8 +475,8 @@
 
     </div>
 
-    <div class="section-label">Instructors &amp; Admin</div>
-    <div class="grid">
+    <div class="section-label" data-staff-only>Instructors &amp; Admin</div>
+    <div class="grid" data-staff-only>
 
         <div class="card">
             <span class="card-status instructor">Restricted</span>

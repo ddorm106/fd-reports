@@ -299,6 +299,10 @@
         .card-status.draft-saved { background: rgba(230,168,23,0.12); color: var(--cfd-accent-amber); }
         .card .draft-note { font-size: .8rem; color: var(--cfd-accent-amber); margin-top: 8px; }
     </style>
+<!-- Staff-only items (chiefs, officers, Training): hidden by default, shown when the Career Portal says this person is
+     staff (career.fdtraining.org/safety/board.json -> staff). David 10/4: firefighters don't need these. -->
+<style>html:not(.fd-staff) [data-staff-only]{display:none!important}</style>
+<script>(function(){if(!window.fetch)return;fetch("https://career.fdtraining.org/safety/board.json",{credentials:"include",cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(d){if(d&&d.staff)document.documentElement.classList.add("fd-staff")}).catch(function(){})})();</script>
 </head>
 <body>
 
@@ -325,7 +329,7 @@
             <a href="../firefighter-report/page1.html" class="card-link">Open Report <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
         </div>
 
-        <div class="card" data-report="cfdMonthly.rescueDriver">
+        <div class="card" data-report="cfdMonthly.rescueDriver" data-staff-only>
             <span class="card-status active">Active</span>
             <h3>Rescue Driver Monthly</h3>
             <p>Rescue 1 driver operations. 26 items.</p>
@@ -333,7 +337,7 @@
             <a href="../rescue-driver-report/page1.html" class="card-link">Open Report <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
         </div>
 
-        <div class="card" data-report="cfdMonthly.engineDriver">
+        <div class="card" data-report="cfdMonthly.engineDriver" data-staff-only>
             <span class="card-status active">Active</span>
             <h3>Engine Driver Monthly</h3>
             <p>Engine company driver/operators. 34 items.</p>
@@ -341,7 +345,7 @@
             <a href="../engine-driver-report/page1.html" class="card-link">Open Report <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
         </div>
 
-        <div class="card" data-report="cfdMonthly.aoic">
+        <div class="card" data-report="cfdMonthly.aoic" data-staff-only>
             <span class="card-status active">Active</span>
             <h3>AOIC Monthly</h3>
             <p>Acting Officer in Charge. 34 items.</p>
@@ -349,7 +353,7 @@
             <a href="../aoic-report/page1.html" class="card-link">Open Report <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
         </div>
 
-        <div class="card" data-report="cfdMonthly.aerial">
+        <div class="card" data-report="cfdMonthly.aerial" data-staff-only>
             <span class="card-status active">Active</span>
             <h3>Aerial Operator Monthly</h3>
             <p>Truck 1 aerial operators — task book skills, driving, and aerial pumping. 39 items.</p>
