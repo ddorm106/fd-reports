@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#07080c">
+<meta name="robots" content="noindex">
+<title>901 · Centerville Fire</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,400;0,600;1,400&family=Oswald:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #f3efe6;
+    --muted: #8e929c;
+    --line: #2a2d36;
+    --red: #c8102e;
+    --navy: #0e1c4a;
+    --gold: #e2b657;
+    --bg: #07080c;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); }
+  body {
+    font-family: Barlow, "Avenir Next", "Segoe UI", sans-serif;
+    min-height: 100dvh;
+  }
+  .rail {
+    position: fixed;
+    left: 0; top: 0; bottom: 0;
+    width: 8px;
+    background: var(--red);
+  }
+  main {
+    max-width: 440px;
+    margin: 0 auto;
+    padding: 28px 22px 128px 26px;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  header img {
+    width: 84px;
+    height: 84px;
+    object-fit: contain;
+    background: #000;
+    border-radius: 4px;
+  }
+  .who { min-width: 0; }
+  .kicker {
+    margin: 0;
+    font-family: Oswald, Impact, sans-serif;
+    font-weight: 500;
+    font-size: 13px;
+    letter-spacing: 0.22em;
+    color: var(--gold);
+  }
+  .dept {
+    margin: 2px 0 0;
+    font-family: Oswald, Impact, sans-serif;
+    font-weight: 600;
+    font-size: 28px;
+    line-height: 0.95;
+    letter-spacing: 0.02em;
+  }
+  .place {
+    margin: 6px 0 0;
+    color: var(--muted);
+    font-size: 13px;
+    letter-spacing: 0.04em;
+  }
+  .asset {
+    margin: 26px 0 0;
+    font-family: Oswald, Impact, sans-serif;
+    font-weight: 600;
+    font-size: 104px;
+    line-height: 0.8;
+    letter-spacing: -0.03em;
+  }
+  .mark {
+    margin: 14px 0 0;
+    display: inline-block;
+    background: var(--red);
+    color: white;
+    font-family: Oswald, Impact, sans-serif;
+    font-weight: 500;
+    font-size: 22px;
+    letter-spacing: 0.06em;
+    padding: 7px 12px 6px;
+  }
+  .kind {
+    margin: 16px 0 0;
+    font-family: Oswald, Impact, sans-serif;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    font-size: 14px;
+    color: var(--ink);
+  }
+  dl {
+    margin: 28px 0 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 18px;
+  }
+  .row {
+    border-top: 1px solid var(--line);
+    padding: 11px 0 12px;
+    min-width: 0;
+  }
+  .wide { grid-column: 1 / -1; }
+  dt {
+    margin: 0;
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  dd {
+    margin: 3px 0 0;
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    overflow-wrap: anywhere;
+  }
+  dd a { color: inherit; text-decoration: none; border-bottom: 1px solid #5c3a3e; }
+  .call {
+    position: fixed;
+    left: 8px; right: 0; bottom: 0;
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    background: linear-gradient(to top, #07080c 70%, rgba(7,8,12,0));
+  }
+  .call a {
+    display: block;
+    background: var(--red);
+    color: white;
+    text-decoration: none;
+    text-align: center;
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 22px;
+    letter-spacing: 0.12em;
+    padding: 15px 12px 13px;
+  }
+  .call small {
+    display: block;
+    text-align: center;
+    margin-top: 6px;
+    color: var(--muted);
+    letter-spacing: 0.14em;
+    font-size: 10px;
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+<div class="rail"></div>
+<main>
+  <header>
+    <img src="../../centerville-patch.png" alt="Centerville Fire Station 1 patch">
+    <div class="who">
+      <p class="kicker">EQUIPMENT</p>
+      <p class="dept">Centerville Fire</p>
+      <p class="place">Station 1 · Engine 1</p>
+    </div>
+  </header>
+
+  <p class="asset">901</p>
+  <p class="mark">5&quot; · 100 ft</p>
+  <p class="kind">TEST HOSE</p>
+
+  <dl>
+    <div class="row"><dt>Department</dt><dd>Centerville Fire</dd></div>
+    <div class="row"><dt>Division</dt><dd>Suppression</dd></div>
+    <div class="row"><dt>Brand</dt><dd>Key Hose</dd></div>
+    <div class="row"><dt>Model</dt><dd>Combat Ready</dd></div>
+    <div class="row"><dt>Serial</dt><dd>KH901TEST</dd></div>
+    <div class="row"><dt>Year</dt><dd>2024</dd></div>
+    <div class="row"><dt>Assigned</dt><dd>Not assigned</dd></div>
+    <div class="row"><dt>Apparatus</dt><dd>Engine 1</dd></div>
+    <div class="row"><dt>Purchase</dt><dd>$850</dd></div>
+    <div class="row"><dt>Vendor</dt><dd>NAFECO</dd></div>
+    <div class="row wide"><dt>Station</dt><dd>Station 1</dd></div>
+    <div class="row wide"><dt>Address</dt><dd><a href="https://maps.apple.com/?q=101%20Miller%20Court%2C%20Centerville%2C%20GA%2031028">101 Miller Court, Centerville, GA 31028</a></dd></div>
+  </dl>
+</main>
+<div class="call">
+  <a href="tel:4789534050">CALL 478-953-4050</a>
+  <small>Call if found · Centerville Fire</small>
+</div>
+</body>
+</html>
