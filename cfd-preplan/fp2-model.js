@@ -97,8 +97,11 @@
         /* Put there on purpose (a doorway gap, a spot with no wall): leave it. */
         if (op.free) return;
         if (typeof op.x !== 'number' || typeof op.y !== 'number') return;
-        var host = G.hostOpening(op.x, op.y, floor.walls || [], 24);
-        if (host) { op.wallId = host.wallId; op.t = host.t; adopted++; }
+        /* Only into a wall it fits in. One that sits in a doorway gap, or hangs
+         * past a wall's end, was drawn there (DivisionScan sends such doors
+         * without a flag) — adopting it would shove it back inside the wall. */
+        var host = G.placeOpeningAt(op.x, op.y, floor.walls || [], op.width || 32, { reach: 24 });
+        if (host.hosted) { op.wallId = host.wallId; op.t = host.t; adopted++; }
       });
     });
     return adopted;
