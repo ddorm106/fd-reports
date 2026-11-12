@@ -94,6 +94,8 @@
       (floor[kind] || []).forEach(function (op) {
         if (!op.id) op.id = uid(kind === 'doors' ? 'd_' : 'n_');
         if (op.wallId) return;
+        /* Put there on purpose (a doorway gap, a spot with no wall): leave it. */
+        if (op.free) return;
         if (typeof op.x !== 'number' || typeof op.y !== 'number') return;
         var host = G.hostOpening(op.x, op.y, floor.walls || [], 24);
         if (host) { op.wallId = host.wallId; op.t = host.t; adopted++; }
@@ -355,7 +357,11 @@
       ['doors', 'windows'].forEach(function (k) {
         (f[k] || []).forEach(function (e) {
           movePoint(e);
-          if (typeof e.angle === 'number') e.angle = (e.angle + deg) % 360;
+          if (typeof e.angle === 'number') {
+            /* A free-standing opening must never land on 0, which the
+             * renderers read as "no angle, borrow the nearest wall's". */
+            e.angle = e.free ? G.freeAngle(e.angle + deg) : (e.angle + deg) % 360;
+          }
         });
       });
       ['objects', 'symbols'].forEach(function (k) {

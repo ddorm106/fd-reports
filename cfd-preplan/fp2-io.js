@@ -244,7 +244,11 @@
       if (e.hingeSide) o.hinge = /end/i.test(e.hingeSide) ? 'end' : 'start';
       /* Prefer the app's hosting; fall back to solving it geometrically. */
       var mapped = e.wallId ? idMap[String(e.wallId)] : null;
-      if (mapped) {
+      if (e.free && !mapped) {
+        /* Placed off a wall on purpose in the app — keep it where it was put. */
+        o.free = true;
+        if (typeof o.angle === 'number') o.angle = G.freeAngle(o.angle);
+      } else if (mapped) {
         o.wallId = mapped;
         var w = out.walls.filter(function (ww) { return ww.id === mapped; })[0];
         if (w) o.t = G.projT(o.x, o.y, w.x1, w.y1, w.x2, w.y2);

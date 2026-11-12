@@ -624,6 +624,68 @@
     return best;
   }
 
+  /* Where a door or window goes for a tap at (x, y).
+   *
+   * It used to be "in the nearest wall, or nowhere", and an opening that did
+   * not fit was pushed along until it did. A scanned building has doorways
+   * that are GAPS between two wall ends, so the one place a door belonged was
+   * the one place it could not go: the tap either missed every wall or the
+   * door was shoved back inside the wall beside the gap.
+   *
+   * Now the tap wins. If the whole opening fits inside a wall within reach it
+   * is hosted in that wall, as before. Otherwise it is free-standing, exactly
+   * where it was put: lined up on the nearest wall's line when one is within
+   * reach, or loose at the tap when none is.
+   *
+   *   opts.reach      how close (px) a wall must be to take or align it
+   *   opts.keepAngle  angle (deg) a loose opening keeps when no wall is near
+   */
+  function placeOpeningAt(x, y, walls, widthPx, opts) {
+    opts = opts || {};
+    var reach = opts.reach == null ? 22 : opts.reach;
+    var half = (widthPx || 32) / 2;
+    var best = null, any = null;
+    for (var i = 0; i < (walls || []).length; i++) {
+      var w = walls[i];
+      var len = wallLength(w);
+      if (len < EPS) continue;
+      var d = pointToSeg(x, y, w.x1, w.y1, w.x2, w.y2);
+      if (!any || d < any.dist) any = { wall: w, dist: d };
+      if (d > reach) continue;
+      /* Unclamped: how far along the wall's LINE the tap falls, so a tap past
+       * the end of the wall is known to be past it. */
+      var along = ((x - w.x1) * (w.x2 - w.x1) + (y - w.y1) * (w.y2 - w.y1)) / len;
+      var fits = along >= half - 0.01 && len - along >= half - 0.01;
+      /* A wall the opening fits in beats a nearer one it does not. */
+      if (!best || (fits && !best.fits) || (fits === best.fits && d < best.dist)) {
+        best = { wall: w, dist: d, along: along, len: len, fits: fits };
+      }
+    }
+    if (best && best.fits) {
+      var t = best.along / best.len, bw = best.wall;
+      return { hosted: true, wallId: bw.id, wall: bw, t: t,
+               x: bw.x1 + (bw.x2 - bw.x1) * t, y: bw.y1 + (bw.y2 - bw.y1) * t,
+               angle: freeAngle(angleOf(bw.x1, bw.y1, bw.x2, bw.y2) * 180 / Math.PI) };
+    }
+    if (best) {
+      var fw = best.wall, ft = best.along / best.len;
+      return { hosted: false,
+               x: fw.x1 + (fw.x2 - fw.x1) * ft, y: fw.y1 + (fw.y2 - fw.y1) * ft,
+               angle: freeAngle(angleOf(fw.x1, fw.y1, fw.x2, fw.y2) * 180 / Math.PI) };
+    }
+    var ang = opts.keepAngle != null ? opts.keepAngle
+      : (any ? angleOf(any.wall.x1, any.wall.y1, any.wall.x2, any.wall.y2) * 180 / Math.PI : 0);
+    return { hosted: false, x: x, y: y, angle: freeAngle(ang) };
+  }
+
+  /* The renderers read a missing or ZERO angle as "work it out from the
+   * nearest wall", which would turn a level free-standing door to match a
+   * cross wall beside it. 360 is the same direction and is not zero. */
+  function freeAngle(deg) {
+    var a = ((deg % 360) + 360) % 360;
+    return a === 0 ? 360 : a;
+  }
+
   /* ------------------------------------------------------ welding / chains */
 
   /* Pull endpoints that are within tol of each other onto a shared point.
@@ -1025,6 +1087,7 @@
     faceAtPoint: faceAtPoint, detectAllFaces: detectAllFaces,
     snapPoint: snapPoint, constrainAngle: constrainAngle, pointAtDistance: pointAtDistance,
     resolveOpening: resolveOpening, hostOpening: hostOpening,
+    placeOpeningAt: placeOpeningAt, freeAngle: freeAngle,
     weldCorners: weldCorners, chainWalls: chainWalls,
     straightenWalls: straightenWalls,
     wallHalfPx: wallHalfPx, offsetChain: offsetChain, wallQuad: wallQuad,

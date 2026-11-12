@@ -305,8 +305,8 @@
     wall: 'Drag out one wall. Hold <kbd>Shift</kbd> for straight. Type a length after drawing to set it exactly.',
     chain: 'Click corner to corner. The wall has thickness and joins the last one. <kbd>Shift</kbd> keeps it square. Click the green dot to close the room. <kbd>Enter</kbd> finishes, <kbd>Backspace</kbd> undoes a corner.',
     room: 'Drag out a rectangle — it becomes four walls with the thickness set above.',
-    door: 'Move along a wall. The door follows it and cuts an opening when you click. Flip the swing from the panel.',
-    window: 'Move along a wall and click to set a window. It stays in that wall when the wall moves.',
+    door: 'Click anywhere to place a door. On a wall it sits in the wall; in a gap or open space it stays where you put it. Flip the swing from the panel.',
+    window: 'Click anywhere to place a window. On a wall it sits in the wall; anywhere else it stays where you put it.',
     zone: 'Tap inside any closed room to measure and name it. Areas need the walls to actually meet — use Weld corners if a room will not take.',
     place: 'Tap to place the selected symbol.',
     text: 'Tap where the label goes.',
@@ -1171,7 +1171,11 @@
     if (hit.kind === 'door' || hit.kind === 'window') {
       var op = doc.list(hit.kind + 's')[hit.index];
       doc.pushUndo();
-      drag = { mode: 'opening-slide', op: op };
+      /* Carry it by the spot it was picked up at, so a tap that only meant to
+       * select it does not jump its centre under the finger. */
+      var at = G.resolveOpening(op, doc.wallsById()) || op;
+      drag = { mode: 'opening-slide', op: op,
+               off: { x: (at.x || 0) - pt.x, y: (at.y || 0) - pt.y } };
       return;
     }
 
@@ -1293,11 +1297,11 @@
       return;
     }
     if (dr.mode === 'opening-slide') {
-      /* Slide along the host wall — an opening cannot leave its wall by drag,
-       * which is the whole point of hosting it. */
-      var w = doc.wallsById()[dr.op.wallId];
-      if (w) dr.op.t = G.projT(pt.x, pt.y, w.x1, w.y1, w.x2, w.y2);
-      else { dr.op.x = pt.x; dr.op.y = pt.y; }
+      /* It goes where it is dragged: along its wall, into another wall, or off
+       * the walls altogether into a gap or open floor. A loose one keeps the
+       * way it was facing until a wall lines it up. */
+      seatOpening(dr.op, { x: pt.x + dr.off.x, y: pt.y + dr.off.y }, doc.floor().walls || [],
+                  dr.op.wallId ? null : dr.op.angle);
       return;
     }
     if (dr.mode === 'underlay-move') {
@@ -1481,41 +1485,45 @@
   function updateOpeningGhost(pt) {
     var f = doc.floor();
     var preset = openingPreset();
-    var host = G.hostOpening(pt.x, pt.y, f.walls || [], 28 / state.view.zoom + (archHalfPx() || 8));
-    if (!host) { state.ghostOpening = null; state.snap = null; return; }
     var scale = doc.data.scale_px_per_ft || 12;
     var rec = {
-      wallId: host.wallId,
-      t: host.t,
       width: preset.widthFt * scale,
       type: preset.type,
       swing: 1,
       hinge: 'start',
       kind: preset.kind
     };
-    var r = G.resolveOpening(rec, doc.wallsById());
-    state.ghostOpening = r ? Object.assign(rec, { x: r.x, y: r.y, angle: r.angle, width: r.width }) : null;
+    seatOpening(rec, pt, f.walls || []);
+    state.ghostOpening = rec;
+  }
+
+  function openingReach() { return 28 / state.view.zoom + (archHalfPx() || 8); }
+
+  /* Put an opening where the pointer is: in a wall when it fits in one, and
+   * free-standing otherwise (see FPGeom.placeOpeningAt). One rule for the
+   * hover ghost, the tap and a drag, so what is shown is what is placed. */
+  function seatOpening(op, pt, walls, keepAngle) {
+    var p = G.placeOpeningAt(pt.x, pt.y, walls, op.width, { reach: openingReach(), keepAngle: keepAngle });
+    op.x = p.x; op.y = p.y; op.angle = p.angle;
+    if (p.hosted) { op.wallId = p.wallId; op.t = p.t; delete op.free; }
+    else { delete op.wallId; delete op.t; op.free = true; }
+    return p;
   }
 
   function placeOpening(kind, pt) {
     var f = doc.floor();
     var preset = openingPreset();
     if (preset.kind !== kind) preset = kind === 'window' ? OPENINGS.window : OPENINGS.single;
-    var host = G.hostOpening(pt.x, pt.y, f.walls || [], 28 / state.view.zoom + (archHalfPx() || 8));
-    if (!host) { showToast('Tap on a wall to put a ' + kind + ' in it', 'err'); return; }
     doc.pushUndo();
     var scale = doc.data.scale_px_per_ft || 12;
     var rec = {
       id: uid(kind === 'door' ? 'd_' : 'n_'),
-      wallId: host.wallId,
-      t: host.t,
       width: preset.widthFt * scale,
       type: preset.type,
       swing: 1,
       hinge: 'start'
     };
-    var r = G.resolveOpening(rec, doc.wallsById());
-    if (r) { rec.x = r.x; rec.y = r.y; rec.angle = r.angle; }
+    seatOpening(rec, pt, f.walls || []);
     doc.list(kind + 's').push(rec);
     hideEmpty();
     commit();
@@ -2119,9 +2127,23 @@
         }
       }
       if (!el.wallId) {
+        /* Nothing to line a loose opening up with, so let it be turned. */
+        var tb = document.createElement('button');
+        tb.type = 'button';
+        tb.className = 'fp-tbtn sm';
+        tb.textContent = '⟳ Turn 45°';
+        tb.title = 'Turn this ' + hit.kind + ' — it is not in a wall, so it can face any way';
+        tb.addEventListener('click', function () {
+          doc.pushUndo();
+          el.angle = G.freeAngle((el.angle || 0) + 45);
+          el.free = true;
+          commit();
+          draw();
+        });
+        body.appendChild(tb);
         var warn = document.createElement('div');
         warn.className = 'hint';
-        warn.textContent = 'Not attached to a wall — it will not follow if the wall moves.';
+        warn.textContent = 'Not attached to a wall — it stays where you put it and will not follow if a wall moves. Drag it onto a wall to set it in.';
         body.appendChild(warn);
       }
     } else if (hit.kind === 'text') {
