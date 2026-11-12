@@ -1073,7 +1073,19 @@
       return;
     }
 
-    if (t === 'door' || t === 'window') { placeOpening(t, pt); return; }
+    if (t === 'door' || t === 'window') {
+      /* Pressing on a door or window that is already there picks it up, so one
+       * just set can be slid into place without changing tools. Anywhere else
+       * places a new one. */
+      var oh = renderer.hitTest(p.sx, p.sy);
+      if (oh && (oh.kind === 'door' || oh.kind === 'window')) {
+        state.ghostOpening = null;
+        beginSelectDrag(p, pt);
+        return;
+      }
+      placeOpening(t, pt);
+      return;
+    }
 
     if (t === 'place') {
       if (!state.activeSymbolId) { showToast('Pick a symbol first', 'err'); return; }
@@ -2126,6 +2138,35 @@
           body.appendChild(wsb);
         }
       }
+      /* Fine tuning: an inch or six at a time along the way it runs, for the
+       * move a finger or mouse cannot make. Drag it for anything bigger. */
+      (function () {
+        var at = G.resolveOpening(el, doc.wallsById()) || el;
+        var rad = (at.angle || 0) * Math.PI / 180;
+        var ux = Math.cos(rad), uy = Math.sin(rad);
+        var fwd = Math.abs(ux) >= Math.abs(uy) ? (ux >= 0 ? '→' : '←') : (uy >= 0 ? '↓' : '↑');
+        var back = { '→': '←', '←': '→', '↓': '↑', '↑': '↓' }[fwd];
+        var row = document.createElement('div');
+        row.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;margin-top:8px';
+        [[back + ' 6″', -6], [back + ' 1″', -1], ['1″ ' + fwd, 1], ['6″ ' + fwd, 6]].forEach(function (b) {
+          var nb = document.createElement('button');
+          nb.type = 'button';
+          nb.className = 'fp-tbtn sm';
+          nb.textContent = b[0];
+          nb.title = 'Move this ' + hit.kind + ' ' + Math.abs(b[1]) + ' in';
+          nb.addEventListener('click', function () {
+            var now = G.resolveOpening(el, doc.wallsById()) || el;
+            var px = b[1] / 12 * (doc.data.scale_px_per_ft || 12);
+            doc.pushUndo();
+            seatOpening(el, { x: now.x + ux * px, y: now.y + uy * px }, doc.floor().walls || [],
+                        el.wallId ? (now.angle || 0) : el.angle);
+            commit();
+            draw();
+          });
+          row.appendChild(nb);
+        });
+        body.appendChild(row);
+      })();
       if (!el.wallId) {
         /* Nothing to line a loose opening up with, so let it be turned. */
         var tb = document.createElement('button');
