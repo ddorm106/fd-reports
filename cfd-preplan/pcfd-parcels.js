@@ -68,13 +68,56 @@
   var base = src ? src.slice(0, src.lastIndexOf('/') + 1) : '';
   var DATA = (me && me.getAttribute('data-parcels')) || (base + 'parcels-peach.js?v=1');
   var MIN_ZOOM = 15;
+  /* COUNTY TILES (optional, 2026-09-26): data-parcel-tiles="<dir>/" = the rest of the county as 0.02-deg tiles
+     (build_county_parcels.py) loaded for whatever is on screen at zoom 15+ and merged into CV_PARCELS (de-duped by
+     pin). No attribute = off, so every page that doesn't ask is unchanged. */
+  var TILES = me && me.getAttribute('data-parcel-tiles'), TIDX = null, TGOT = {}, TPIN = null;
+  function tilesFor(map, done) {
+    if (!TILES || !window.CV_PARCELS || map.getZoom() < MIN_ZOOM) return;
+    (TIDX ? Promise.resolve(TIDX) : fetch(TILES + 'index.json?v=2', { credentials: 'same-origin' }).then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { TIDX = j || { t: 0.02, tiles: [] }; TIDX.set = {}; TIDX.tiles.forEach(function (k) { TIDX.set[k] = 1; }); return TIDX; }))
+      .then(function (ix) {
+        var b = map.getBounds(), t = ix.t, need = [];
+        for (var gx = Math.floor((b.getWest() - t / 2) / t); gx <= Math.floor((b.getEast() + t / 2) / t); gx++)
+          for (var gy = Math.floor((b.getSouth() - t / 2) / t); gy <= Math.floor((b.getNorth() + t / 2) / t); gy++) {
+            var k = gx + '_' + gy; if (ix.set[k] && !TGOT[k]) { TGOT[k] = 1; need.push(k); }
+          }
+        if (!need.length) return;
+        if (!TPIN) { TPIN = {}; window.CV_PARCELS.p.forEach(function (r) { TPIN[r[0]] = 1; }); }
+        Promise.all(need.map(function (k) { return fetch(TILES + k + '.json?v=2', { credentials: 'same-origin' }).then(function (r) { return r.ok ? r.json() : { p: [] }; }).catch(function () { TGOT[k] = 0; return { p: [] }; }); }))
+          .then(function (all) {
+            var P = window.CV_PARCELS.p, added = 0;
+            all.forEach(function (j) { (j.p || []).forEach(function (r) { if (!TPIN[r[0]]) { TPIN[r[0]] = 1; P.push(r); added++; } }); });
+            if (added && done) done();
+          });
+      }).catch(function () {});
+  }
   var TAP_PX = 10;              // how near a main a finger has to land, in screen pixels
   var POSITION = (me && me.getAttribute('data-position')) || 'topleft';
   var KEY = 'pcfd_parcels_on';
   var pending = null;
 
   var OCC = (me && me.getAttribute('data-occupancies')) || (base + 'occupancies-peach.js?v=2');
+  /* Street View aim point per parcel (the main building), from build_parcel_aim.py. */
+  var AIM = (me && me.getAttribute('data-aim')) || (base + 'parcel-aim-peach.js?v=1');
+  var apending = null;
+  function loadAim() {
+    if (window.PCFD_AIM) return Promise.resolve(window.PCFD_AIM);
+    if (apending) return apending;
+    apending = new Promise(function (res) {
+      var s = document.createElement('script');
+      s.src = AIM;
+      s.onload = function () { res(window.PCFD_AIM || null); };
+      s.onerror = function () { apending = null; res(null); };
+      document.head.appendChild(s);
+    });
+    return apending;
+  }
   var TIER_COLOR = { 1: '#c62828', 2: '#e07b00', 3: '#5b7c99' };   // same as Centerville
+  /* The same plugin also runs the Centerville map site (2026-09-23): these three say whose map it is.
+     Defaults are Peach's, so every Peach page is unchanged. */
+  var DEPT = (me && me.getAttribute('data-dept')) || 'PCFD';
+  var COUNTY = (me && me.getAttribute('data-county')) || 'Peach County, GA';
   var opending = null;
 
   /* Resolves null on failure rather than rejecting: the occupancy list is an extra,
@@ -92,8 +135,8 @@
     return opending;
   }
 
-  var WATER = (me && me.getAttribute('data-water')) || (base + 'water-peach.js?v=3');
-  var NHYD = (me && me.getAttribute('data-hydrants')) || (base + 'neighbor-hydrants-peach.js?v=2');
+  var WATER = (me && me.getAttribute('data-water')) || (base + 'water-peach.js?v=8');
+  var NHYD = (me && me.getAttribute('data-hydrants')) || (base + 'neighbor-hydrants-peach.js?v=6');
   var WFAC = (me && me.getAttribute('data-facilities')) || (base + 'water-facilities.js?v=1');
   var WFAC_ZOOM = 12;
   var fpending = null;
@@ -146,6 +189,7 @@
   function nhydPopup(h, N) {
     var c = hydClass(h[4], h[5]), who = (N.srcs || [])[h[2]] || '';
     var x = '<div style="font:13px/1.4 -apple-system,Segoe UI,Roboto,sans-serif;min-width:180px">' +
+      svSlot(h[0], h[1]) +
       '<div style="font-weight:700">Hydrant' + (h[3] ? ' #' + esc(h[3]) : '') + '</div>' +
       (h[6] ? '<div style="font-size:12px">' + esc(h[6]) + '</div>' : '') +
       '<div style="font-size:12px;margin-top:2px">' + (c ? esc(HYD_CLS[c][1]) : 'Flow not on file') +
@@ -153,7 +197,7 @@
       (h[8] ? '<div style="font-size:12px">On a ' + esc(h[8]) + '&quot; main</div>' : '') +
       (h[7] ? '<div style="font-size:12px;font-weight:700;color:#c62828">OUT OF SERVICE</div>' : '') +
       (h[9] ? '<div style="font-size:11px;color:#64748b">' + esc(h[9]) + '</div>' : '') +
-      '<div style="font-size:11px;color:#64748b;margin-top:3px">' + esc(who) + ' &mdash; not a PCFD hydrant</div></div>';
+      '<div style="font-size:11px;color:#64748b;margin-top:3px">' + esc(who) + ' &mdash; not a ' + esc(DEPT) + ' hydrant</div></div>';
     return x;
   }
   var WATER_ZOOM = 15;          // same as parcels: at 14, downtown Fort Valley alone is ~5,800 mains (0.5 s per pan)
@@ -231,11 +275,18 @@
 
   /* Grey = inferred from the hydrants on the street (build_probable_mains.py), never a utility record. */
   function isProbable(W, r) { return String((W.srcs || [])[r[1]] || '').indexOf('Probable main') === 0; }
+  function isLead(W, r) { return String((W.srcs || [])[r[1]] || '').indexOf('hydrant lead') >= 0; }
   function waterPopup(r, W) {
+    if (isLead(W, r)) {
+      return '<div style="font:13px/1.4 -apple-system,Segoe UI,Roboto,sans-serif;min-width:200px;max-width:250px">' +
+        '<div style="font-weight:700">Hydrant lead (traced)</div>' +
+        '<div style="font-size:12px">Every hydrant hangs off a main by a short lead (branch). This one is drawn straight from the hydrant to the nearest main on the map, so it shows which main feeds it.</div>' +
+        '<div style="font-size:10.5px;color:#b45309;margin-top:4px">Not a utility record &mdash; not for excavation. Call 811.</div></div>';
+    }
     if (isProbable(W, r)) {
       return '<div style="font:13px/1.4 -apple-system,Segoe UI,Roboto,sans-serif;min-width:200px;max-width:250px">' +
-        '<div style="font-weight:700">Probable water main</div>' +
-        '<div style="font-size:12px">Hydrants stand on this street but no utility has published the pipe here, so a main almost certainly runs along it. Size and exact route unknown.</div>' +
+        '<div style="font-weight:700">' + (r[0] ? r[0] + '&quot; water main (traced)' : 'Water main (traced) &mdash; size not known yet') + '</div>' +
+        '<div style="font-size:12px">Traced from the hydrants: every hydrant sits on a main, so the main is drawn along the streets that join them (hydrant to hydrant where a street is too new to be on the map). Checked against areas where the real mains are published (Warner Robins, Macon, Fort Valley, Centerville), about 9 in 10 traced lines sit on a real main.</div>' +
         '<div style="font-size:10.5px;color:#b45309;margin-top:4px">Not a utility record &mdash; not for excavation. Call 811.</div></div>';
     }
     var mat = (W.mats && W.mats[r[2]]) || '';
@@ -284,11 +335,394 @@
     });
   }
 
+  /* PROPERTY PHOTO (2026-09-22): Street View first (see STREET VIEW FIRST), and an aerial of the lot with its line drawn on.
+     Esri World Imagery's export cuts one image to any box without a key; asking
+     for it in Web Mercator (3857) lets the outline be projected onto the same
+     pixels. Padded so the neighbours show, never tighter than ~70 m across. */
+  var PHOTO_W = 480, PHOTO_H = 300;
+  var ESRI_EXPORT = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export';
+  function merc(lng, lat) {
+    var R = 6378137, y = Math.max(-85, Math.min(85, lat)) * Math.PI / 180;
+    return [R * lng * Math.PI / 180, R * Math.log(Math.tan(Math.PI / 4 + y / 2))];
+  }
+  function photoBox(minLng, minLat, maxLng, maxLat, w, h) {
+    var a = merc(minLng, minLat), b = merc(maxLng, maxLat);
+    var cx = (a[0] + b[0]) / 2, cy = (a[1] + b[1]) / 2;
+    var bw = Math.max((b[0] - a[0]) * 1.35, 70), bh = Math.max((b[1] - a[1]) * 1.35, 70 * h / w);
+    if (bw / bh < w / h) bw = bh * w / h; else bh = bw * h / w;
+    return [cx - bw / 2, cy - bh / 2, cx + bw / 2, cy + bh / 2];
+  }
+  function photoUrl(box, w, h) {
+    return ESRI_EXPORT + '?bbox=' + box.map(function (v) { return v.toFixed(1); }).join(',') +
+      '&bboxSR=3857&imageSR=3857&size=' + w + ',' + h + '&format=jpg&f=image';
+  }
+  var SV_BASE = (me && me.getAttribute('data-sv')) || 'https://pcfdmembers.org/sv/';   // fd-streetview Worker
+  /* STREET VIEW (2026-09-22/23). Parcel photos open on Street View aimed at the main building (aerial = fallback);
+     hydrant popups carry a svSlot() filled with the view from ~16 m up the street. Both share one camera control:
+     - − + zoom and ◀ ▶ turn (David: "add the zoom and move feature to the parcels like the hydrants");
+     - SAVED VIEWS: ⚙ -> the view PIN (checked by the fd-streetview Worker, never in page code) -> Move camera
+       (drag the camera pin on the map; the photo jumps to the nearest pano there and looks back at the target),
+       Save (everyone then gets that view), Reset. David: "set the default view ... gate it 7488 ... some are still off".
+       A saved view wins over the automatic pick. Keys: p:<parcel pin>, h:<lat,lng 5 dp>.
+     The automatic pick: parcel -> the pano Google finds for the county ADDRESS (else nearest the lot) aimed at the
+     largest building footprint; hydrant -> the pano ~16 m away in 8 directions (the nearest sits on the hydrant and
+     looks at pavement). Google is reached through fd-streetview (key held there, our sites only, photos cached). */
+  var svCache = {}, svViewCache = {}, SV_MAP = null, SV_EDIT = true;   // SV_EDIT false = show saved views, no ⚙
+  function distM(la1, lo1, la2, lo2) {
+    var k = Math.PI / 180, x = (lo2 - lo1) * k * Math.cos((la1 + la2) / 2 * k), y = (la2 - la1) * k;
+    return 6371000 * Math.sqrt(x * x + y * y);
+  }
+  function bearing(la1, lo1, la2, lo2) {
+    var k = Math.PI / 180, dl = (lo2 - lo1) * k;
+    var y = Math.sin(dl) * Math.cos(la2 * k);
+    var x = Math.cos(la1 * k) * Math.sin(la2 * k) - Math.sin(la1 * k) * Math.cos(la2 * k) * Math.cos(dl);
+    return (Math.atan2(y, x) / k + 360) % 360;
+  }
+  function svMeta(loc, radius) {
+    return fetch(SV_BASE + 'meta?loc=' + encodeURIComponent(loc) + '&r=' + radius)
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { return j && j.status === 'OK' && j.location ? j : null; })
+      .catch(function () { return null; });
+  }
+  function svPanoAt(pano) {
+    return fetch(SV_BASE + 'meta?pano=' + encodeURIComponent(pano)).then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { return j && j.location ? j.location : null; }).catch(function () { return null; });
+  }
+  function svView(key) {        // a saved view, or null
+    if (!key) return Promise.resolve(null);
+    if (!svViewCache[key]) svViewCache[key] = fetch(SV_BASE + 'view?key=' + encodeURIComponent(key))
+      .then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) { return j && j.pano ? j : null; })
+      .catch(function () { return null; });
+    return svViewCache[key];
+  }
+  function svPost(body) {       // text/plain: no CORS preflight from the other sites
+    return fetch(SV_BASE + 'view', { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(body) })
+      .then(function (r) { return r.json().then(function (j) { j.status = r.status; return j; }); })
+      .catch(function () { return { error: 'No connection.' }; });
+  }
+  function svPin(v) { try { if (v === undefined) return sessionStorage.getItem('pcfd_sv_pin') || ''; sessionStorage.setItem('pcfd_sv_pin', v); } catch (e) { return ''; } }
+  function findPano(bb, q, aim) {
+    var ck = bb.join(',');
+    if (svCache[ck]) return svCache[ck];
+    var cLat = aim ? aim[1] : (bb[1] + bb[3]) / 2, cLng = aim ? aim[0] : (bb[0] + bb[2]) / 2;
+    var half = distM(bb[1], bb[0], bb[3], bb[2]) / 2;
+    function near(j) { return j && distM(j.location.lat, j.location.lng, cLat, cLng) <= half + 120 ? j : null; }
+    function byCentre() {
+      return svMeta(cLat.toFixed(6) + ',' + cLng.toFixed(6), Math.round(Math.min(300, Math.max(50, half + 30)))).then(near);
+    }
+    svCache[ck] = (q ? svMeta(q, 50).then(near).then(function (j) { return j || byCentre(); }) : byCentre())
+      .then(function (j) {
+        if (!j) return null;
+        var d = Math.max(8, distM(j.location.lat, j.location.lng, cLat, cLng));
+        var fit = aim && aim[2] ? aim[2] * 1.7 : Math.max(half, 15) * 0.8;   // building ~60% of the width
+        return { pano: j.pano_id, date: j.date || '', lat: j.location.lat, lng: j.location.lng, pitch: 3,
+                 heading: Math.round(bearing(j.location.lat, j.location.lng, cLat, cLng)),
+                 fov: Math.round(Math.min(100, Math.max(40, 2 * Math.atan(fit / d) * 180 / Math.PI))) };
+      });
+    return svCache[ck];
+  }
+  function svDate(s) {
+    var m = /^(\d{4})-(\d{2})/.exec(s || '');
+    return m ? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][+m[2] - 1] + ' ' + m[1] : '';
+  }
+  function svCtlHtml() {
+    var b = 'border:1px solid #cbd5e1;width:34px;height:30px;font:700 15px/28px -apple-system,Segoe UI,Roboto,sans-serif;' +
+      'background:#fff;color:#1e293b;cursor:pointer;padding:0;border-radius:6px;';
+    // a row UNDER the photo (David: "put the arrows below the image")
+    return '<div class="sv-ctl" style="display:none;gap:4px;justify-content:center;flex-wrap:wrap;margin:5px 0 2px">' +
+      '<button type="button" data-a="out" title="Zoom out" style="' + b + '">&minus;</button>' +
+      '<button type="button" data-a="in" title="Zoom in" style="' + b + '">+</button>' +
+      '<button type="button" data-a="left" title="Turn left" style="' + b + '">&#9664;</button>' +
+      '<button type="button" data-a="right" title="Turn right" style="' + b + '">&#9654;</button>' +
+      '<button type="button" data-a="fwd" title="Move the camera forward (the way it is facing)" style="' + b + '">&#9650;</button>' +
+      '<button type="button" data-a="back" title="Move the camera back" style="' + b + '">&#9660;</button>' +
+      (SV_EDIT ? '<button type="button" data-a="set" title="Set the view everyone sees (PIN)" style="' + b + 'font-size:13px">&#9881;</button>' : '') + '</div>' +
+      '<div class="sv-adm" style="display:none;flex-wrap:wrap;gap:4px;align-items:center;margin:2px 0 4px;' +
+      'background:#0f172a;color:#fff;border-radius:6px;padding:6px 7px;font:12px -apple-system,Segoe UI,Roboto,sans-serif"></div>';
+  }
+  /* One camera: cam = {pano, lat?, lng?, heading, pitch, fov, date}; target = [lat, lng] it looks at; key = saved-view key.
+     ui = {box (holds .sv-ctl/.sv-adm), img, link (<a> to Google), tag (date label), tagText(cam)}. */
+  function svCamera(cam, target, key, ui, onFirstLoad) {
+    var first = true, marker = null;
+    var ctl = ui.box.querySelector('.sv-ctl'), adm = ui.box.querySelector('.sv-adm');
+    function load() {
+      var h = Math.round((cam.heading % 360 + 360) % 360);
+      ui.link.href = 'https://www.google.com/maps/@?api=1&map_action=pano&pano=' + encodeURIComponent(cam.pano) +
+        '&heading=' + h + '&pitch=' + cam.pitch + '&fov=' + cam.fov;
+      var dt = svDate(cam.date); ui.tag.textContent = ui.tagText(cam, dt); ui.tag.style.display = ui.tag.textContent ? '' : 'none';
+      ui.img.style.opacity = first ? '1' : '.6';
+      ui.img.src = SV_BASE + 'img?pano=' + encodeURIComponent(cam.pano) + '&heading=' + h + '&pitch=' + cam.pitch + '&fov=' + cam.fov;
+    }
+    ui.img.onload = function () {
+      ui.img.style.opacity = '1'; ctl.style.display = 'flex';
+      if (first) { first = false; if (onFirstLoad) onFirstLoad(true); }
+    };
+    ui.img.onerror = function () { if (first) { first = false; if (onFirstLoad) onFirstLoad(false); } };
+    function say(msg, bad) { var s = adm.querySelector('.sv-say'); if (s) { s.textContent = msg; s.style.color = bad ? '#fca5a5' : '#86efac'; } }
+    var ab = 'border:0;border-radius:4px;padding:3px 8px;font:600 11.5px -apple-system,sans-serif;cursor:pointer;';
+    function adminBar() {
+      if (!svPin()) {
+        adm.innerHTML = '<span>View PIN</span><input type="password" inputmode="numeric" maxlength="8" style="width:64px;font:13px monospace;' +
+          'padding:2px 4px;border-radius:4px;border:0"><button type="button" data-b="pin" style="' + ab + 'background:#fff;color:#0f172a">OK</button>' +
+          '<span class="sv-say"></span>';
+        setTimeout(function () { var i = adm.querySelector('input'); if (i) i.focus(); }, 30);
+      } else {
+        adm.innerHTML = '<button type="button" data-b="move" style="' + ab + 'background:#fbbf24;color:#0f172a">Move camera</button>' +
+          '<button type="button" data-b="save" style="' + ab + 'background:#22c55e;color:#052e16">Save view</button>' +
+          '<button type="button" data-b="reset" style="' + ab + 'background:#fff;color:#0f172a">Reset</button><span class="sv-say"></span>';
+      }
+    }
+    /* ▲ ▼ (David: "add an up and down arrow to move the camera down the road"): like Google's Street View arrows --
+     step to the next pano the way the camera faces (▲) or behind it (▼), keeping the heading. Face down the road
+     with ◀ ▶, step, then turn back to the building. Tries 12, 20, 30 m so it gets past the pano it stands on. */
+  var stepping = false;
+  function step(dir) {
+    if (stepping) return; stepping = true;
+    var at = cam.lat != null ? Promise.resolve({ lat: cam.lat, lng: cam.lng }) : svPanoAt(cam.pano);
+    at.then(function (o) {
+      if (!o) { stepping = false; return; }
+      cam.lat = o.lat; cam.lng = o.lng;
+      var k = Math.PI / 180, hd = ((cam.heading % 360) + 360) % 360 + (dir < 0 ? 180 : 0);
+      function tryAt(i) {
+        var dists = [12, 20, 30];
+        if (i >= dists.length) { stepping = false; if (adm.style.display === 'flex') say('No street photo further that way.', true); return; }
+        var m = dists[i], la = o.lat + m * Math.cos(hd * k) / 110540, lo = o.lng + m * Math.sin(hd * k) / (111320 * Math.cos(o.lat * k));
+        svMeta(la.toFixed(6) + ',' + lo.toFixed(6), Math.round(m * 0.6)).then(function (j) {
+          if (!j || j.pano_id === cam.pano || distM(j.location.lat, j.location.lng, o.lat, o.lng) < 4) return tryAt(i + 1);
+          cam.pano = j.pano_id; cam.date = j.date || cam.date; cam.lat = j.location.lat; cam.lng = j.location.lng;
+          if (marker) marker.setLatLng([cam.lat, cam.lng]);
+          stepping = false; load();
+        });
+      }
+      tryAt(0);
+    });
+  }
+  function moveCamera() {
+      var map = SV_MAP; if (!map || !window.L) return;
+      (cam.lat != null ? Promise.resolve({ lat: cam.lat, lng: cam.lng }) : svPanoAt(cam.pano)).then(function (at) {
+        if (!at) return;
+        cam.lat = at.lat; cam.lng = at.lng;
+        if (marker) map.removeLayer(marker);
+        marker = L.marker([at.lat, at.lng], { draggable: true, zIndexOffset: 2000, icon: L.divIcon({ className: '', iconSize: [30, 30], iconAnchor: [15, 15],
+          html: '<div style="width:30px;height:30px;border-radius:50%;background:#fbbf24;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.5);' +
+                'font:16px/24px sans-serif;text-align:center">&#128247;</div>' }) }).addTo(map);
+        say('Drag the camera pin to where the camera should stand.');
+        marker.on('dragend', function () {
+          var ll = marker.getLatLng();
+          svMeta(ll.lat.toFixed(6) + ',' + ll.lng.toFixed(6), 30).then(function (j) {
+            if (!j) { say('No street photo there -- try closer to a street.', true); return; }
+            cam.pano = j.pano_id; cam.date = j.date || ''; cam.lat = j.location.lat; cam.lng = j.location.lng;
+            cam.heading = Math.round(bearing(cam.lat, cam.lng, target[0], target[1]));
+            marker.setLatLng([cam.lat, cam.lng]); load(); say('Moved. Turn/zoom, then Save view.');
+          });
+        });
+        map.once('popupclose', function () { if (marker) { map.removeLayer(marker); marker = null; } });
+      });
+    }
+    ctl.addEventListener('click', function (ev) {
+      var b = ev.target.closest('button'); if (!b) return;
+      ev.preventDefault(); ev.stopPropagation();
+      var act = b.getAttribute('data-a');
+      if (act === 'in') cam.fov = Math.max(15, Math.round(cam.fov * 0.7));
+      else if (act === 'out') cam.fov = Math.min(110, Math.round(cam.fov / 0.7));
+      else if (act === 'left' || act === 'right') cam.heading += (act === 'left' ? -1 : 1) * Math.max(4, cam.fov / 4);
+      else if (act === 'set') { var open = adm.style.display === 'flex'; adm.style.display = open ? 'none' : 'flex'; if (!open) adminBar(); return; }
+    else if (act === 'fwd' || act === 'back') { step(act === 'fwd' ? 1 : -1); return; }
+      else return;
+      load();
+    });
+    adm.addEventListener('click', function (ev) {
+      var b = ev.target.closest('button'); if (!b) return;
+      ev.preventDefault(); ev.stopPropagation();
+      var what = b.getAttribute('data-b');
+      if (what === 'pin') {
+        var v = adm.querySelector('input').value.trim();
+        svPost({ key: key, pin: v, check: true }).then(function (j) { if (j.ok) { svPin(v); adminBar(); } else say(j.error || 'Not accepted.', true); });
+      } else if (what === 'move') moveCamera();
+      else if (what === 'save') {
+        svPost({ key: key, pin: svPin(), pano: cam.pano, heading: Math.round((cam.heading % 360 + 360) % 360), pitch: cam.pitch, fov: cam.fov, date: cam.date })
+          .then(function (j) {
+            if (j.ok) { svViewCache[key] = Promise.resolve(j.view); say('Saved -- everyone now sees this view.'); }
+            else { if (j.status === 401) svPin(''); say(j.error || 'Not saved.', true); }
+          });
+      } else if (what === 'reset') {
+        svPost({ key: key, pin: svPin(), clear: true }).then(function (j) {
+          if (j.ok) { delete svViewCache[key]; say('Cleared -- reopen to see the automatic view.'); } else say(j.error || 'Not cleared.', true);
+        });
+      }
+    });
+    adm.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); var b = adm.querySelector('[data-b="pin"]'); if (b) b.click(); } });
+    load();
+  }
+  /* Parcel photo: Street + Aerial stacked in one box; hydratePhoto() decides which shows.
+     bb = [minLng, minLat, maxLng, maxLat]; d = the lot line as an SVG path in the aerial's pixels;
+     q = the address Street View looks up; key = saved-view key (p:<pin>). */
+  function photoFrame(bb, box, d, q, mapsQ, aim, key) {
+    var cLat = (bb[1] + bb[3]) / 2, cLng = (bb[0] + bb[2]) / 2;
+    var big = photoUrl(photoBox(bb[0], bb[1], bb[2], bb[3], 1600, 1000), 1600, 1000);
+    var lay = 'display:none;position:absolute;inset:0';
+    var btn = 'border:0;padding:3px 9px;font:700 11px -apple-system,Segoe UI,Roboto,sans-serif;cursor:pointer;';
+    return '<div class="pcfd-photo" data-bb="' + bb.join(',') + '" data-q="' + esc(q) + '" data-aim="' + (aim ? aim.join(',') : '') + '" data-key="' + esc(key || '') + '" ' +
+      'style="position:relative;margin:0 0 7px;border-radius:6px;overflow:hidden;background:#cbd5e1;' +
+      'aspect-ratio:' + PHOTO_W + '/' + PHOTO_H + '">' +
+      '<a class="ph-aer" href="' + esc(big) + '" target="_blank" rel="noopener" title="Open a larger photo" style="' + lay + '">' +
+      '<img src="' + esc(photoUrl(box, PHOTO_W, PHOTO_H)) + '" alt="Aerial photo of the parcel" ' +
+      'style="display:block;width:100%;height:100%;object-fit:cover">' +
+      '<svg viewBox="0 0 ' + PHOTO_W + ' ' + PHOTO_H + '" style="position:absolute;inset:0;width:100%;height:100%">' +
+      '<path d="' + d + '" fill="rgba(250,204,21,.10)" fill-rule="evenodd" stroke="#facc15" stroke-width="3" ' +
+      'stroke-linejoin="round"/></svg>' +
+      '<span style="position:absolute;right:4px;bottom:3px;font-size:9px;color:#fff;text-shadow:0 0 2px #000">' +
+      'Imagery &copy; Esri</span></a>' +
+      '<div class="ph-svbox" style="' + lay + '">' +
+      '<a class="ph-sv" target="_blank" rel="noopener" title="Open Street View here" style="display:block;width:100%;height:100%">' +
+      '<img alt="Street View of the property" style="display:block;width:100%;height:100%;object-fit:cover"></a>' +
+      '<span class="ph-date" style="position:absolute;right:5px;top:5px;font-size:10px;font-weight:600;color:#fff;' +
+      'background:rgba(15,23,42,.6);padding:1px 6px;border-radius:9px;pointer-events:none"></span></div>' +
+      '<div class="ph-msg" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;' +
+      'font-size:11px;color:#475569">Loading photo&hellip;</div>' +
+      '<div class="ph-tg" style="position:absolute;left:5px;top:5px;display:none;border-radius:7px;overflow:hidden;' +
+      'box-shadow:0 1px 3px rgba(0,0,0,.4)">' +
+      '<button type="button" data-v="sv" style="' + btn + '">Street</button>' +
+      '<button type="button" data-v="aer" style="' + btn + 'border-left:1px solid #cbd5e1">Aerial</button></div>' +
+      '</div>' + '<div class="ph-ctlbox">' + svCtlHtml() + '</div>' +
+      '<div style="font-size:12px;margin:-2px 0 6px">' +
+      '<a class="ph-svlink" target="_blank" rel="noopener" href="https://www.google.com/maps/@?api=1&amp;map_action=pano&amp;viewpoint=' +
+      cLat.toFixed(6) + ',' + cLng.toFixed(6) + '">Street View &rarr;</a> &nbsp; ' +
+      '<a target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&amp;query=' +
+      encodeURIComponent(mapsQ) + '">Google Maps &rarr;</a></div>';
+  }
+  function hydratePhoto(root) {
+    var el = root && root.querySelector && root.querySelector('.pcfd-photo');
+    if (!el || el.__pcfdPhoto) return;
+    el.__pcfdPhoto = true;
+    var bb = el.getAttribute('data-bb').split(',').map(Number), q = el.getAttribute('data-q'), key = el.getAttribute('data-key') || '';
+    var aim = (el.getAttribute('data-aim') || '').split(',').filter(Boolean).map(Number);
+    var target = aim.length === 3 ? [aim[1], aim[0]] : [(bb[1] + bb[3]) / 2, (bb[0] + bb[2]) / 2];
+    var aer = el.querySelector('.ph-aer'), svb = el.querySelector('.ph-svbox'), msg = el.querySelector('.ph-msg');
+    var ctlbox = el.nextElementSibling && el.nextElementSibling.classList.contains('ph-ctlbox') ? el.nextElementSibling : null;
+    var tg = el.querySelector('.ph-tg'), btns = tg.querySelectorAll('button');
+    function show(v) {
+      msg.style.display = 'none';
+      aer.style.display = v === 'aer' ? 'block' : 'none';
+      svb.style.display = v === 'sv' ? 'block' : 'none';
+      if (ctlbox) ctlbox.style.display = v === 'sv' ? '' : 'none';
+      for (var i = 0; i < btns.length; i++) {
+        var on = btns[i].getAttribute('data-v') === v;
+        btns[i].style.background = on ? '#1e3a8a' : '#fff';
+        btns[i].style.color = on ? '#fff' : '#1e293b';
+      }
+    }
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].addEventListener('click', function (ev) { ev.preventDefault(); ev.stopPropagation(); show(this.getAttribute('data-v')); });
+    }
+    var settled = false;
+    function aerialOnly() { if (settled) return; settled = true; show('aer'); }
+    var t = setTimeout(aerialOnly, 8000);
+    svView(key).then(function (v) {
+      return v ? { pano: v.pano, heading: v.heading, pitch: v.pitch, fov: v.fov, date: v.date || '', saved: true }
+               : findPano(bb, q, aim.length === 3 ? aim : null);
+    }).then(function (p) {
+      if (!p) { clearTimeout(t); aerialOnly(); return; }
+      var cam = { pano: p.pano, lat: p.lat, lng: p.lng, heading: p.heading, pitch: p.pitch == null ? 3 : p.pitch, fov: p.fov, date: p.date };
+      var sl = el.parentNode && el.parentNode.querySelector('.ph-svlink');
+      var link = svb.querySelector('.ph-sv');
+      svCamera(cam, target, key, { box: ctlbox || svb, img: link.querySelector('img'), link: link, tag: svb.querySelector('.ph-date'),
+        tagText: function (c, dt) { if (sl) sl.href = link.href; return (dt || '') + (p.saved ? ' · set view' : ''); } },
+        function (ok) {
+          if (settled) return;
+          settled = true; clearTimeout(t);
+          if (!ok) { show('aer'); return; }
+          tg.style.display = 'flex'; show('sv');
+        });
+    });
+  }
+
+  /* HYDRANT slot: a page's hydrant popup carries svSlot(lat, lng); the plugin fills it when the popup opens. */
+  function svSlot(lat, lng) {
+    return '<div class="pcfd-sv" data-lat="' + (+lat).toFixed(6) + '" data-lng="' + (+lng).toFixed(6) + '" ' +
+      'style="display:none;margin:0 0 6px;width:var(--pcfd-pop-w,340px);max-width:100%">' +
+      '<div style="position:relative;border-radius:6px;overflow:hidden;background:#cbd5e1;aspect-ratio:' + PHOTO_W + '/' + PHOTO_H + '">' +
+      '<a target="_blank" rel="noopener" title="Open Street View here" style="display:block;width:100%;height:100%">' +
+      '<img alt="Street View of the hydrant" style="display:block;width:100%;height:100%;object-fit:cover"></a>' +
+      '<span class="sv-tag" style="position:absolute;right:5px;top:5px;font-size:10px;font-weight:600;color:#fff;' +
+      'background:rgba(15,23,42,.6);padding:1px 6px;border-radius:9px;pointer-events:none"></span></div>' + svCtlHtml() + '</div>';
+  }
+  var svPtCache = {};
+  function findPanoAt(lat, lng) {
+    var ck = lat.toFixed(6) + ',' + lng.toFixed(6);
+    if (!svPtCache[ck]) {
+      var k = Math.PI / 180, R0 = 111320;
+      var probes = [0, 45, 90, 135, 180, 225, 270, 315].map(function (b) {
+        var la = lat + 16 * Math.cos(b * k) / R0, lo = lng + 16 * Math.sin(b * k) / (R0 * Math.cos(lat * k));
+        return svMeta(la.toFixed(6) + ',' + lo.toFixed(6), 8);
+      });
+      svPtCache[ck] = Promise.all(probes).then(function (js) {
+        var best = null;
+        js.forEach(function (j) {
+          if (!j) return;
+          var d = distM(j.location.lat, j.location.lng, lat, lng);
+          if (d < 9 || d > 35) return;
+          if (!best || Math.abs(d - 16) < Math.abs(best.d - 16)) best = { j: j, d: d };
+        });
+        if (!best) return null;
+        var j = best.j, d = best.d;
+        /* Opens ~12 m across the hydrant: tighter and a hydrant whose book point is a few metres off falls out of
+           frame (tested on three), so the crew zooms and turns with the buttons. */
+        return { pano: j.pano_id, date: j.date || '', lat: j.location.lat, lng: j.location.lng,
+                 heading: Math.round(bearing(j.location.lat, j.location.lng, lat, lng)),
+                 fov: Math.round(Math.min(90, Math.max(20, 2 * Math.atan(6 / d) * 180 / Math.PI))),
+                 pitch: Math.round(Math.max(-20, -Math.atan(2 / d) * 180 / Math.PI)) };
+      });
+    }
+    return svPtCache[ck];
+  }
+  function svHydrate(root, resized) {
+    var slots = root && root.querySelectorAll ? root.querySelectorAll('.pcfd-sv') : [];
+    Array.prototype.forEach.call(slots, function (el) {
+      if (el.__pcfdSv) return;
+      el.__pcfdSv = true;
+      var lat = +el.getAttribute('data-lat'), lng = +el.getAttribute('data-lng');
+      var key = 'h:' + lat.toFixed(5) + ',' + lng.toFixed(5);
+      svView(key).then(function (v) {
+        return v ? { pano: v.pano, heading: v.heading, pitch: v.pitch, fov: v.fov, date: v.date || '', saved: true } : findPanoAt(lat, lng);
+      }).then(function (p) {
+        if (!p) return;
+        var cam = { pano: p.pano, lat: p.lat, lng: p.lng, heading: p.heading, pitch: p.pitch, fov: p.fov, date: p.date };
+        svCamera(cam, [lat, lng], key, { box: el, img: el.querySelector('img'), link: el.querySelector('a'), tag: el.querySelector('.sv-tag'),
+          tagText: function (c, dt) {
+            var ft = c.lat != null ? Math.round(distM(c.lat, c.lng, lat, lng) * 3.28084) + ' ft away' : '';
+            return [dt ? 'Street View ' + dt : '', ft, p.saved ? 'set view' : ''].filter(Boolean).join(' · ');
+          } },
+          function (ok) { if (ok) { el.style.display = 'block'; if (resized) resized(); } });
+      });
+    });
+  }
+  window.PCFD_SV = { slot: svSlot, hydrate: svHydrate };   // for pages' own hydrant popups
+
+  function photoHtml(rec) {
+    var bb = [rec[2], rec[3], rec[4], rec[5]];
+    var box = photoBox(bb[0], bb[1], bb[2], bb[3], PHOTO_W, PHOTO_H);
+    var sx = PHOTO_W / (box[2] - box[0]), sy = PHOTO_H / (box[3] - box[1]), d = '';
+    rec[6].forEach(function (rings) {
+      rings.forEach(function (f) {
+        for (var i = 0; i + 1 < f.length; i += 2) {
+          var m = merc(f[i], f[i + 1]);
+          d += (i ? 'L' : 'M') + ((m[0] - box[0]) * sx).toFixed(1) + ' ' + ((box[3] - m[1]) * sy).toFixed(1);
+        }
+        d += 'Z';
+      });
+    });
+    var ad = rec[7] || [], q = ad.length ? ad[0] + ', ' + COUNTY : '';
+    var aim = window.PCFD_AIM && window.PCFD_AIM.by[rec[0]];
+    return photoFrame(bb, box, d, q, q || ((bb[1] + bb[3]) / 2).toFixed(6) + ',' + ((bb[0] + bb[2]) / 2).toFixed(6), aim, 'p:' + rec[0]);
+  }
+
   /* The county's address for the PARCEL. On a strip centre that is one number
      for the whole lot, not each tenant's suite -- hence the label. */
   function popupHtml(rec) {
     var ad = rec[7] || [];
-    var h = '<div style="font:13px/1.4 -apple-system,Segoe UI,Roboto,sans-serif;min-width:170px">';
+    var h = '<div style="font:13px/1.4 -apple-system,Segoe UI,Roboto,sans-serif;width:var(--pcfd-pop-w,340px)">';
+    h += photoHtml(rec);
     h += ad.length
       ? '<div style="font-weight:700">' + esc(ad[0]) + '</div>'
       : '<div style="font-weight:700;color:#64748b">No county address on file</div>';
@@ -299,6 +733,9 @@
     h += '<div style="font-size:12px;color:#475569;margin-top:3px">Tax ID <b>' + esc(rec[0]) +
          '</b>' + (rec[1] != null ? ' &middot; ' + rec[1] + ' ac' : '') + '</div>';
     if (ad.length) h += '<div style="font-size:10.5px;color:#94a3b8;margin-top:2px">County address</div>';
+
+    /* A host page can add its own lines under the parcel facts (the Centerville map site: nearest hydrants). */
+    if (typeof window.PCFD_PARCEL_EXTRA === 'function') { try { h += window.PCFD_PARCEL_EXTRA(rec) || ''; } catch (e) {} }
 
     /* What stands on it, the way the Centerville map lists it. */
     var O = window.PCFD_OCC, occ = (O && O.by && O.by[rec[0]]) || [];
@@ -331,6 +768,18 @@
 
   function attach(map) {
     if (map.__pcfdParcels || map.options.pcfdParcels === false) return;
+    SV_MAP = map;   // the Street View camera pin (Move camera) goes on this map
+    /* Photo popups size with the MAP zoom (David 2026-09-23: "need the modal to size with the zoom"): zoomed in you are
+       looking at one lot, so the photo gets bigger; zoomed out, smaller. Never wider than ~90% of the screen.
+       Parcel and hydrant popups read the width from --pcfd-pop-w on the map container; an open one re-lays itself out. */
+    function popWidth() {
+      var z = map.getZoom(), w = z <= 14 ? 240 : z >= 20 ? 520 : { 15: 280, 16: 320, 17: 360, 18: 420, 19: 480 }[Math.round(z)] || 340;
+      map.getContainer().style.setProperty('--pcfd-pop-w', Math.min(w, Math.round(window.innerWidth * 0.9) - 40) + 'px');
+      var pp = map._popup;
+      if (pp && pp.isOpen && pp.isOpen() && pp._updateLayout) { pp._updateLayout(); pp._updatePosition(); }
+    }
+    map.on('zoomend', popWidth); window.addEventListener('resize', popWidth);
+    map.whenReady(popWidth);
     map.__pcfdParcels = true;
 
     /* Own pane below the overlay pane (400): parcels sit under every marker,
@@ -354,6 +803,7 @@
       label('&#9638; Parcels');
       /* Only what is on screen: 14,000 lots is too many to hand Leaflet at
          once and nobody can look at them all anyway. */
+      tilesFor(map, draw);
       var b = map.getBounds(), w = b.getWest(), e = b.getEast(), s = b.getSouth(), n = b.getNorth();
       var P = window.CV_PARCELS.p;
       for (var i = 0; i < P.length; i++) {
@@ -388,7 +838,7 @@
       if (!on) { group.clearLayers(); if (map.hasLayer(group)) map.removeLayer(group); label('&#9638; Parcels'); return; }
       if (!map.hasLayer(group)) group.addTo(map);
       label('&#9638; Parcels <small>loading</small>');
-      Promise.all([load(), loadOcc()]).then(draw).catch(function () { label('&#9638; Parcels <small>unavailable</small>'); });
+      Promise.all([load(), loadOcc(), loadAim()]).then(draw).catch(function () { label('&#9638; Parcels <small>unavailable</small>'); });
     }
 
     /* ------------------------------------------------------------ water */
@@ -404,7 +854,16 @@
     var cgroup = L.layerGroup();        // water towers + pump houses (from WFAC_ZOOM)
     var facs = null;
     var nhyd = null;
-    var won = false, wbtn = null, legend = null, mains = null, labels = null;
+    var won = false, wbtn = null, legend = null, mains = null, labels = null, keyHd = null, keyBody = null;
+    function keyIsOpen() { try { return localStorage.getItem('pcfd_water_key') === 'open'; } catch (e) { return false; } }
+    function keyOpen(o) {
+      try { localStorage.setItem('pcfd_water_key', o ? 'open' : 'closed'); } catch (e) {}
+      if (!keyBody) return;
+      keyBody.style.display = o ? 'block' : 'none';
+      keyHd.innerHTML = (o ? '&#9662;' : '&#9656;') + ' Water key';
+      keyHd.setAttribute('aria-expanded', o ? 'true' : 'false');
+      setTimeout(clearOfPage, 0);
+    }
 
     function wlabel(t) { if (wbtn) wbtn.innerHTML = t; }
 
@@ -428,7 +887,8 @@
       order.sort(function (a, b) { return groups[a].r[0] - groups[b].r[0]; });
       var edges = [], pipes = [];
       order.forEach(function (key) {
-        var g = groups[key], st = isProbable(W, g.r) ? { color: '#64748b', weight: 3 } : waterStyle(g.r);
+        /* Traced from hydrants: slate-blue, sized like the rest where a hydrant record gives the size. */
+        var g = groups[key], st = isLead(W, g.r) ? { color: '#6b84a8', weight: 1.8 } : isProbable(W, g.r) ? (function (s) { return { color: '#6b84a8', weight: s ? waterStyle(g.r).weight : 2.8 }; })(g.r[0]) : waterStyle(g.r);
         edges.push(L.polyline(g.parts, {
           pane: 'pcfdParcels', renderer: wrenderer, interactive: false,
           color: '#ffffff', weight: st.weight + 3, opacity: 0.92, lineCap: 'round', lineJoin: 'round'
@@ -519,6 +979,7 @@
         wbtn.style.background = won ? '#e0f2fe' : '#fff';
       }
       if (legend) legend.style.display = won ? 'block' : 'none';
+      if (legend) keyOpen(keyIsOpen());
       setTimeout(clearOfPage, 0);                // the legend changes the box's height
       if (!won) {
         if (map.hasLayer(cgroup)) map.removeLayer(cgroup);
@@ -549,14 +1010,22 @@
         wbtn.title = 'Show known water mains (approximate, from public records)';
         wbtn.style.cssText = css + ';color:#075985';
         wbtn.innerHTML = '&#128167; Water';
+        /* the water KEY folds away (David 2026-09-25: "can we collapse the parcels and water modal -- when i select water
+           it stays popped up"): with Water on only a "Key" row shows; tap it to open / close. Starts closed; remembered. */
         legend = L.DomUtil.create('div', '', box);
-        legend.style.cssText = 'display:none;padding:5px 8px;font:11px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;color:#334155;background:#fff;border-top:1px solid #ccc;max-width:190px;white-space:normal;max-height:38vh;overflow-y:auto';
-        legend.innerHTML =
+        legend.style.cssText = 'display:none;background:#fff;border-top:1px solid #ccc;max-width:190px';
+        keyHd = L.DomUtil.create('a', '', legend);
+        keyHd.href = '#'; keyHd.setAttribute('role', 'button');
+        keyHd.style.cssText = 'display:block;padding:0 8px;font:600 11px/26px -apple-system,Segoe UI,Roboto,sans-serif;color:#475569;text-decoration:none;white-space:nowrap';
+        keyBody = L.DomUtil.create('div', '', legend);
+        keyBody.style.cssText = 'padding:0 8px 6px;font:11px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;color:#334155;white-space:normal;max-height:38vh;overflow-y:auto';
+        L.DomEvent.on(keyHd, 'click', function (ev) { L.DomEvent.preventDefault(ev); keyOpen(!keyIsOpen()); });
+        keyBody.innerHTML =
           '<div><span style="' + PIPE_CSS + ';height:6px;background:#1e3a8a"></span>12&quot; and bigger</div>' +
           '<div><span style="' + PIPE_CSS + ';height:4px;background:#1d4ed8"></span>8&ndash;10&quot;</div>' +
           '<div><span style="' + PIPE_CSS + ';height:3px;background:#2563eb"></span>6&quot;, or size not on file</div>' +
           '<div><span style="' + PIPE_CSS + ';height:2px;background:#3b82f6"></span>smaller than 6&quot;</div>' +
-          '<div><span style="' + PIPE_CSS + ';height:3px;background:#64748b"></span>probable main (from hydrants)</div>' +
+          '<div><span style="' + PIPE_CSS + ';height:3px;background:#6b84a8"></span>traced from hydrants (~9 in 10 match real mains)</div>' +
           '<div><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#0369a1;vertical-align:middle;margin:0 12px 0 7px"></span>known size, route not public</div>' +
           '<div><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#27ae60;border:2px solid #fff;box-shadow:0 0 0 1px #94a3b8;vertical-align:middle;margin:0 10px 0 5px"></span>neighbours&rsquo; hydrants (by flow class)</div>' +
           '<div><span style="display:inline-block;vertical-align:middle;margin:0 6px 0 2px">' + TOWER_SVG.replace('width="22" height="28"', 'width="16" height="20"') + '</span>water tower / tank &nbsp;<span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#0f766e;vertical-align:middle"></span> pump station</div>' +
@@ -669,10 +1138,21 @@
         }
         if (!html && on && z >= MIN_ZOOM) { var p = parcelAt(ll); if (p) html = popupHtml(p); }
         /* maxHeight: a strip centre can list five tenants; scroll rather than cover the map. */
-        if (html) L.popup({ maxWidth: 280, maxHeight: 380, pcfd: true }).setLatLng(ll).setContent(html).openOn(map);
+        if (html) hydratePhoto(L.popup({ maxWidth: 640, maxHeight: 560, pcfd: true }).setLatLng(ll).setContent(html).openOn(map).getElement());
       }, 0);
     }
-    map.on('click', onTap);
+    map.on('click', function (e) { if (!window.PCFD_TAP_OFF) onTap(e); });   // a host tool (measure) can pause lot taps
+    /* Street View for any hydrant popup on this map -- ours or the page's own -- that
+       carries a .pcfd-sv slot; the popup re-lays itself out once the picture is in. */
+    map.on('popupopen', function (e) {
+      var pp = e.popup;
+      /* re-measure only: update() would re-run a function-content popup and throw the
+         picture away (the radar's and inspections' hydrant popups are built on open) */
+      svHydrate(pp.getElement(), function () {
+        if (!pp.isOpen || !pp.isOpen()) return;
+        if (pp._updateLayout) { pp._updateLayout(); pp._updatePosition(); if (pp._adjustPan) pp._adjustPan(); }
+      });
+    });
 
     /* ------------------------------------------------------------ keep the buttons visible */
     /* A page panel sitting on our corner (the radar's header) would hide the buttons.
@@ -721,5 +1201,5 @@
   L.Map.addInitHook(function () { attach(this); });
 
   window.PCFDParcels = { load: load, loadWater: loadWater, loadOcc: loadOcc, loadNhyd: loadNhyd, loadWfac: loadWfac, attach: attach,
-                         data: DATA, water: WATER, occupancies: OCC, version: 'taps-2026-09-21' };
+                         data: DATA, water: WATER, occupancies: OCC, version: 'book-sync-2026-09-22' };
 })();
